@@ -352,16 +352,6 @@ report_html(obj, "analysis_report.html", title = "Ca vs Ctrl Analysis")
 
 ---
 
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Open an issue to discuss major changes
-2. Follow existing code style (roxygen2 docs, S4 methods)
-3. Add examples to `inst/examples/` for new features
-4. Update NAMESPACE via `devtools::document()`
-
----
-
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) file.
