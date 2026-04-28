@@ -52,7 +52,7 @@ This is not "LLM does your analysis for you." It's a tool to make analysis steps
 
 ```r
 # Requirements: R >= 4.2, Seurat >= 5.0
-remotes::install_github("kanyy/scAgentKit", upgrade = "never")
+remotes::install_github("changhaokan/scAgentKit", upgrade = "never")
 
 # Or from local source
 # tar xzf scAgentKit.tar.gz
