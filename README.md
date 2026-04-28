@@ -1,5 +1,7 @@
 # scAgentKit
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![R: >= 4.2](https://img.shields.io/badge/R-%3E%3D%204.2-blue)](https://www.r-project.org/)
+[![Seurat: >= 5.0](https://img.shields.io/badge/Seurat-%3E%3D%205.0-orange)](https://satijalab.org/seurat/)
 > **An LLM-orchestratable toolkit for single-cell RNA-seq analysis.**
 > Each pipeline decision is made by an LLM looking at evidence, gives a written rationale, and can be audited. No black boxes.
 
