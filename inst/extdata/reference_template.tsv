@@ -1,0 +1,50 @@
+cell_type	marker	tissue	source
+T cell	Cd3d	all	PanglaoDB
+T cell	Cd3e	all	PanglaoDB
+T cell	Cd3g	all	PanglaoDB
+T cell	Cd8a	all	PanglaoDB
+T cell	Cd4	all	PanglaoDB
+B cell	Cd19	all	PanglaoDB
+B cell	Ms4a1	all	PanglaoDB
+B cell	Cd79a	all	PanglaoDB
+Plasma cell	Jchain	all	PanglaoDB
+Plasma cell	Xbp1	all	PanglaoDB
+Plasma cell	Mzb1	all	PanglaoDB
+Macrophage	Cd68	all	PanglaoDB
+Macrophage	Cd163	all	PanglaoDB
+Macrophage	Adgre1	all	PanglaoDB
+MDSC	S100a8	all	CellMarker
+MDSC	S100a9	all	CellMarker
+MDSC	Ly6g	all	CellMarker
+MDSC	Csf3r	all	CellMarker
+MDSC	Cxcr2	all	CellMarker
+Neutrophil	S100a8	all	PanglaoDB
+Neutrophil	S100a9	all	PanglaoDB
+Neutrophil	Elane	all	PanglaoDB
+Neutrophil	Mpo	all	PanglaoDB
+CAF	Pdgfra	all	CellMarker
+CAF	Pdgfrb	all	CellMarker
+CAF	Acta2	all	CellMarker
+CAF	Col1a1	all	CellMarker
+CAF	Col3a1	all	CellMarker
+Endothelial cell	Pecam1	all	PanglaoDB
+Endothelial cell	Cdh5	all	PanglaoDB
+Endothelial cell	Kdr	all	PanglaoDB
+Lymphatic endothelial cell	Prox1	all	CellMarker
+Lymphatic endothelial cell	Lyve1	all	CellMarker
+Pericyte	Rgs5	all	CellMarker
+Pericyte	Mcam	all	CellMarker
+Smooth muscle cell	Acta2	all	PanglaoDB
+Smooth muscle cell	Myh11	all	PanglaoDB
+Smooth muscle cell	Tagln	all	PanglaoDB
+Enterocyte	Vil1	colon	CellMarker
+Enterocyte	Krt20	colon	CellMarker
+Enterocyte	Fabp1	colon	CellMarker
+Enterocyte	Alpi	colon	CellMarker
+Enteric glial cell	Sox10	colon	CellMarker
+Enteric glial cell	Plp1	colon	CellMarker
+Enteric glial cell	S100b	colon	CellMarker
+Hepatocyte	Alb	liver	CellMarker
+Hepatocyte	Apoa1	liver	CellMarker
+Hepatocyte	Ttr	liver	CellMarker
+Kupffer cell	Clec4f	liver	CellMarker
