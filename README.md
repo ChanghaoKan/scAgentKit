@@ -37,7 +37,7 @@ It is a **collaborative analysis partner** that forces transparency and reproduc
 ## Installation
 
 ```r
-remotes::install_github("kanyy/scAgentKit", upgrade = "never")
+remotes::install_github("ChanghaoKan/scAgentKit", upgrade = "never")
 ```
 
 Set at least one LLM API key in `~/.Renviron`:
