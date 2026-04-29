@@ -1,27 +1,21 @@
+**✅ 以下是 scAgentKit 完整更新后的 README.md 全文**
 
+你可以直接全选复制，替换你 GitHub 上的 `README.md` 文件。
+
+```markdown
 # scAgentKit
 
 > **An LLM-orchestratable, fully auditable toolkit for single-cell RNA-seq analysis.**
 
-scAgentKit turns the tacit knowledge of single-cell analysis into explicit, reproducible, and auditable steps. Every decision (QC thresholds, number of PCs, batch variable, clustering resolution, cell-type annotation) is made with evidence, recorded with reasoning, and can be replayed as plain R code.
+scAgentKit turns the tacit knowledge of single-cell analysis into explicit, reproducible, and auditable steps. Every decision — QC thresholds, number of PCs, batch variable, clustering resolution, cell-type annotation — is made with evidence, recorded with reasoning, and can be replayed as plain R code.
 
-**Core philosophy**:  
-No black boxes. Every LLM call produces a written rationale. Every step appends to a decision log. At the end you get a clean, dependency-free R script + machine-readable audit trail + human-readable HTML report.
+**Core philosophy**: No black boxes. Every LLM call produces a written rationale. Every step appends to a decision log. At the end you get a clean, dependency-free R script + machine-readable audit trail + human-readable HTML report.
 
 ---
 
 ## Why scAgentKit exists
 
-A typical single-cell analyst makes ~15–20 small but consequential decisions per dataset:
-
-- Which QC method and thresholds to use?
-- How many PCs? (variance-based or visual?)
-- Which metadata column is the real batch variable?
-- What clustering resolution is stable *and* biologically meaningful?
-- Is cluster 7 a real CD8 effector population or just stressed cells / doublets?
-- Should I subcluster the T/NK lineage separately?
-
-Most of these decisions are made silently and never appear in the methods section. Two analysts can produce completely different biological stories from the same data with no way to audit *why*.
+A typical single-cell analyst makes 15–20 small but consequential decisions per dataset. Most of these decisions are made silently and never appear in the methods section. Two analysts can produce completely different biological stories from the same data with no way to audit *why*.
 
 scAgentKit makes every decision a first-class, recorded step. The LLM sees the same evidence a human analyst would (marker tables, UMAPs, clustree, proportions, reference matches), writes its reasoning in plain English, and the choice is permanently logged.
 
@@ -34,21 +28,19 @@ It is a **collaborative analysis partner** that forces transparency and reproduc
 
 | Feature | Description |
 |---------|-------------|
-| **Full audit trail** | Every function call records parameters, rationale, timestamp, and a reproducible code snippet |
-| **Two-step annotation** | Broad annotation → per-lineage re-clustering + fine annotation (the killer feature) |
-| **Vision-driven decisions** | `sc_select_pcs_visual()` and `sc_resolution_recommend(vision=TRUE)` let the LLM *see* UMAPs and clustree |
-| **Multi-LLM support** | Swap between DeepSeek, Grok, Claude, Qwen, Kimi, OpenAI, or any OpenAI-compatible endpoint with one line |
-| **Per-sample QC** | Proper `qc_split()` → `qc_mad()` / `qc_doublet()` → `qc_merge()` workflow (critical for correct doublet detection) |
-| **Reference integration** | `annot_query_cellmarker()` + `annot_match_reference()` give the LLM external evidence |
-| **Self-contained outputs** | `export_script()`, `export_decisions()`, `report_html()` (with base64-embedded figures) |
-| **Strong Seurat v5 support** | Careful `JoinLayers()` handling throughout |
+| **Full audit trail** | Every decision is recorded with parameters, rationale, and reproducible code |
+| **Three-step annotation workflow** | Coarse annotation → quality cleaning → fine subclustering per lineage |
+| **Smart quality control** | `annot_clean_celltypes()` automatically merges singular/plural names and flags/removes low-quality clusters |
+| **Vision-driven QC** | Optional LLM vision mode to visually judge whether small clusters are real biology or contamination |
+| **Multi-LLM support** | DeepSeek, Grok, Claude, Qwen, Kimi, OpenAI, or any OpenAI-compatible endpoint |
+| **Per-sample QC** | Proper `qc_split` → `qc_mad`/`qc_doublet` → `qc_merge` workflow |
+| **Self-contained outputs** | Clean R script, JSON decision log, and beautiful HTML report |
 
 ---
 
 ## Installation
 
 ```r
-# Requirements: R ≥ 4.2, Seurat ≥ 5.0
 remotes::install_github("kanyy/scAgentKit", upgrade = "never")
 ```
 
@@ -64,99 +56,89 @@ XAI_API_KEY=xai-...
 
 ---
 
-## Quick Start (Recommended Pipeline)
+## Recommended Pipeline (2026 Updated)
 
 ```r
 library(scAgentKit)
-library(Seurat)
 
 chat_text   <- chat_deepseek()
-chat_vision <- chat_grok()          # or chat_claude() for stronger reasoning
+chat_vision <- chat_grok()          # vision capable
 
 obj <- AgentSeurat(seurat_obj)
 
-# 1. QC (per-sample, recommended)
-obj <- qc_add_metrics(obj, species = "mouse")
-obj <- qc_split(obj, split_by = "sample")
-obj <- qc_mad(obj, nmad = 3)
-obj <- qc_doublet(obj, remove = TRUE)
-obj <- qc_remove_genes(obj, species = "mouse")
-obj <- qc_merge(obj)
-
-# 2. Standard processing
-obj <- sc_normalize(obj)
-obj <- sc_find_hvg(obj, nfeatures = 2000)
-obj <- sc_scale(obj)
-obj <- sc_pca(obj, npcs = 50)
-
-# 3. PC selection (vision)
-obj <- sc_select_pcs_visual(obj, 
-                            chat_fn = chat_vision,
-                            variance_thresholds = c(0.80, 0.85, 0.90),
-                            tissue = "mouse colorectal cancer")
-
-# 4. Batch correction
-obj <- sc_select_batch_var(obj, chat_fn = chat_text, tissue = "mouse colorectal cancer")
-obj <- sc_harmony(obj, group_by_vars = obj@params$batch_recommendation$recommended)
-
-obj <- sc_umap(obj)
-obj <- sc_find_neighbors(obj)
-
-# 5. Clustering + LLM resolution recommendation
-obj <- sc_cluster_sweep(obj, resolutions = c(0.2, 0.4, 0.6, 0.8, 1.0))
-obj <- sc_resolution_recommend(obj, 
-                               chat_fn = chat_vision,
-                               vision = TRUE,
-                               tissue = "mouse colorectal cancer",
-                               expected_n_celltypes = c(8, 16),
-                               data_context = "Mouse CRC immunotherapy model (Ca vs Ctrl)")
-
-obj <- sc_cluster(obj, resolution = obj@params$resolution_recommendation$chosen)
-
-obj <- sc_find_markers(obj, only_pos = TRUE)
-obj <- sc_markers_summary(obj)
-
-# 6. Annotation
+# ====================== STEP 1: Coarse annotation ======================
 obj <- annot_llm_annotate(obj, 
                           chat_fn = chat_text,
                           tissue = "mouse colorectal cancer",
-                          data_context = "Focus on TME remodeling and macrophage polarization")
+                          data_context = "Focus on major lineages first")
 
 obj <- annot_apply(obj)
 
-# 7. Fine annotation per lineage (the most powerful feature)
+# ====================== STEP 2: Clean names + quality filter ======================
+obj <- annot_clean_celltypes(obj,
+                             merge_plural = TRUE,
+                             min_cells    = 50,
+                             action       = "flag",           # or "remove"
+                             vision       = TRUE,             # LLM visually judges quality
+                             chat_fn      = chat_vision,
+                             tissue       = "mouse colorectal cancer")
+
+# ====================== STEP 3: Fine subclustering (only on key lineages) ======================
 obj <- annot_subcluster(obj,
                         chat_fn = chat_text,
-                        target = c("T_NK", "B", "Macrophages"),
+                        target = c("T_NK", "B", "Macrophage"),
                         tissue = "mouse colorectal cancer",
-                        data_context = "Focus on macrophage polarization states and T cell exhaustion")
+                        data_context = "Focus on macrophage polarization and T cell states")
 
-# 8. Outputs
+# ====================== Outputs ======================
 export_script(obj, "reproducible_script.R")
 export_decisions(obj, "decisions.json")
 report_html(obj, "analysis_report.html")
-
-save_checkpoint(obj, "final_checkpoint.qs")
 ```
+
+**Why this three-step approach?**
+- First pass focuses on major biological structure (avoids over-fragmentation)
+- `annot_clean_celltypes()` merges naming variants and removes technical noise
+- Vision mode lets the LLM *see* the UMAP and decide if small clusters are real or artifacts
+- Final subclustering is only applied to lineages you actually care about
+
+---
+
+## Quality Control & Cleaning (`annot_clean_celltypes`)
+
+```r
+obj <- annot_clean_celltypes(obj,
+                             merge_plural = TRUE,   # Macrophages → Macrophage
+                             min_cells    = 50,
+                             action       = "flag", # or "remove"
+                             vision       = TRUE)   # LLM looks at UMAP
+```
+
+**What it does:**
+- Automatically merges singular/plural cell type names
+- Flags or removes clusters with very few cells (often contaminants or doublets)
+- When `vision = TRUE`, generates a UMAP highlighting suspicious clusters and asks the LLM to visually judge whether they are real biology or technical artifacts
+
+This step greatly improves annotation quality before doing expensive fine subclustering.
 
 ---
 
 ## Core Design Principles
 
-1. **Every LLM-touching function records a written rationale**
-2. **Two-step annotation is first-class** — broad → lineage-specific re-analysis
-3. **Vision is optional but powerful** — use it for ambiguous visual decisions (PC selection, resolution)
-4. **Per-sample processing is the default** for QC and doublet detection
-5. **You always stay in control** — the LLM recommends, you (or the recorded script) execute
+1. Every LLM-touching function records a written rationale
+2. Two-step (now three-step) annotation is first-class
+3. Vision is optional but powerful for ambiguous visual decisions
+4. Per-sample processing is the default for QC and doublet detection
+5. You always stay in control — the LLM recommends, you execute
 
 ---
 
 ## Important Notes
 
-- `data_context` is only supported in `sc_resolution_recommend()`, `annot_llm_annotate()`, and `annot_subcluster()`.
-- `sc_select_pcs_visual()` and `sc_select_batch_var()` do **not** accept `data_context`.
-- For mouse data, always pass `species = "mouse"` to `qc_add_metrics()` and `qc_remove_genes()`.
-- Vision steps (`sc_select_pcs_visual`, `sc_resolution_recommend(vision = TRUE)`) require a vision-capable model (Grok, Claude, GPT-4o, Qwen-VL, etc.).
+- `data_context` is only supported in `annot_llm_annotate()`, `annot_subcluster()`, and `annot_clean_celltypes()`
+- `sc_select_pcs_visual()` and `sc_select_batch_var()` do **not** accept `data_context`
+- For mouse data, always pass `species = "mouse"` to `qc_add_metrics()` and `qc_remove_genes()`
+- Vision steps require a vision-capable model (Grok, Claude, GPT-4o, Qwen-VL, etc.)
 
 ---
 
@@ -173,10 +155,10 @@ save_checkpoint(obj, "final_checkpoint.qs")
 
 ## Limitations (Honest)
 
-- The LLM is a **collaborator**, not ground truth. Always validate important findings marker-by-marker.
-- Vision calls can be slow and occasionally fail on image encoding (the package has robust fallbacks).
-- API costs are real (a full 70k-cell pipeline typically costs $0.5–3 with smart provider mixing).
-- Small lineages (< 300–500 cells) produce unstable sub-clustering — this is biology, not a tool limitation.
+- Vision steps require a vision-capable model and can be slower
+- LLM decisions are not ground truth — always validate important findings marker-by-marker
+- Very small datasets (< 3,000 cells) may not benefit from the full pipeline
+- `annot_clean_celltypes(vision = TRUE)` currently uses a single combined UMAP; per-cluster detailed judgment will be added in future versions
 
 ---
 
@@ -185,7 +167,7 @@ save_checkpoint(obj, "final_checkpoint.qs")
 If you use scAgentKit in your work, please cite:
 
 ```
-Yang K. scAgentKit: An LLM-orchestratable single-cell RNA-seq toolkit with full auditability.
+Changhao K. scAgentKit: An LLM-orchestratable single-cell RNA-seq toolkit with full auditability.
 GitHub, 2026. https://github.com/kanyy/scAgentKit
 ```
 
@@ -205,8 +187,18 @@ The package was developed through extensive iteration with Claude (Anthropic) an
 
 **Contributing**
 
-Issues and pull requests are very welcome. The package is intentionally modular — most logic lives in small, well-documented functions in `R/`. Two rules must be followed:
+Issues and pull requests are very welcome. The package is intentionally modular. Two rules must be followed:
 
 1. Every function that calls an LLM must record a `rationale`.
 2. Every function must append a reproducible script snippet via `.record_step()`.
+
+---
+
+**Contact**
+
+- GitHub Issues: https://github.com/kanyy/scAgentKit/issues
+- Author: Kan Changhao (Shenzhen Bay Laboratory)
+
+
+---
 
