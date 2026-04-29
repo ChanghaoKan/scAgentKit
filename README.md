@@ -93,8 +93,6 @@ report_html(obj, "analysis_report.html")
 
 ## Important Notes
 
-- The parameter `data_context` is supported in `annot_subcluster()` and `annot_clean_celltypes()`, but **not** in `annot_llm_annotate()` or `sc_resolution_recommend()`.
-- For mouse datasets, always specify `species = "mouse"` in `qc_add_metrics()` and `qc_remove_genes()`.
 - Vision features require a vision-capable model (e.g., Grok, Claude Sonnet, GPT-4o).
 
 ---
