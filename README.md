@@ -1,8 +1,4 @@
-**✅ 以下是 scAgentKit 完整更新后的 README.md 全文**
 
-你可以直接全选复制，替换你 GitHub 上的 `README.md` 文件。
-
-```markdown
 # scAgentKit
 
 > **An LLM-orchestratable, fully auditable toolkit for single-cell RNA-seq analysis.**
