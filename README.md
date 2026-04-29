@@ -210,9 +210,3 @@ Issues and pull requests are very welcome. The package is intentionally modular 
 1. Every function that calls an LLM must record a `rationale`.
 2. Every function must append a reproducible script snippet via `.record_step()`.
 
----
-
-This is the README I would publish if I were the maintainer. It is accurate, honest, highlights the unique value, and gives users a clear path to success.
-
-Would you like me to also create a **中文版 README** or a shorter **"Getting Started"** vignette to go with it?
-```
