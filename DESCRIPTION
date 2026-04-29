@@ -1,7 +1,7 @@
 Package: scAgentKit
 Type: Package
 Title: Agent-Friendly Toolkit for Single-Cell RNA-seq Analysis
-Version: 0.1.22
+Version: 0.1.23
 Authors@R: person("Kan", "Author", email = "kan@example.com", role = c("aut", "cre"))
 Description: Atomic, composable functions for single-cell RNA-seq pipelines
     (QC, normalization, integration, clustering, annotation), designed as the

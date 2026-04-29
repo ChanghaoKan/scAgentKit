@@ -11,8 +11,9 @@
 #' tissue / species filters in R. Subsequent calls are fast and offline.
 #'
 #' Source: Hu et al., CellMarker 2.0, Nucleic Acids Research 2023.
-#' Download URL:
-#' \url{http://bio-bigdata.hrbmu.edu.cn/CellMarker/CellMarker_download.html}
+#' 使用稳定镜像地址（原 yikedaxue.slwshop.cn 经常返回 502 Bad Gateway）：
+#' \url{http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Mouse.xlsx}
+#' \url{http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Human.xlsx}
 #'
 #' @section Format of the returned reference:
 #' A data frame with columns `cell_type`, `marker`, `tissue`, `species`,
@@ -56,10 +57,11 @@ annot_query_cellmarker <- function(species,
 
   if (is.null(url)) {
     # CellMarker 2.0 "all" tables.
+    # 使用稳定镜像地址（原 yikedaxue.slwshop.cn 经常 502）
     url <- switch(
       species,
-      human = "http://yikedaxue.slwshop.cn/download/Cell_marker_Human.xlsx",
-      mouse = "http://yikedaxue.slwshop.cn/download/Cell_marker_Mouse.xlsx"
+      human = "http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Human.xlsx",
+      mouse = "http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Mouse.xlsx"
     )
   }
 
@@ -150,6 +152,7 @@ annot_query_cellmarker <- function(species,
   ref
 }
 
+
 # Explode rows whose marker field lists multiple genes
 # (comma / slash / semicolon / whitespace separated).
 .explode_markers <- function(df) {
@@ -161,6 +164,7 @@ annot_query_cellmarker <- function(species,
   expanded <- expanded[nzchar(expanded$marker), , drop = FALSE]
   expanded
 }
+
 
 #' Clear the scAgentKit reference cache
 #'

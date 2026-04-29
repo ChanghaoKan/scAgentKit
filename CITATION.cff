@@ -1,0 +1,17 @@
+cat > CITATION.cff <<'EOF'
+cff-version: 1.2.0
+message: "If you use scAgentKit in your research, please cite this software."
+title: "scAgentKit: An LLM-orchestratable single-cell RNA-seq toolkit"
+authors:
+  - family-names: "Yang"
+    given-names: "Kan"
+    affiliation: "Shenzhen Bay Laboratory"
+version: 0.1.22
+date-released: 2026-04-28
+url: "https://github.com/<USERNAME>/scAgentKit"
+license: MIT
+EOF
+
+git add CITATION.cff
+git commit -m "Add CITATION.cff"
+git push
