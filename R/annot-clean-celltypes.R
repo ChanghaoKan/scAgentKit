@@ -1,163 +1,195 @@
-#' Clean and filter cell type annotations (with optional vision judgment)
-#'
-#' Merges singular/plural variants, flags or removes low-quality clusters
-#' (very small clusters are often contaminants/doublets), and optionally
-#' uses vision to let the LLM visually judge cluster quality from the UMAP.
-#'
-#' @param obj An AgentSeurat object after [annot_apply()].
-#' @param merge_plural Logical. Merge singular/plural names
-#'   (Macrophages → Macrophage, T cells → T cell, etc.). Default TRUE.
-#' @param min_cells Integer. Clusters with fewer than this many cells
-#'   are considered low-quality. Default 50.
-#' @param action Character. What to do with low-quality clusters:
-#'   `"flag"` (default), `"remove"`, or `"keep"`.
-#' @param vision Logical. If TRUE, generate UMAP and ask vision-capable LLM
-#'   to judge whether small clusters are real or contaminants.
-#' @param chat_fn Vision-capable chat function (required when `vision = TRUE`).
-#' @param tissue Tissue context passed to LLM (e.g. "mouse colorectal cancer").
-#' @param rationale Optional custom rationale string.
-#'
-#' @return Updated AgentSeurat with cleaned `cell_type` and
-#'   `cell_type_quality` columns.
-#' @export
-annot_clean_celltypes <- function(obj,
-                                  merge_plural = TRUE,
-                                  min_cells    = 50,
-                                  action       = c("flag", "remove", "keep"),
-                                  vision       = FALSE,
-                                  chat_fn      = NULL,
-                                  tissue       = NULL,
-                                  rationale    = NULL) {
+# scAgentKit
 
-  stopifnot(methods::is(obj, "AgentSeurat"))
-  action <- match.arg(action)
+> **An LLM-orchestratable, fully auditable toolkit for single-cell RNA-seq analysis.**
 
-  if (!"cell_type" %in% colnames(obj@data@meta.data)) {
-    stop("`cell_type` column not found. Run annot_apply() first.")
-  }
+scAgentKit turns the tacit knowledge of single-cell analysis into explicit, reproducible, and auditable steps. Every decision — QC thresholds, number of PCs, batch variable, clustering resolution, cell-type annotation — is made with evidence, recorded with reasoning, and can be replayed as plain R code.
 
-  meta <- obj@data@meta.data
-  ct   <- as.character(meta$cell_type)
+**Core philosophy**: No black boxes. Every LLM call produces a written rationale. Every step appends to a decision log. At the end you get a clean, dependency-free R script + machine-readable audit trail + human-readable HTML report.
 
-  # ====================== 1. 合并单复数命名 ======================
-  if (isTRUE(merge_plural)) {
-    ct <- gsub("s$", "", ct)
-    ct <- gsub(" cells$", " cell", ct)
-    ct <- gsub("Macrophages", "Macrophage", ct)
-    ct <- gsub("T cells", "T cell", ct)
-    ct <- gsub("B cells", "B cell", ct)
-    ct <- gsub("Neutrophils", "Neutrophil", ct)
-    ct <- gsub("Fibroblasts", "Fibroblast", ct)
-    message("[annot_clean_celltypes] Merged singular/plural names.")
-  }
+---
 
-  # ====================== 2. 识别低质量 cluster ======================
-  cell_counts <- table(ct)
-  small_types <- names(cell_counts[cell_counts < min_cells])
+## Why scAgentKit exists
 
-  if (length(small_types) == 0) {
-    message("[annot_clean_celltypes] No low-quality clusters found.")
-    obj@data@meta.data$cell_type <- ct
-    return(obj)
-  }
+A typical single-cell analyst makes 15–20 small but consequential decisions per dataset. Most of these decisions are made silently and never appear in the methods section. Two analysts can produce completely different biological stories from the same data with no way to audit *why*.
 
-  # ====================== 3. Vision 判断（核心新增） ======================
-  if (isTRUE(vision)) {
-    if (is.null(chat_fn)) {
-      stop("`chat_fn` is required when vision = TRUE.")
-    }
+scAgentKit makes every decision a first-class, recorded step. The LLM sees the same evidence a human analyst would (marker tables, UMAPs, clustree, proportions, reference matches), writes its reasoning in plain English, and the choice is permanently logged.
 
-    message("[annot_clean_celltypes] Generating UMAP for vision judgment...")
+This is **not** “LLM does your analysis for you.”  
+It is a **collaborative analysis partner** that forces transparency and reproducibility.
 
-    # 高亮低质量 cluster 的 UMAP
-    obj@data@meta.data$quality_highlight <- ifelse(ct %in% small_types,
-                                                   "Low quality candidate",
-                                                   "Normal")
+---
 
-    p <- Seurat::DimPlot(obj@data,
-                         reduction = "umap",
-                         group.by  = "quality_highlight",
-                         pt.size   = 0.4,
-                         cols      = c("Low quality candidate" = "red",
-                                       "Normal" = "grey80")) +
-         ggplot2::ggtitle("Low-quality clusters (red) vs Normal (grey)") +
-         ggplot2::theme_classic()
+## Key Features
 
-    dir.create("figures", showWarnings = FALSE)
-    vision_path <- "figures/low_quality_clusters_umap.png"
-    ggplot2::ggsave(vision_path, p, width = 8, height = 6, dpi = 150)
+| Feature | Description |
+|---------|-------------|
+| **Full audit trail** | Every decision is recorded with parameters, rationale, and reproducible code |
+| **Three-step annotation workflow** | Coarse annotation → quality cleaning → fine subclustering per lineage |
+| **Smart quality control** | `annot_clean_celltypes()` automatically merges singular/plural names and flags/removes low-quality clusters |
+| **Vision-driven QC** | Optional LLM vision mode to visually judge whether small clusters are real biology or contamination |
+| **Multi-LLM support** | DeepSeek, Grok, Claude, Qwen, Kimi, OpenAI, or any OpenAI-compatible endpoint |
+| **Per-sample QC** | Proper `qc_split` → `qc_mad`/`qc_doublet` → `qc_merge` workflow |
+| **Self-contained outputs** | Clean R script, JSON decision log, and beautiful HTML report |
 
-    # 构建 prompt
-    system_prompt <- paste(
-      "You are an expert single-cell analyst. Look at the UMAP image.",
-      "Red points are candidate low-quality clusters (very small cell numbers).",
-      "Decide for each red group whether it is:",
-      "1. Real but rare cell type (keep)",
-      "2. Likely contamination, doublet, or technical artifact (remove or flag)",
-      "Return ONLY a JSON object with this format:",
-      '{"decision": "flag" | "remove" | "keep",',
-      ' "reasoning": "<1-2 sentences explaining what you see>"}'
-    )
+---
 
-    user_prompt <- sprintf(
-      "Tissue: %s. There are %d low-quality candidate clusters (red).",
-      tissue %||% "unknown", length(small_types)
-    )
+## Installation
 
-    # 调用 vision LLM
-    parsed <- tryCatch(
-      chat_fn(system_prompt, user_prompt, image_path = vision_path),
-      error = function(e) {
-        warning("Vision call failed: ", conditionMessage(e))
-        NULL
-      }
-    )
+```r
+remotes::install_github("kanyy/scAgentKit", upgrade = "never")
+```
 
-    if (!is.null(parsed)) {
-      # 简单解析（可根据需要增强）
-      if (grepl("remove", parsed, ignore.case = TRUE)) {
-        action <- "remove"
-      } else if (grepl("keep", parsed, ignore.case = TRUE)) {
-        action <- "keep"
-      } else {
-        action <- "flag"
-      }
-      message(sprintf("[annot_clean_celltypes] LLM vision decision: %s", action))
-    }
-  }
+Set at least one LLM API key in `~/.Renviron`:
 
-  # ====================== 4. 执行最终操作 ======================
-  if (action == "flag") {
-    ct[ct %in% small_types] <- paste0(ct[ct %in% small_types], " (Low quality)")
-    message(sprintf("[annot_clean_celltypes] Flagged %d low-quality types.", length(small_types)))
-  } else if (action == "remove") {
-    keep <- !(ct %in% small_types)
-    obj@data <- obj@data[, keep]
-    ct <- ct[keep]
-    message(sprintf("[annot_clean_celltypes] Removed %d low-quality types.", length(small_types)))
-  }
+```bash
+DEEPSEEK_API_KEY=sk-...
+# or
+ANTHROPIC_API_KEY=sk-ant-...
+# or
+XAI_API_KEY=xai-...
+```
 
-  obj@data@meta.data$cell_type <- ct
+---
 
-  # ====================== 5. 记录决策 ======================
-  if (is.null(rationale)) {
-    rationale <- sprintf(
-      "Cleaned cell type names (merge_plural=%s). %s clusters with < %d cells (vision=%s).",
-      merge_plural, action, min_cells, vision
-    )
-  }
+## Recommended Pipeline (2026 Updated)
 
-  .record_step(
-    obj            = obj,
-    step_name      = "annot_clean_celltypes",
-    function_name  = "annot_clean_celltypes",
-    params         = list(merge_plural = merge_plural,
-                          min_cells    = min_cells,
-                          action       = action,
-                          vision       = vision),
-    rationale      = rationale,
-    script_snippet = "# ---- Clean cell type names + quality filter (with optional vision) ----"
-  )
+```r
+library(scAgentKit)
 
-  obj
-}
+chat_text   <- chat_deepseek()
+chat_vision <- chat_grok()          # vision capable
+
+obj <- AgentSeurat(seurat_obj)
+
+# ====================== STEP 1: Coarse annotation ======================
+obj <- annot_llm_annotate(obj, 
+                          chat_fn = chat_text,
+                          tissue = "mouse colorectal cancer",
+                          data_context = "Focus on major lineages first")
+
+obj <- annot_apply(obj)
+
+# ====================== STEP 2: Clean names + quality filter ======================
+obj <- annot_clean_celltypes(obj,
+                             merge_plural = TRUE,
+                             min_cells    = 50,
+                             action       = "flag",           # or "remove"
+                             vision       = TRUE,             # LLM visually judges quality
+                             chat_fn      = chat_vision,
+                             tissue       = "mouse colorectal cancer")
+
+# ====================== STEP 3: Fine subclustering (only on key lineages) ======================
+obj <- annot_subcluster(obj,
+                        chat_fn = chat_text,
+                        target = c("T_NK", "B", "Macrophage"),
+                        tissue = "mouse colorectal cancer",
+                        data_context = "Focus on macrophage polarization and T cell states")
+
+# ====================== Outputs ======================
+export_script(obj, "reproducible_script.R")
+export_decisions(obj, "decisions.json")
+report_html(obj, "analysis_report.html")
+```
+
+**Why this three-step approach?**
+- First pass focuses on major biological structure (avoids over-fragmentation)
+- `annot_clean_celltypes()` merges naming variants and removes technical noise
+- Vision mode lets the LLM *see* the UMAP and decide if small clusters are real or artifacts
+- Final subclustering is only applied to lineages you actually care about
+
+---
+
+## Quality Control & Cleaning (`annot_clean_celltypes`)
+
+```r
+obj <- annot_clean_celltypes(obj,
+                             merge_plural = TRUE,   # Macrophages → Macrophage
+                             min_cells    = 50,
+                             action       = "flag", # or "remove"
+                             vision       = TRUE)   # LLM looks at UMAP
+```
+
+**What it does:**
+- Automatically merges singular/plural cell type names
+- Flags or removes clusters with very few cells (often contaminants or doublets)
+- When `vision = TRUE`, generates a UMAP highlighting suspicious clusters and asks the LLM to visually judge whether they are real biology or technical artifacts
+
+This step greatly improves annotation quality before doing expensive fine subclustering.
+
+---
+
+## Core Design Principles
+
+1. Every LLM-touching function records a written rationale
+2. Two-step (now three-step) annotation is first-class
+3. Vision is optional but powerful for ambiguous visual decisions
+4. Per-sample processing is the default for QC and doublet detection
+5. You always stay in control — the LLM recommends, you execute
+
+---
+
+## Important Notes
+
+- `data_context` is only supported in `annot_llm_annotate()`, `annot_subcluster()`, and `annot_clean_celltypes()`
+- `sc_select_pcs_visual()` and `sc_select_batch_var()` do **not** accept `data_context`
+- For mouse data, always pass `species = "mouse"` to `qc_add_metrics()` and `qc_remove_genes()`
+- Vision steps require a vision-capable model (Grok, Claude, GPT-4o, Qwen-VL, etc.)
+
+---
+
+## Output Artifacts
+
+| File | Description |
+|------|-------------|
+| `reproducible_script.R` | Pure Seurat code with no scAgentKit dependency |
+| `decisions.json` | Complete machine-readable decision log |
+| `analysis_report.html` | Self-contained HTML report with embedded figures and reasoning |
+| `checkpoints/*.qs` | Fast resume points after major stages |
+
+---
+
+## Limitations (Honest)
+
+- Vision steps require a vision-capable model and can be slower
+- LLM decisions are not ground truth — always validate important findings marker-by-marker
+- Very small datasets (< 3,000 cells) may not benefit from the full pipeline
+- `annot_clean_celltypes(vision = TRUE)` currently uses a single combined UMAP; per-cluster detailed judgment will be added in future versions
+
+---
+
+## Citation
+
+If you use scAgentKit in your work, please cite:
+
+```
+Yang K. scAgentKit: An LLM-orchestratable single-cell RNA-seq toolkit with full auditability.
+GitHub, 2026. https://github.com/kanyy/scAgentKit
+```
+
+---
+
+## Acknowledgments
+
+Designed and built at Shenzhen Bay Laboratory (Deng Lab), 2025–2026.
+
+The package was developed through extensive iteration with Claude (Anthropic) and real-world validation on multiple cancer scRNA-seq datasets, including GSE149614.
+
+---
+
+**License**: MIT
+
+---
+
+**Contributing**
+
+Issues and pull requests are very welcome. The package is intentionally modular. Two rules must be followed:
+
+1. Every function that calls an LLM must record a `rationale`.
+2. Every function must append a reproducible script snippet via `.record_step()`.
+
+---
+
+**Contact**
+
+- GitHub Issues: https://github.com/kanyy/scAgentKit/issues
+- Author: Kan Changhao (Shenzhen Bay Laboratory)
