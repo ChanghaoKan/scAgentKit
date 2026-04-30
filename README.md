@@ -1447,7 +1447,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- 📧 **Email**: kan@example.com
+- 📧 **Email**: kch_ynu@163.com
 - 🐛 **Issues**: [GitHub Issues](https://github.com/ChanghaoKan/scAgentKit/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/ChanghaoKan/scAgentKit/discussions)
 - 📖 **Documentation**: [Wiki](https://github.com/ChanghaoKan/scAgentKit/wiki)
