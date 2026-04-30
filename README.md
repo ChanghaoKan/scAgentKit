@@ -1398,4 +1398,83 @@ Please also cite the underlying methods:
 }
 ```
 
-**LLM Providers:**
+### Example Methods Section
+
+> "Single-cell RNA-seq analysis was performed using scAgentKit v0.1.23 (Kan, 2025), an LLM-orchestratable toolkit built on Seurat v5 (Hao et al., 2021). Quality control included per-sample doublet detection with scDblFinder (Germain et al., 2021) and MAD-based outlier removal (nmad = 3). Batch correction was performed using Harmony (Korsunsky et al., 2019) on the top 30 principal components. Clustering resolution (0.6) was selected via LLM-assisted analysis of clustree stability metrics and multi-resolution UMAP visualizations using DeepSeek-V3 and Grok-4.1-fast. Cell type annotation was performed through a three-step process: (1) marker-reference overlap scoring, (2) LLM-driven annotation with anti-hallucination constraints, and (3) per-lineage subclustering with adaptive resolution. All analytical decisions, rationales, and parameters are documented in the decision log (Supplementary Data 1), and the complete analysis is reproducible via the exported R script (Supplementary Code 1)."
+
+---
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Areas for Contribution
+
+- 🧬 Additional species support (zebrafish, rat, etc.)
+- 🗃️ Curated reference databases (tissue-specific)
+- 🔌 New LLM provider integrations
+- 📊 Additional visualization functions
+- 🧪 Unit tests and benchmarks
+- 📚 Documentation improvements
+- 🐛 Bug reports and fixes
+
+### Development Setup
+
+```bash
+git clone https://github.com/ChanghaoKan/scAgentKit.git
+cd scAgentKit
+
+# Install development dependencies
+Rscript -e 'install.packages(c("devtools", "testthat", "roxygen2"))'
+
+# Build documentation
+Rscript -e 'devtools::document()'
+
+# Run tests
+Rscript -e 'devtools::test()'
+
+# Check package
+Rscript -e 'devtools::check()'
+```
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## Support
+
+- 📧 **Email**: kan@example.com
+- 🐛 **Issues**: [GitHub Issues](https://github.com/ChanghaoKan/scAgentKit/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/ChanghaoKan/scAgentKit/discussions)
+- 📖 **Documentation**: [Wiki](https://github.com/ChanghaoKan/scAgentKit/wiki)
+
+---
+
+## Acknowledgments
+
+- **Seurat Team** (Satija Lab) for the foundational single-cell analysis framework
+- **Harmony Team** (Raychaudhuri Lab) for batch correction methodology
+- **scDblFinder Authors** for doublet detection
+- **LLM Providers** (DeepSeek, xAI, Anthropic, OpenAI) for API access
+- **Shenzhen Bay Laboratory** for institutional support
+
+---
+
+## Related Projects
+
+- [Seurat](https://satijalab.org/seurat/) - Core single-cell analysis framework
+- [Scanpy](https://scanpy.readthedocs.io/) - Python alternative
+- [CellTypist](https://www.celltypist.org/) - Automated cell type annotation
+- [scGPT](https://github.com/bowang-lab/scGPT) - Foundation model for single-cell
+- [Azimuth](https://azimuth.hubmapconsortium.org/) - Reference-based annotation
+
+---
+
+<p align="center">
+  <strong>Made with ❤️ for the single-cell community</strong><br>
+  <sub>Transforming implicit knowledge into explicit, reproducible science</sub>
+</p>
