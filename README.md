@@ -3,7 +3,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![R: >= 4.1](https://img.shields.io/badge/R-%3E%3D%204.1-blue)](https://www.r-project.org/)
 [![Seurat: >= 5.0](https://img.shields.io/badge/Seurat-%3E%3D%205.0-orange)](https://satijalab.org/seurat/)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.XXXXXX-blue)](https://doi.org/10.5281/zenodo.XXXXXX)
 
 > **An LLM-orchestratable toolkit for transparent, reproducible single-cell RNA-seq analysis**
 
@@ -19,7 +18,7 @@
 - 📝 **Complete Audit Trail**: Every decision is logged with parameters, rationale, and timestamp
 - 🔄 **Full Reproducibility**: Automatically generates executable R scripts that recreate the entire analysis
 - 🎯 **Anti-Hallucination Design**: Structured JSON outputs with contradicting evidence fields reduce LLM confabulation
-- 🔌 **Provider-Agnostic**: Works with OpenAI, Anthropic Claude, DeepSeek, Grok, Qwen, local Ollama, and more
+- 🔌 **Provider-Agnostic**: Works with OpenAI, Anthropic Claude, DeepSeek, Grok, and local models
 - 👁️ **Vision-Capable**: LLMs can analyze plots (elbow curves, clustree diagrams, UMAPs) for informed decisions
 - 🧬 **Seurat v5 Compatible**: Handles both legacy and modern Seurat objects with automatic layer management
 
@@ -29,14 +28,15 @@
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Standard Workflow](#standard-workflow)
+- [Standard Workflow](#standard-workflow-recommended)
 - [Complete Feature Showcase](#complete-feature-showcase)
 - [Scenario-Specific Guidelines](#scenario-specific-guidelines)
 - [Core Concepts](#core-concepts)
 - [Function Reference](#function-reference)
 - [Best Practices](#best-practices)
+- [Honest Limitations](#honest-limitations)
+- [Roadmap](#roadmap)
 - [Citation](#citation)
-- [Contributing](#contributing)
 - [License](#license)
 
 ---
@@ -66,17 +66,16 @@ BiocManager::install(c("scDblFinder", "SingleCellExperiment"))
 
 ### Configure LLM API Keys
 
-Add at least one API key to your `~/.Renviron` file:
+Add API keys to your `~/.Renviron` file:
 
 ```bash
-# Text-only models (required)
-DEEPSEEK_API_KEY=sk-...           # Recommended: cost-effective
-OPENAI_API_KEY=sk-...             # Alternative
-DASHSCOPE_API_KEY=sk-...          # Qwen (Alibaba)
+# Recommended combination
+DEEPSEEK_API_KEY=sk-...           # Required: for text-based decisions
+XAI_API_KEY=xai-...               # Required: for vision-based decisions (Grok)
 
-# Vision-capable models (optional, for visual decision steps)
-XAI_API_KEY=xai-...               # Grok (recommended for vision)
-ANTHROPIC_API_KEY=sk-ant-...      # Claude Sonnet 4
+# Alternative providers (optional)
+ANTHROPIC_API_KEY=sk-ant-...      # Claude Sonnet 4 (text + vision)
+OPENAI_API_KEY=sk-...             # GPT-4 (text + vision)
 ```
 
 Restart R after editing `.Renviron`:
@@ -90,19 +89,20 @@ Sys.getenv("DEEPSEEK_API_KEY")  # Should return your key
 
 ## Quick Start
 
+Minimal example to get started (5 minutes for ~10k cells):
+
 ```r
 library(scAgentKit)
-library(Seurat)
 
-# Initialize chat functions
-chat_text   <- chat_deepseek()    # For text-based decisions
-chat_vision <- chat_grok()        # For plot-based decisions
+# Configure LLM providers (recommended combination)
+chat_text   <- chat_deepseek()    # Cost-effective for text reasoning
+chat_vision <- chat_grok()        # Vision-capable for plot analysis
 
-# Load your Seurat object
+# Load and wrap your Seurat object
 seu <- readRDS("your_data.rds")
-obj <- AgentSeurat(seu, initial_script = 'seu <- readRDS("your_data.rds")')
+obj <- AgentSeurat(seu)
 
-# Minimal pipeline (5 minutes for ~10k cells)
+# Basic pipeline
 obj <- qc_add_metrics(obj, species = "auto")
 obj <- qc_threshold(obj, min_nCount = 1000, min_nFeature = 500, max_percent_mt = 20)
 obj <- sc_normalize(obj)
@@ -120,14 +120,14 @@ obj <- sc_markers_summary(obj, top_n = 30)
 obj <- annot_llm_annotate(obj, chat_fn = chat_text, tissue = "your tissue context")
 obj <- annot_apply(obj)
 
-# Export results
+# Export
 export_script(obj, "analysis.R")
 report_html(obj, "report.html")
 ```
 
 ---
 
-## Standard Workflow
+## Standard Workflow (Recommended)
 
 This workflow covers the most common use case: multi-sample dataset with batch effects, requiring integration and cell type annotation.
 
@@ -141,9 +141,9 @@ library(Seurat)
 seu <- readRDS("merged_seurat.rds")
 obj <- AgentSeurat(seu, initial_script = 'seu <- readRDS("merged_seurat.rds")')
 
-# Configure LLM providers
-chat_text   <- chat_deepseek()    # Cost-effective for text reasoning
-chat_vision <- chat_grok()        # Vision-capable for plot analysis
+# Configure LLM providers (recommended combination)
+chat_text   <- chat_deepseek()    # DeepSeek-V3: cost-effective, reliable
+chat_vision <- chat_grok()        # Grok-4.1-fast: vision-capable
 
 # ============================================================
 # 2. QUALITY CONTROL (Per-Sample)
@@ -720,12 +720,10 @@ chat_fn <- function(system_prompt, user_prompt, image_path = NULL) {
 }
 
 # Built-in providers:
-chat_deepseek()   # Text-only, cost-effective
-chat_openai()     # Text-only
-chat_grok()       # Vision-capable
+chat_deepseek()   # Text-only, cost-effective (recommended)
+chat_grok()       # Vision-capable (recommended)
 chat_claude()     # Vision-capable
-chat_qwen()       # Text-only
-chat_kimi()       # Text-only
+chat_openai()     # Text + vision
 
 # Custom provider:
 chat_custom <- make_chat_fn_openai_compatible(
@@ -825,6 +823,9 @@ export_script(obj, "analysis.R")
 | `sc_markers_summary()` | Filter & rank by pct_diff | `top_n`, `log2fc_cut` |
 
 ### Annotation
+
+| Function | Purpose | Key Parameters |
+|----------|---------|----------------|
 | `annot_load_reference()` | Load marker reference database | `path`, `tissue_filter` |
 | `annot_match_reference()` | Score clusters vs reference | `reference`, `top_n_candidates` |
 | `annot_llm_annotate()` | LLM-driven annotation | `chat_fn`, `tissue`, `expected_celltypes` |
@@ -866,20 +867,25 @@ export_script(obj, "analysis.R")
 
 ### 1. **LLM Provider Selection**
 
-```r
-# Cost-effective strategy (recommended):
-chat_text   <- chat_deepseek()    # $0.14 per 1M input tokens
-chat_vision <- chat_grok()        # $2 per 1M input tokens
+**Recommended combination** (best balance of cost, quality, and speed):
 
-# High-quality strategy:
+```r
+chat_text   <- chat_deepseek()    # DeepSeek-V3: $0.14 per 1M input tokens
+chat_vision <- chat_grok()        # Grok-4.1-fast: $2 per 1M input tokens
+```
+
+**Alternative options:**
+
+```r
+# High-quality (more expensive):
 chat_text   <- chat_claude()      # Claude Sonnet 4
 chat_vision <- chat_claude()      # Same model for consistency
 
-# Local/offline strategy:
+# Local/offline (free but slower):
 chat_text <- make_chat_fn_openai_compatible(
   base_url = "http://localhost:11434/v1",
   model = "qwen2.5:14b",
-  api_key_env = ""  # No key needed for local
+  api_key_env = ""  # No key needed
 )
 ```
 
@@ -1010,7 +1016,7 @@ report_html(obj, "report.html")
 
 # Document LLM versions
 cat("LLM providers used:\n")
-cat("- Text: DeepSeek V3 (2024-12)\n")
+cat("- Text: DeepSeek-V3 (2024-12)\n")
 cat("- Vision: Grok-4.1-fast (2025-01)\n")
 
 # Save session info
@@ -1265,7 +1271,7 @@ obj@data <- seu
 
 **A:** See [Citation](#citation) section below. Include:
 1. Software citation
-2. LLM provider citations (OpenAI, Anthropic, etc.)
+2. LLM provider citations (DeepSeek, xAI, etc.)
 3. Seurat citation
 4. Method-specific citations (Harmony, scDblFinder, etc.)
 
@@ -1287,6 +1293,48 @@ Rscript my_analysis.R
 ```
 
 Ensure API keys are in `~/.Renviron` or set via `Sys.setenv()`.
+
+---
+
+## Honest Limitations
+
+The package is a working prototype, not a production tool. You should know:
+
+- **The LLM is not ground truth.** It rationalizes (we observed it justifying 27% γδT in HCC by inventing an "HCC enrichment" argument — which happens to be partially correct, but not for the reasons it gave). It over-corrects when prompts are too strict. It under-corrects when prompts are too lax. Validate marker-by-marker for any finding you'll publish.
+
+- **Small-lineage subclustering is unstable.** A B subset of 1500 cells split into 11 sub-clusters of 100–300 cells each has weak markers; the LLM's confidence (and any tool's confidence) is genuinely low here. This is a sample-size limit, not a tool limit.
+
+- **Prompts are tissue/disease-specific.** Built-in vocabulary covers liver/HCC well, plus generic immune and major tumour types. Cardiac, renal, neural tissue may need custom `data_context` or vocabulary overrides.
+
+- **API costs are not zero.** A full pipeline on a 70k-cell dataset costs ~$0.3–$3 depending on provider mix. Running 100 datasets is $30–$300, not free.
+
+- **Validation is on you.** scAgentKit is a **collaborator**, not a replacement. Every annotation needs marker-level review by someone who knows the biology. Trust the reasoning the way you'd trust a trainee's first pass — useful starting point, not final answer.
+
+- **Vision over slow networks.** Sending base64-encoded PNGs to xAI / Anthropic from China requires a proxy. Set `Sys.setenv(http_proxy=...)` before vision calls.
+
+- **Seurat v5 only.** v4 compatibility is not tested.
+
+---
+
+## Roadmap
+
+### v0.1 (current) — single-user agent toolkit ✓
+
+Working multi-provider system, vision decisions, two-step annotation, validated on real HCC data.
+
+### v0.2 — orchestration
+
+A high-level `agent_run(obj, goal = "annotate broad cell types")` that decides which atomic functions to call, in what order, and when to ask the user. Tools become *callable by the LLM* via tool-use APIs rather than user-orchestrated.
+
+### v0.3 — global annotation review
+
+Two-pass annotation: first label clusters independently, then show the LLM the global label set and ask "are any of these inconsistent? proportions off? labels overlapping?" Single-pass annotation makes errors that global review can catch.
+
+### Longer-term
+
+- Persistent memory across runs (the agent remembers your dataset's quirks)
+- Multi-dataset comparative annotation (cross-tissue label consistency)
+- Annotation uncertainty quantification (which cells are most ambiguous)
 
 ---
 
@@ -1350,107 +1398,4 @@ Please also cite the underlying methods:
 }
 ```
 
-**LLM Provider (example for DeepSeek):**
-
-### Example Methods Section
-
-> "Single-cell RNA-seq analysis was performed using scAgentKit v0.1.23 (Kan, 2025), an LLM-orchestratable toolkit built on Seurat v5 (Hao et al., 2021). Quality control included per-sample doublet detection with scDblFinder (Germain et al., 2021) and MAD-based outlier removal (nmad = 3). Batch correction was performed using Harmony (Korsunsky et al., 2019) on the top 30 principal components. Clustering resolution (0.6) was selected via LLM-assisted analysis of clustree stability metrics and multi-resolution UMAP visualizations using DeepSeek-V3 and Grok-4.1-fast. Cell type annotation was performed through a three-step process: (1) marker-reference overlap scoring, (2) LLM-driven annotation with anti-hallucination constraints, and (3) per-lineage subclustering with adaptive resolution. All analytical decisions, rationales, and parameters are documented in the decision log (Supplementary Data 1), and the complete analysis is reproducible via the exported R script (Supplementary Code 1)."
-
----
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Areas for Contribution
-
-- 🧬 Additional species support (zebrafish, rat, etc.)
-- 🗃️ Curated reference databases (tissue-specific)
-- 🔌 New LLM provider integrations
-- 📊 Additional visualization functions
-- 🧪 Unit tests and benchmarks
-- 📚 Documentation improvements
-- 🐛 Bug reports and fixes
-
-### Development Setup
-
-```bash
-git clone https://github.com/ChanghaoKan/scAgentKit.git
-cd scAgentKit
-
-# Install development dependencies
-Rscript -e 'install.packages(c("devtools", "testthat", "roxygen2"))'
-
-# Build documentation
-Rscript -e 'devtools::document()'
-
-# Run tests
-Rscript -e 'devtools::test()'
-
-# Check package
-Rscript -e 'devtools::check()'
-```
-
----
-
-## Changelog
-
-### v0.1.23 (2025-01-15)
-- Added adaptive subclustering resolution
-- Improved cell cycle marker detection
-- Enhanced vision-based resolution recommendation with multi-panel UMAPs
-- Fixed Seurat v5 layer handling in doublet detection
-- Added contamination audit in subclustering
-
-### v0.1.20 (2024-12-20)
-- Initial public release
-- Core QC, normalization, clustering, annotation pipeline
-- LLM integration with multiple providers
-- Vision-capable decision steps
-- HTML report generation
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## Support
-
-- 📧 **Email**: kan@example.com
-- 🐛 **Issues**: [GitHub Issues](https://github.com/ChanghaoKan/scAgentKit/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/ChanghaoKan/scAgentKit/discussions)
-- 📖 **Documentation**: [Wiki](https://github.com/ChanghaoKan/scAgentKit/wiki)
-
----
-
-## Acknowledgments
-
-- **Seurat Team** (Satija Lab) for the foundational single-cell analysis framework
-- **Harmony Team** (Raychaudhuri Lab) for batch correction methodology
-- **scDblFinder Authors** for doublet detection
-- **LLM Providers** (OpenAI, Anthropic, DeepSeek, xAI) for API access
-- **Shenzhen Bay Laboratory** for institutional support
-
----
-
-## Related Projects
-
-- [Seurat](https://satijalab.org/seurat/) - Core single-cell analysis framework
-- [Scanpy](https://scanpy.readthedocs.io/) - Python alternative
-- [CellTypist](https://www.celltypist.org/) - Automated cell type annotation
-- [scGPT](https://github.com/bowang-lab/scGPT) - Foundation model for single-cell
-- [Azimuth](https://azimuth.hubmapconsortium.org/) - Reference-based annotation
-
----
-
-<p align="center">
-  <strong>Made with ❤️ for the single-cell community</strong><br>
-  <sub>Transforming implicit knowledge into explicit, reproducible science</sub>
-</p>
-
-| Function | Purpose | Key Parameters |
-|----------|---------|----------------|
-|
+**LLM Providers:**
