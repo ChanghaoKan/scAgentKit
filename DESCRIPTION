@@ -21,7 +21,7 @@ Imports:
     tibble,
     ggplot2,
     Matrix,
-    qs
+    qs2
 Suggests:
     harmony,
     scDblFinder,
