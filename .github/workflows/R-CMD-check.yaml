@@ -45,7 +45,6 @@ jobs:
           extra-packages: |
             any::rcmdcheck
             any::testthat
-            satijalab/seurat-data
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2

@@ -24,18 +24,8 @@ Imports:
     Matrix,
     qs2
 Suggests:
-    harmony,
-    scDblFinder,
-    SingleCellExperiment,
-    clustree,
-    base64enc,
-    httr2,
-    magick,
-    png,
-    readxl,
     future.apply,
     ontologyIndex,
-    SeuratData,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown

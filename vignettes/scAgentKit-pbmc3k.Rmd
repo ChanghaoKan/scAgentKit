@@ -7,11 +7,11 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment  = "#>",
-  eval     = FALSE
+  comment = "#>",
+  eval = FALSE   # 演示用,CI 不实际跑;读者本地有 SeuratData 时可手动 eval
 )
 ```
 
