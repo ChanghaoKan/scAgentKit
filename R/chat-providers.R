@@ -350,15 +350,15 @@ chat_openai <- function(model       = "gpt-4o-mini",
 #' Anthropic Claude chat_fn — vision-capable
 #'
 #' Convenience alias for [make_chat_fn_claude()] (see that function for
-#' full options). Default uses Claude Sonnet 4.5: best price/intelligence
+#' full options). Default uses Claude Sonnet 4.6: best price/intelligence
 #' ratio for the structured decisions and vision tasks scAgentKit uses.
 #'
-#' @param model Default `"claude-sonnet-4-5"`. Use `"claude-opus-4-7"`
+#' @param model Default `"claude-sonnet-4-6"`. Use `"claude-opus-4-7"`
 #'   for the highest-intelligence model.
 #' @param api_key_env Default `"ANTHROPIC_API_KEY"`.
 #' @param ... Forwarded to [make_chat_fn_claude()].
 #' @export
-chat_claude <- function(model       = "claude-sonnet-4-5",
+chat_claude <- function(model       = "claude-sonnet-4-6",
                         api_key_env = "ANTHROPIC_API_KEY",
                         ...) {
   make_chat_fn_claude(
@@ -386,7 +386,7 @@ list_chat_providers <- function() {
     helper       = c("chat_deepseek()", "chat_grok()", "chat_qwen()",
                      "chat_kimi()", "chat_openai()", "chat_claude()"),
     default_model = c("deepseek-chat", "grok-4-1-fast", "qwen-plus",
-                      "moonshot-v1-32k", "gpt-4o-mini", "claude-sonnet-4-5"),
+                      "moonshot-v1-32k", "gpt-4o-mini", "claude-sonnet-4-6"),
     api_key_env  = c("DEEPSEEK_API_KEY", "XAI_API_KEY", "DASHSCOPE_API_KEY",
                      "MOONSHOT_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"),
     vision       = c("no", "yes (default)", "no (yes for qwen-vl-*)",
@@ -395,13 +395,13 @@ list_chat_providers <- function() {
     cost_tier    = c("$$ (cheapest)", "$$ (cheap, vision)",
                      "$$ (China region best)", "$$ (long-context strong)",
                      "$$$ (4o-mini cheap, 4o pricey)",
-                     "$$$ (Sonnet 4.5 mid, Opus 4.7 high)"),
+                     "$$$ (Sonnet 4.6 mid, Opus 4.7 high)"),
     notes        = c("Best for text-only structured decisions; recommended default for marker annotation.",
                      "Cheap vision; alternative to Claude for budget testing.",
                      "Good Chinese-language support; vision via qwen-vl-max.",
                      "Long context; useful for very large marker tables.",
                      "Industry standard; gpt-4o-mini cheap, gpt-4o full quality.",
-                     "Strongest at structured reasoning + vision; recommended for sc_select_pcs_visual()."),
+                     "Strongest at structured reasoning + vision; recommended for sc_select_pcs_visual(). Default sonnet-4-6; opus-4-7 available."),
     stringsAsFactors = FALSE
   )
 

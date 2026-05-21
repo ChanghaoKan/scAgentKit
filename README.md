@@ -4,23 +4,43 @@
 [![R: >= 4.1](https://img.shields.io/badge/R-%3E%3D%204.1-blue)](https://www.r-project.org/)
 [![Seurat: >= 5.0](https://img.shields.io/badge/Seurat-%3E%3D%205.0-orange)](https://satijalab.org/seurat/)
 
-> **An LLM-orchestratable toolkit for transparent, reproducible single-cell RNA-seq analysis**
+> **An auditable, LLM-orchestrated end-to-end pipeline for single-cell RNA-seq analysis.**
 
 ---
 
-## Overview
+## What scAgentKit is, and what it is not
 
-**scAgentKit** is an R package that transforms single-cell RNA-seq analysis from a series of implicit, undocumented decisions into an explicit, auditable workflow. By integrating Large Language Models (LLMs) as reasoning agents, scAgentKit makes every analytical choice—from quality control thresholds to cell type annotations—transparent, justified, and reproducible.
+scAgentKit covers the full single-cell RNA-seq pipeline — QC, integration, dimensionality reduction, clustering, annotation, sub-annotation — and lets an LLM make the *decisions an analyst would normally make by eye* at each step, looking at the same evidence: statistics, plots, marker genes. Every decision is logged with its rationale and exported as a runnable R script. The whole pipeline is auditable and reproducible from raw counts.
 
-### Key Features
+**This is deliberately not another LLM cell-type annotation tool.** Annotation is one step in a longer pipeline. Several recent tools focus on the annotation step alone — [mLLMCelltype](https://github.com/cafferychen777/mLLMCelltype) (Yang et al., bioRxiv 2025) does multi-LLM consensus with Consensus Proportion and Shannon entropy; [CyteType](https://github.com/NygenAnalytics/CyteType) (Ahuja et al., bioRxiv 2025) maps to Cell Ontology with a multi-agent architecture; [DeepCellSeek](https://academic.oup.com/bib/article/26/6/bbaf677) benchmarks 7 LLMs against SingleR/ScType. scAgentKit takes a different angle: it audits and reproduces the *upstream* decisions (QC thresholds, PC dimensions, clustering resolution, batch variable choice) that those tools assume have already been made well. For the annotation step itself, scAgentKit holds parity rather than competes; the unique contribution is end-to-end transparency.
 
-- 🤖 **LLM-Driven Decision Making**: Each analysis step is guided by LLM reasoning over actual evidence (statistics, plots, marker genes)
-- 📝 **Complete Audit Trail**: Every decision is logged with parameters, rationale, and timestamp
-- 🔄 **Full Reproducibility**: Automatically generates executable R scripts that recreate the entire analysis
-- 🎯 **Anti-Hallucination Design**: Structured JSON outputs with contradicting evidence fields reduce LLM confabulation
-- 🔌 **Provider-Agnostic**: Works with OpenAI, Anthropic Claude, DeepSeek, Grok, and local models
-- 👁️ **Vision-Capable**: LLMs can analyze plots (elbow curves, clustree diagrams, UMAPs) for informed decisions
-- 🧬 **Seurat v5 Compatible**: Handles both legacy and modern Seurat objects with automatic layer management
+### What is genuinely distinctive
+
+1. **End-to-end coverage.** QC → integration → clustering → annotation → sub-annotation, with LLM-in-the-loop at every step that's normally an analyst judgement call.
+2. **`AgentSeurat` S4 container with a first-class decision log and exported R script.** Every tool function takes/returns the container; `get_script(obj)` emits the entire reproducible pipeline.
+3. **Vision-capable upstream decisions.** `sc_select_pcs_visual` shows the LLM elbow/cumulative-variance plots; `sc_resolution_recommend` shows multi-panel UMAP + clustree.
+4. **Cycling-cluster lineage rescue.** Proliferating clusters where MKI67/TOP2A dominate the differential markers get a separate "high-expression non-cell-cycle, non-housekeeping" rescue list, with structured naming (`Cycling cells (lineage candidate: X)`).
+5. **Structured contamination rules.** "What counts as TRUE contamination" is encoded as criteria the LLM must apply, not left to discretion.
+
+### v0.2.0 hardening for the preprint
+
+- **Per-step token tracking.** Every LLM call is metered; `get_token_usage(obj)` / `token_usage_summary()` for cost reporting.
+- **Parallel annotation.** `annot_llm_annotate(parallel = TRUE)` under `future::plan()`.
+- **Ensemble + hybrid confidence + marker-citation validation** (see `?annot_llm_annotate`).
+- **Cell Ontology mapping** via exact-match-only (`annot_map_to_cl`).
+- **Checkpoint versioning.** `@version` slot + `upgrade_checkpoint()` for backward compatibility.
+- **Reproducibility.** Dockerfile pinned to `rocker/r-ver:4.4.2`; GitHub Actions matrix CI.
+- **Benchmark scaffolding** in `benchmark/` for the four upstream-decision experiments (PC, resolution, batch var, end-to-end reproducibility) and two annotation-side ablations.
+
+---
+
+## Honest limitations (read before relying on this)
+
+- **Annotation core is not SOTA.** mLLMCelltype's 50-dataset benchmark reaches 77.3% mean accuracy with cross-model deliberation; scAgentKit's single-LLM (or `n_samples = 3` ensemble) annotation is in parity-with-baselines territory, not state of the art. Use it for the end-to-end provenance, not because it annotates better than dedicated tools.
+- **Adaptive curves were calibrated on HCC/liver.** The default resolution formula (`0.05 + 0.10 * log10(n)` clamped) and the subcluster `n_hvg / n_pcs` curves were tuned on liver data, 10-50k cells. PBMC, developing brain, organoid topologies may need different curves. Pass explicit numeric values for those.
+- **LLM calls are non-deterministic.** With `temperature = 0` and `n_samples = 1`, the pipeline is reproducible up to provider-side noise. With ensemble (`n_samples > 1`) and `temperature > 0`, runs vary by a few percent on edge clusters; the `confidence_disagreement` / `ensemble_agreement` fields make this visible rather than hidden.
+- **Failure modes we know about.** Sparse marker DB tissues (gonad, placenta, embryonic intermediates), extremely rare populations (< 0.1%), cross-species mixtures, highly proliferative tumors where even cycling rescue cannot recover lineage, and patient-specific malignant populations that are themselves a lineage in single-patient atlases.
+- **No published benchmark yet.** The `benchmark/` directory has the spec; results will be published with the methods preprint.
 
 ---
 
@@ -34,7 +54,6 @@
 - [Core Concepts](#core-concepts)
 - [Function Reference](#function-reference)
 - [Best Practices](#best-practices)
-- [Honest Limitations](#honest-limitations)
 - [Roadmap](#roadmap)
 - [Citation](#citation)
 - [License](#license)
@@ -60,7 +79,7 @@ if (!requireNamespace("remotes", quietly = TRUE)) {
 remotes::install_github("ChanghaoKan/scAgentKit", upgrade = "never")
 
 # Install optional dependencies for full functionality
-install.packages(c("harmony", "clustree"))
+install.packages(c("harmony", "clustree", "future.apply", "ontologyIndex"))
 BiocManager::install(c("scDblFinder", "SingleCellExperiment"))
 ```
 
@@ -74,7 +93,7 @@ DEEPSEEK_API_KEY=sk-...           # Required: for text-based decisions
 XAI_API_KEY=xai-...               # Required: for vision-based decisions (Grok)
 
 # Alternative providers (optional)
-ANTHROPIC_API_KEY=sk-ant-...      # Claude Sonnet 4 (text + vision)
+ANTHROPIC_API_KEY=sk-ant-...      # Claude Sonnet 4.6 (text + vision)
 OPENAI_API_KEY=sk-...             # GPT-4 (text + vision)
 ```
 
@@ -1194,29 +1213,23 @@ obj@figures  # Verify plot was saved
 
 ---
 
-## Performance Benchmarks
+## Performance and cost
 
-Typical runtime and cost for a 70,000-cell dataset (10 samples, human PBMC):
+scAgentKit v0.2.0 meters every LLM call and attributes tokens to the step that issued them. The honest answer to "how much does this cost" depends on your provider, model, dataset size, and cluster count, so we measure rather than estimate:
 
-| Step | Runtime | LLM Cost | Notes |
-|------|---------|----------|-------|
-| QC (per-sample) | 5 min | $0 | No LLM |
-| Normalization + PCA | 3 min | $0 | No LLM |
-| PC selection (vision) | 30 sec | $0.02 | 1 image |
-| Batch variable selection | 20 sec | $0.05 | Text-only |
-| Harmony integration | 2 min | $0 | No LLM |
-| Clustering sweep | 1 min | $0 | No LLM |
-| Resolution recommendation (vision) | 45 sec | $0.08 | 1 image + 4 UMAPs |
-| Marker finding | 8 min | $0 | No LLM |
-| LLM annotation (12 clusters) | 2 min | $0.15 | Text-only |
-| Celltype cleaning (vision) | 30 sec | $0.03 | 1 UMAP |
-| Subclustering (3 lineages) | 5 min | $0.20 | Text-only |
-| **Total** | **~27 min** | **~$0.53** | DeepSeek + Grok |
+```r
+# After running your pipeline:
+get_token_usage(obj)        # per-step breakdown
+token_usage_summary()       # global by provider+model
+```
 
-**Cost optimization:**
-- Use DeepSeek for all text steps: ~$0.30 total
-- Use Claude for all steps: ~$2.50 total
-- Use local Ollama: $0 (but slower and lower quality)
+Indicative orders of magnitude on a 12-cluster, 30k-cell dataset with default `n_samples = 1`:
+
+- DeepSeek-V3: tens of cents per full pipeline.
+- Claude Sonnet 4.6: a few dollars per full pipeline.
+- GPT-4o: in between.
+
+A reproducible cost table across providers and dataset sizes is part of the methods preprint and will land in `benchmark/results/` together with the corresponding scripts. The previous version of this README listed a single number from one run; v0.2.0 removes that and ships the measurement tooling instead.
 
 ---
 
@@ -1296,9 +1309,9 @@ Ensure API keys are in `~/.Renviron` or set via `Sys.setenv()`.
 
 ---
 
-## Honest Limitations
+## Detailed limitations (extended)
 
-The package is a working prototype, not a production tool. You should know:
+In addition to the [headline limitations at the top of this README](#honest-limitations-read-before-relying-on-this), some practical things you should know once you start using the package on real data:
 
 - **The LLM is not ground truth.** It rationalizes (we observed it justifying 27% γδT in HCC by inventing an "HCC enrichment" argument — which happens to be partially correct, but not for the reasons it gave). It over-corrects when prompts are too strict. It under-corrects when prompts are too lax. Validate marker-by-marker for any finding you'll publish.
 
@@ -1306,7 +1319,7 @@ The package is a working prototype, not a production tool. You should know:
 
 - **Prompts are tissue/disease-specific.** Built-in vocabulary covers liver/HCC well, plus generic immune and major tumour types. Cardiac, renal, neural tissue may need custom `data_context` or vocabulary overrides.
 
-- **API costs are not zero.** A full pipeline on a 70k-cell dataset costs ~$0.3–$3 depending on provider mix. Running 100 datasets is $30–$300, not free.
+- **API costs are not zero.** Use `get_token_usage(obj)` to measure your actual cost; do not rely on a single advertised number.
 
 - **Validation is on you.** scAgentKit is a **collaborator**, not a replacement. Every annotation needs marker-level review by someone who knows the biology. Trust the reasoning the way you'd trust a trainee's first pass — useful starting point, not final answer.
 

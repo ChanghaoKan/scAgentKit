@@ -157,6 +157,9 @@ report_html <- function(obj,
                background: #e7f0f7; color: var(--accent); }
       .badge.warn { background: #fff3cd; color: #8a6d0f; }
       .badge.err  { background: #fbe3e4; color: #a12f2f; }
+      tr.row-warn td { background: #fffbeb; }
+      tr.row-err  td { background: #fdecea; }
+      table small { color: var(--muted); font-size: .78rem; }
       footer { color: var(--muted); font-size: .85rem; margin-top: 3em;
                border-top: 1px solid var(--border); padding-top: 1em; }
       details { margin-top: .5em; }
@@ -325,6 +328,15 @@ report_html <- function(obj,
 .render_llm_annotations <- function(obj) {
   ann <- obj@params$llm_annotations
   if (is.null(ann) || !is.data.frame(ann) || nrow(ann) == 0) return("")
+
+  # v0.1.24: detect new columns added by the hybrid-confidence /
+  # validation / ensemble layer. Render conditionally so this works on
+  # older AgentSeurat objects (pre-v0.1.24) loaded from checkpoints.
+  has_hybrid    <- "hybrid_confidence"       %in% colnames(ann)
+  has_disagree  <- "confidence_disagreement" %in% colnames(ann)
+  has_halluc    <- "hallucinated_markers"    %in% colnames(ann)
+  has_ensemble  <- "ensemble_agreement"      %in% colnames(ann)
+
   rows <- vapply(seq_len(nrow(ann)), function(i) {
     r <- ann[i, ]
     action <- as.character(r$recommended_action %||% "")
@@ -336,22 +348,84 @@ report_html <- function(obj,
       mark_unknown     = '<span class="badge warn">unknown</span>',
       sprintf('<span class="badge">%s</span>', .esc(action))
     )
+
+    # Row-level "needs attention" flags
+    flags <- character(0)
+    if (has_disagree && isTRUE(r$confidence_disagreement)) {
+      flags <- c(flags,
+                 '<span class="badge err">confidence&nbsp;mismatch</span>')
+    }
+    if (has_halluc && nzchar(as.character(r$hallucinated_markers %||% ""))) {
+      flags <- c(flags,
+                 '<span class="badge err">hallucinated&nbsp;genes</span>')
+    }
+    contradicting <- as.character(r$contradicting_markers %||% "")
+    if (nzchar(contradicting)) {
+      flags <- c(flags,
+                 '<span class="badge warn">contradictions</span>')
+    }
+    if (has_ensemble &&
+        !is.na(r$ensemble_agreement) &&
+        as.numeric(r$ensemble_agreement) < 0.6 &&
+        as.integer(r$ensemble_n %||% 1) > 1) {
+      flags <- c(flags,
+                 '<span class="badge warn">ensemble&nbsp;split</span>')
+    }
+    flags_html <- if (length(flags) == 0) "&mdash;"
+                  else paste(flags, collapse = " ")
+
+    # Whole-row highlight class
+    row_class <- if (action == "reject") "row-err"
+                 else if (action %in% c("flag_for_review", "mark_unknown") ||
+                          (has_disagree && isTRUE(r$confidence_disagreement)) ||
+                          (has_halluc &&
+                             nzchar(as.character(r$hallucinated_markers %||% "")))) {
+                   "row-warn"
+                 } else ""
+    tr_open <- if (nzchar(row_class)) sprintf('<tr class="%s">', row_class)
+               else "<tr>"
+
+    # Confidence column: show LLM | hybrid when hybrid available
+    conf_html <- if (has_hybrid && !is.na(r$hybrid_confidence)) {
+      hybrid_label <- as.character(r$hybrid_confidence_label %||% "")
+      sprintf('%s<br/><small>hybrid: %s (%.2f)</small>',
+              .esc(r$confidence), .esc(hybrid_label),
+              as.numeric(r$hybrid_confidence))
+    } else {
+      .esc(r$confidence)
+    }
+
+    # Supporting markers: append hallucinated set if any
+    sup_html <- .esc(r$supporting_markers)
+    if (has_halluc && nzchar(as.character(r$hallucinated_markers %||% ""))) {
+      sup_html <- sprintf(
+        '%s<br/><small style="color:#c0392b">not&nbsp;in&nbsp;input:&nbsp;%s</small>',
+        sup_html, .esc(r$hallucinated_markers)
+      )
+    }
+
     sprintf(
-      '<tr><td>%s</td><td><strong>%s</strong></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
+      paste0(
+        '%s<td>%s</td><td><strong>%s</strong></td><td>%s</td>',
+        '<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
+      ),
+      tr_open,
       .esc(r$cluster),
       .esc(r$primary_annotation),
-      .esc(r$confidence),
+      conf_html,
       badge,
-      .esc(r$supporting_markers),
+      flags_html,
+      sup_html,
       .esc(r$contradicting_markers),
       .esc(r$reasoning)
     )
   }, character(1))
+
   paste0(
     '<section><h2>LLM annotations</h2>',
     '<table><thead><tr>',
     '<th>Cluster</th><th>Annotation</th><th>Confidence</th>',
-    '<th>Action</th><th>Supporting markers</th>',
+    '<th>Action</th><th>Flags</th><th>Supporting markers</th>',
     '<th>Contradicting markers</th><th>Reasoning</th>',
     '</tr></thead><tbody>',
     paste(rows, collapse = "\n"),

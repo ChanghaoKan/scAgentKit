@@ -70,6 +70,9 @@ sc_select_pcs_visual <- function(obj,
     stop("PCA not found. Run sc_pca() first.")
   }
 
+  # v0.2.0: snapshot token state at entry for per-step accounting
+  .tok_before <- length(.token_state$records)
+
   # Pull stdev to compute cumulative variance
   pca_obj <- obj@data[["pca"]]
   stdev   <- pca_obj@stdev
@@ -285,7 +288,7 @@ sc_select_pcs_visual <- function(obj,
     chosen, 100 * chosen_var
   )
 
-  .record_step(
+  obj <- .record_step(
     obj            = obj,
     step_name      = "sc_select_pcs_visual",
     function_name  = "sc_select_pcs_visual",
@@ -301,6 +304,7 @@ sc_select_pcs_visual <- function(obj,
     script_snippet = script,
     new_stage      = "pcs_selected"
   )
+  .attach_step_tokens(obj, "sc_select_pcs_visual", .tok_before)
 }
 
 # Helper: NULL-coalesce

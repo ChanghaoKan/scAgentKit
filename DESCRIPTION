@@ -1,8 +1,9 @@
 Package: scAgentKit
 Type: Package
 Title: Agent-Friendly Toolkit for Single-Cell RNA-seq Analysis
-Version: 0.1.23
-Authors@R: person("Kan", "Author", email = "kan@example.com", role = c("aut", "cre"))
+Version: 0.2.0
+Authors@R: person(given = "Changhao", family = "Kan",
+                  email = "kch_ynu@163.com", role = c("aut", "cre"))
 Description: Atomic, composable functions for single-cell RNA-seq pipelines
     (QC, normalization, integration, clustering, annotation), designed as the
     tool layer of an LLM agent. Every function takes and returns an
@@ -32,8 +33,14 @@ Suggests:
     magick,
     png,
     readxl,
+    future.apply,
+    ontologyIndex,
+    SeuratData,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
+URL: https://github.com/ChanghaoKan/scAgentKit
+BugReports: https://github.com/ChanghaoKan/scAgentKit/issues
 RoxygenNote: 7.3.1
 Config/testthat/edition: 3
+VignetteBuilder: knitr

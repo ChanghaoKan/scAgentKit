@@ -76,6 +76,9 @@ sc_resolution_recommend <- function(obj,
     stop("Package 'jsonlite' is required.")
   }
 
+  # v0.2.0: snapshot token state at entry for per-step accounting
+  .tok_before <- length(.token_state$records)
+
   # 1. Find the RNA_snn_res.* columns produced by sc_cluster_sweep()
   meta <- obj@data@meta.data
   res_cols <- grep("^RNA_snn_res\\.", colnames(meta), value = TRUE)
@@ -359,6 +362,7 @@ sc_resolution_recommend <- function(obj,
     script_snippet = script
   )
   obj@params$resolution_recommendation <- recommendation
+  obj <- .attach_step_tokens(obj, "sc_resolution_recommend", .tok_before)
   obj
 }
 

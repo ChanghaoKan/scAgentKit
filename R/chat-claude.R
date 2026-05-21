@@ -210,6 +210,22 @@ make_chat_fn_claude <- function(
            httr2::resp_body_string(resp))
     }
 
+    # Token accounting. Anthropic returns:
+    #   usage: { input_tokens, output_tokens,
+    #            cache_creation_input_tokens, cache_read_input_tokens }
+    # We collapse cache reads into cached_tokens (they're billed at a
+    # discount but still count for cost reporting).
+    if (!is.null(parsed$usage)) {
+      .token_record(
+        provider      = "anthropic",
+        model         = parsed$model %||% model,
+        input_tokens  = parsed$usage$input_tokens,
+        output_tokens = parsed$usage$output_tokens,
+        cached_tokens = parsed$usage$cache_read_input_tokens %||% NA_integer_,
+        call_type     = if (is.null(image_path)) "text" else "vision"
+      )
+    }
+
     # Extract text blocks from content (skip thinking blocks etc.)
     txt <- vapply(parsed$content, function(b) {
       if (!is.null(b$type) && b$type == "text" && !is.null(b$text)) b$text

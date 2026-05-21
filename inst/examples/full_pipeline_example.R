@@ -5,25 +5,38 @@
 #        -> Harmony -> UMAP -> neighbors -> cluster sweep
 #        -> commit resolution -> find markers -> marker summary
 #        -> plot UMAPs -> checkpoint -> export
+#
+# This example uses a small public dataset (PBMC) so it is runnable
+# as-is. Replace the `seu <- ...` line with your own data when running
+# on a real experiment. The rest of the pipeline is unchanged.
 # =============================================================
 
 library(scAgentKit)
 library(Seurat)
 
 # ---- 1. Ingest ----
-seu <- readRDS("Ca_Ctrl_merged_JoinLayers_seurat.rds")
+# Option A (default): public PBMC 3k from SeuratData
+# install.packages("SeuratData")
+# SeuratData::InstallData("pbmc3k")
+# seu <- SeuratData::LoadData("pbmc3k")
+#
+# Option B: your own Seurat object
+# seu <- readRDS("Ca_Ctrl_merged_JoinLayers_seurat.rds")
+
+seu <- SeuratData::LoadData("pbmc3k")
+seu$sample <- "pbmc3k"    # the rest of the pipeline expects a sample column
 obj <- AgentSeurat(seu,
-                   initial_script = 'seurat_obj <- readRDS("Ca_Ctrl_merged_JoinLayers_seurat.rds")')
+                   initial_script = 'seu <- SeuratData::LoadData("pbmc3k")')
 
 # ---- 2. QC ----
-obj <- qc_add_metrics(obj, species = "mouse")
+obj <- qc_add_metrics(obj, species = "human")
 obj <- qc_plot(obj, tag = "before", group_by = "sample")
 obj <- qc_split(obj, split_by = "sample")
 obj <- qc_threshold(obj, min_nCount = 1000, min_nFeature = 500,
-                    max_percent_mt = 50)
+                    max_percent_mt = 20)
 obj <- qc_mad(obj, nmad = 3)
 obj <- qc_doublet(obj, remove = TRUE, seed = 999)
-obj <- qc_remove_genes(obj, species = "mouse")
+obj <- qc_remove_genes(obj, species = "human")
 obj <- qc_merge(obj, join_layers = TRUE)
 obj <- qc_plot(obj, tag = "after", group_by = "sample")
 obj <- save_checkpoint(obj, "checkpoints/01_qc.qs")

@@ -1,0 +1,227 @@
+---
+title: "Getting started with scAgentKit on PBMC 3k"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with scAgentKit on PBMC 3k}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+## What this vignette covers
+
+This walkthrough runs scAgentKit end-to-end on the standard PBMC 3k
+dataset (~2,700 cells, 13 known immune populations). The point is to
+show the *shape* of the pipeline — what every step looks like, what
+gets recorded, and how to inspect the decision log and reproducible
+script when the analysis finishes.
+
+Because the LLM calls cost real money and require an API key, the
+chunks below are not evaluated when the vignette is built. Copy them
+into an R session with `ANTHROPIC_API_KEY` (or any other supported
+provider's key) set in `~/.Renviron`.
+
+## 1. Install and load
+
+```{r install}
+# install.packages("remotes")
+# remotes::install_github("ChanghaoKan/scAgentKit")
+# remotes::install_github("satijalab/seurat-data")
+
+library(scAgentKit)
+library(Seurat)
+library(SeuratData)
+```
+
+## 2. Build the AgentSeurat
+
+```{r ingest}
+SeuratData::InstallData("pbmc3k")
+seu <- SeuratData::LoadData("pbmc3k")
+seu$sample <- "pbmc3k"
+
+obj <- AgentSeurat(
+  seu,
+  initial_script = 'seu <- SeuratData::LoadData("pbmc3k")'
+)
+obj
+```
+
+The `obj` printout reports the scAgentKit version, the stage
+(`initialized`), data shape, and zero recorded decisions so far.
+
+## 3. QC
+
+```{r qc}
+obj <- qc_add_metrics(obj, species = "human")
+obj <- qc_plot(obj, tag = "before", group_by = "sample")
+
+obj <- qc_split(obj, split_by = "sample")
+obj <- qc_threshold(obj, min_nCount = 1000, min_nFeature = 500,
+                    max_percent_mt = 20)
+
+# MAD filter: log10 space on count/feature (v0.2.0 default), linear on
+# percent.mt (upper-only)
+obj <- qc_mad(obj, nmad = 3)
+
+obj <- qc_doublet(obj, remove = TRUE, seed = 999)
+obj <- qc_remove_genes(obj, species = "human")
+obj <- qc_merge(obj, join_layers = TRUE)
+obj <- qc_plot(obj, tag = "after", group_by = "sample")
+```
+
+## 4. Normalize, HVG, scale, PCA
+
+```{r pp}
+obj <- sc_normalize(obj)
+obj <- sc_find_variable_features(obj, nfeatures = 2000)
+obj <- sc_scale(obj, vars_to_regress = c("nCount_RNA", "percent.mt"))
+obj <- sc_pca(obj, npcs = 50)
+```
+
+## 5. LLM-driven PC selection
+
+```{r pcs}
+chat_fn <- chat_claude()    # uses ANTHROPIC_API_KEY env var
+# Or: chat_fn <- chat_deepseek(); chat_grok(); chat_openai(); etc.
+
+obj <- sc_select_pcs_visual(
+  obj,
+  chat_fn = chat_fn,
+  tissue  = "PBMC"
+)
+```
+
+The LLM is shown elbow / cumulative variance plots at multiple
+candidate `ndim` values, and picks the one with the best
+biology-respects-statistics tradeoff. The reasoning is logged.
+
+## 6. UMAP, neighbors, cluster sweep, resolution recommend
+
+```{r cluster}
+obj <- sc_neighbors(obj)
+obj <- sc_umap(obj)
+obj <- sc_cluster_sweep(obj, resolutions = c(0.3, 0.5, 0.8, 1.0, 1.2))
+
+obj <- sc_resolution_recommend(
+  obj,
+  chat_fn = chat_fn,
+  tissue  = "PBMC",
+  vision  = TRUE
+)
+
+# Commit the recommended resolution as `seurat_clusters`
+obj <- sc_cluster_commit(obj)
+```
+
+## 7. Markers and reference matching
+
+```{r markers}
+obj <- sc_markers(obj)
+obj <- sc_markers_summary(obj, top_n = 30)
+obj <- annot_query_cellmarker(obj, species = "human", tissue = "Peripheral blood")
+obj <- annot_match_reference(obj)
+```
+
+## 8. LLM annotation with anti-hallucination + ensemble + hybrid confidence
+
+```{r annot}
+# Ensemble mode: 3 independent LLM calls per cluster, majority vote.
+# Requires temperature > 0 in chat_fn; rebuild with temperature = 0.4
+# for diversity.
+chat_fn_ens <- chat_claude(temperature = 0.4)
+
+# Optional parallelism — set future::plan() first
+# future::plan(future::multisession, workers = 4)
+
+obj <- annot_llm_annotate(
+  obj,
+  chat_fn          = chat_fn_ens,
+  tissue           = "PBMC",
+  n_samples        = 3,
+  validate_markers = TRUE,
+  parallel         = FALSE       # set TRUE after future::plan()
+)
+
+obj <- annot_clean_celltypes(obj)
+obj <- annot_apply(obj)
+```
+
+Each row of `obj@params$llm_annotations` now has:
+
+- `primary_annotation`, `confidence` (LLM self-report)
+- `hybrid_confidence`, `hybrid_confidence_label` (objective)
+- `confidence_disagreement` (TRUE when LLM and hybrid land in opposite bands)
+- `supporting_markers`, `contradicting_markers`
+- `hallucinated_markers` (cited genes not in the marker evidence)
+- `ensemble_agreement`, `ensemble_n` (modal-label fraction)
+- `recommended_action` (`accept` / `flag_for_review` / `reject` / `mark_unknown`)
+
+## 9. Optional: subcluster the broad types
+
+```{r subcluster}
+obj <- annot_subcluster(
+  obj,
+  chat_fn               = chat_fn,
+  target                = NULL,      # all broad types meeting threshold
+  subcluster_resolution = "adaptive",
+  n_hvg                 = "adaptive",
+  n_pcs                 = "adaptive",
+  tissue                = "PBMC"
+)
+```
+
+## 10. Optional: map annotations to Cell Ontology
+
+```{r cl}
+# install.packages("ontologyIndex")
+obj <- annot_map_to_cl(obj, map_cells = TRUE)
+
+# Interactive lookup if a label didn't match
+cl_lookup("hepatocyte", n = 5)
+```
+
+## 11. Inspect the audit trail
+
+```{r inspect}
+# Decision log
+get_decisions(obj)
+
+# Full reproducible R script — re-running this from raw counts produces
+# the same analysis (LLM-call non-determinism aside)
+cat(get_script(obj))
+
+# Token usage breakdown per pipeline step
+get_token_usage(obj)
+
+# Or the global running total
+token_usage_summary()
+```
+
+## 12. Export
+
+```{r export}
+# HTML report with decisions, figures, annotations (flagged rows
+# highlighted), token usage
+report_html(obj, file = "pbmc3k_report.html")
+
+# Persistable checkpoint
+save_checkpoint(obj, "pbmc3k_final.qs")
+```
+
+## Where to go next
+
+- For tissue-specific work, look at `inst/examples/full_pipeline_example.R`
+  (mouse colon CRC + immunotherapy) and the HCC examples.
+- The `benchmark/` directory contains scripts comparing scAgentKit's
+  upstream decisions (PC selection, resolution recommendation, batch
+  variable identification) against analyst-curated ground truth.
+- See `?annot_llm_annotate` for the full set of ensembling and
+  validation options.

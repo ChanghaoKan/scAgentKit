@@ -58,6 +58,10 @@ sc_select_batch_var <- function(obj,
   if (obj@data_type != "seurat") {
     stop("sc_select_batch_var expects a single merged Seurat object.")
   }
+
+  # v0.2.0: snapshot token state at entry for per-step accounting
+  .tok_before <- length(.token_state$records)
+
   meta <- obj@data@meta.data
   n_cells <- nrow(meta)
 
@@ -180,6 +184,7 @@ sc_select_batch_var <- function(obj,
   if (!is.null(recommendation)) {
     obj@params$batch_recommendation <- recommendation
   }
+  obj <- .attach_step_tokens(obj, "sc_select_batch_var", .tok_before)
   obj
 }
 

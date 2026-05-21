@@ -38,10 +38,10 @@
 #'   least `min_cells_per_broad` cells.
 #' @param subcluster_resolution Numeric, the string `"adaptive"`
 #'   (default) or `"auto"`, or a named numeric vector (see Details).
-#' @param n_hvg Integer. Number of HVGs to recompute per subset.
-#'   Default 1500.
-#' @param n_pcs Integer. Number of PCs to compute on the subset.
-#'   Default 20. UMAP and graph use all of them.
+#'   The "adaptive" curve was empirically calibrated on liver/HCC data
+#'   (10-50k cells, broad types from cDC1 to hepatocytes). Other tissues
+#'   (developing brain, organoids, very rare populations) may need a
+#'   different curve; pass a fixed numeric to override.
 #' @param min_cells_per_broad Integer. Skip broad types with fewer
 #'   cells. Default 200.
 #' @param min_cells_per_subcluster Integer. Sub-clusters smaller than
@@ -63,13 +63,23 @@
 #' Per-target results (sub-clusters, markers, LLM responses, UMAP
 #' figures) are stored in `obj@params$subcluster_results`.
 #'
+#' @param n_hvg Integer or `"adaptive"`. Number of HVGs to recompute per
+#'   subset. Default `"adaptive"`: scale with subset size on a log10
+#'   curve, clamped to [800, 2000]. Pass a single integer for fixed
+#'   behaviour. Prior to v0.1.24 the default was a fixed 1500.
+#' @param n_pcs Integer or `"adaptive"`. Number of PCs to compute on
+#'   the subset. UMAP and graph use all of them. Default `"adaptive"`:
+#'   scale with subset size on a log10 curve, clamped to [10, 30].
+#'   Pass a single integer for fixed behaviour. Prior to v0.1.24 the
+#'   default was a fixed 20.
+#'
 #' @export
 annot_subcluster <- function(obj,
                              chat_fn,
                              target                   = NULL,
                              subcluster_resolution    = "adaptive",
-                             n_hvg                    = 1500,
-                             n_pcs                    = 20,
+                             n_hvg                    = "adaptive",
+                             n_pcs                    = "adaptive",
                              min_cells_per_broad      = 200,
                              min_cells_per_subcluster = 30,
                              tissue                   = "human tissue",
@@ -87,6 +97,11 @@ annot_subcluster <- function(obj,
   if (!"cell_type" %in% colnames(obj@data@meta.data)) {
     stop("`cell_type` column not found. Run annot_llm_annotate() first.")
   }
+
+  # v0.2.0: snapshot token state at entry. annot_subcluster fans out to
+  # many LLM calls across per-broad sub-pipelines and resolution
+  # recommenders; we record the cumulative cost as a single step entry.
+  .tok_before <- length(.token_state$records)
 
   # Diagnostic: catch checkpoint corruption (column length != row count)
   # before any mutation. This happened in v0.1.18 with one user's
@@ -267,7 +282,7 @@ annot_subcluster <- function(obj,
     "# specific prompt constraints. See obj@params$subcluster_results.\n"
   )
 
-  .record_step(
+  obj <- .record_step(
     obj           = obj,
     step_name     = "annot_subcluster",
     function_name = "annot_subcluster",
@@ -283,6 +298,7 @@ annot_subcluster <- function(obj,
     script_snippet = script,
     new_stage      = "fine_annotated"
   )
+  .attach_step_tokens(obj, "annot_subcluster", .tok_before)
 }
 
 
@@ -393,22 +409,46 @@ annot_subcluster <- function(obj,
   # subset() in v5, so positional alignment with cell_idx still holds.
   cells <- colnames(sub)
 
+  # v0.1.24: resolve adaptive n_hvg / n_pcs from subset size.
+  # Static defaults (n_hvg=1500, n_pcs=20) over-spec small subsets
+  # (500-cell cDC1 doesn't have power for 1500 HVG) and under-spec
+  # large ones (22k T/NK can use more PCs).
+  n_cells_sub <- length(cells)
+  n_hvg_used <- if (is.character(n_hvg) && length(n_hvg) == 1 &&
+                    n_hvg == "adaptive") {
+    .adaptive_n_hvg(n_cells_sub, n_genes = nrow(sub))
+  } else {
+    as.integer(n_hvg)
+  }
+  n_pcs_used <- if (is.character(n_pcs) && length(n_pcs) == 1 &&
+                    n_pcs == "adaptive") {
+    .adaptive_n_pcs(n_cells_sub)
+  } else {
+    as.integer(n_pcs)
+  }
+  if (verbose) {
+    message(sprintf("  [%s] n_hvg=%d, n_pcs=%d (cells=%d)",
+                    broad, n_hvg_used, n_pcs_used, n_cells_sub))
+  }
+
   # 2. Re-normalize / find HVGs (variance structure differs in lineage subset)
   sub <- Seurat::NormalizeData(sub, verbose = FALSE)
-  sub <- Seurat::FindVariableFeatures(sub, nfeatures = n_hvg, verbose = FALSE)
+  sub <- Seurat::FindVariableFeatures(sub, nfeatures = n_hvg_used,
+                                       verbose = FALSE)
 
   # 3. Scale on HVG only (S4-method-dispatch-safe pattern, see v0.1.8)
   hvg <- Seurat::VariableFeatures(sub)
   sub <- Seurat::ScaleData(sub, features = hvg, verbose = FALSE)
 
   # 4. PCA
-  sub <- Seurat::RunPCA(sub, features = hvg, npcs = n_pcs, verbose = FALSE)
+  sub <- Seurat::RunPCA(sub, features = hvg, npcs = n_pcs_used,
+                         verbose = FALSE)
 
   # 5. Resolve resolution
   res_used <- if (is.character(resolution_spec) && resolution_spec == "auto") {
     .auto_resolution_for_subset(sub, chat_fn = chat_fn,
                                 broad = broad, tissue = tissue,
-                                n_pcs = n_pcs, max_retries = max_retries,
+                                n_pcs = n_pcs_used, max_retries = max_retries,
                                 verbose = verbose)
   } else {
     as.numeric(resolution_spec)
@@ -417,9 +457,10 @@ annot_subcluster <- function(obj,
                                broad, res_used))
 
   # 6. Neighbors + cluster + UMAP
-  sub <- Seurat::FindNeighbors(sub, dims = seq_len(n_pcs), verbose = FALSE)
+  sub <- Seurat::FindNeighbors(sub, dims = seq_len(n_pcs_used),
+                                verbose = FALSE)
   sub <- Seurat::FindClusters(sub, resolution = res_used, verbose = FALSE)
-  sub <- Seurat::RunUMAP(sub, dims = seq_len(n_pcs), verbose = FALSE)
+  sub <- Seurat::RunUMAP(sub, dims = seq_len(n_pcs_used), verbose = FALSE)
 
   # Get cluster IDs aligned by name to `cells` (cell_idx order).
   # Seurat::Idents() returns a NAMED factor — names are barcodes — so
@@ -554,9 +595,47 @@ annot_subcluster <- function(obj,
     annotations       = annotations,
     markers           = markers,
     resolution_used   = res_used,
+    n_hvg_used        = n_hvg_used,
+    n_pcs_used        = n_pcs_used,
     n_subclusters     = length(unique_clu),
     umap_path         = umap_path
   )
+}
+
+
+# v0.1.24: adaptive HVG count from subset size.
+# Static 1500 over-specifies small subsets and under-specifies larger ones.
+# Curve: 800 + 400 * log10(n / 100), clamped to [800, 2000].
+#   n=200    -> 920
+#   n=500    -> 1080
+#   n=1500   -> 1270
+#   n=5000   -> 1480
+#   n=20000  -> 1720
+#   n=50000  -> 1880
+# Also caps at n_genes / 2 because nfeatures > total genes is nonsense.
+.adaptive_n_hvg <- function(n_cells, n_genes = NULL) {
+  raw <- 800 + 400 * log10(max(n_cells, 100) / 100)
+  out <- max(800, min(2000, round(raw)))
+  if (!is.null(n_genes) && n_genes > 0) {
+    out <- min(out, max(500, floor(n_genes / 2)))
+  }
+  as.integer(out)
+}
+
+
+# v0.1.24: adaptive PC count from subset size.
+# Static 20 is fine for medium subsets but under-counts large ones (50k+)
+# and over-counts very small ones (500). Curve: 8 + 4 * log10(n), clamped
+# to [10, 30].
+#   n=200    -> 17
+#   n=500    -> 19
+#   n=1500   -> 21
+#   n=5000   -> 23
+#   n=20000  -> 25
+#   n=50000  -> 27
+.adaptive_n_pcs <- function(n_cells) {
+  raw <- 8 + 4 * log10(max(n_cells, 100))
+  as.integer(max(10, min(30, round(raw))))
 }
 
 

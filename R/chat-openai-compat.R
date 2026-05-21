@@ -182,6 +182,37 @@ make_chat_fn_openai_compat <- function(
            httr2::resp_body_string(resp))
     }
 
+    # Token accounting. OpenAI-compatible providers usually return:
+    #   usage: { prompt_tokens, completion_tokens, total_tokens }
+    # Some (DeepSeek, Qwen) also include `prompt_cache_hit_tokens` for
+    # cached prompt prefix; we map that to cached_tokens.
+    if (!is.null(parsed$usage)) {
+      cache_hit <- parsed$usage$prompt_cache_hit_tokens %||%
+                   parsed$usage$prompt_tokens_details$cached_tokens %||%
+                   NA_integer_
+      # Derive a short provider tag from the base_url host (e.g.
+      # "api.deepseek.com" -> "deepseek", "dashscope.aliyuncs.com" ->
+      # "dashscope"). This is best-effort — failures fall back to
+      # "openai_compat".
+      provider_tag <- tryCatch({
+        host <- regmatches(base_url,
+                            regexpr("(?<=://)[^/]+", base_url, perl = TRUE))
+        host <- sub("^api\\.", "", host)
+        host <- sub("^www\\.", "", host)
+        host <- strsplit(host, "\\.")[[1]][1]
+        if (length(host) == 0 || !nzchar(host)) "openai_compat" else host
+      }, error = function(e) "openai_compat")
+
+      .token_record(
+        provider      = paste0("openai_compat:", provider_tag),
+        model         = parsed$model %||% model,
+        input_tokens  = parsed$usage$prompt_tokens,
+        output_tokens = parsed$usage$completion_tokens,
+        cached_tokens = cache_hit,
+        call_type     = if (is.null(image_path)) "text" else "vision"
+      )
+    }
+
     parsed$choices[[1]]$message$content
   }
 }

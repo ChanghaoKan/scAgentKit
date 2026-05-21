@@ -23,6 +23,13 @@
 #'   recording figures generated during the pipeline.
 #' @slot params Flat list of the most recently applied parameters (useful
 #'   for quick inspection; full history lives in @@decisions).
+#' @slot token_usage List of per-step LLM token consumption summaries
+#'   (added in v0.2.0). One entry per pipeline step that involved an LLM
+#'   call. Each entry is a list with `input_tokens`, `output_tokens`,
+#'   `cached_tokens`, `n_calls`, and a `by_model` data frame.
+#' @slot version Character, the scAgentKit version that created this
+#'   object. Used by [upgrade_checkpoint()] to handle backward
+#'   compatibility when loading saved objects.
 #' @slot created_at POSIXct timestamp of object creation.
 #' @slot updated_at POSIXct timestamp of the last modification.
 #'
@@ -39,6 +46,8 @@ methods::setClass(
     scripts     = "character",
     figures     = "data.frame",
     params      = "list",
+    token_usage = "list",
+    version     = "character",
     created_at  = "POSIXct",
     updated_at  = "POSIXct"
   ),
@@ -55,6 +64,8 @@ methods::setClass(
       stringsAsFactors = FALSE
     ),
     params      = list(),
+    token_usage = list(),
+    version     = NA_character_,
     created_at  = Sys.time(),
     updated_at  = Sys.time()
   )
@@ -85,11 +96,19 @@ AgentSeurat <- function(seurat, initial_script = NULL) {
     "seurat"
   }
 
+  # Stamp the constructing scAgentKit version onto the object so future
+  # upgrade_checkpoint() can decide how to migrate stored fields.
+  pkg_version <- tryCatch(
+    as.character(utils::packageVersion("scAgentKit")),
+    error = function(e) NA_character_
+  )
+
   obj <- methods::new(
     "AgentSeurat",
     data       = seurat,
     data_type  = data_type,
     stage      = "initialized",
+    version    = pkg_version %||% NA_character_,
     created_at = Sys.time(),
     updated_at = Sys.time()
   )
@@ -106,6 +125,10 @@ AgentSeurat <- function(seurat, initial_script = NULL) {
 #' @export
 methods::setMethod("show", "AgentSeurat", function(object) {
   cat("<AgentSeurat>\n")
+  ver <- if (length(object@version) == 0 || is.na(object@version)) {
+    "<unknown>"
+  } else object@version
+  cat("  Version:    ", ver, "\n", sep = "")
   cat("  Stage:      ", object@stage, "\n", sep = "")
   cat("  Data type:  ", object@data_type, "\n", sep = "")
 
@@ -129,6 +152,19 @@ methods::setMethod("show", "AgentSeurat", function(object) {
 
   cat("  Decisions:  ", length(object@decisions), " steps recorded\n", sep = "")
   cat("  Figures:    ", nrow(object@figures), "\n", sep = "")
+
+  # Token usage one-liner if any LLM calls happened
+  if (length(object@token_usage) > 0) {
+    tot_in  <- sum(vapply(object@token_usage,
+                          function(x) x$input_tokens  %||% 0L, integer(1)))
+    tot_out <- sum(vapply(object@token_usage,
+                          function(x) x$output_tokens %||% 0L, integer(1)))
+    n_calls <- sum(vapply(object@token_usage,
+                          function(x) x$n_calls %||% 0L, integer(1)))
+    cat(sprintf("  LLM tokens: %d in + %d out across %d call(s)\n",
+                tot_in, tot_out, n_calls))
+  }
+
   cat("  Updated:    ", format(object@updated_at, "%Y-%m-%d %H:%M:%S"),
       "\n", sep = "")
   invisible(NULL)
@@ -174,4 +210,66 @@ get_script <- function(obj) {
 get_figures <- function(obj) {
   stopifnot(methods::is(obj, "AgentSeurat"))
   obj@figures
+}
+
+
+#' Return the per-step LLM token usage log
+#'
+#' Each pipeline step that issued LLM calls records its consumption here.
+#' Use this for cost reporting and as a more granular alternative to the
+#' global [token_usage_summary()].
+#'
+#' @param obj An AgentSeurat object.
+#' @return A named list keyed by step name. Each entry is a list with
+#'   `input_tokens`, `output_tokens`, `cached_tokens`, `n_calls`, and a
+#'   `by_model` data frame.
+#' @export
+get_token_usage <- function(obj) {
+  stopifnot(methods::is(obj, "AgentSeurat"))
+  obj@token_usage
+}
+
+
+#' Upgrade a saved AgentSeurat from an older scAgentKit version
+#'
+#' Saved checkpoints (qs/rds) from older scAgentKit releases may be missing
+#' slots that newer versions expect. This function fills in defaults so
+#' `obj` round-trips through the current S4 class without errors.
+#'
+#' Currently handles:
+#' \itemize{
+#'   \item pre-v0.2.0 objects without `@@token_usage` slot
+#'   \item pre-v0.2.0 objects without `@@version` slot
+#' }
+#'
+#' @param obj An AgentSeurat object loaded from a checkpoint.
+#' @return The same object with any missing slots populated.
+#' @export
+upgrade_checkpoint <- function(obj) {
+  stopifnot(methods::is(obj, "AgentSeurat"))
+  # methods::slotNames returns what the *current* class definition has;
+  # if a slot exists in the class but not the loaded object, methods::slot
+  # returns the prototype default — so we mostly need to check whether
+  # the object actually carries data in the new slots and stamp the
+  # version.
+  changed <- character(0)
+  if (length(methods::slot(obj, "token_usage", check = FALSE)) == 0 &&
+      !is.list(methods::slot(obj, "token_usage", check = FALSE))) {
+    methods::slot(obj, "token_usage") <- list()
+    changed <- c(changed, "token_usage")
+  }
+  current_ver <- methods::slot(obj, "version", check = FALSE)
+  if (length(current_ver) == 0 || is.na(current_ver) || !nzchar(current_ver)) {
+    methods::slot(obj, "version") <-
+      tryCatch(as.character(utils::packageVersion("scAgentKit")),
+               error = function(e) "unknown")
+    changed <- c(changed, "version")
+  }
+  if (length(changed) > 0) {
+    message(sprintf(
+      "[upgrade_checkpoint] populated missing slot(s): %s",
+      paste(changed, collapse = ", ")
+    ))
+  }
+  obj
 }
