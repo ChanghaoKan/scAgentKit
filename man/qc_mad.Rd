@@ -9,6 +9,7 @@ qc_mad(
   nmad = 3,
   group_by = NULL,
   metrics = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo", "percent.hb"),
+  log_metrics = c("nCount_RNA", "nFeature_RNA"),
   rationale = NULL
 )
 }
@@ -24,6 +25,11 @@ is global.}
 \item{metrics}{Character vector of QC metrics to filter on.
 Default `c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo",
 "percent.hb")`.}
+
+\item{log_metrics}{Character vector of metrics to log10-transform
+before MAD computation. Default
+`c("nCount_RNA", "nFeature_RNA")`. Set to `character(0)` to recover
+pre-v0.1.24 linear-space behaviour.}
 
 \item{rationale}{Optional LLM-supplied rationale.}
 }
@@ -41,7 +47,13 @@ When `data_type == "seurat_list"`, MAD is computed within each element
 MAD is computed within each group of the metadata column. When
 `data_type == "seurat"` and `group_by` is NULL, MAD is computed globally.
 
+For `nCount_RNA` and `nFeature_RNA`, the median/MAD are computed on
+`log10(x)` rather than the raw counts. These distributions are heavily
+right-skewed; filtering in linear space systematically discards healthy
+large cells while the lower bound becomes meaningless (negative). This
+matches scater::isOutlier(log = TRUE), OSCA, and Pijuan-Sala 2019.
+
 For `percent.mt`, `percent.ribo`, and `percent.hb` only the upper bound
-is applied (removing high-expression outliers), as low values for these
-are biologically benign.
+is applied (removing high-expression outliers), in linear space, as low
+values for these are biologically benign.
 }

@@ -10,8 +10,12 @@ annot_llm_annotate(
   tissue,
   condition = NULL,
   expected_celltypes = NULL,
+  strict_vocabulary = FALSE,
   clusters = NULL,
   max_retries = 2,
+  n_samples = 1,
+  validate_markers = TRUE,
+  parallel = FALSE,
   verbose = TRUE,
   rationale = NULL
 )
@@ -31,13 +35,51 @@ schema described in the system prompt.}
 
 \item{expected_celltypes}{Optional character vector of cell types that
 should plausibly be present in this tissue. If supplied, the LLM is
-instructed to prefer these and to flag novel types.}
+instructed to prefer these and to flag novel types. If NULL,
+`annot_llm_annotate()` will attempt to auto-detect a celltype column
+in the Seurat metadata and use those values as a *prior* (see
+`strict_vocabulary`).}
+
+\item{strict_vocabulary}{Logical, default FALSE. When TRUE, the LLM is
+forced to match `expected_celltypes` *verbatim* (no sub-division, no
+renaming). Useful when you want output that aligns one-to-one with
+a published annotation. When FALSE (default), `expected_celltypes`
+acts as a prior — the LLM is told to prefer these but may use other
+names if marker evidence warrants. **Changed in v0.1.24**: prior to
+v0.1.24, auto-detection of a celltype column silently engaged strict
+mode. This silently locked the LLM to the author's labels and could
+propagate annotation errors.}
 
 \item{clusters}{Optional integer or character vector restricting which
 clusters to annotate (for iterative review). Default NULL = all.}
 
 \item{max_retries}{Integer, JSON-parse retries on malformed output.
 Default 2.}
+
+\item{n_samples}{Integer, number of independent LLM calls per cluster.
+Default 1 (no ensembling, backwards compatible). When > 1, the LLM
+is queried `n_samples` times per cluster and majority vote is taken
+on `primary_annotation`. Ensemble agreement is reported as
+`ensemble_agreement` (fraction of calls that agreed with the
+majority) and `ensemble_n` (number of valid calls). For the
+ensemble to be meaningful, build your chat_fn with
+`temperature > 0`; with `temperature = 0` all samples will be
+identical and the ensemble adds no information.}
+
+\item{validate_markers}{Logical, default TRUE. When TRUE, the
+`supporting_markers` and `contradicting_markers` returned by the LLM
+are checked against the actual top-marker list. Any genes not in
+the evidence are flagged as `hallucinated_markers`. The hallucination
+rate also feeds into the hybrid confidence score.}
+
+\item{parallel}{Logical, default `FALSE`. When `TRUE` and the
+`future.apply` package is installed, per-cluster annotation calls
+run in parallel under whatever execution `future::plan()` is
+active. For multi-core parallelism set the plan beforehand:
+\preformatted{future::plan(future::multisession, workers = 8)}
+Token usage from parallel workers is collected back into the
+parent's accumulator on completion. With `temperature = 0` and
+`n_samples = 1` parallel runs are reproducible across re-runs.}
 
 \item{verbose}{Logical, print progress per cluster. Default TRUE.}
 
@@ -46,9 +88,12 @@ Default 2.}
 \value{
 Updated AgentSeurat. A data frame of annotations is stored at
   `obj@params$llm_annotations` with columns: cluster,
-  primary_annotation, confidence, supporting_markers,
-  contradicting_markers, alternative_annotations,
-  recommended_action, reasoning.
+  primary_annotation, confidence (LLM self-reported),
+  hybrid_confidence (objective score; see Details),
+  hybrid_confidence_label, confidence_disagreement,
+  supporting_markers, contradicting_markers, hallucinated_markers,
+  alternative_annotations, recommended_action, ensemble_agreement,
+  ensemble_n, reasoning.
 }
 \description{
 For each cluster, assembles an evidence bundle (top markers, reference
@@ -79,5 +124,27 @@ A minimal `ellmer`-based wrapper:
 }
 A minimal `httr2`-based wrapper for a local vLLM / Ollama server is in
 `inst/examples/llm_wrappers.R`.
+}
+
+\section{Hybrid confidence}{
+
+The hybrid confidence score is a weighted combination of four
+objective signals, each in [0, 1]:
+\itemize{
+  \item `ref_overlap` (weight 0.30): the cluster's best reference
+    overlap score from `annot_match_reference`, capped at 1.
+  \item `specificity` (weight 0.30): median `pct.1 - pct.2` of the
+    cluster's top markers.
+  \item `non_hallucination` (weight 0.20): fraction of the LLM's
+    `supporting_markers` that actually appear in the cluster's
+    top-marker list.
+  \item `proportion_plausibility` (weight 0.20): 1 if the LLM
+    reported `reasonable`, 0.5 for `suspicious`, 0 for `abnormal`
+    or missing.
+}
+The resulting score is mapped to a label: `high` (>= 0.7),
+`medium` (0.4-0.7), `low` (< 0.4). `confidence_disagreement` is
+TRUE when the LLM's self-reported confidence and the hybrid label
+fall in non-adjacent bands.
 }
 

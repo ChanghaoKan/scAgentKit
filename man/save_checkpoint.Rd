@@ -9,7 +9,7 @@ save_checkpoint(obj, path, rationale = NULL)
 \arguments{
 \item{obj}{An AgentSeurat object.}
 
-\item{path}{File path ending in `.qs`.}
+\item{path}{File path ending in `.qs2`.}
 
 \item{rationale}{Optional LLM-supplied rationale.}
 }
@@ -19,7 +19,7 @@ The AgentSeurat object (invisibly), unchanged except for a
 }
 \description{
 Serializes the full AgentSeurat (data + decision log + scripts + figures
-registry) to a single `.qs` file for fast reload. Recommended after each
+registry) to a single `.qs2` file for fast reload. Recommended after each
 major stage (QC, PCA, Harmony, clustering) so the agent can resume from
 any step if later stages fail.
 }

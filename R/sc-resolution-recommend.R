@@ -53,6 +53,15 @@
 #'
 #' @return Updated AgentSeurat. Recommendation stored at
 #'   `obj@params$resolution_recommendation`.
+#' @param vision_panels Character vector of panel types to include in the
+#'   vision input to the LLM. Default: all available panels (UMAP,
+#'   clustree, marker dotplot, etc.). Pass a subset to constrain.
+#' @param max_panels Integer. Hard cap on the number of panels sent in
+#'   one request, to control token usage. Default 9.
+#' @param panel_dpi Integer. Rasterization DPI for each panel. Lower
+#'   reduces base64 payload size. Default 100.
+#' @param panel_width Numeric. Panel width in inches. Default 6.
+#' @param panel_height Numeric. Panel height in inches. Default 4.
 #' @export
 sc_resolution_recommend <- function(obj,
                                     chat_fn,

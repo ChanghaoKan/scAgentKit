@@ -19,7 +19,6 @@ Imports:
     methods,
     Seurat (>= 5.0.0),
     dplyr,
-    tibble,
     ggplot2,
     Matrix,
     qs2
@@ -28,7 +27,19 @@ Suggests:
     ontologyIndex,
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    SeuratObject,
+    SingleCellExperiment,
+    base64enc,
+    clustree,
+    harmony,
+    httr2,
+    jsonlite,
+    magick,
+    openssl,
+    png,
+    readxl,
+    scDblFinder
 URL: https://github.com/ChanghaoKan/scAgentKit
 BugReports: https://github.com/ChanghaoKan/scAgentKit/issues
 RoxygenNote: 7.3.1

@@ -7,7 +7,7 @@
 load_checkpoint(path)
 }
 \arguments{
-\item{path}{Path to a `.qs` file saved by [save_checkpoint()].}
+\item{path}{Path to a `.qs2` file saved by [save_checkpoint()].}
 }
 \value{
 The loaded AgentSeurat object.

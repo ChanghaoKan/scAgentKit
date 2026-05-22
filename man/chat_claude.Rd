@@ -5,13 +5,13 @@
 \title{Anthropic Claude chat_fn — vision-capable}
 \usage{
 chat_claude(
-  model = "claude-sonnet-4-5",
+  model = "claude-sonnet-4-6",
   api_key_env = "ANTHROPIC_API_KEY",
   ...
 )
 }
 \arguments{
-\item{model}{Default `"claude-sonnet-4-5"`. Use `"claude-opus-4-7"`
+\item{model}{Default `"claude-sonnet-4-6"`. Use `"claude-opus-4-7"`
 for the highest-intelligence model.}
 
 \item{api_key_env}{Default `"ANTHROPIC_API_KEY"`.}
@@ -20,6 +20,6 @@ for the highest-intelligence model.}
 }
 \description{
 Convenience alias for [make_chat_fn_claude()] (see that function for
-full options). Default uses Claude Sonnet 4.5: best price/intelligence
+full options). Default uses Claude Sonnet 4.6: best price/intelligence
 ratio for the structured decisions and vision tasks scAgentKit uses.
 }

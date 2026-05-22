@@ -45,6 +45,15 @@ recording figures generated during the pipeline.}
 \item{\code{params}}{Flat list of the most recently applied parameters (useful
 for quick inspection; full history lives in @decisions).}
 
+\item{\code{token_usage}}{List of per-step LLM token consumption summaries
+(added in v0.2.0). One entry per pipeline step that involved an LLM
+call. Each entry is a list with `input_tokens`, `output_tokens`,
+`cached_tokens`, `n_calls`, and a `by_model` data frame.}
+
+\item{\code{version}}{Character, the scAgentKit version that created this
+object. Used by [upgrade_checkpoint()] to handle backward
+compatibility when loading saved objects.}
+
 \item{\code{created_at}}{POSIXct timestamp of object creation.}
 
 \item{\code{updated_at}}{POSIXct timestamp of the last modification.}

@@ -37,6 +37,20 @@ sc_resolution_recommend(
 `vision = TRUE`, the function auto-picks the most recent
 `sc_cluster_sweep` figure from `@figures`.}
 
+\item{vision_panels}{Character vector of panel types to include in the
+vision input to the LLM. Default: all available panels (UMAP,
+clustree, marker dotplot, etc.). Pass a subset to constrain.}
+
+\item{max_panels}{Integer. Hard cap on the number of panels sent in
+one request, to control token usage. Default 9.}
+
+\item{panel_dpi}{Integer. Rasterization DPI for each panel. Lower
+reduces base64 payload size. Default 100.}
+
+\item{panel_width}{Numeric. Panel width in inches. Default 6.}
+
+\item{panel_height}{Numeric. Panel height in inches. Default 4.}
+
 \item{max_retries}{Integer. Default 2.}
 }
 \value{

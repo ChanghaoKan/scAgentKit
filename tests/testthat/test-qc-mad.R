@@ -21,8 +21,9 @@ make_minimal_seurat <- function(counts_per_cell, features_per_cell,
   rownames(mat) <- paste0("gene", seq_len(n_genes))
   colnames(mat) <- paste0("cell", seq_len(n_cells))
   for (j in seq_len(n_cells)) {
-    n_feat <- features_per_cell[j]
-    per_gene <- ceiling(counts_per_cell[j] / max(n_feat, 1))
+    n_feat <- min(features_per_cell[j], n_genes)   # <-- clamp 到 n_genes
+    if (n_feat < 1) next
+    per_gene <- ceiling(counts_per_cell[j] / n_feat)
     idx <- seq_len(n_feat)
     mat[idx, j] <- per_gene
   }

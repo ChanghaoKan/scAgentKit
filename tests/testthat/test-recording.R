@@ -30,7 +30,7 @@ test_that(".record_step accumulates decisions, scripts, and params", {
   expect_equal(obj@decisions[[1]]$step, "qc_threshold")
   expect_equal(obj@stage, "qc_filtered")
   expect_equal(obj@params$min_nCount, 1000)
-  expect_match(obj@scripts[2], "qc_threshold")
+  expect_match(tail(obj@scripts, 1), "qc_threshold")
 })
 
 test_that(".record_step merges params instead of overwriting", {

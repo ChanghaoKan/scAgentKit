@@ -6,3 +6,7 @@
 ^pkgdown$
 ^docs$
 ^\.gitignore$
+^CITATION\.cff$
+^Dockerfile$
+^benchmark$
+^CHANGES_v0\.2\.0\.md$

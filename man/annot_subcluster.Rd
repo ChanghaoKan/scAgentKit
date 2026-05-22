@@ -9,8 +9,8 @@ annot_subcluster(
   chat_fn,
   target = NULL,
   subcluster_resolution = "adaptive",
-  n_hvg = 1500,
-  n_pcs = 20,
+  n_hvg = "adaptive",
+  n_pcs = "adaptive",
   min_cells_per_broad = 200,
   min_cells_per_subcluster = 30,
   tissue = "human tissue",
@@ -31,13 +31,22 @@ NULL (default) for auto: subcluster every broad type with at
 least `min_cells_per_broad` cells.}
 
 \item{subcluster_resolution}{Numeric, the string `"adaptive"`
-(default) or `"auto"`, or a named numeric vector (see Details).}
+(default) or `"auto"`, or a named numeric vector (see Details).
+The "adaptive" curve was empirically calibrated on liver/HCC data
+(10-50k cells, broad types from cDC1 to hepatocytes). Other tissues
+(developing brain, organoids, very rare populations) may need a
+different curve; pass a fixed numeric to override.}
 
-\item{n_hvg}{Integer. Number of HVGs to recompute per subset.
-Default 1500.}
+\item{n_hvg}{Integer or `"adaptive"`. Number of HVGs to recompute per
+subset. Default `"adaptive"`: scale with subset size on a log10
+curve, clamped to [800, 2000]. Pass a single integer for fixed
+behaviour. Prior to v0.1.24 the default was a fixed 1500.}
 
-\item{n_pcs}{Integer. Number of PCs to compute on the subset.
-Default 20. UMAP and graph use all of them.}
+\item{n_pcs}{Integer or `"adaptive"`. Number of PCs to compute on
+the subset. UMAP and graph use all of them. Default `"adaptive"`:
+scale with subset size on a log10 curve, clamped to [10, 30].
+Pass a single integer for fixed behaviour. Prior to v0.1.24 the
+default was a fixed 20.}
 
 \item{min_cells_per_broad}{Integer. Skip broad types with fewer
 cells. Default 200.}
@@ -47,6 +56,10 @@ this are not annotated by the LLM and labelled
 `"<broad>: too small to annotate"`. Default 30.}
 
 \item{tissue}{Character. Tissue context to give the LLM.}
+
+\item{data_context}{[说明文字]}
+
+\item{suggest_followups}{[说明文字]}
 
 \item{top_n_markers}{Integer. Top markers per sub-cluster to send
 to the LLM. Default 15.}
