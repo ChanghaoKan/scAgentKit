@@ -34,7 +34,7 @@ Updated AgentSeurat at stage "scaled".
 Wrapper around [Seurat::ScaleData()] with a critical default change:
 \strong{by default we scale only the variable features}, not all genes.
 Seurat's own default (`features = NULL`) scales every gene, which on a
-typical 20k+ gene matrix takes minutes for no downstream benefit —
+typical 20k+ gene matrix takes minutes for no downstream benefit --
 [sc_pca()] uses only variable features anyway, and visualisation tools
 like [Seurat::DoHeatmap()] need scaled data only for the genes plotted.
 }

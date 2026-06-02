@@ -22,7 +22,7 @@ qc_merge <- function(obj, join_layers = TRUE, rationale = NULL) {
 
   # Auto-detect whether cell names already start with the sample prefix.
   # If they do, do NOT add cell ids again (would create double prefix
-  # like "HCC01T_HCC01T_AAACCTGAGGGCATGT" — common with GSE data where
+  # like "HCC01T_HCC01T_AAACCTGAGGGCATGT" -- common with GSE data where
   # the original counts matrix was already in <sample>_<barcode> format).
   sample_names <- names(seurat_list)
   add_ids <- TRUE

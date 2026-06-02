@@ -74,8 +74,8 @@
 #'   default was a fixed 20.
 #'
 #' @export
-#' @param data_context [说明文字]
-#' @param suggest_followups [说明文字]
+#' @param data_context Optional character string with extra biological context for the LLM prompt. Default NULL.
+#' @param suggest_followups Logical; if TRUE, ask the LLM to suggest follow-up analyses. Default FALSE.
 annot_subcluster <- function(obj,
                              chat_fn,
                              target                   = NULL,
@@ -160,8 +160,8 @@ annot_subcluster <- function(obj,
     target, subcluster_resolution, broad_counts
   )
 
-  # Initialize fine columns. Use the live meta.data — never a captured
-  # copy — to guarantee row counts match the data.frame we're writing
+  # Initialize fine columns. Use the live meta.data -- never a captured
+  # copy -- to guarantee row counts match the data.frame we're writing
   # back into. Use rep() with the data.frame's actual nrow rather than
   # an arbitrary right-hand side, in case the assay/meta have drifted.
   n_meta <- nrow(obj@data@meta.data)
@@ -219,7 +219,7 @@ annot_subcluster <- function(obj,
     )
     if (is.null(res)) next
 
-    # Merge back using INTEGER row indices (never character names —
+    # Merge back using INTEGER row indices (never character names --
     # character indexing on an unnamed character vector silently
     # extends the vector if names don't match, which corrupts
     # meta.data without an error).
@@ -311,7 +311,7 @@ annot_subcluster <- function(obj,
   # subsets need higher resolution to surface meaningful sub-structure;
   # smaller subsets over-fragment at high resolution.
   #
-  # v0.1.22: curve tightened by 0.05 vs v0.1.21 — empirically v0.1.21
+  # v0.1.22: curve tightened by 0.05 vs v0.1.21 -- empirically v0.1.21
   # over-fragmented T/NK at 22k cells (23 clusters with many
   # sub-200-cell stress-state cluster fragments).
   #
@@ -377,7 +377,7 @@ annot_subcluster <- function(obj,
     stop("Seurat is required.")
   }
   meta <- obj@data@meta.data
-  # `cell_idx` is derived from row position — this is what we'll use to
+  # `cell_idx` is derived from row position -- this is what we'll use to
   # write back into meta.data. `cells` is the barcode set Seurat
   # operates on. They must stay in lock-step (same length, same order),
   # but we deliberately do NOT compare barcode *strings* between
@@ -398,7 +398,7 @@ annot_subcluster <- function(obj,
 
   # Defensive: confirm subset returned the expected number of cells.
   # We do NOT require setequal() of barcodes because Seurat v5 may
-  # rewrite barcodes (e.g. add _1 suffix) — that's fine, we use
+  # rewrite barcodes (e.g. add _1 suffix) -- that's fine, we use
   # positional row indices for the merge.
   if (ncol(sub) != length(cells)) {
     stop(sprintf(
@@ -465,7 +465,7 @@ annot_subcluster <- function(obj,
   sub <- Seurat::RunUMAP(sub, dims = seq_len(n_pcs_used), verbose = FALSE)
 
   # Get cluster IDs aligned by name to `cells` (cell_idx order).
-  # Seurat::Idents() returns a NAMED factor — names are barcodes — so
+  # Seurat::Idents() returns a NAMED factor -- names are barcodes -- so
   # we can index by name to guarantee the cluster_ids vector is in the
   # same positional order as `cells` (and therefore `cell_idx`).
   ident_factor <- Seurat::Idents(sub)
@@ -478,7 +478,7 @@ annot_subcluster <- function(obj,
       ))
     }
   } else {
-    # Idents() returned an unnamed vector — fall back to positional
+    # Idents() returned an unnamed vector -- fall back to positional
     # alignment, but warn since this is unusual.
     cluster_ids <- as.character(ident_factor)
     if (length(cluster_ids) != length(cells)) {
@@ -735,7 +735,7 @@ annot_subcluster <- function(obj,
 #   - Lists stress / immediate-early genes (same reason)
 #   - Names lineage-internal end-states that are NEVER contaminants
 #     (plasma cell, NK in T/NK, Kupffer in myeloid, etc.)
-#   - Has tightened contaminant criteria (≥3 canonical markers,
+#   - Has tightened contaminant criteria (>=3 canonical markers,
 #     high logFC, not on the ambient/stress list)
 #   - Has tissue/species-aware proportion guide
 #   - Optionally requests a followup field with concrete next-step
@@ -768,7 +768,7 @@ annot_subcluster <- function(obj,
     )
   } else {
     sprintf(
-      "  No tissue-specific ambient list available for '%s'. As a general rule, transcripts from the dominant lineage of the tissue can leak into all droplets via free RNA — be skeptical of single high-abundance transcripts that match the tissue's dominant cell type.",
+      "  No tissue-specific ambient list available for '%s'. As a general rule, transcripts from the dominant lineage of the tissue can leak into all droplets via free RNA -- be skeptical of single high-abundance transcripts that match the tissue's dominant cell type.",
       tissue
     )
   }
@@ -780,7 +780,7 @@ annot_subcluster <- function(obj,
     ", ..."
   )
 
-  # data_context is the user's research framework — anchor followup
+  # data_context is the user's research framework -- anchor followup
   # suggestions to it. If absent, suggestions are generic-but-concrete.
   data_context_str <- if (!is.null(data_context) && nzchar(data_context)) {
     sprintf("\n------ User research context ------\n%s\n", data_context)
@@ -793,7 +793,7 @@ annot_subcluster <- function(obj,
       "BEYOND the label itself, suggest 1-2 concrete next-step analyses",
       "or scientific questions for THIS specific sub-cluster, anchored to",
       "this tissue/disease context (and the user research context above,",
-      "if provided). Be specific to the cluster's markers — not generic",
+      "if provided). Be specific to the cluster's markers -- not generic",
       "advice. Examples of GOOD followups:",
       "  - 'TIM3/LAG3/TIGIT co-expression in this cluster suggests terminal",
       "     exhaustion; test correlation with clinical anti-PD-1 response.'",
@@ -819,12 +819,12 @@ annot_subcluster <- function(obj,
             broad),
     sprintf("Tissue context: %s. Detected gene-symbol convention in input: %s.",
             tissue, species),
-    "Gene symbols may be human (CD8A) or mouse (Cd8a) — interpret accordingly.",
+    "Gene symbols may be human (CD8A) or mouse (Cd8a) -- interpret accordingly.",
     data_context_str,
     "",
     "------ Approach ------",
     sprintf("This sub-cluster was carved out of a %s subset by re-clustering.", broad),
-    "The markers below are FROM the lineage subset only — they describe",
+    "The markers below are FROM the lineage subset only -- they describe",
     "how this sub-cluster differs from OTHER sub-clusters of the same",
     "broad lineage, NOT how it differs from all cells. So expect markers",
     "to look like fine-grained lineage-internal differences (cytotoxic",
@@ -832,7 +832,7 @@ annot_subcluster <- function(obj,
     "",
     "Your task is to identify the most likely SUB-TYPE within this lineage.",
     "",
-    sprintf("Typical sub-types within '%s' (examples — not a whitelist):", broad),
+    sprintf("Typical sub-types within '%s' (examples -- not a whitelist):", broad),
     vocab_examples,
     "",
     "------ What is NOT contamination ------",
@@ -844,14 +844,14 @@ annot_subcluster <- function(obj,
     stress_str,
     "",
     "Lineage-INTERNAL terminal differentiation states are NEVER contaminants:",
-    "  - Plasma cell, plasmablast, GC B cell, regulatory B  → all are B sub-types,",
+    "  - Plasma cell, plasmablast, GC B cell, regulatory B  -> all are B sub-types,",
     "    label as themselves (e.g. 'plasma cell'), NEVER 'B (contaminant: plasma cell)'",
-    "  - NK cell, NKT, MAIT, gamma-delta T  → all are T/NK members,",
+    "  - NK cell, NKT, MAIT, gamma-delta T  -> all are T/NK members,",
     "    label as themselves, NEVER 'T/NK (contaminant: NK)'",
     "  - Kupffer cell (liver), alveolar macrophage (lung), microglia (brain)",
-    "    → tissue-resident myeloid sub-types in the right tissue, NEVER contaminants",
+    "    -> tissue-resident myeloid sub-types in the right tissue, NEVER contaminants",
     "  - Tumour-derived cells in their own broad lineage (e.g. dysplastic hepatocyte",
-    "    in a hepatocyte subset) → just a sub-type, not contamination",
+    "    in a hepatocyte subset) -> just a sub-type, not contamination",
     "",
     "------ TRUE contamination ------",
     sprintf("Use the label format \"%s (contaminant: <true type>)\" ONLY when ALL of:", broad),
@@ -957,10 +957,10 @@ annot_subcluster <- function(obj,
           "  - cDC1 (CLEC9A, XCR1, IRF8)",
           "  - cDC2 (CLEC10A, CD1C, FCER1A)",
           "  - pDC (LILRA4, IRF7, GZMB)",
-          "  - Kupffer cell (CD163, MARCO, VSIG4 — liver-specific)",
+          "  - Kupffer cell (CD163, MARCO, VSIG4 -- liver-specific)",
           "  - TAM M1-like (TNF, IL1B, NOS2-low)",
           "  - TAM M2-like (CD163, CD206/MRC1, TGFB1)",
-          "  - SPP1+ TAM (SPP1, MARCO, GPNMB — common in HCC)",
+          "  - SPP1+ TAM (SPP1, MARCO, GPNMB -- common in HCC)",
           "  - proliferating myeloid (MKI67, TOP2A)",
           "  - neutrophil (FCGR3B, CXCR2, S100A12)",
           sep = "\n")
@@ -997,7 +997,7 @@ annot_subcluster <- function(obj,
 
 
 # Typical proportion ranges for sub-types within a broad lineage.
-# Used in the LLM prompt as a sanity check — see the "PROPORTION SANITY
+# Used in the LLM prompt as a sanity check -- see the "PROPORTION SANITY
 # CHECK" block. These are tumour-context defaults (HCC and similar
 # solid tumours); biology varies by tissue and disease, so the prompt
 # describes them as guides, not laws. A grossly-off proportion is a
@@ -1068,7 +1068,7 @@ annot_subcluster <- function(obj,
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------------------------
 # v0.1.22: tissue-aware ambient gene lists. Added because v0.1.21 prompt
 # baked HCC-specific ambient genes (ALB, SERPINA1, AFP) into the system
 # prompt as global, which is wrong for non-liver tissue. With this
@@ -1077,10 +1077,10 @@ annot_subcluster <- function(obj,
 #
 # Returns a character vector of HUMAN gene symbols. Mouse equivalents
 # (sentence case) are added by the prompt builder. Empty vector if the
-# tissue string doesn't match any built-in pattern — in that case the
+# tissue string doesn't match any built-in pattern -- in that case the
 # prompt falls back to a generic "be cautious of dominant lineage
 # transcripts" note.
-# ─────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------------------------
 .tissue_ambient_genes <- function(tissue) {
   t <- tolower(as.character(tissue %||% ""))
 
@@ -1144,7 +1144,7 @@ annot_subcluster <- function(obj,
 
 
 # Cross-species, tissue-aware proportion guide. v0.1.22 supersedes the
-# v0.1.21 version which had HCC-incorrect γδT range (1-5%) baked in.
+# v0.1.21 version which had HCC-incorrect gamma-deltaT range (1-5%) baked in.
 .lineage_proportion_guide_v2 <- function(broad, tissue) {
   b <- tolower(broad)
   t <- tolower(as.character(tissue %||% ""))
@@ -1218,7 +1218,7 @@ annot_subcluster <- function(obj,
 
 # Stress / dissociation / immediate-early signature genes. Both human
 # and mouse symbols, since LLM may see either depending on the dataset.
-# Used in the prompt as an "ambient/artifact" list — finding these in
+# Used in the prompt as an "ambient/artifact" list -- finding these in
 # a sub-cluster's markers does NOT imply cross-lineage contamination,
 # only stress.
 .stress_genes_both_species <- function() {

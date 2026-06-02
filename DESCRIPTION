@@ -1,47 +1,51 @@
 Package: scAgentKit
 Type: Package
-Title: Agent-Friendly Toolkit for Single-Cell RNA-seq Analysis
-Version: 0.2.0
+Title: LLM-Orchestrated, Auditable scRNA-seq Pipeline
+Version: 0.3.0
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
-Description: Atomic, composable functions for single-cell RNA-seq pipelines
-    (QC, normalization, integration, clustering, annotation), designed as the
-    tool layer of an LLM agent. Every function takes and returns an
-    AgentSeurat S4 object that accumulates decision logs and reproducible
-    R script snippets, enabling both agent orchestration and publication-grade
-    reproducibility.
+Description: End-to-end single-cell RNA-seq pipeline (QC, integration,
+    dimensionality reduction, clustering, annotation, sub-annotation)
+    with vision-capable LLM-driven decisions at every analyst-judgement
+    step. Built on agentomicsCore, scAgentKit logs every decision with
+    rationale and exports a fully reproducible R script. Distinctive
+    features include cycling-cluster lineage rescue, structured
+    contamination criteria for cluster annotation, hybrid (LLM +
+    objective) confidence scoring, marker-citation hallucination
+    validation, and per-step LLM token / cost tracking.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 4.1.0)
 Imports:
+    agentomicsCore (>= 0.1.0),
     methods,
     Seurat (>= 5.0.0),
+    SeuratObject,
     dplyr,
     ggplot2,
     Matrix,
-    qs2
+    magrittr,
+    jsonlite
 Suggests:
-    future.apply,
-    ontologyIndex,
-    testthat (>= 3.0.0),
-    knitr,
-    rmarkdown,
-    SeuratObject,
-    SingleCellExperiment,
-    base64enc,
-    clustree,
     harmony,
+    scDblFinder,
+    SingleCellExperiment,
+    clustree,
+    base64enc,
     httr2,
-    jsonlite,
     magick,
-    openssl,
     png,
     readxl,
-    scDblFinder
+    future.apply,
+    ontologyIndex,
+    SeuratData,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 URL: https://github.com/ChanghaoKan/scAgentKit
 BugReports: https://github.com/ChanghaoKan/scAgentKit/issues
-RoxygenNote: 7.3.1
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0

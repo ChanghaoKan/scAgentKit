@@ -11,8 +11,8 @@
 #'   \item cluster count at every resolution
 #'   \item stability (Adjusted Rand Index) between adjacent resolutions
 #'   \item number of "small" clusters (< `small_cluster_pct` of cells)
-#'     at every resolution — a proxy for over-clustering
-#'   \item the clustree PNG (when `vision = TRUE`) — showing how clusters
+#'     at every resolution -- a proxy for over-clustering
+#'   \item the clustree PNG (when `vision = TRUE`) -- showing how clusters
 #'     split and merge as resolution increases
 #'   \item tissue context and (optionally) expected cell-type count
 #' }
@@ -102,7 +102,7 @@ sc_resolution_recommend <- function(obj,
 
   # v0.1.6: auto-detect expected_n_celltypes from existing author column,
   # if user didn't pass one explicitly. We allow some "wiggle room" around
-  # the author's count: ±50% in each direction (clamped to [3, 30]) so
+  # the author's count: +/-50% in each direction (clamped to [3, 30]) so
   # the LLM can sub-divide a bit if marker evidence supports it.
   if (is.null(expected_n_celltypes)) {
     auto_col <- .detect_celltype_col(meta)
@@ -147,7 +147,7 @@ sc_resolution_recommend <- function(obj,
   stats_df$ari_vs_prev <- ari_adjacent
 
   # 4. Resolve image to send
-  # ─────────────────────────────────────────────────────────────────────────
+  # -------------------------------------------------------------------------
   # Two modes:
   #   - clustree-only (legacy v0.1.0-0.1.14): only the clustree dendrogram,
   #     used if user explicitly passes image_path.
@@ -237,7 +237,7 @@ sc_resolution_recommend <- function(obj,
       "  1. `chosen_resolution` MUST be one of the panel resolutions you ",
       "actually saw: ", panels_str, ". Pick the best of those three.\n",
       "  2. If you think a resolution OUTSIDE this panel set is better ",
-      "(based on the numeric table), put it in `alternatives` — never in ",
+      "(based on the numeric table), put it in `alternatives` -- never in ",
       "`chosen_resolution`. The chosen value must be defensible from ",
       "VISUAL evidence in the panels you saw.\n",
       "  3. `visual_notes` MUST be non-empty: describe what you observed ",
@@ -430,15 +430,15 @@ sc_resolution_recommend <- function(obj,
       "  where a single cluster abruptly splits into several small branches ",
       "  (that split is usually noise, not biology). Look for 'plateaus' ",
       "  where most clusters have stable ancestry (edges mostly vertical). ",
-      "  'Crossing edges' indicate instability — avoid such resolutions.\n",
+      "  'Crossing edges' indicate instability -- avoid such resolutions.\n",
       "- UMAP panels (if present): each panel is one resolution colored by ",
       "  cluster ID. Look for: \n",
-      "    (a) over-fragmentation — a visually continuous group split into ",
+      "    (a) over-fragmentation -- a visually continuous group split into ",
       "        multiple colours with no clear visual boundary. This means ",
       "        the resolution is too high.\n",
-      "    (b) under-resolution — visually distinct islands or sub-blobs ",
+      "    (b) under-resolution -- visually distinct islands or sub-blobs ",
       "        merged into one colour. Resolution is too low.\n",
-      "    (c) good separation — each colour corresponds to a visually ",
+      "    (c) good separation -- each colour corresponds to a visually ",
       "        cohesive region; boundaries align with density gaps.\n",
       "- Cross-validate: a resolution that looks stable in clustree AND ",
       "  produces visually clean separation in UMAP is a strong candidate.\n",
@@ -502,7 +502,7 @@ sc_resolution_recommend <- function(obj,
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
 
 
-# ─────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------------------------
 # v0.1.16: build a multi-panel image for vision = TRUE.
 #
 # Layout (when clustree is available):
@@ -515,7 +515,7 @@ sc_resolution_recommend <- function(obj,
 # The function attaches `panels_used` (numeric vector of resolutions
 # rendered) as an attribute on the returned path so the caller can
 # include them in the prompt.
-# ─────────────────────────────────────────────────────────────────────────
+# -------------------------------------------------------------------------
 .build_resolution_vision_panel <- function(obj,
                                            res_cols, res_values, stats_df,
                                            expected_n_celltypes = NULL,

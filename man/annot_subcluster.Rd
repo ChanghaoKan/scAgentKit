@@ -57,9 +57,9 @@ this are not annotated by the LLM and labelled
 
 \item{tissue}{Character. Tissue context to give the LLM.}
 
-\item{data_context}{[说明文字]}
+\item{data_context}{Optional character string with extra biological context for the LLM prompt. Default NULL.}
 
-\item{suggest_followups}{[说明文字]}
+\item{suggest_followups}{Logical; if TRUE, ask the LLM to suggest follow-up analyses. Default FALSE.}
 
 \item{top_n_markers}{Integer. Top markers per sub-cluster to send
 to the LLM. Default 15.}

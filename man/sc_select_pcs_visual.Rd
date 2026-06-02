@@ -69,7 +69,7 @@ Two ways to specify candidates (mutually exclusive):
     `variance_thresholds = c(0.80, 0.85, 0.90)`. The function
     computes the smallest `ndim` whose cumulative explained variance
     reaches each threshold, deduplicates, and uses those. Panel
-    titles read "variance >= 80% (ndim=27)" — meaningful to a
+    titles read "variance >= 80% (ndim=27)" -- meaningful to a
     biologist thinking in signal-to-noise terms.
   \item \strong{Manual}: pass `candidates = c(20, 30, 40, 50)`.
     Panel titles read "ndim = 30".

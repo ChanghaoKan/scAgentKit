@@ -6,7 +6,7 @@
 #' / stromal / parenchymal lineages; users can extend it via `extra_map`.
 #'
 #' This is helpful when the LLM annotation produced finer labels than
-#' the author's broad categories — see [annot_compare_with_reference()]
+#' the author's broad categories -- see [annot_compare_with_reference()]
 #' which uses this internally.
 #'
 #' @param x Character vector of cell type labels.
@@ -103,13 +103,13 @@ annot_compare_with_reference <- function(obj,
 
   # -- Resolve the reference annotation vector --
   if (!is.null(author_celltype)) {
-    # External vector — align by cell name, handling double-prefix.
+    # External vector -- align by cell name, handling double-prefix.
     ref_vec <- .align_external_celltype(obj, author_celltype)
     source_label <- "external"
   } else {
     if (is.null(reference_col)) {
       # Exclude `cell_type` since that is the LLM output we are comparing
-      # against — it can never be the reference.
+      # against -- it can never be the reference.
       reference_col <- .detect_celltype_col(meta, exclude = "cell_type")
       if (is.na(reference_col)) {
         stop("Could not auto-detect a reference cell type column. ",

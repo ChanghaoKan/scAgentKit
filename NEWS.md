@@ -1,3 +1,64 @@
+# scAgentKit 0.3.0 (2026)
+
+This release factors the omic-agnostic infrastructure into a new package,
+**`agentomicsCore`**, on which scAgentKit (and future
+`atacAgentKit`, `chipAgentKit`, `spatialAgentKit`) all depend. The
+methods-paper framing changes accordingly: scAgentKit becomes the first
+single-cell *instantiation* of the agentomicsCore framework, not a
+standalone product.
+
+## What moved out of scAgentKit (now in agentomicsCore)
+
+* S4 container (`AgentSeurat` is now a subclass of `agentomicsCore::AgentOmics`)
+* Decision log + reproducible script export (`record_step`,
+  `find_in_decisions`)
+* Multi-provider chat factory (`chat_claude`, `chat_openai`,
+  `chat_deepseek`, `chat_grok`, `chat_qwen`, `chat_kimi`)
+* Per-call LLM token tracking
+* Checkpoint I/O (`save_checkpoint`, `load_checkpoint`)
+* Generic HTML report renderer (`render_report`, with an `extras` hook)
+
+## What stayed in scAgentKit
+
+Everything single-cell-specific: all `qc_*`, `sc_*`, `annot_*` functions,
+plus the wrapping `report_html()` that calls `render_report()` with
+scAgentKit's domain-specific section renderers as `extras`.
+
+## Backward compatibility
+
+* `AgentSeurat` continues to be a class (now an S4 subclass of
+  `AgentOmics`), so existing checkpoints load and existing code that
+  checks `methods::is(obj, "AgentSeurat")` continues to pass.
+* All previously-internal helpers (`.record_step`, `.find_in_decisions`,
+  `.attach_step_tokens`, `.with_token_scope`, `.token_record`,
+  `.token_records_summarise`, `.esc`, `.token_state`) remain available
+  in scAgentKit via an internal alias layer
+  (`R/imports.R`). The ~7000 lines of pre-existing scAgentKit source
+  files are unchanged.
+* All previously-exported symbols from scAgentKit
+  (`scAgentKit::chat_claude`, `::save_checkpoint`, `::get_decisions`,
+  etc.) continue to resolve, via re-exports.
+
+## Required action when upgrading
+
+Install both packages:
+
+```r
+remotes::install_github("ChanghaoKan/agentomicsCore")
+remotes::install_github("ChanghaoKan/scAgentKit")    # v0.3.0
+```
+
+Then, if you have saved AgentSeurat checkpoints from v0.1.x / v0.2.x,
+optionally migrate them in-place:
+
+```r
+obj <- load_checkpoint("old.qs")
+obj <- upgrade_checkpoint(obj)
+save_checkpoint(obj, "old.qs")
+```
+
+---
+
 # scAgentKit 0.2.0 (2026-05-22)
 
 This release targets the methods preprint. It is a coherent step from

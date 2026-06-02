@@ -6,7 +6,7 @@
 #'
 #' @param obj An AgentSeurat object after [annot_apply()].
 #' @param merge_plural Logical. Merge singular/plural names
-#'   (Macrophages → Macrophage, T cells → T cell, etc.). Default TRUE.
+#'   (Macrophages -> Macrophage, T cells -> T cell, etc.). Default TRUE.
 #' @param min_cells Integer. Clusters with fewer than this many cells
 #'   are considered low-quality. Default 50.
 #' @param action Character. What to do with low-quality clusters:
@@ -39,7 +39,7 @@ annot_clean_celltypes <- function(obj,
   meta <- obj@data@meta.data
   ct   <- as.character(meta$cell_type)
 
-  # ====================== 1. 合并单复数命名 ======================
+  # ====================== 1. Merge singular/plural naming ======================
   if (isTRUE(merge_plural)) {
     ct <- gsub("s$", "", ct)
     ct <- gsub(" cells$", " cell", ct)
@@ -51,7 +51,7 @@ annot_clean_celltypes <- function(obj,
     message("[annot_clean_celltypes] Merged singular/plural names.")
   }
 
-  # ====================== 2. 识别低质量 cluster ======================
+  # ====================== 2. Identify low-quality cluster ======================
   cell_counts <- table(ct)
   small_types <- names(cell_counts[cell_counts < min_cells])
 
@@ -61,7 +61,7 @@ annot_clean_celltypes <- function(obj,
     return(obj)
   }
 
-  # ====================== 3. Vision 判断（核心新增） ======================
+  # ====================== 3. Vision judgment (core new addition) ======================
   if (isTRUE(vision)) {
     if (is.null(chat_fn)) {
       stop("`chat_fn` is required when vision = TRUE.")
@@ -69,7 +69,7 @@ annot_clean_celltypes <- function(obj,
 
     message("[annot_clean_celltypes] Generating UMAP for vision judgment...")
 
-    # 高亮低质量 cluster 的 UMAP
+    # Highlight low-quality cluster UMAP
     obj@data@meta.data$quality_highlight <- ifelse(ct %in% small_types,
                                                    "Low quality candidate",
                                                    "Normal")
@@ -87,7 +87,7 @@ annot_clean_celltypes <- function(obj,
     vision_path <- "figures/low_quality_clusters_umap.png"
     ggplot2::ggsave(vision_path, p, width = 8, height = 6, dpi = 150)
 
-    # 构建 prompt
+    # Build prompt
     system_prompt <- paste(
       "You are an expert single-cell analyst. Look at the UMAP image.",
       "Red points are candidate low-quality clusters (very small cell numbers).",
@@ -104,7 +104,7 @@ annot_clean_celltypes <- function(obj,
       tissue %||% "unknown", length(small_types)
     )
 
-    # 调用 vision LLM
+    # Call vision LLM
     parsed <- tryCatch(
       chat_fn(system_prompt, user_prompt, image_path = vision_path),
       error = function(e) {
@@ -114,7 +114,7 @@ annot_clean_celltypes <- function(obj,
     )
 
     if (!is.null(parsed)) {
-      # 简单解析（可根据需要增强）
+      # Simple parse (can enhance as needed)
       if (grepl("remove", parsed, ignore.case = TRUE)) {
         action <- "remove"
       } else if (grepl("keep", parsed, ignore.case = TRUE)) {
@@ -126,7 +126,7 @@ annot_clean_celltypes <- function(obj,
     }
   }
 
-  # ====================== 4. 执行最终操作 ======================
+  # ====================== 4. Execute final operation ======================
   if (action == "flag") {
     ct[ct %in% small_types] <- paste0(ct[ct %in% small_types], " (Low quality)")
     message(sprintf("[annot_clean_celltypes] Flagged %d low-quality types.", length(small_types)))
@@ -139,7 +139,7 @@ annot_clean_celltypes <- function(obj,
 
   obj@data@meta.data$cell_type <- ct
 
-  # ====================== 5. 记录决策 ======================
+  # ====================== 5. Record decision ======================
   if (is.null(rationale)) {
     rationale <- sprintf(
       "Cleaned cell type names (merge_plural=%s). %s clusters with < %d cells (vision=%s).",

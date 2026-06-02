@@ -28,7 +28,7 @@ Maps fine-grained cell type labels (e.g. "CD8 T cell", "Plasma cell",
 }
 \details{
 This is helpful when the LLM annotation produced finer labels than
-the author's broad categories — see [annot_compare_with_reference()]
+the author's broad categories -- see [annot_compare_with_reference()]
 which uses this internally.
 }
 \examples{

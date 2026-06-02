@@ -70,8 +70,8 @@ The LLM receives:
   \item cluster count at every resolution
   \item stability (Adjusted Rand Index) between adjacent resolutions
   \item number of "small" clusters (< `small_cluster_pct` of cells)
-    at every resolution — a proxy for over-clustering
-  \item the clustree PNG (when `vision = TRUE`) — showing how clusters
+    at every resolution -- a proxy for over-clustering
+  \item the clustree PNG (when `vision = TRUE`) -- showing how clusters
     split and merge as resolution increases
   \item tissue context and (optionally) expected cell-type count
 }

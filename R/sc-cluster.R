@@ -55,8 +55,8 @@ seurat_obj <- FindNeighbors(seurat_obj, reduction = "%s", dims = 1:%d)',
 #'
 #' Runs [Seurat::FindClusters()] at a range of resolutions and saves a
 #' clustree plot to help pick a stable resolution. Does NOT commit to a
-#' single resolution — call [sc_cluster()] after inspecting clustree.
-#' This two-step pattern mirrors the human workflow (explore → commit).
+#' single resolution -- call [sc_cluster()] after inspecting clustree.
+#' This two-step pattern mirrors the human workflow (explore -> commit).
 #'
 #' @param obj An AgentSeurat object after [sc_find_neighbors()].
 #' @param resolutions Numeric vector of resolutions to test.
@@ -85,7 +85,7 @@ sc_cluster_sweep <- function(obj,
   # The clustree visualisation is helpful but optional. ggraph/clustree
   # versions older than the user's ggplot2 will fail with errors like
   # "Unknown guide: edge_colourbar". Don't let a plotting failure
-  # discard the (successful) clustering work — wrap in tryCatch.
+  # discard the (successful) clustering work -- wrap in tryCatch.
   dir.create(plot_dir, showWarnings = FALSE, recursive = TRUE)
   plot_path <- file.path(plot_dir, "clustree.png")
   plot_ok <- tryCatch({

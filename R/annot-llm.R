@@ -45,7 +45,7 @@
 #'   forced to match `expected_celltypes` *verbatim* (no sub-division, no
 #'   renaming). Useful when you want output that aligns one-to-one with
 #'   a published annotation. When FALSE (default), `expected_celltypes`
-#'   acts as a prior — the LLM is told to prefer these but may use other
+#'   acts as a prior -- the LLM is told to prefer these but may use other
 #'   names if marker evidence warrants. **Changed in v0.1.24**: prior to
 #'   v0.1.24, auto-detection of a celltype column silently engaged strict
 #'   mode. This silently locked the LLM to the author's labels and could
@@ -168,7 +168,7 @@ annot_llm_annotate <- function(obj,
           mode_msg <- if (isTRUE(strict_vocabulary)) {
             "(strict mode: LLM forced to match these exactly)"
           } else {
-            "(prior only; LLM may refine — pass strict_vocabulary=TRUE to force exact match)"
+            "(prior only; LLM may refine -- pass strict_vocabulary=TRUE to force exact match)"
           }
           message(sprintf(
             "[annot_llm_annotate] auto-detected expected_celltypes from '%s' column %s: %s",
@@ -408,7 +408,7 @@ annot_llm_annotate <- function(obj,
     sprintf(
       paste0(
         "VOCABULARY (strict): the dataset author already used these exact ",
-        "cell-type strings: %s. Use the SAME strings verbatim — do NOT ",
+        "cell-type strings: %s. Use the SAME strings verbatim -- do NOT ",
         "subdivide (e.g. don't split T/NK into T cell + NK cell), do NOT ",
         "rename (e.g. don't return 'Macrophage' if the author uses 'Myeloid'). ",
         "Pick the closest match from this list."
@@ -521,18 +521,18 @@ annot_llm_annotate <- function(obj,
 
   cycling_note <- if (isTRUE(is_cycling)) {
     paste0(
-      "\nIMPORTANT — this cluster is CYCLING-DOMINANT. Its top markers ",
+      "\nIMPORTANT -- this cluster is CYCLING-DOMINANT. Its top markers ",
       "(by differential expression) are mostly cell-cycle genes (MKI67, ",
       "TOP2A, UBE2C, KIAA0101, BIRC5, CDK1, etc.). Cell-cycle markers are ",
       "STATE, not LINEAGE. Decision protocol for cycling clusters:\n",
-      "  STEP 1 — Look at the LINEAGE RESCUE LIST above first. It contains ",
+      "  STEP 1 -- Look at the LINEAGE RESCUE LIST above first. It contains ",
       "  the cluster's most-expressed non-CC genes. Lineage-specific ",
       "  markers there (ALB/KRT18=hepatocyte, CD3D=T cell, CD68=myeloid, ",
       "  CD79A=B cell, etc.) tell you the lineage even though differential ",
       "  filtering missed them.\n",
-      "  STEP 2 — Cross-check with reference database candidates above.\n",
-      "  STEP 3 — Choose ONE of these structured names ",
-      "(MANDATORY format — do NOT use plain lineage names for cycling ",
+      "  STEP 2 -- Cross-check with reference database candidates above.\n",
+      "  STEP 3 -- Choose ONE of these structured names ",
+      "(MANDATORY format -- do NOT use plain lineage names for cycling ",
       "clusters, do NOT use 'Unknown'):\n",
       "      A. 'Cycling cells (lineage candidate: <X>)'  ",
       "if rescue list shows clear lineage markers for <X>. Use confidence='medium' or 'high' depending on signal strength.\n",
@@ -540,7 +540,7 @@ annot_llm_annotate <- function(obj,
       "ONLY if neither rescue list nor reference candidates give a usable lineage signal. Use confidence='low'.\n",
       "  In the reasoning field, name the specific rescue-list genes that ",
       "drove your lineage assignment (e.g. 'rescue list shows ALB/KRT18/",
-      "APOA1 → hepatocyte lineage despite cycling-dominant differential ",
+      "APOA1 -> hepatocyte lineage despite cycling-dominant differential ",
       "markers').\n"
     )
   } else ""
@@ -714,7 +714,7 @@ annot_llm_annotate <- function(obj,
   non_halluc <- if (is.na(halluc_rate)) 0.5 else 1 - halluc_rate
 
   # Signal 4: proportion plausibility from the LLM's own assessment.
-  # Used as a secondary signal — the LLM tends to flag obvious mismatches.
+  # Used as a secondary signal -- the LLM tends to flag obvious mismatches.
   prop_str <- tolower(as.character(parsed$proportion_assessment %||% ""))
   proportion <- if (prop_str == "reasonable") 1
                 else if (prop_str == "suspicious") 0.5
@@ -841,10 +841,10 @@ annot_llm_annotate <- function(obj,
 
 # Compute "lineage rescue" markers for a cycling-dominant cluster.
 # Why: in a cycling cluster, the top markers ranked by pct_diff are almost
-# entirely cell-cycle genes — because those genes really do separate the
+# entirely cell-cycle genes -- because those genes really do separate the
 # cluster from its neighbours. But the cluster's actual lineage markers
 # (ALB / KRT18 for hepatocytes, CD3D for T cells, ...) are also present
-# at high expression — they're just *also* highly expressed in adjacent
+# at high expression -- they're just *also* highly expressed in adjacent
 # same-lineage clusters, so cluster-vs-rest log2FC isn't significant.
 #
 # This helper returns the top genes (excluding cell-cycle genes) ranked

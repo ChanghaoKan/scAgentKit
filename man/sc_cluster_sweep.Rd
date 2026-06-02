@@ -28,6 +28,6 @@ Updated AgentSeurat with multiple `RNA_snn_res.*` metadata
 \description{
 Runs [Seurat::FindClusters()] at a range of resolutions and saves a
 clustree plot to help pick a stable resolution. Does NOT commit to a
-single resolution — call [sc_cluster()] after inspecting clustree.
-This two-step pattern mirrors the human workflow (explore → commit).
+single resolution -- call [sc_cluster()] after inspecting clustree.
+This two-step pattern mirrors the human workflow (explore -> commit).
 }

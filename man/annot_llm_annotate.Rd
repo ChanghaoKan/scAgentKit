@@ -44,7 +44,7 @@ in the Seurat metadata and use those values as a *prior* (see
 forced to match `expected_celltypes` *verbatim* (no sub-division, no
 renaming). Useful when you want output that aligns one-to-one with
 a published annotation. When FALSE (default), `expected_celltypes`
-acts as a prior — the LLM is told to prefer these but may use other
+acts as a prior -- the LLM is told to prefer these but may use other
 names if marker evidence warrants. **Changed in v0.1.24**: prior to
 v0.1.24, auto-detection of a celltype column silently engaged strict
 mode. This silently locked the LLM to the author's labels and could

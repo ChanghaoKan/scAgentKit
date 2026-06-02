@@ -27,7 +27,7 @@
 #'     level size > 50). Tiny levels suggest noise.
 #'   \item Penalises columns that look biological (`treatment`,
 #'     `condition`, `group`, `disease`, `genotype`, `phenotype`,
-#'     `tumor`, `normal`, `case`, `control`) — these should NOT be the
+#'     `tumor`, `normal`, `case`, `control`) -- these should NOT be the
 #'     batch variable.
 #' }
 #'

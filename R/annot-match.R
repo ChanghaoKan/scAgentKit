@@ -54,7 +54,7 @@ annot_load_reference <- function(path, tissue_filter = NULL, species = NULL) {
 #'
 #' For each cluster's top marker list, computes an overlap score against
 #' each cell type in the reference. The score is simple overlap (Jaccard-
-#' style): `|cluster_markers ∩ celltype_markers| / |celltype_markers|`.
+#' style): `|cluster_markers intersect celltype_markers| / |celltype_markers|`.
 #' This rewards cell types whose characteristic markers appear prominently
 #' in the cluster's top-N list.
 #'
@@ -119,7 +119,7 @@ annot_match_reference <- function(obj,
   script <- sprintf(
 '# ---- Reference-matching (top %d candidates / cluster) ----
 # Reference loaded from external file; see annot_load_reference().
-# Overlap score = |cluster_markers ∩ celltype_markers| / |celltype_markers|',
+# Overlap score = |cluster_markers intersect celltype_markers| / |celltype_markers|',
     top_n_candidates)
 
   if (is.null(rationale)) {

@@ -9,20 +9,14 @@ AgentSeurat(seurat, initial_script = NULL)
 \arguments{
 \item{seurat}{A Seurat object or a named list of Seurat objects.}
 
-\item{initial_script}{Optional character string recording how the input
-was loaded (e.g. the readRDS call); will be prepended to the
-reproducible script.}
+\item{initial_script}{Optional character string recording how the
+input was loaded; prepended to the reproducible script.}
 }
 \value{
-An AgentSeurat object at stage "initialized".
+An AgentSeurat object (which inherits from AgentOmics).
 }
 \description{
-Entry point of the pipeline. Wraps a user-supplied Seurat object (or a
-list of Seurat objects) into an AgentSeurat container.
-}
-\examples{
-\dontrun{
-  seu <- readRDS("my_data.rds")
-  obj <- AgentSeurat(seu, initial_script = 'seu <- readRDS("my_data.rds")')
-}
+Convenience wrapper around [agentomicsCore::AgentOmics()] that stamps
+the scAgentKit package version onto the object and returns an
+instance of the [AgentSeurat-class] subclass.
 }

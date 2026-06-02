@@ -3,59 +3,19 @@
 \docType{class}
 \name{AgentSeurat-class}
 \alias{AgentSeurat-class}
-\alias{show,AgentSeurat-method}
-\title{AgentSeurat: S4 container for agent-driven scRNA-seq analysis}
-\usage{
-\S4method{show}{AgentSeurat}(object)
-}
-\arguments{
-\item{object}{An AgentSeurat object.}
-}
+\title{AgentSeurat: scRNA-seq-specific subclass of AgentOmics}
 \description{
-An S4 class that wraps a Seurat object (or list of Seurat objects during
-per-sample processing) together with decision logs, reproducible script
-snippets, figure metadata, and stage tracking. Every tool function in
-scAgentKit takes and returns an AgentSeurat, accumulating state as the
-pipeline progresses.
+A thin S4 subclass of [agentomicsCore::AgentOmics] that signals
+"this container holds Seurat-shaped data". It adds no new slots and
+overrides no behaviour -- the subclass exists for backward
+compatibility with checkpoints saved by scAgentKit v0.1.x/v0.2.x
+(whose serialised objects have class `"AgentSeurat"`) and to give
+downstream code a domain-specific type tag.
 }
-\section{Slots}{
-
-\describe{
-\item{\code{data}}{The core data payload. Either a single Seurat object or a
-named list of Seurat objects (during per-sample processing phases).}
-
-\item{\code{data_type}}{Character, either "seurat" or "seurat_list", indicating
-the structure of @data.}
-
-\item{\code{stage}}{Character tag for the current pipeline stage
-(e.g. "initialized", "qc_metrics_added", "doublet_removed",
-"normalized", "pca_done", "harmony_integrated", "clustered",
-"annotated").}
-
-\item{\code{decisions}}{List of decision records. Each element is a list with
-fields: step, function_name, timestamp, params, rationale,
-success.}
-
-\item{\code{scripts}}{Character vector of R script snippets; concatenating these
-reproduces the analysis from scratch.}
-
-\item{\code{figures}}{Data frame with columns step, path, description,
-recording figures generated during the pipeline.}
-
-\item{\code{params}}{Flat list of the most recently applied parameters (useful
-for quick inspection; full history lives in @decisions).}
-
-\item{\code{token_usage}}{List of per-step LLM token consumption summaries
-(added in v0.2.0). One entry per pipeline step that involved an LLM
-call. Each entry is a list with `input_tokens`, `output_tokens`,
-`cached_tokens`, `n_calls`, and a `by_model` data frame.}
-
-\item{\code{version}}{Character, the scAgentKit version that created this
-object. Used by [upgrade_checkpoint()] to handle backward
-compatibility when loading saved objects.}
-
-\item{\code{created_at}}{POSIXct timestamp of object creation.}
-
-\item{\code{updated_at}}{POSIXct timestamp of the last modification.}
-}}
-
+\details{
+New objects constructed via [AgentSeurat()] carry both classes
+(`AgentSeurat` AND `AgentOmics`), so `methods::is(obj, "AgentOmics")`
+continues to pass and the entire agentomicsCore extension API
+(`record_step()`, `find_in_decisions()`, `render_report()`, ...)
+works unchanged.
+}

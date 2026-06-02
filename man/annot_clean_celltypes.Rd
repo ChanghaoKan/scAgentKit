@@ -19,7 +19,7 @@ annot_clean_celltypes(
 \item{obj}{An AgentSeurat object after [annot_apply()].}
 
 \item{merge_plural}{Logical. Merge singular/plural names
-(Macrophages → Macrophage, T cells → T cell, etc.). Default TRUE.}
+(Macrophages -> Macrophage, T cells -> T cell, etc.). Default TRUE.}
 
 \item{min_cells}{Integer. Clusters with fewer than this many cells
 are considered low-quality. Default 50.}

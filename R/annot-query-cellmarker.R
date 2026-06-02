@@ -11,13 +11,13 @@
 #' tissue / species filters in R. Subsequent calls are fast and offline.
 #'
 #' Source: Hu et al., CellMarker 2.0, Nucleic Acids Research 2023.
-#' 使用稳定镜像地址（原 yikedaxue.slwshop.cn 经常返回 502 Bad Gateway）：
+#' Use stable mirror address (original yikedaxue.slwshop.cn often returned 502 Bad Gateway):
 #' \url{http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Mouse.xlsx}
 #' \url{http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Human.xlsx}
 #'
 #' @section Format of the returned reference:
 #' A data frame with columns `cell_type`, `marker`, `tissue`, `species`,
-#' `source` — the same shape produced by [annot_load_reference()], so it
+#' `source` -- the same shape produced by [annot_load_reference()], so it
 #' plugs directly into [annot_match_reference()].
 #'
 #' @param species Character, one of `"human"` or `"mouse"`.
@@ -57,7 +57,7 @@ annot_query_cellmarker <- function(species,
 
   if (is.null(url)) {
     # CellMarker 2.0 "all" tables.
-    # 使用稳定镜像地址（原 yikedaxue.slwshop.cn 经常 502）
+    # Use stable mirror address (original yikedaxue.slwshop.cn often 502)
     url <- switch(
       species,
       human = "http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Human.xlsx",

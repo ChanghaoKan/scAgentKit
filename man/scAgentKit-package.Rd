@@ -4,9 +4,9 @@
 \name{scAgentKit-package}
 \alias{scAgentKit}
 \alias{scAgentKit-package}
-\title{scAgentKit: Agent-Friendly Toolkit for Single-Cell RNA-seq Analysis}
+\title{scAgentKit: LLM-Orchestrated, Auditable scRNA-seq Pipeline}
 \description{
-Atomic, composable functions for single-cell RNA-seq pipelines (QC, normalization, integration, clustering, annotation), designed as the tool layer of an LLM agent. Every function takes and returns an AgentSeurat S4 object that accumulates decision logs and reproducible R script snippets, enabling both agent orchestration and publication-grade reproducibility.
+End-to-end single-cell RNA-seq pipeline (QC, integration, dimensionality reduction, clustering, annotation, sub-annotation) with vision-capable LLM-driven decisions at every analyst-judgement step. Built on agentomicsCore, scAgentKit logs every decision with rationale and exports a fully reproducible R script. Distinctive features include cycling-cluster lineage rescue, structured contamination criteria for cluster annotation, hybrid (LLM + objective) confidence scoring, marker-citation hallucination validation, and per-step LLM token / cost tracking.
 }
 \seealso{
 Useful links:
@@ -18,6 +18,11 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Changhao Kan \email{kch_ynu@163.com}
+
+Authors:
+\itemize{
+  \item Changhao Kan \email{kch_ynu@163.com}
+}
 
 }
 \keyword{internal}

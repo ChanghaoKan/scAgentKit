@@ -209,7 +209,7 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
     id <- names(cl$name)[hit[1]]
     return(list(cl_id = id, cl_name = cl$name[[id]]))
   }
-  # 2. Synonym match — cl$synonym is a list of character vectors
+  # 2. Synonym match -- cl$synonym is a list of character vectors
   syn <- cl$synonym
   if (!is.null(syn)) {
     for (i in seq_along(syn)) {
