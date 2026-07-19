@@ -1,13 +1,13 @@
 cff-version: 1.2.0
 message: "If you use scAgentKit in your research, please cite this software."
-title: "scAgentKit: An LLM-orchestratable single-cell RNA-seq toolkit"
+title: "scAgentKit: A human-in-the-loop single-cell RNA-seq toolkit"
 authors:
   - family-names: "Kan"
     given-names: "Changhao"
     email: "kch_ynu@163.com"
     affiliation: "Shenzhen Bay Laboratory"
-version: 0.1.24
-date-released: 2026-05-21
+version: 0.4.0
+date-released: 2026-07-20
 url: "https://github.com/ChanghaoKan/scAgentKit"
 repository-code: "https://github.com/ChanghaoKan/scAgentKit"
 license: MIT
@@ -17,4 +17,4 @@ keywords:
   - RNA-seq
   - LLM
   - cell-type-annotation
-  - reproducibility
+  - provenance

@@ -1,4 +1,27 @@
+# scAgentKit 0.4.0 (2026-07-20)
+
+* Make `annot_apply()` non-destructive by default: clusters flagged by an
+  LLM as `reject` are retained unless the analyst explicitly sets
+  `drop_rejected = TRUE` after review.
+* Restore `R CMD check` CI, correct clean-install instructions, and pin the
+  compatible `agentomicsCore` v0.1.1 release in package and Docker metadata.
+* Repair the PBMC3K vignette and examples to match current public APIs.
+* Pass the selected PCA dimensions and Harmony iteration limit through the
+  documented `dims.use` and `max.iter.harmony` arguments.
+* Clarify that marker-citation checks aid review but do not guarantee cell-type
+  annotation accuracy.
+* Reframe generated scripts and the incomplete benchmark directory as
+  reviewable prototype artifacts rather than validated end-to-end replay or
+  performance evidence.
+* Remove local session history and stale release/citation metadata.
+
+---
+
 # scAgentKit 0.3.0 (2026)
+
+scAgentKit remains an experimental, human-in-the-loop research-software
+prototype. Decision records and generated script snippets support review;
+they do not by themselves establish scientific validity or exact replay.
 
 This release factors the omic-agnostic infrastructure into a new package,
 **`agentomicsCore`**, on which scAgentKit (and future
@@ -10,11 +33,11 @@ standalone product.
 ## What moved out of scAgentKit (now in agentomicsCore)
 
 * S4 container (`AgentSeurat` is now a subclass of `agentomicsCore::AgentOmics`)
-* Decision log + reproducible script export (`record_step`,
+* Decision log + generated script export (`record_step`,
   `find_in_decisions`)
 * Multi-provider chat factory (`chat_claude`, `chat_openai`,
   `chat_deepseek`, `chat_grok`, `chat_qwen`, `chat_kimi`)
-* Per-call LLM token tracking
+* Best-effort LLM token tracking when providers return usage metadata
 * Checkpoint I/O (`save_checkpoint`, `load_checkpoint`)
 * Generic HTML report renderer (`render_report`, with an `extras` hook)
 
@@ -24,7 +47,7 @@ Everything single-cell-specific: all `qc_*`, `sc_*`, `annot_*` functions,
 plus the wrapping `report_html()` that calls `render_report()` with
 scAgentKit's domain-specific section renderers as `extras`.
 
-## Backward compatibility
+## Compatibility
 
 * `AgentSeurat` continues to be a class (now an S4 subclass of
   `AgentOmics`), so existing checkpoints load and existing code that
@@ -33,8 +56,8 @@ scAgentKit's domain-specific section renderers as `extras`.
   `.attach_step_tokens`, `.with_token_scope`, `.token_record`,
   `.token_records_summarise`, `.esc`, `.token_state`) remain available
   in scAgentKit via an internal alias layer
-  (`R/imports.R`). The ~7000 lines of pre-existing scAgentKit source
-  files are unchanged.
+  (`R/imports.R`). Older checkpoints should still be backed up and tested
+  before replacing the originals.
 * All previously-exported symbols from scAgentKit
   (`scAgentKit::chat_claude`, `::save_checkpoint`, `::get_decisions`,
   etc.) continue to resolve, via re-exports.
@@ -61,9 +84,9 @@ save_checkpoint(obj, "old.qs")
 
 # scAgentKit 0.2.0 (2026-05-22)
 
-This release targets the methods preprint. It is a coherent step from
-"works in our lab" to "submittable": every LLM call is now metered,
-parallelisable, and version-stamped onto the object that consumed it.
+This release added experimental token-accounting, parallel annotation,
+checkpoint-version, and evaluation scaffolding. These features still require
+provider- and dataset-specific validation.
 
 ## Breaking
 
@@ -74,9 +97,9 @@ parallelisable, and version-stamped onto the object that consumed it.
 
 ## New features
 
-* **Token usage tracking.** Every chat_fn wrapper now records token
-  consumption to a package-private accumulator after each successful
-  API call. Inspect via `token_usage_summary()` (global) or
+* **Token usage tracking.** Built-in chat factories record provider-returned
+  token metadata after successful API calls. Inspect via
+  `token_usage_summary()` (global) or
   `get_token_usage(obj)` (per pipeline step). Anthropic and OpenAI-
   compatible usage schemas are both normalised to
   `{input_tokens, output_tokens, cached_tokens}`. Provider tag is
@@ -86,7 +109,7 @@ parallelisable, and version-stamped onto the object that consumed it.
   per-cluster LLM calls under `future::plan()`. Token records from
   worker processes are merged back into the parent's accumulator.
   Requires `future.apply` (Suggests). With `temperature = 0` and
-  `n_samples = 1` parallel runs remain reproducible.
+  `n_samples = 1` does not eliminate provider-side non-determinism.
 * **Cell Ontology mapping.** New `annot_map_to_cl()` resolves
   annotations to CL identifiers via exact name + synonym match (no
   fuzzy / embedding similarity by design — see the docstring for the
@@ -99,15 +122,14 @@ parallelisable, and version-stamped onto the object that consumed it.
 
 ## Infrastructure
 
-* **GitHub Actions CI** (`.github/workflows/R-CMD-check.yaml`). Matrix:
-  macOS / Windows / Ubuntu × R devel / release / oldrel.
-* **Docker image.** `Dockerfile` pinned to `rocker/r-ver:4.4.2` with
-  all CRAN+Bioc dependencies and SeuratData pre-installed.
-* **Benchmark scaffolding.** New `benchmark/` directory with the spec
-  for the 6 paper-grade benchmarks (PC selection, resolution, batch
-  var, reproducibility, multi-provider, anti-hallucination ablation).
-  `bench_01_pc_selection.R` has a runnable harness; the other five
-  are documented stubs.
+* **GitHub Actions CI** (`.github/workflows/R-CMD-check.yaml`) runs a single
+  Ubuntu `R CMD check` job.
+* **Docker development environment.** `Dockerfile` pins the R base image and
+  core release reference; CRAN/Bioconductor dependencies resolve at build
+  time unless an external lock or image digest is used.
+* **Evaluation scaffolding.** `benchmark/` documents six planned studies.
+  `bench_01_pc_selection.R` is a partial prototype; the other scripts are
+  explicit stubs and no results are included.
 
 ## Smaller things
 

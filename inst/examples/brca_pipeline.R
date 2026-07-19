@@ -15,7 +15,6 @@
 # ---- 0. Setup ---------------------------------------------------------------
 library(Matrix)
 library(Seurat)
-library(qs)
 library(future)
 library(dplyr)
 library(ggplot2)
@@ -42,7 +41,7 @@ colnames(count_matrix) <- rownames(cell_info)
 seurat_obj <- CreateSeuratObject(counts = count_matrix, meta.data = cell_info)
 
 # Wrap in AgentSeurat. The initial_script will be prepended to the
-# auto-generated reproducible_script.R later.
+# generated script trace later.
 obj <- AgentSeurat(
   seurat_obj,
   initial_script = '
@@ -62,18 +61,13 @@ colnames(obj@data@meta.data)
 # e.g. "Batch.Set.ID", "Patient.ID", "tumor_subtype", "Sex", ...
 
 # ---- 2. Configure an LLM chat function -------------------------------------
-# Pick ONE provider. Anthropic is recommended for vision (clustree).
-source(system.file("examples", "llm_wrappers.R", package = "scAgentKit"))
-
-# Default: Anthropic (needs ANTHROPIC_API_KEY in env)
-chat_fn <- make_chat_fn_anthropic(model = "claude-sonnet-4-5")
+# Pick one provider after checking model availability and data policy.
+# Anthropic example (needs ANTHROPIC_API_KEY in the environment):
+chat_fn <- chat_claude()
 
 # Alternatives — uncomment whichever you prefer:
-# chat_fn <- make_chat_fn_openai(model   = "gpt-4o-mini")             # OPENAI_API_KEY
-# chat_fn <- make_chat_fn_deepseek()                                   # DEEPSEEK_API_KEY (text-only, no vision)
-# chat_fn <- make_chat_fn_ollama(model   = "qwen2-vl:7b",              # local, supports vision
-#                                supports_vision = TRUE)
-# chat_fn <- make_chat_fn_mock()                                       # dry-run, no network
+# chat_fn <- chat_openai()    # OPENAI_API_KEY
+# chat_fn <- chat_deepseek()  # DEEPSEEK_API_KEY; text-only preset
 
 # ---- 3. QC -----------------------------------------------------------------
 obj <- qc_add_metrics(obj, species = "human")    # BRCA -> human; uses ^MT- pattern
@@ -100,11 +94,11 @@ obj <- save_checkpoint(obj, "checkpoints/01_qc.qs")
 
 # ---- 4. Normalization, HVG, scaling, PCA -----------------------------------
 obj <- sc_normalize(obj)
-obj <- sc_find_hvg(obj, n_features = 2000)
+obj <- sc_find_hvg(obj, nfeatures = 2000)
 
 # Optional: cell-cycle scoring. Inspect Phase distribution before deciding
 # to regress. With BRCA you almost always want the proliferating signal
-# (tumor cells cycle), so prefer mode = "difference" if you regress at all.
+# (tumor cells cycle), so consider mode = "difference" if you regress at all.
 obj <- sc_cellcycle_score(obj, species = "human")
 table(obj@data$Phase)
 
@@ -153,7 +147,7 @@ obj <- sc_resolution_recommend(
 )
 rec_res <- obj@params$resolution_recommendation
 rec_res$chosen
-rec_res$clustree_notes
+rec_res$visual_notes
 rec_res$reasoning
 
 obj <- sc_cluster(obj, resolution = rec_res$chosen)
@@ -191,12 +185,12 @@ ann <- obj@params$llm_annotations
 print(ann[, c("cluster", "primary_annotation", "confidence",
               "recommended_action", "contradicting_markers")])
 
-obj <- annot_apply(obj, source = "llm", drop_rejected = TRUE)
+obj <- annot_apply(obj, source = "llm", drop_rejected = FALSE)
 obj <- sc_plot_umap(obj, group_bys = "cell_type", tag = "annotated")
 obj <- save_checkpoint(obj, "checkpoints/03_annotated.qs")
 
 # ---- 9. Export everything --------------------------------------------------
-export_script(obj, "reproducible_script.R",
+export_script(obj, "generated_script_trace.R",
               header_comment = "BRCA scAgentKit pipeline")
 export_decisions(obj, "decisions.json")
 report_html(obj, path = "BRCA_report.html",

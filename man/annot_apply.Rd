@@ -8,7 +8,7 @@ annot_apply(
   obj,
   source = c("llm", "manual"),
   manual_overrides = NULL,
-  drop_rejected = TRUE,
+  drop_rejected = FALSE,
   column_name = "cell_type",
   rationale = NULL
 )
@@ -23,9 +23,11 @@ to contain the full mapping).}
 \item{manual_overrides}{Named character vector, `c("0" = "T cell", ...)`,
 that overrides LLM output for listed clusters.}
 
-\item{drop_rejected}{Logical. If TRUE (default), clusters whose LLM
-`recommended_action == "reject"` are removed from the Seurat object.
-Ignored when `source = "manual"`.}
+\item{drop_rejected}{Logical. Default `FALSE`, so clusters whose LLM
+`recommended_action == "reject"` remain in the Seurat object for review.
+Set to `TRUE` only after independently validating the flagged clusters;
+doing so removes their cells from the returned object. Ignored when
+`source = "manual"`.}
 
 \item{column_name}{Metadata column to write. Default `"cell_type"`.}
 
@@ -39,9 +41,7 @@ Updated AgentSeurat. The Seurat metadata gains `column_name`;
 Takes either the LLM annotation table produced by [annot_llm_annotate()]
 or a manual `cluster_id -> cell_type` mapping, and writes a `cell_type`
 metadata column to the underlying Seurat object. Optionally removes
-clusters whose `recommended_action` from the LLM is `"reject"`, matching
-the common workflow of dropping obvious doublet / contamination / low-
-quality clusters (cf. the original Ca_Ctrl cluster15/17 handling).
+clusters whose LLM-produced `recommended_action` is `"reject"`.
 }
 \details{
 Manual overrides always win: a cluster listed in `manual_overrides` will

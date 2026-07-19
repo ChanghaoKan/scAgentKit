@@ -11,17 +11,18 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE   # 演示用,CI 不实际跑;读者本地有 SeuratData 时可手动 eval
+  eval = FALSE   # Illustrative: enable locally only after reviewing inputs and dependencies.
 )
 ```
 
 ## What this vignette covers
 
-This walkthrough runs scAgentKit end-to-end on the standard PBMC 3k
-dataset (~2,700 cells, 13 known immune populations). The point is to
+This walkthrough shows the scAgentKit workflow on the standard PBMC 3k
+dataset. The point is to
 show the *shape* of the pipeline — what every step looks like, what
-gets recorded, and how to inspect the decision log and reproducible
-script when the analysis finishes.
+gets recorded, and how to inspect the decision log and generated script
+trace when the analysis finishes. The chunks are illustrative and require
+analyst review before use on a real dataset.
 
 Because the LLM calls cost real money and require an API key, the
 chunks below are not evaluated when the vignette is built. Copy them
@@ -32,7 +33,8 @@ provider's key) set in `~/.Renviron`.
 
 ```{r install}
 # install.packages("remotes")
-# remotes::install_github("ChanghaoKan/scAgentKit")
+# remotes::install_github("ChanghaoKan/agentomicsCore@v0.1.1")
+# remotes::install_github("ChanghaoKan/scAgentKit@v0.4.0")
 # remotes::install_github("satijalab/seurat-data")
 
 library(scAgentKit)
@@ -81,7 +83,7 @@ obj <- qc_plot(obj, tag = "after", group_by = "sample")
 
 ```{r pp}
 obj <- sc_normalize(obj)
-obj <- sc_find_variable_features(obj, nfeatures = 2000)
+obj <- sc_find_hvg(obj, nfeatures = 2000)
 obj <- sc_scale(obj, vars_to_regress = c("nCount_RNA", "percent.mt"))
 obj <- sc_pca(obj, npcs = 50)
 ```
@@ -100,13 +102,13 @@ obj <- sc_select_pcs_visual(
 ```
 
 The LLM is shown elbow / cumulative variance plots at multiple
-candidate `ndim` values, and picks the one with the best
-biology-respects-statistics tradeoff. The reasoning is logged.
+candidate `ndim` values and returns a recommendation with a recorded
+rationale. The analyst should review the evidence before proceeding.
 
 ## 6. UMAP, neighbors, cluster sweep, resolution recommend
 
 ```{r cluster}
-obj <- sc_neighbors(obj)
+obj <- sc_find_neighbors(obj)
 obj <- sc_umap(obj)
 obj <- sc_cluster_sweep(obj, resolutions = c(0.3, 0.5, 0.8, 1.0, 1.2))
 
@@ -118,19 +120,22 @@ obj <- sc_resolution_recommend(
 )
 
 # Commit the recommended resolution as `seurat_clusters`
-obj <- sc_cluster_commit(obj)
+obj <- sc_cluster(
+  obj,
+  resolution = obj@params$resolution_recommendation$chosen
+)
 ```
 
 ## 7. Markers and reference matching
 
 ```{r markers}
-obj <- sc_markers(obj)
+obj <- sc_find_markers(obj)
 obj <- sc_markers_summary(obj, top_n = 30)
-obj <- annot_query_cellmarker(obj, species = "human", tissue = "Peripheral blood")
-obj <- annot_match_reference(obj)
+ref <- annot_query_cellmarker(species = "human", tissue = "Peripheral blood")
+obj <- annot_match_reference(obj, reference = ref)
 ```
 
-## 8. LLM annotation with anti-hallucination + ensemble + hybrid confidence
+## 8. LLM annotation with marker-citation checks, ensemble, and heuristic confidence
 
 ```{r annot}
 # Ensemble mode: 3 independent LLM calls per cluster, majority vote.
@@ -150,14 +155,15 @@ obj <- annot_llm_annotate(
   parallel         = FALSE       # set TRUE after future::plan()
 )
 
+# Keep flagged clusters while reviewing the model output.
+obj <- annot_apply(obj, drop_rejected = FALSE)
 obj <- annot_clean_celltypes(obj)
-obj <- annot_apply(obj)
 ```
 
 Each row of `obj@params$llm_annotations` now has:
 
 - `primary_annotation`, `confidence` (LLM self-report)
-- `hybrid_confidence`, `hybrid_confidence_label` (objective)
+- `hybrid_confidence`, `hybrid_confidence_label` (uncalibrated heuristic)
 - `confidence_disagreement` (TRUE when LLM and hybrid land in opposite bands)
 - `supporting_markers`, `contradicting_markers`
 - `hallucinated_markers` (cited genes not in the marker evidence)
@@ -194,8 +200,8 @@ cl_lookup("hepatocyte", n = 5)
 # Decision log
 get_decisions(obj)
 
-# Full reproducible R script — re-running this from raw counts produces
-# the same analysis (LLM-call non-determinism aside)
+# Generated R script trace — inspect and complete any skeleton sections
+# before attempting a replay
 cat(get_script(obj))
 
 # Token usage breakdown per pipeline step
@@ -210,18 +216,17 @@ token_usage_summary()
 ```{r export}
 # HTML report with decisions, figures, annotations (flagged rows
 # highlighted), token usage
-report_html(obj, file = "pbmc3k_report.html")
+report_html(obj, path = "pbmc3k_report.html")
 
 # Persistable checkpoint
-save_checkpoint(obj, "pbmc3k_final.qs")
+save_checkpoint(obj, "pbmc3k_final.qs2")
 ```
 
 ## Where to go next
 
 - For tissue-specific work, look at `inst/examples/full_pipeline_example.R`
   (mouse colon CRC + immunotherapy) and the HCC examples.
-- The `benchmark/` directory contains scripts comparing scAgentKit's
-  upstream decisions (PC selection, resolution recommendation, batch
-  variable identification) against analyst-curated ground truth.
+- The `benchmark/` directory contains experimental scaffolding for planned
+  evaluations. It does not currently establish comparative performance.
 - See `?annot_llm_annotate` for the full set of ensembling and
   validation options.

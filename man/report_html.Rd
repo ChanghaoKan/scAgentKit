@@ -20,8 +20,8 @@ report_html(
 \item{title}{Character, report title shown in the HTML. If NULL,
 a default based on the object's stage is used.}
 
-\item{include_script}{Logical, whether to embed the full reproducible
-script inline. Default TRUE.}
+\item{include_script}{Logical, whether to embed the accumulated script
+snippets inline. Default TRUE.}
 
 \item{include_params}{Logical, whether to include full parameter
 details (can be verbose). Default TRUE.}

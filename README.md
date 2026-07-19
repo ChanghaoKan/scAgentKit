@@ -3,44 +3,45 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![R: >= 4.1](https://img.shields.io/badge/R-%3E%3D%204.1-blue)](https://www.r-project.org/)
 [![Seurat: >= 5.0](https://img.shields.io/badge/Seurat-%3E%3D%205.0-orange)](https://satijalab.org/seurat/)
+[![R-CMD-check](https://github.com/ChanghaoKan/scAgentKit/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ChanghaoKan/scAgentKit/actions/workflows/R-CMD-check.yaml)
 
-> **An auditable, LLM-orchestrated end-to-end pipeline for single-cell RNA-seq analysis.**
+> **An experimental, human-in-the-loop toolkit for provenance-tracked single-cell RNA-seq analysis.**
 
 ---
 
 ## What scAgentKit is, and what it is not
 
-scAgentKit covers the full single-cell RNA-seq pipeline — QC, integration, dimensionality reduction, clustering, annotation, sub-annotation — and lets an LLM make the *decisions an analyst would normally make by eye* at each step, looking at the same evidence: statistics, plots, marker genes. Every decision is logged with its rationale and exported as a runnable R script. The whole pipeline is auditable and reproducible from raw counts.
+scAgentKit wraps a Seurat workflow spanning QC, integration, dimensionality reduction, clustering, annotation, and sub-annotation. Optional language-model calls can review the same summaries, plots, and marker lists presented to an analyst. Pipeline functions retain parameters, rationales, figures, and generated R snippets so decisions can be inspected later.
 
-**This is deliberately not another LLM cell-type annotation tool.** Annotation is one step in a longer pipeline. Several recent tools focus on the annotation step alone — [mLLMCelltype](https://github.com/cafferychen777/mLLMCelltype) (Yang et al., bioRxiv 2025) does multi-LLM consensus with Consensus Proportion and Shannon entropy; [CyteType](https://github.com/NygenAnalytics/CyteType) (Ahuja et al., bioRxiv 2025) maps to Cell Ontology with a multi-agent architecture; [DeepCellSeek](https://academic.oup.com/bib/article/26/6/bbaf677) benchmarks 7 LLMs against SingleR/ScType. scAgentKit takes a different angle: it audits and reproduces the *upstream* decisions (QC thresholds, PC dimensions, clustering resolution, batch variable choice) that those tools assume have already been made well. For the annotation step itself, scAgentKit holds parity rather than competes; the unique contribution is end-to-end transparency.
+This is a research-software prototype, not an autonomous analyst. The biological interpretation, model output, and generated code all require human review. No comparative accuracy or benchmark claim is made until the planned evaluations have been completed and released.
 
-### What is genuinely distinctive
+### Current design elements
 
-1. **End-to-end coverage.** QC → integration → clustering → annotation → sub-annotation, with LLM-in-the-loop at every step that's normally an analyst judgement call.
-2. **`AgentSeurat` S4 container with a first-class decision log and exported R script.** Every tool function takes/returns the container; `get_script(obj)` emits the entire reproducible pipeline.
+1. **Broad workflow coverage.** QC → integration → clustering → annotation → sub-annotation, with optional model assistance at selected judgement points.
+2. **`AgentSeurat` S4 container with a decision log and generated script trace.** Pipeline-mutating functions take and return the container so their recorded state travels with the analysis.
 3. **Vision-capable upstream decisions.** `sc_select_pcs_visual` shows the LLM elbow/cumulative-variance plots; `sc_resolution_recommend` shows multi-panel UMAP + clustree.
 4. **Cycling-cluster lineage rescue.** Proliferating clusters where MKI67/TOP2A dominate the differential markers get a separate "high-expression non-cell-cycle, non-housekeeping" rescue list, with structured naming (`Cycling cells (lineage candidate: X)`).
-5. **Structured contamination rules.** "What counts as TRUE contamination" is encoded as criteria the LLM must apply, not left to discretion.
+5. **Structured contamination prompts.** Candidate contamination calls are presented with explicit criteria that the model and analyst can review.
 
-### v0.2.0 hardening for the preprint
+### Current prototype (v0.4.0)
 
-- **Per-step token tracking.** Every LLM call is metered; `get_token_usage(obj)` / `token_usage_summary()` for cost reporting.
+- **Best-effort token tracking.** Built-in providers record usage when the API returns token metadata; inspect it with `get_token_usage(obj)` / `token_usage_summary()`.
 - **Parallel annotation.** `annot_llm_annotate(parallel = TRUE)` under `future::plan()`.
 - **Ensemble + hybrid confidence + marker-citation validation** (see `?annot_llm_annotate`).
 - **Cell Ontology mapping** via exact-match-only (`annot_map_to_cl`).
 - **Checkpoint versioning.** `@version` slot + `upgrade_checkpoint()` for backward compatibility.
-- **Reproducibility.** Dockerfile pinned to `rocker/r-ver:4.4.2`; GitHub Actions matrix CI.
-- **Benchmark scaffolding** in `benchmark/` for the four upstream-decision experiments (PC, resolution, batch var, end-to-end reproducibility) and two annotation-side ablations.
+- **Development checks.** A Docker development environment pins the R base image and core release reference; GitHub Actions runs `R CMD check` on Ubuntu.
+- **Experimental evaluation scaffolding.** `benchmark/` contains a partial harness and planned studies, not published results.
 
 ---
 
 ## Honest limitations (read before relying on this)
 
-- **Annotation core is not SOTA.** mLLMCelltype's 50-dataset benchmark reaches 77.3% mean accuracy with cross-model deliberation; scAgentKit's single-LLM (or `n_samples = 3` ensemble) annotation is in parity-with-baselines territory, not state of the art. Use it for the end-to-end provenance, not because it annotates better than dedicated tools.
+- **Annotation performance is not established.** The current repository does not contain a completed, independently reviewed benchmark against dedicated annotation tools.
 - **Adaptive curves were calibrated on HCC/liver.** The default resolution formula (`0.05 + 0.10 * log10(n)` clamped) and the subcluster `n_hvg / n_pcs` curves were tuned on liver data, 10-50k cells. PBMC, developing brain, organoid topologies may need different curves. Pass explicit numeric values for those.
-- **LLM calls are non-deterministic.** With `temperature = 0` and `n_samples = 1`, the pipeline is reproducible up to provider-side noise. With ensemble (`n_samples > 1`) and `temperature > 0`, runs vary by a few percent on edge clusters; the `confidence_disagreement` / `ensemble_agreement` fields make this visible rather than hidden.
+- **LLM calls are non-deterministic.** Even with `temperature = 0`, providers can change models or serving behavior. Ensembles add further variability; disagreement fields expose some, but not all, uncertainty.
 - **Failure modes we know about.** Sparse marker DB tissues (gonad, placenta, embryonic intermediates), extremely rare populations (< 0.1%), cross-species mixtures, highly proliferative tumors where even cycling rescue cannot recover lineage, and patient-specific malignant populations that are themselves a lineage in single-patient atlases.
-- **No published benchmark yet.** The `benchmark/` directory has the spec; results will be published with the methods preprint.
+- **Generated scripts require review.** Some downstream steps currently emit reconstruction snippets or script skeletons rather than a guaranteed standalone replay from raw counts.
 
 ---
 
@@ -48,7 +49,7 @@ scAgentKit covers the full single-cell RNA-seq pipeline — QC, integration, dim
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Standard Workflow](#standard-workflow-recommended)
+- [Standard Workflow Template](#standard-workflow-template)
 - [Complete Feature Showcase](#complete-feature-showcase)
 - [Scenario-Specific Guidelines](#scenario-specific-guidelines)
 - [Core Concepts](#core-concepts)
@@ -75,11 +76,15 @@ if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
 
-# Install scAgentKit
-remotes::install_github("ChanghaoKan/scAgentKit", upgrade = "never")
+# Install the shared core and scAgentKit
+remotes::install_github("ChanghaoKan/agentomicsCore@v0.1.1", upgrade = "never")
+remotes::install_github("ChanghaoKan/scAgentKit@v0.4.0", upgrade = "never")
 
 # Install optional dependencies for full functionality
 install.packages(c("harmony", "clustree", "future.apply", "ontologyIndex"))
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
 BiocManager::install(c("scDblFinder", "SingleCellExperiment"))
 ```
 
@@ -88,38 +93,39 @@ BiocManager::install(c("scDblFinder", "SingleCellExperiment"))
 Add API keys to your `~/.Renviron` file:
 
 ```bash
-# Recommended combination
-DEEPSEEK_API_KEY=sk-...           # Required: for text-based decisions
-XAI_API_KEY=xai-...               # Required: for vision-based decisions (Grok)
-
-# Alternative providers (optional)
-ANTHROPIC_API_KEY=sk-ant-...      # Claude Sonnet 4.6 (text + vision)
-OPENAI_API_KEY=sk-...             # GPT-4 (text + vision)
+# Examples; set only the keys for providers you intend to use
+DEEPSEEK_API_KEY=sk-...
+XAI_API_KEY=xai-...
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 ```
 
 Restart R after editing `.Renviron`:
 
 ```r
-# Verify configuration
-Sys.getenv("DEEPSEEK_API_KEY")  # Should return your key
+# Verify that the variable exists without printing the secret
+nzchar(Sys.getenv("DEEPSEEK_API_KEY"))
 ```
 
 ---
 
 ## Quick Start
 
-Minimal example to get started (5 minutes for ~10k cells):
+Minimal workflow shape (runtime depends on data size, hardware, and provider):
 
 ```r
 library(scAgentKit)
 
-# Configure LLM providers (recommended combination)
-chat_text   <- chat_deepseek()    # Cost-effective for text reasoning
+# Configure example LLM providers
+chat_text   <- chat_deepseek()    # Example text provider
 chat_vision <- chat_grok()        # Vision-capable for plot analysis
 
 # Load and wrap your Seurat object
 seu <- readRDS("your_data.rds")
-obj <- AgentSeurat(seu)
+obj <- AgentSeurat(
+  seu,
+  initial_script = 'seu <- readRDS("your_data.rds")'
+)
 
 # Basic pipeline
 obj <- qc_add_metrics(obj, species = "auto")
@@ -137,7 +143,8 @@ obj <- sc_cluster(obj, resolution = 0.5)
 obj <- sc_find_markers(obj)
 obj <- sc_markers_summary(obj, top_n = 30)
 obj <- annot_llm_annotate(obj, chat_fn = chat_text, tissue = "your tissue context")
-obj <- annot_apply(obj)
+# Keep every cluster until the suggestions have been independently reviewed.
+obj <- annot_apply(obj, drop_rejected = FALSE)
 
 # Export
 export_script(obj, "analysis.R")
@@ -146,9 +153,11 @@ report_html(obj, "report.html")
 
 ---
 
-## Standard Workflow (Recommended)
+## Standard Workflow Template
 
-This workflow covers the most common use case: multi-sample dataset with batch effects, requiring integration and cell type annotation.
+This template illustrates a multi-sample dataset with batch effects. Replace
+all thresholds, metadata fields, and biological context with values justified
+for your experiment.
 
 ```r
 library(scAgentKit)
@@ -160,9 +169,9 @@ library(Seurat)
 seu <- readRDS("merged_seurat.rds")
 obj <- AgentSeurat(seu, initial_script = 'seu <- readRDS("merged_seurat.rds")')
 
-# Configure LLM providers (recommended combination)
-chat_text   <- chat_deepseek()    # DeepSeek-V3: cost-effective, reliable
-chat_vision <- chat_grok()        # Grok-4.1-fast: vision-capable
+# Configure example LLM providers
+chat_text   <- chat_deepseek()    # Example text provider
+chat_vision <- chat_grok()        # Verify selected model image support
 
 # ============================================================
 # 2. QUALITY CONTROL (Per-Sample)
@@ -189,7 +198,7 @@ obj <- qc_mad(obj, nmad = 3)
 obj <- qc_doublet(obj, remove = TRUE, seed = 999)
 
 # Remove unwanted gene categories
-obj <- qc_remove_genes(obj, species = "auto")
+obj <- qc_remove_genes(obj, species = "human")
 
 # Merge samples back
 obj <- qc_merge(obj, join_layers = TRUE)
@@ -222,12 +231,15 @@ obj <- save_checkpoint(obj, "checkpoints/02_pca.qs")
 # ============================================================
 # 5. BATCH INTEGRATION (if needed)
 # ============================================================
-# LLM recommends batch variable (distinguishes technical vs biological)
+# Request a batch-variable recommendation, then inspect it
 obj <- sc_select_batch_var(obj, chat_fn = chat_text)
+View(obj@params$batch_candidates)
+batch_var <- obj@params$batch_recommendation$recommended
+# Override batch_var here if it is biological or otherwise inappropriate.
 
 # Run Harmony integration
 obj <- sc_harmony(obj, 
-                  group_by_vars = obj@params$batch_recommendation$recommended,
+                  group_by_vars = batch_var,
                   max_iter = 10)
 
 # ============================================================
@@ -251,8 +263,10 @@ obj <- sc_resolution_recommend(obj,
                                expected_n_celltypes = c(8, 15),
                                vision = TRUE)
 
-# Commit to chosen resolution
-obj <- sc_cluster(obj, resolution = obj@params$resolution_recommendation$chosen)
+# Review the evidence and adopt or override the recommendation
+obj@params$resolution_recommendation
+chosen_resolution <- obj@params$resolution_recommendation$chosen
+obj <- sc_cluster(obj, resolution = chosen_resolution)
 
 # Visualize clusters
 obj <- sc_plot_umap(obj, group_bys = c("seurat_clusters", "sample"))
@@ -274,9 +288,12 @@ obj <- save_checkpoint(obj, "checkpoints/05_markers.qs")
 # 9. CELL TYPE ANNOTATION (Three-Step Strategy)
 # ============================================================
 
-# Step 1: Reference database matching (optional but recommended)
+# Step 1: Reference database matching (optional)
+# Supply a curated human reference for this PBMC example. The small file in
+# inst/extdata is a format template with mouse-style symbols, not a validated
+# human PBMC reference.
 ref <- annot_load_reference(
-  path = system.file("extdata", "reference_template.tsv", package = "scAgentKit"),
+  path = "references/pbmc_human_markers.tsv",
   tissue_filter = "blood",
   species = "human"
 )
@@ -295,7 +312,7 @@ View(obj@params$llm_annotations)
 # Step 3: Apply annotations (with optional manual overrides)
 obj <- annot_apply(obj, 
                    source = "llm",
-                   drop_rejected = TRUE,
+                   drop_rejected = FALSE,
                    manual_overrides = c("5" = "Plasma cell"))  # Override cluster 5
 
 # Visualize annotations
@@ -326,7 +343,7 @@ obj <- save_checkpoint(obj, "checkpoints/07_final.qs")
 # ============================================================
 # 11. EXPORT RESULTS
 # ============================================================
-export_script(obj, "reproducible_analysis.R")
+export_script(obj, "generated_analysis_trace.R")
 export_decisions(obj, "decision_log.json")
 report_html(obj, "analysis_report.html", title = "PBMC scRNA-seq Analysis")
 
@@ -339,7 +356,8 @@ saveRDS(final_seu, "final_annotated_seurat.rds")
 
 ## Complete Feature Showcase
 
-This section demonstrates **all available functions**, including optional steps like cell cycle regression and comparison with author annotations.
+This section demonstrates selected extended options, including cell-cycle
+regression and comparison with author annotations.
 
 ```r
 library(scAgentKit)
@@ -364,13 +382,12 @@ obj <- qc_threshold(obj,
 # Keep doublets for inspection (don't remove)
 obj <- qc_doublet(obj, remove = FALSE, seed = 999)
 
-# Custom gene removal patterns
+# Choose which built-in gene categories to remove
 obj <- qc_remove_genes(obj, 
                        species = "mouse",
                        remove_mt = TRUE,
                        remove_ribo = FALSE,  # Keep ribosomal genes
-                       remove_hb = TRUE,
-                       custom_patterns = c("^Gm\\d+", "^Rik"))  # Remove predicted genes
+                       remove_hb = TRUE)
 
 # ============================================================
 # CELL CYCLE HANDLING
@@ -388,9 +405,11 @@ obj <- sc_plot_umap(obj, group_bys = c("Phase", "S.Score", "G2M.Score"))
 
 # SCENARIO 2: Steady-state immune profiling - REGRESS
 # (Cell cycle is technical noise)
-obj <- sc_cellcycle_regress(obj, 
-                            vars_to_regress = c("S.Score", "G2M.Score"),
-                            rationale = "Removing cell cycle effects for immune cell type identification")
+obj <- sc_cellcycle_regress(
+  obj,
+  mode = "full",
+  rationale = "Removing cell-cycle effects for immune cell-type identification"
+)
 
 # ============================================================
 # ADVANCED DIMENSIONALITY REDUCTION
@@ -440,7 +459,7 @@ obj <- sc_resolution_recommend(obj,
                                tissue = "mouse liver",
                                vision = FALSE)
 
-# Strategy 4: LLM-assisted with multi-panel vision (recommended)
+# Strategy 4: LLM-assisted with multi-panel vision (experimental)
 obj <- sc_resolution_recommend(obj,
                                chat_fn = chat_vision,
                                tissue = "mouse liver",
@@ -465,7 +484,7 @@ ref <- annot_load_reference("cellmarker_human.tsv",
 obj <- annot_match_reference(obj, reference = ref)
 obj <- annot_llm_annotate(obj, chat_fn = chat_text, tissue = "human brain cortex")
 
-# Option C: With expected cell type vocabulary (improves accuracy)
+# Option C: Constrain output to an expected cell-type vocabulary
 obj <- annot_llm_annotate(obj,
                           chat_fn = chat_text,
                           tissue = "mouse tumor microenvironment",
@@ -485,18 +504,14 @@ obj <- annot_llm_annotate(obj,
 
 # Compare with author's original annotations (if available)
 obj <- annot_compare_with_reference(obj, 
-                                    reference_col = "celltype",  # Author's column
-                                    predicted_col = "cell_type")  # Our annotation
+                                    reference_col = "celltype")  # Author's column
 
 # Collapse fine types to broad categories
-obj <- annot_collapse_to_broad(obj, 
-                               source_col = "cell_type",
-                               target_col = "cell_type_broad")
+obj@data$cell_type_broad <- annot_collapse_to_broad(obj@data$cell_type)
 
 # Clean and merge similar cell type names
 obj <- annot_clean_celltypes(obj,
                              merge_plural = TRUE,
-                             merge_case = TRUE,
                              min_cells = 30,
                              vision = TRUE,
                              chat_fn = chat_vision)
@@ -527,7 +542,7 @@ obj <- annot_subcluster(obj,
                                                  "B cell" = 0.4,
                                                  "Macrophage" = 0.5))
 
-# LLM-driven per-lineage resolution (most expensive but most accurate)
+# LLM-assisted per-lineage resolution (experimental; review each choice)
 obj <- annot_subcluster(obj,
                         chat_fn = chat_text,
                         target = c("T cell", "Myeloid"),
@@ -634,7 +649,7 @@ obj <- annot_subcluster(obj, chat_fn = chat_text,
 ```r
 # Regress cell cycle for cleaner immune cell separation
 obj <- sc_cellcycle_score(obj, species = "human")
-obj <- sc_cellcycle_regress(obj, vars_to_regress = c("S.Score", "G2M.Score"))
+obj <- sc_cellcycle_regress(obj, mode = "full")
 
 # Use curated immune reference
 ref <- annot_load_reference("cellmarker_human_immune.tsv", 
@@ -702,8 +717,13 @@ obj <- save_checkpoint(obj, "checkpoints/02_pca.qs")
 obj <- save_checkpoint(obj, "checkpoints/03_harmony.qs")
 
 # Use text-only LLM for cost efficiency
-chat_text <- chat_deepseek()  # Most cost-effective
-obj <- sc_resolution_recommend(obj, chat_fn = chat_text, vision = FALSE)
+chat_text <- chat_deepseek()  # Example text provider; check current terms/pricing
+obj <- sc_resolution_recommend(
+  obj,
+  chat_fn = chat_text,
+  tissue = "your tissue context",
+  vision = FALSE
+)
 ```
 
 ---
@@ -722,7 +742,7 @@ obj@data          # Seurat object (or list during per-sample QC)
 obj@data_type     # "seurat" or "seurat_list"
 obj@stage         # Current pipeline stage
 obj@decisions     # List of decision records
-obj@scripts       # Reproducible R code snippets
+obj@scripts       # Generated R snippets / reconstruction trace
 obj@figures       # Figure registry (path, description)
 obj@params        # Latest parameters + intermediate results
 obj@created_at    # Timestamp
@@ -739,8 +759,8 @@ chat_fn <- function(system_prompt, user_prompt, image_path = NULL) {
 }
 
 # Built-in providers:
-chat_deepseek()   # Text-only, cost-effective (recommended)
-chat_grok()       # Vision-capable (recommended)
+chat_deepseek()   # Text-only preset
+chat_grok()       # Image-capable preset; verify selected model support
 chat_claude()     # Vision-capable
 chat_openai()     # Text + vision
 
@@ -754,7 +774,7 @@ chat_custom <- make_chat_fn_openai_compatible(
 
 ### Decision Recording
 
-Every function call records:
+Pipeline-mutating functions are designed to record:
 
 ```r
 decision <- list(
@@ -767,9 +787,11 @@ decision <- list(
 )
 ```
 
-### Reproducible Scripts
+### Generated Script Trace
 
-Each function appends executable R code:
+Pipeline functions append generated R snippets. Some are runnable; others are
+reconstruction skeletons that require the recorded input-loading code and
+analyst review:
 
 ```r
 # Accumulated in obj@scripts
@@ -778,7 +800,7 @@ snippet <- '
 seurat_obj <- FindClusters(seurat_obj, resolution = 0.6)
 '
 
-# Export complete script
+# Export the accumulated script trace
 export_script(obj, "analysis.R")
 ```
 
@@ -796,7 +818,7 @@ export_script(obj, "analysis.R")
 | `qc_threshold()` | Fixed threshold filtering | `min_nCount`, `max_percent_mt` |
 | `qc_mad()` | MAD-based outlier removal | `nmad` (default 3) |
 | `qc_doublet()` | scDblFinder doublet detection | `remove` (TRUE/FALSE) |
-| `qc_remove_genes()` | Remove MT/ribo/Hb genes | `species`, `custom_patterns` |
+| `qc_remove_genes()` | Remove MT/ribo/Hb genes | `species`, `mt_pattern`, `ribo_pattern`, `hb_pattern` |
 | `qc_merge()` | Merge samples back | `join_layers` |
 
 ### Normalization & Scaling
@@ -807,7 +829,7 @@ export_script(obj, "analysis.R")
 | `sc_find_hvg()` | Identify highly variable genes | `nfeatures` (default 2000) |
 | `sc_scale()` | Z-score scaling | `vars_to_regress` |
 | `sc_cellcycle_score()` | Score S/G2M phases | `species` |
-| `sc_cellcycle_regress()` | Regress cell cycle | `vars_to_regress` |
+| `sc_cellcycle_regress()` | Regress cell cycle | `mode` (`full`/`difference`) |
 
 ### Dimensionality Reduction
 
@@ -848,9 +870,9 @@ export_script(obj, "analysis.R")
 | `annot_load_reference()` | Load marker reference database | `path`, `tissue_filter` |
 | `annot_match_reference()` | Score clusters vs reference | `reference`, `top_n_candidates` |
 | `annot_llm_annotate()` | LLM-driven annotation | `chat_fn`, `tissue`, `expected_celltypes` |
-| `annot_apply()` | Apply annotations to metadata | `source`, `drop_rejected`, `manual_overrides` |
+| `annot_apply()` | Apply annotations; rejected clusters are retained by default | `source`, `drop_rejected`, `manual_overrides` |
 | `annot_clean_celltypes()` | Merge & clean cell type names | `merge_plural`, `min_cells`, `vision` |
-| `annot_collapse_to_broad()` | Fine → broad type mapping | `source_col`, `target_col` |
+| `annot_collapse_to_broad()` | Fine → broad label vector | `x`, `extra_map`, `keep_unmapped` |
 | `annot_subcluster()` | Per-lineage fine annotation | `target`, `subcluster_resolution`, `tissue` |
 | `annot_compare_with_reference()` | Compare with author labels | `reference_col`, `predicted_col` |
 
@@ -867,7 +889,7 @@ export_script(obj, "analysis.R")
 |----------|---------|----------------|
 | `save_checkpoint()` | Save AgentSeurat object | `path` (.qs format) |
 | `load_checkpoint()` | Load AgentSeurat object | `path` |
-| `export_script()` | Export reproducible R script | `path`, `header_comment` |
+| `export_script()` | Export accumulated R script trace | `path`, `header_comment` |
 | `export_decisions()` | Export decision log as JSON | `path` |
 | `report_html()` | Generate HTML report | `path`, `title`, `include_script` |
 
@@ -886,21 +908,22 @@ export_script(obj, "analysis.R")
 
 ### 1. **LLM Provider Selection**
 
-**Recommended combination** (best balance of cost, quality, and speed):
+One possible provider combination (verify current model availability,
+capabilities, privacy terms, and pricing with each provider):
 
 ```r
-chat_text   <- chat_deepseek()    # DeepSeek-V3: $0.14 per 1M input tokens
-chat_vision <- chat_grok()        # Grok-4.1-fast: $2 per 1M input tokens
+chat_text   <- chat_deepseek()
+chat_vision <- chat_grok()
 ```
 
 **Alternative options:**
 
 ```r
-# High-quality (more expensive):
-chat_text   <- chat_claude()      # Claude Sonnet 4
-chat_vision <- chat_claude()      # Same model for consistency
+# Alternative provider:
+chat_text   <- chat_claude()
+chat_vision <- chat_claude()      # Same configured model for consistency
 
-# Local/offline (free but slower):
+# Local endpoint (resource use and privacy depend on your deployment):
 chat_text <- make_chat_fn_openai_compatible(
   base_url = "http://localhost:11434/v1",
   model = "qwen2.5:14b",
@@ -933,7 +956,7 @@ obj <- sc_cellcycle_score(obj, species = "mouse")  # Score only
 
 # NO (steady-state immune, tissue homeostasis):
 obj <- sc_cellcycle_score(obj, species = "mouse")
-obj <- sc_cellcycle_regress(obj, vars_to_regress = c("S.Score", "G2M.Score"))
+obj <- sc_cellcycle_regress(obj, mode = "full")
 # → Regress to reduce noise
 
 # UNSURE:
@@ -942,12 +965,11 @@ obj <- sc_cellcycle_regress(obj, vars_to_regress = c("S.Score", "G2M.Score"))
 
 ### 4. **Resolution Selection Guidelines**
 
-| Dataset Type | Recommended Resolution Range | Strategy |
-|--------------|------------------------------|----------|
-| PBMC (8-12 types) | 0.3 - 0.6 | Use LLM recommendation |
-| Tumor (high heterogeneity) | 0.6 - 1.2 | Higher resolution + subclustering |
-| Brain (many subtypes) | 0.4 - 0.8 | Conservative + extensive subclustering |
-| Single tissue (homogeneous) | 0.2 - 0.5 | Lower resolution sufficient |
+There is no dataset-type-specific resolution range that is generally valid.
+Sweep a defensible grid, inspect cluster stability, marker coherence, sample
+composition, and sensitivity to neighboring resolutions, then record the
+analyst's choice. Treat `sc_resolution_recommend()` as a review aid rather
+than ground truth.
 
 ### 5. **Annotation Quality Control**
 
@@ -959,16 +981,18 @@ ann <- obj@params$llm_annotations
 View(ann[, c("cluster", "primary_annotation", "confidence", 
              "contradicting_markers", "recommended_action")])
 
-# Check for low-confidence clusters
-low_conf <- ann[ann$confidence < 0.7, ]
+# Check for low-confidence clusters (self-report or heuristic label)
+low_conf <- ann[
+  ann$confidence %in% "low" | ann$hybrid_confidence_label %in% "low",
+]
 
-# Check for rejected clusters
+# Treat rejection as a review flag, not an automatic deletion decision
 rejected <- ann[ann$recommended_action == "reject", ]
 
 # Apply with manual overrides
 obj <- annot_apply(obj, 
                    source = "llm",
-                   drop_rejected = TRUE,
+                   drop_rejected = FALSE,
                    manual_overrides = c(
                      "3" = "Plasma cell",      # Override cluster 3
                      "7" = "Proliferating T"   # Override cluster 7
@@ -988,7 +1012,7 @@ obj <- annot_apply(obj,
 # ✗ Biological differences (treatment vs control) are the question
 # ✗ Well-controlled experiment with minimal batch effects
 
-# Let LLM decide:
+# Request a model recommendation, then review it:
 obj <- sc_select_batch_var(obj, chat_fn = chat_text)
 # → Inspect obj@params$batch_recommendation$reasoning
 ```
@@ -997,23 +1021,28 @@ obj <- sc_select_batch_var(obj, chat_fn = chat_text)
 
 ```r
 # When to subcluster:
-# ✓ Broad type has > 500 cells
+# ✓ Broad type has enough cells for the planned resolution and replicate design
 # ✓ Known heterogeneity (e.g., T cells: CD4/CD8/Treg/MAIT)
 # ✓ Biological question requires fine resolution
 
-# Adaptive resolution (recommended):
+# Adaptive resolution (default HCC/liver-calibrated heuristic; review first):
 obj <- annot_subcluster(obj, 
                         chat_fn = chat_text,
+                        tissue = "your tissue context",
                         subcluster_resolution = "adaptive")
 # → Small lineages get lower resolution (avoid over-fragmentation)
 # → Large lineages get higher resolution (capture diversity)
 
 # Fixed resolution (predictable):
 obj <- annot_subcluster(obj, 
+                        chat_fn = chat_text,
+                        tissue = "your tissue context",
                         subcluster_resolution = 0.5)
 
 # Per-lineage custom (full control):
 obj <- annot_subcluster(obj,
+                        chat_fn = chat_text,
+                        tissue = "your tissue context",
                         subcluster_resolution = c(
                           "T cell" = 0.6,      # High diversity
                           "B cell" = 0.4,      # Moderate diversity
@@ -1021,22 +1050,22 @@ obj <- annot_subcluster(obj,
                         ))
 ```
 
-### 8. **Reproducibility Checklist**
+### 8. **Provenance and reconstruction checklist**
 
 ```r
 # Set seeds for stochastic steps
 obj <- qc_doublet(obj, seed = 999)
 obj <- sc_harmony(obj, group_by_vars = "sample", seed = 999)
 
-# Export complete analysis
+# Export review artifacts
 export_script(obj, "analysis.R")
 export_decisions(obj, "decisions.json")
 report_html(obj, "report.html")
 
-# Document LLM versions
-cat("LLM providers used:\n")
-cat("- Text: DeepSeek-V3 (2024-12)\n")
-cat("- Vision: Grok-4.1-fast (2025-01)\n")
+# Record the exact model identifiers returned by your providers
+writeLines(c("text_model=<provider-returned-id>",
+             "vision_model=<provider-returned-id>"),
+           "model_versions.txt")
 
 # Save session info
 writeLines(capture.output(sessionInfo()), "session_info.txt")
@@ -1083,14 +1112,6 @@ chat_local <- make_chat_fn_openai_compatible(
   max_tokens = 2000
 )
 
-# Example: Azure OpenAI
-chat_azure <- make_chat_fn_openai_compatible(
-  base_url = "https://your-resource.openai.azure.com/openai/deployments/gpt-4o",
-  model = "gpt-4o",  # Deployment name
-  api_key_env = "AZURE_OPENAI_KEY",
-  extra_headers = c(`api-version` = "2024-02-15-preview")
-)
-
 # Example: Custom API with httr2
 chat_custom <- function(system_prompt, user_prompt, image_path = NULL) {
   # Your custom implementation
@@ -1105,6 +1126,11 @@ chat_custom <- function(system_prompt, user_prompt, image_path = NULL) {
   return(response$message)
 }
 ```
+
+Azure OpenAI and other provider-specific gateways may require custom
+authentication headers, URL layouts, or query parameters. The generic helper
+does not promise those provider-specific conventions; use a reviewed custom
+`chat_fn` like the template above when they are required.
 
 ### Parallel Processing for Large Datasets
 
@@ -1170,8 +1196,8 @@ obj@data <- seu
 obj <- annot_llm_annotate(obj, chat_fn = chat_text, 
                           tissue = "...", max_retries = 5)
 
-# Solution 2: Switch to a more reliable model
-chat_text <- chat_claude()  # Claude is more reliable with JSON
+# Solution 2: Try another provider/model and validate its structured output
+chat_text <- chat_claude()
 ```
 
 #### 4. **Out of Memory**
@@ -1203,9 +1229,9 @@ obj <- qc_merge(obj)
 ```r
 # Problem: LLM doesn't reference the plot
 # Solution: Verify vision support
-chat_vision <- chat_grok()  # Grok-4.1-fast supports vision
+chat_vision <- chat_grok()  # Confirm the selected model supports images
 # Or Claude:
-chat_vision <- chat_claude()  # Claude Sonnet 4 supports vision
+chat_vision <- chat_claude()  # Confirm the selected model supports images
 
 # Check if image file exists
 obj@figures  # Verify plot was saved
@@ -1215,7 +1241,9 @@ obj@figures  # Verify plot was saved
 
 ## Performance and cost
 
-scAgentKit v0.2.0 meters every LLM call and attributes tokens to the step that issued them. The honest answer to "how much does this cost" depends on your provider, model, dataset size, and cluster count, so we measure rather than estimate:
+scAgentKit v0.4.0 records token fields from built-in chat providers when the
+API returns usage metadata. Custom chat functions are not automatically
+metered, and the package does not calculate currency costs:
 
 ```r
 # After running your pipeline:
@@ -1223,13 +1251,9 @@ get_token_usage(obj)        # per-step breakdown
 token_usage_summary()       # global by provider+model
 ```
 
-Indicative orders of magnitude on a 12-cluster, 30k-cell dataset with default `n_samples = 1`:
-
-- DeepSeek-V3: tens of cents per full pipeline.
-- Claude Sonnet 4.6: a few dollars per full pipeline.
-- GPT-4o: in between.
-
-A reproducible cost table across providers and dataset sizes is part of the methods preprint and will land in `benchmark/results/` together with the corresponding scripts. The previous version of this README listed a single number from one run; v0.2.0 removes that and ships the measurement tooling instead.
+Provider pricing, caching rules, and model identifiers change. Use the
+recorded token counts together with the provider's current billing page; do
+not infer a cost from unverified examples in this repository.
 
 ---
 
@@ -1244,19 +1268,21 @@ A reproducible cost table across providers and dataset sizes is part of the meth
 obj <- sc_select_pcs(obj, threshold = 0.85)  # Manual threshold
 obj <- sc_cluster(obj, resolution = 0.6)     # Manual resolution
 
-# LLM required:
+# LLM required for these model-assisted paths:
 # - annot_llm_annotate()
-# - sc_resolution_recommend() (with vision)
-# - sc_select_batch_var()
+# - sc_resolution_recommend()
+# sc_select_batch_var(chat_fn = NULL) can use its rule-based path.
 ```
 
 ### Q: How do I handle species other than human/mouse?
 
-**A:** Provide custom gene patterns:
+**A:** Automatic species handling is currently limited to human and mouse.
+For another species, supply patterns that match its gene naming convention;
+the `species` value still has to select the closest built-in convention:
 
 ```r
 obj <- qc_add_metrics(obj, 
-                      species = "rat",  # Or any label
+                      species = "mouse",
                       mt_pattern = "^Mt-",
                       ribo_pattern = "^Rp[sl]",
                       hb_pattern = "^Hb[ab]")
@@ -1269,6 +1295,7 @@ obj <- qc_add_metrics(obj,
 ```r
 # Override specific clusters
 obj <- annot_apply(obj, 
+                   drop_rejected = FALSE,
                    manual_overrides = c(
                      "3" = "Corrected cell type",
                      "7" = "Another correction"
@@ -1290,7 +1317,12 @@ obj@data <- seu
 
 ### Q: Is my data sent to LLM providers?
 
-**A:** Only summary statistics and marker gene lists are sent, never raw count matrices or cell-level data. Images sent are plots (UMAPs, elbow curves), not identifiable data.
+**A:** The built-in model-assisted steps send selected summaries, labels,
+marker lists, prompts, and—when enabled—plot images, rather than the full
+count matrix. Those artifacts can still contain sensitive or unpublished
+information. Custom chat functions can send anything their author programs.
+Inspect prompts and plots, review the provider's data policy, and use a
+trusted local endpoint when required by consent or institutional policy.
 
 ### Q: Can I run this on a cluster/HPC?
 
@@ -1319,11 +1351,11 @@ In addition to the [headline limitations at the top of this README](#honest-limi
 
 - **Prompts are tissue/disease-specific.** Built-in vocabulary covers liver/HCC well, plus generic immune and major tumour types. Cardiac, renal, neural tissue may need custom `data_context` or vocabulary overrides.
 
-- **API costs are not zero.** Use `get_token_usage(obj)` to measure your actual cost; do not rely on a single advertised number.
+- **Hosted API calls may incur cost.** `get_token_usage(obj)` reports provider-returned token fields, not currency; local/custom providers may behave differently.
 
 - **Validation is on you.** scAgentKit is a **collaborator**, not a replacement. Every annotation needs marker-level review by someone who knows the biology. Trust the reasoning the way you'd trust a trainee's first pass — useful starting point, not final answer.
 
-- **Vision over slow networks.** Sending base64-encoded PNGs to xAI / Anthropic from China requires a proxy. Set `Sys.setenv(http_proxy=...)` before vision calls.
+- **Vision uploads can be large.** Base64-encoded plots increase request size and may be unsuitable for slow links or sensitive data. Configure networking according to your institution and provider.
 
 - **Seurat v5 only.** v4 compatibility is not tested.
 
@@ -1331,17 +1363,17 @@ In addition to the [headline limitations at the top of this README](#honest-limi
 
 ## Roadmap
 
-### v0.1 (current) — single-user agent toolkit ✓
+### v0.4.0 (current) — human-in-the-loop prototype
 
-Working multi-provider system, vision decisions, two-step annotation, validated on real HCC data.
+Available now: Seurat workflow wrappers, provenance records, provider
+adapters, optional vision-assisted decisions, annotation citation checks,
+checkpoints, reports, and unit tests for selected logic.
 
-### v0.2 — orchestration
+### Planned / experimental
 
-A high-level `agent_run(obj, goal = "annotate broad cell types")` that decides which atomic functions to call, in what order, and when to ask the user. Tools become *callable by the LLM* via tool-use APIs rather than user-orchestrated.
-
-### v0.3 — global annotation review
-
-Two-pass annotation: first label clusters independently, then show the LLM the global label set and ask "are any of these inconsistent? proportions off? labels overlapping?" Single-pass annotation makes errors that global review can catch.
+- A reviewed high-level orchestrator with explicit user approval points.
+- Global annotation review and calibrated uncertainty evaluation.
+- Completed, versioned benchmarks across public datasets and baselines.
 
 ### Longer-term
 
@@ -1358,13 +1390,13 @@ If you use scAgentKit in your research, please cite:
 ### Software Citation
 
 ```bibtex
-@software{scAgentKit2025,
+@software{scAgentKit2026,
   author = {Kan, Changhao},
-  title = {scAgentKit: An LLM-orchestratable toolkit for transparent single-cell RNA-seq analysis},
-  year = {2025},
+  title = {scAgentKit: A human-in-the-loop toolkit for provenance-tracked single-cell RNA-seq analysis},
+  year = {2026},
   publisher = {GitHub},
   url = {https://github.com/ChanghaoKan/scAgentKit},
-  version = {0.1.23}
+  version = {0.4.0}
 }
 ```
 
@@ -1413,13 +1445,13 @@ Please also cite the underlying methods:
 
 ### Example Methods Section
 
-> "Single-cell RNA-seq analysis was performed using scAgentKit v0.1.23 (Kan, 2025), an LLM-orchestratable toolkit built on Seurat v5 (Hao et al., 2021). Quality control included per-sample doublet detection with scDblFinder (Germain et al., 2021) and MAD-based outlier removal (nmad = 3). Batch correction was performed using Harmony (Korsunsky et al., 2019) on the top 30 principal components. Clustering resolution (0.6) was selected via LLM-assisted analysis of clustree stability metrics and multi-resolution UMAP visualizations using DeepSeek-V3 and Grok-4.1-fast. Cell type annotation was performed through a three-step process: (1) marker-reference overlap scoring, (2) LLM-driven annotation with anti-hallucination constraints, and (3) per-lineage subclustering with adaptive resolution. All analytical decisions, rationales, and parameters are documented in the decision log (Supplementary Data 1), and the complete analysis is reproducible via the exported R script (Supplementary Code 1)."
+> "Single-cell RNA-seq analysis used scAgentKit v0.4.0 (Kan, 2026) with Seurat v5. Quality-control thresholds, integration variables, clustering parameters, and annotation review procedures were selected by the analysts and recorded with the analysis artifacts. Where language-model assistance was used, we report the provider-returned model identifier, prompts/evidence supplied, and all manual overrides. Generated script snippets and the decision log were reviewed and archived with the package environment and original input-loading code."
 
 ---
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions can be proposed through GitHub issues or pull requests.
 
 ### Areas for Contribution
 
@@ -1462,8 +1494,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - 📧 **Email**: kch_ynu@163.com
 - 🐛 **Issues**: [GitHub Issues](https://github.com/ChanghaoKan/scAgentKit/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/ChanghaoKan/scAgentKit/discussions)
-- 📖 **Documentation**: [Wiki](https://github.com/ChanghaoKan/scAgentKit/wiki)
 
 ---
 
@@ -1489,5 +1519,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 <p align="center">
   <strong>Made with ❤️ for the single-cell community</strong><br>
-  <sub>Transforming implicit knowledge into explicit, reproducible science</sub>
+  <sub>Making analysis decisions easier to inspect and review</sub>
 </p>

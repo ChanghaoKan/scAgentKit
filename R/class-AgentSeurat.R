@@ -32,7 +32,7 @@ methods::setClass(
 #'
 #' @param seurat A Seurat object or a named list of Seurat objects.
 #' @param initial_script Optional character string recording how the
-#'   input was loaded; prepended to the reproducible script.
+#'   input was loaded; prepended to the generated script trace.
 #'
 #' @return An AgentSeurat object (which inherits from AgentOmics).
 #' @export

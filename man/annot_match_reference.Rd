@@ -23,8 +23,8 @@ Updated AgentSeurat; a data frame of matches (columns:
 }
 \description{
 For each cluster's top marker list, computes an overlap score against
-each cell type in the reference. The score is simple overlap (Jaccard-
-style): `|cluster_markers intersect celltype_markers| / |celltype_markers|`.
+each cell type in the reference. The score is reference-marker coverage:
+`|cluster_markers intersect celltype_markers| / |celltype_markers|`.
 This rewards cell types whose characteristic markers appear prominently
 in the cluster's top-N list.
 }

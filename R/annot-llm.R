@@ -1,11 +1,11 @@
-#' LLM-driven cell type annotation with anti-hallucination structure
+#' LLM-driven cell type annotation with marker-citation grounding
 #'
 #' For each cluster, assembles an evidence bundle (top markers, reference
 #' matches, cluster size and proportion, tissue context) and asks an LLM
-#' to annotate. The LLM is *forced* to return a strict JSON object
-#' including a `contradicting_markers` field, which substantially reduces
-#' hallucination: a model that must also list evidence *against* its own
-#' choice is much less willing to confabulate.
+#' to annotate. The prompt requests a strict JSON object including a
+#' `contradicting_markers` field, and cited markers can be checked against
+#' the supplied marker list. This structure supports review of model output;
+#' it does not guarantee annotation accuracy or prevent unsupported claims.
 #'
 #' The function is LLM-provider-agnostic. The caller supplies a `chat_fn`
 #' of signature `function(system_prompt, user_prompt) -> character` that
@@ -60,29 +60,31 @@
 #'   on `primary_annotation`. Ensemble agreement is reported as
 #'   `ensemble_agreement` (fraction of calls that agreed with the
 #'   majority) and `ensemble_n` (number of valid calls). For the
-#'   ensemble to be meaningful, build your chat_fn with
-#'   `temperature > 0`; with `temperature = 0` all samples will be
-#'   identical and the ensemble adds no information.
+#'   ensemble to have intentional sampling diversity, build your chat_fn with
+#'   `temperature > 0`; provider responses can still vary at zero temperature,
+#'   but repeated calls may add limited independent information.
 #' @param validate_markers Logical, default TRUE. When TRUE, the
 #'   `supporting_markers` and `contradicting_markers` returned by the LLM
 #'   are checked against the actual top-marker list. Any genes not in
-#'   the evidence are flagged as `hallucinated_markers`. The hallucination
-#'   rate also feeds into the hybrid confidence score.
+#'   the supplied evidence are stored in the legacy-named
+#'   `hallucinated_markers` field. This means "unsupported by this input
+#'   marker list", not necessarily biologically false. The corresponding
+#'   rate also feeds into the heuristic confidence score.
 #' @param parallel Logical, default `FALSE`. When `TRUE` and the
 #'   `future.apply` package is installed, per-cluster annotation calls
 #'   run in parallel under whatever execution `future::plan()` is
 #'   active. For multi-core parallelism set the plan beforehand:
 #'   \preformatted{future::plan(future::multisession, workers = 8)}
-#'   Token usage from parallel workers is collected back into the
-#'   parent's accumulator on completion. With `temperature = 0` and
-#'   `n_samples = 1` parallel runs are reproducible across re-runs.
+#'   Provider-returned token usage from parallel workers is collected back
+#'   into the parent's accumulator on completion. `temperature = 0` and
+#'   `n_samples = 1` do not guarantee identical provider responses.
 #' @param verbose Logical, print progress per cluster. Default TRUE.
 #' @param rationale Optional LLM-supplied top-level rationale.
 #'
 #' @return Updated AgentSeurat. A data frame of annotations is stored at
 #'   `obj@@params$llm_annotations` with columns: cluster,
 #'   primary_annotation, confidence (LLM self-reported),
-#'   hybrid_confidence (objective score; see Details),
+#'   hybrid_confidence (uncalibrated heuristic score; see Details),
 #'   hybrid_confidence_label, confidence_disagreement,
 #'   supporting_markers, contradicting_markers, hallucinated_markers,
 #'   alternative_annotations, recommended_action, ensemble_agreement,
@@ -90,7 +92,8 @@
 #'
 #' @section Hybrid confidence:
 #' The hybrid confidence score is a weighted combination of four
-#' objective signals, each in [0, 1]:
+#' heuristic signals from marker/reference evidence and model output, each in
+#' [0, 1]. The score and cutoffs are not calibrated probabilities:
 #' \itemize{
 #'   \item `ref_overlap` (weight 0.30): the cluster's best reference
 #'     overlap score from `annot_match_reference`, capped at 1.
@@ -101,7 +104,7 @@
 #'     top-marker list.
 #'   \item `proportion_plausibility` (weight 0.20): 1 if the LLM
 #'     reported `reasonable`, 0.5 for `suspicious`, 0 for `abnormal`
-#'     or missing.
+#'     and 0.5 when missing.
 #' }
 #' The resulting score is mapped to a label: `high` (>= 0.7),
 #' `medium` (0.4-0.7), `low` (< 0.4). `confidence_disagreement` is
@@ -140,8 +143,8 @@ annot_llm_annotate <- function(obj,
     message(sprintf(
       "[annot_llm_annotate] ensemble mode: n_samples = %d. ",
       n_samples),
-      "Make sure your chat_fn was built with temperature > 0; with temperature = 0 ",
-      "all samples will be identical and the ensemble adds no information."
+      "Use temperature > 0 when intentional sampling diversity is desired; ",
+      "temperature = 0 can reduce variation but does not guarantee identical provider responses."
     )
   }
 
@@ -346,7 +349,7 @@ annot_llm_annotate <- function(obj,
 #   primary_annotation, confidence, supporting_markers,
 #   contradicting_markers, alternative_annotations, reasoning.
 # Per-cluster JSON output is stored in obj@params$llm_annotations,
-# augmented with hybrid_confidence (objective), hallucinated_markers,
+# augmented with hybrid_confidence (heuristic), hallucinated_markers,
 # ensemble_agreement.
 # (Reproducibility caveat: LLM calls are non-deterministic; set the
 #  seed/temperature on the provider side to improve reproducibility.)',
@@ -362,8 +365,9 @@ annot_llm_annotate <- function(obj,
     rationale <- sprintf(
       paste0(
         "LLM-annotated %d clusters in tissue context '%s' (n_samples=%d). ",
-        "Anti-hallucination: contradicting_markers required; marker citations ",
-        "validated against input list (%d clusters had hallucinated markers); ",
+        "Marker-citation grounding: contradicting_markers requested and marker ",
+        "citations checked against the input list (%d clusters cited markers absent ",
+        "from that list); this check does not establish biological accuracy. ",
         "hybrid confidence cross-checked against LLM self-report ",
         "(%d clusters in disagreement)."
       ),
@@ -674,7 +678,7 @@ annot_llm_annotate <- function(obj,
 }
 
 
-# Compute a hybrid confidence score from objective signals.
+# Compute an uncalibrated hybrid confidence score from heuristic signals.
 #
 # Inputs:
 #   parsed          : per-cluster parsed LLM JSON (with hallucination_rate
