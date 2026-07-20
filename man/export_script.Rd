@@ -2,14 +2,14 @@
 % Please edit documentation in R/imports.R
 \name{export_script}
 \alias{export_script}
-\title{Export a reproducible scRNA-seq analysis script}
+\title{Export accumulated scRNA-seq analysis snippets}
 \usage{
 export_script(obj, path = "reproducible_script.R", header_comment = NULL)
 }
 \arguments{
 \item{obj}{An AgentOmics object.}
 
-\item{path}{Output file path (default "reproducible_script.R").}
+\item{path}{Output file path (legacy default "reproducible_script.R").}
 
 \item{header_comment}{Optional extra text to include in the file header.}
 }

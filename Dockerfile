@@ -1,27 +1,28 @@
-# scAgentKit reproducibility container
+# scAgentKit development container
 #
-# Pins R + Seurat + Bioconductor + scAgentKit dependencies so anyone with
-# Docker can rerun the published analyses without dependency drift.
+# Pins the R base image and package release references. CRAN/Bioconductor
+# dependencies are resolved when the image is built; use a lockfile or image
+# digest as well if exact environment reconstruction is required.
 #
 # Build:
-#   docker build -t scagentkit:0.2.0 .
+#   docker build -t scagentkit:0.4.0 .
 #
 # Run interactively (with your scratch dir mounted and API key passed in):
 #   docker run --rm -it \
 #     -v $(pwd):/workspace \
 #     -w /workspace \
 #     -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-#     scagentkit:0.2.0 R
+#     scagentkit:0.4.0 R
 #
 # Run a script:
-#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.2.0 \
+#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.4.0 \
 #     Rscript analysis.R
 
 FROM rocker/r-ver:4.4.2
 
 LABEL maintainer="Changhao Kan <kch_ynu@163.com>"
 LABEL org.opencontainers.image.source="https://github.com/ChanghaoKan/scAgentKit"
-LABEL org.opencontainers.image.version="0.2.0"
+LABEL org.opencontainers.image.version="0.4.0"
 
 # System libs needed for Seurat, hdf5, png/jpeg I/O, httr2, magick
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxml2-dev \
         libpng-dev \
         libjpeg-dev \
-        libtiff5-dev \
+        libtiff-dev \
         libfontconfig1-dev \
         libfreetype6-dev \
         libharfbuzz-dev \
@@ -43,7 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
     && rm -rf /var/lib/apt/lists/*
 
-# CRAN deps (rocker pins the snapshot for reproducibility)
+# Installer helpers
 RUN R -e "install.packages(c('remotes', 'BiocManager'))"
 
 # Bioconductor deps that scAgentKit Suggests
@@ -60,11 +61,14 @@ RUN R -e "install.packages(c( \
 # SeuratData (GitHub)
 RUN R -e "remotes::install_github('satijalab/seurat-data', upgrade = 'never')"
 
-# scAgentKit itself — install from the local context. Override to a tag
-# in CI by passing --build-arg SCA_REF=v0.2.0.
-ARG SCA_REF=HEAD
+# Install the shared core explicitly before the local package. Override the
+# release reference at build time only when testing a compatible core branch.
+ARG AGENTOMICS_CORE_REF=v0.1.1
+RUN R -e "remotes::install_github('ChanghaoKan/agentomicsCore@${AGENTOMICS_CORE_REF}', upgrade = 'never', dependencies = c('Depends', 'Imports'))"
+
+# Install scAgentKit from the local build context.
 COPY . /tmp/scAgentKit
-RUN R -e "remotes::install_local('/tmp/scAgentKit', upgrade = 'never', dependencies = TRUE)" \
+RUN R -e "remotes::install_local('/tmp/scAgentKit', upgrade = 'never', dependencies = FALSE)" \
     && rm -rf /tmp/scAgentKit
 
 WORKDIR /workspace

@@ -10,7 +10,7 @@ AgentSeurat(seurat, initial_script = NULL)
 \item{seurat}{A Seurat object or a named list of Seurat objects.}
 
 \item{initial_script}{Optional character string recording how the
-input was loaded; prepended to the reproducible script.}
+input was loaded; prepended to the generated script trace.}
 }
 \value{
 An AgentSeurat object (which inherits from AgentOmics).

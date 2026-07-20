@@ -1,5 +1,5 @@
 # =============================================================
-# Example chat_fn wrappers for scAgentKit's LLM calls
+# Experimental custom chat_fn wrappers for scAgentKit's LLM calls
 #
 # CONTRACT (updated):
 #   chat_fn(system_prompt, user_prompt, image_path = NULL) -> character
@@ -9,7 +9,10 @@
 #                                the user message (used by
 #                                sc_resolution_recommend with vision = TRUE)
 #
-# Every wrapper below honours this contract. If your chosen model does
+# These examples are retained for users implementing a custom provider. The
+# built-in `chat_*()` factories are preferred and can record provider-returned
+# token usage. Calls through these custom examples are not automatically
+# attached to agentomicsCore's usage recorder. If your chosen model does
 # not support vision, it is still fine to send text-only — call
 # sc_resolution_recommend(vision = FALSE) in that case.
 #
@@ -17,9 +20,9 @@
 #   - Set temperature = 0 for annotation / resolution tasks.
 #   - Some providers accept `seed`; use it where available.
 #   - Cross-day reproducibility is not guaranteed even at temperature = 0.
-#     Pin model versions (e.g. "claude-sonnet-4-5-20260401") for
-#     publication. The structured outputs are captured in
-#     obj@params$*, which is sufficient for audit.
+#     Pin a provider-supported versioned model ID, when available, for
+#     publication. Capture provider-returned model IDs and review the
+#     structured outputs stored in obj@params$*.
 # =============================================================
 
 # ----- Helper: read a PNG/JPEG as base64 ----------------------------------
@@ -46,9 +49,9 @@
     stop("Unsupported image extension: ", ext))
 }
 
-# ----- A. Anthropic via `ellmer` (recommended default) -----------------------
-# Claude supports vision natively; ellmer handles image attachment via
-# `content_image_file()`. Set ANTHROPIC_API_KEY.
+# ----- A. Anthropic via `ellmer` (custom example) ----------------------------
+# Image attachment is handled through `content_image_file()`; confirm that
+# the selected model supports it. Set ANTHROPIC_API_KEY.
 make_chat_fn_anthropic <- function(model = "claude-sonnet-4-5") {
   if (!requireNamespace("ellmer", quietly = TRUE)) {
     stop("Install 'ellmer' first: install.packages('ellmer')")
@@ -72,7 +75,7 @@ make_chat_fn_anthropic <- function(model = "claude-sonnet-4-5") {
 }
 
 # ----- B. OpenAI via `ellmer` ------------------------------------------------
-# GPT-4o supports vision. Set OPENAI_API_KEY.
+# Confirm that the selected model supports image input. Set OPENAI_API_KEY.
 make_chat_fn_openai <- function(model = "gpt-4o-mini") {
   if (!requireNamespace("ellmer", quietly = TRUE)) {
     stop("Install 'ellmer' first: install.packages('ellmer')")

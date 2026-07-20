@@ -120,7 +120,7 @@ get_seurat <- function(obj) {
 }
 
 
-#' Export a reproducible scRNA-seq analysis script
+#' Export accumulated scRNA-seq analysis snippets
 #'
 #' scAgentKit wrapper around [agentomicsCore::export_script()] that emits
 #' the standard single-cell library preamble (`Seurat`, `dplyr`,
@@ -137,7 +137,7 @@ export_script <- function(obj,
     path           = path,
     header_comment = header_comment,
     libraries      = c("Seurat", "dplyr", "tibble", "qs2"),
-    title          = "Reproducible scRNA-seq analysis script",
+    title          = "Generated scRNA-seq analysis trace",
     generated_by   = "scAgentKit"
   )
 }

@@ -7,7 +7,7 @@
 #        -> checkpoint -> export
 #
 # Every step returns an updated AgentSeurat that accumulates decisions,
-# figure paths, and reproducible R script snippets.
+# figure paths, and generated R script snippets.
 # =============================================================
 
 library(scAgentKit)
@@ -65,8 +65,8 @@ obj <- qc_plot(obj, tag = "after", group_by = "sample",
 # ---- 11. Checkpoint ----
 obj <- save_checkpoint(obj, "checkpoints/01_qc_complete.qs")
 
-# ---- 12. Export reproducible script + decision log ----
-export_script(obj, "reproducible_script.R",
+# ---- 12. Export generated script trace + decision log ----
+export_script(obj, "generated_script_trace.R",
               header_comment = "Ca_Ctrl QC pipeline")
 export_decisions(obj, "decisions.json")
 

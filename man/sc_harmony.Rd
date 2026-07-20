@@ -22,10 +22,12 @@ choices include `"sample"`, `"Seq.Batch.ID"`, `"donor"`. If you
 believe the data needs no correction, skip this function entirely
 rather than passing a dummy variable.}
 
-\item{ndim}{Integer, PCs to use. Defaults to `obj@params$ndim` if
-[sc_select_pcs()] has been called.}
+\item{ndim}{Integer number of leading PCA dimensions to use. The wrapper
+passes `seq_len(ndim)` to Harmony's `dims.use` argument. Defaults to
+`obj@params$ndim` if [sc_select_pcs()] has been called.}
 
-\item{max_iter}{Maximum Harmony iterations. Default 10.}
+\item{max_iter}{Maximum Harmony iterations. Passed to Harmony's
+`max.iter.harmony` argument. Default 10.}
 
 \item{seed}{Integer, random seed. Default 999.}
 

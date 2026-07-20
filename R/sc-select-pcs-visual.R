@@ -1,13 +1,13 @@
 #' Pick the number of PCs by visually comparing UMAPs (LLM with vision)
 #'
 #' Generates UMAP panels at several candidate dimensionalities, asks a
-#' vision-capable LLM which one gives the cleanest cluster separation,
-#' and writes the chosen `ndim` to `obj@@params$ndim` so downstream
+#' vision-capable LLM to compare them, and writes its recommended `ndim` to
+#' `obj@@params$ndim` so downstream
 #' steps (Harmony, UMAP, FindNeighbors) consume it automatically.
 #'
 #' Two ways to specify candidates (mutually exclusive):
 #' \itemize{
-#'   \item \strong{Variance-driven (recommended)}: pass
+#'   \item \strong{Variance-driven (default)}: pass
 #'     `variance_thresholds = c(0.80, 0.85, 0.90)`. The function
 #'     computes the smallest `ndim` whose cumulative explained variance
 #'     reaches each threshold, deduplicates, and uses those. Panel
@@ -19,9 +19,9 @@
 #' If neither argument is given, defaults to
 #' `variance_thresholds = c(0.80, 0.85, 0.90)`.
 #'
-#' Requires a vision-capable `chat_fn` ([chat_grok()], [chat_claude()],
-#' [chat_openai()] with a 4o-class model). Text-only chat_fn (DeepSeek)
-#' will silently ignore the image and the LLM will be guessing.
+#' Requires a `chat_fn` configured with a model that accepts image input.
+#' Text-only presets can ignore the image, making the recommendation
+#' unsupported by the visual evidence.
 #'
 #' @param obj An AgentSeurat with PCA computed (stage >= "pca_done").
 #' @param chat_fn A vision-capable chat_fn.
@@ -31,7 +31,7 @@
 #' @param candidates Optional integer vector of explicit ndim values.
 #'   If provided, overrides `variance_thresholds`.
 #' @param tissue Optional tissue/condition string to give the LLM
-#'   biological context. Recommended.
+#'   biological context; provide a specific value when available.
 #' @param batch_var Optional metadata column to colour panels by. If
 #'   NULL, uses `obj@@params$batch_recommendation$recommended` if set,
 #'   otherwise computes a temporary leiden clustering at res 0.5.

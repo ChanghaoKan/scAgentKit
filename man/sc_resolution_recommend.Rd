@@ -37,19 +37,21 @@ sc_resolution_recommend(
 `vision = TRUE`, the function auto-picks the most recent
 `sc_cluster_sweep` figure from `@figures`.}
 
-\item{vision_panels}{Character vector of panel types to include in the
-vision input to the LLM. Default: all available panels (UMAP,
-clustree, marker dotplot, etc.). Pass a subset to constrain.}
+\item{vision_panels}{Optional numeric vector of swept resolution values
+whose UMAPs should be included in the vision input. Values not present
+in the sweep are ignored. By default, representative resolutions near
+the heuristic decision region are selected automatically.}
 
-\item{max_panels}{Integer. Hard cap on the number of panels sent in
-one request, to control token usage. Default 9.}
+\item{max_panels}{Integer. Maximum number of UMAP panels selected
+automatically when `vision_panels` is NULL. Explicit `vision_panels`
+determine their own count. Default 3.}
 
 \item{panel_dpi}{Integer. Rasterization DPI for each panel. Lower
-reduces base64 payload size. Default 100.}
+reduces base64 payload size. Default 110.}
 
-\item{panel_width}{Numeric. Panel width in inches. Default 6.}
+\item{panel_width}{Numeric. Panel width in inches. Default 5.}
 
-\item{panel_height}{Numeric. Panel height in inches. Default 4.}
+\item{panel_height}{Numeric. Panel height in inches. Default 4.5.}
 
 \item{max_retries}{Integer. Default 2.}
 }
@@ -100,4 +102,3 @@ For vision mode the callable must accept an `image_path` argument:
 }
 All wrappers in `inst/examples/llm_wrappers.R` honour this contract.
 }
-

@@ -4,9 +4,16 @@
 \name{scAgentKit-package}
 \alias{scAgentKit}
 \alias{scAgentKit-package}
-\title{scAgentKit: LLM-Orchestrated, Auditable scRNA-seq Pipeline}
+\title{scAgentKit: Human-in-the-Loop, Auditable scRNA-seq Toolkit}
 \description{
-End-to-end single-cell RNA-seq pipeline (QC, integration, dimensionality reduction, clustering, annotation, sub-annotation) with vision-capable LLM-driven decisions at every analyst-judgement step. Built on agentomicsCore, scAgentKit logs every decision with rationale and exports a fully reproducible R script. Distinctive features include cycling-cluster lineage rescue, structured contamination criteria for cluster annotation, hybrid (LLM + objective) confidence scoring, marker-citation hallucination validation, and per-step LLM token / cost tracking.
+Experimental single-cell RNA-seq toolkit covering quality control,
+integration, dimensionality reduction, clustering, annotation, and
+sub-annotation. Built on agentomicsCore, it supports optional model-assisted
+decisions while retaining analyst review, decision records, parameters,
+figures, and generated script snippets. Includes cycling-cluster lineage cues,
+structured contamination prompts, hybrid confidence heuristics,
+marker-citation checks, and best-effort token usage capture when providers
+return usage metadata.
 }
 \seealso{
 Useful links:

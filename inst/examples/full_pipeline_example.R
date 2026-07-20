@@ -6,9 +6,9 @@
 #        -> commit resolution -> find markers -> marker summary
 #        -> plot UMAPs -> checkpoint -> export
 #
-# This example uses a small public dataset (PBMC) so it is runnable
-# as-is. Replace the `seu <- ...` line with your own data when running
-# on a real experiment. The rest of the pipeline is unchanged.
+# This workflow template uses the public PBMC 3k dataset. Install SeuratData
+# and review thresholds, metadata columns, provider settings, and annotations
+# before running it.
 # =============================================================
 
 library(scAgentKit)
@@ -16,13 +16,16 @@ library(Seurat)
 
 # ---- 1. Ingest ----
 # Option A (default): public PBMC 3k from SeuratData
-# install.packages("SeuratData")
+# remotes::install_github("satijalab/seurat-data")
 # SeuratData::InstallData("pbmc3k")
 # seu <- SeuratData::LoadData("pbmc3k")
 #
 # Option B: your own Seurat object
 # seu <- readRDS("Ca_Ctrl_merged_JoinLayers_seurat.rds")
 
+if (!requireNamespace("SeuratData", quietly = TRUE)) {
+  stop("Install SeuratData with remotes::install_github('satijalab/seurat-data').")
+}
 seu <- SeuratData::LoadData("pbmc3k")
 seu$sample <- "pbmc3k"    # the rest of the pipeline expects a sample column
 obj <- AgentSeurat(seu,
@@ -66,8 +69,7 @@ obj <- sc_cluster_sweep(obj, resolutions = seq(0.05, 0.5, 0.05))
 # 6a. (Optional) LLM resolution recommendation — vision mode reads the
 #     clustree PNG that sc_cluster_sweep just saved. Auto-picks the most
 #     recent sweep figure from @figures.
-source(system.file("examples", "llm_wrappers.R", package = "scAgentKit"))
-chat_fn <- make_chat_fn_anthropic()
+chat_fn <- chat_claude()
 
 obj <- sc_resolution_recommend(
   obj, chat_fn = chat_fn,
@@ -77,7 +79,7 @@ obj <- sc_resolution_recommend(
 )
 rec <- obj@params$resolution_recommendation
 rec$chosen          # suggested resolution (snapped to sweep grid)
-rec$clustree_notes  # what the model saw in the image
+rec$visual_notes    # what the model reported about the image
 rec$reasoning
 
 # Commit — adopt the suggestion or override with your own number.
@@ -108,9 +110,8 @@ obj <- annot_match_reference(obj, reference = ref, top_n_candidates = 5)
 
 # 8b. LLM reconciliation: for each cluster, send marker list + reference
 #     candidates + cluster proportion to the LLM. See
-#     inst/examples/llm_wrappers.R for concrete chat_fn implementations.
-source(system.file("examples", "llm_wrappers.R", package = "scAgentKit"))
-chat_fn <- make_chat_fn_anthropic(model = "claude-sonnet-4-5")  # or openai/ollama
+#     `list_chat_providers()` for the built-in chat_fn implementations.
+chat_fn <- chat_claude()
 
 obj <- annot_llm_annotate(
   obj,
@@ -128,12 +129,12 @@ obj@params$llm_annotations[,
   c("cluster", "primary_annotation", "confidence",
     "recommended_action", "contradicting_markers")]
 
-# 8d. Apply annotations, dropping clusters the LLM flagged 'reject'.
+# 8d. Apply annotations while retaining model-flagged clusters for review.
 #     Manual overrides win over the LLM if you disagree with any call.
 obj <- annot_apply(
   obj,
   source           = "llm",
-  drop_rejected    = TRUE,
+  drop_rejected    = FALSE,
   manual_overrides = c("3" = "Inflammatory Myeloid cell")  # e.g. MDSC/Neu mix
 )
 
@@ -141,8 +142,8 @@ obj <- sc_plot_umap(obj, group_bys = c("cell_type", "group"),
                     tag = "annotated")
 obj <- save_checkpoint(obj, "checkpoints/06_annotated.qs")
 
-# ---- 9. Export reproducibility artifacts ----
-export_script(obj, "reproducible_script.R",
+# ---- 9. Export review and reconstruction artifacts ----
+export_script(obj, "generated_script_trace.R",
               header_comment = "Ca_Ctrl full pipeline with annotation")
 export_decisions(obj, "decisions.json")
 

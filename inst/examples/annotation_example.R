@@ -32,13 +32,11 @@ obj <- annot_match_reference(obj, reference = ref, top_n_candidates = 5)
 head(obj@params$reference_matches, 20)
 
 # ---- 4. Build a chat_fn (pick any one) -------------------------------------
-source(system.file("examples", "llm_wrappers.R", package = "scAgentKit"))
-
-chat_fn <- make_chat_fn_anthropic(model = "claude-sonnet-4-5")
-# chat_fn <- make_chat_fn_openai(model   = "gpt-4o-mini")
-# chat_fn <- make_chat_fn_deepseek()
-# chat_fn <- make_chat_fn_ollama(model   = "llama3.1:70b")    # fully local
-# chat_fn <- make_chat_fn_mock("T cell")                      # dry run
+chat_fn <- chat_claude()
+# chat_fn <- chat_openai()
+# chat_fn <- chat_deepseek()
+# For a local OpenAI-compatible endpoint, use
+# make_chat_fn_openai_compatible(..., api_key_env = "").
 
 # ---- 5. LLM annotation -----------------------------------------------------
 obj <- annot_llm_annotate(
@@ -72,13 +70,13 @@ print(flagged)
 #                           clusters = c("3", "11"))
 
 # ---- 8. Apply annotations --------------------------------------------------
-# drop_rejected drops clusters flagged 'reject' (e.g. the cluster17
-# pancreatic-contamination case from the original Ca_Ctrl analysis).
+# Treat model-produced rejection flags as review cues. Keep all clusters here;
+# only remove cells after independent QC confirms the decision.
 # manual_overrides always win over the LLM call.
 obj <- annot_apply(
   obj,
   source           = "llm",
-  drop_rejected    = TRUE,
+  drop_rejected    = FALSE,
   manual_overrides = c("3" = "Inflammatory Myeloid cell")
 )
 
@@ -90,5 +88,5 @@ obj <- sc_plot_umap(obj, group_bys = "cell_type", split_by = "group",
 
 # ---- 10. Checkpoint + export -----------------------------------------------
 obj <- save_checkpoint(obj, "checkpoints/06_annotated.qs")
-export_script(obj,    "reproducible_script.R")
+export_script(obj,    "generated_script_trace.R")
 export_decisions(obj, "decisions.json")

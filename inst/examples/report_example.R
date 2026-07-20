@@ -1,9 +1,8 @@
 # =============================================================
 # Example: Using annot_query_cellmarker() + report_html()
 #
-# Shows how to (a) skip the reference-file chore by querying
-# CellMarker 2.0 directly, and (b) generate a self-contained HTML
-# report at the end of a pipeline.
+# Shows how to (a) query CellMarker 2.0 directly and (b) generate an HTML
+# review report at the end of a pipeline.
 # =============================================================
 
 library(scAgentKit)
@@ -35,20 +34,18 @@ head(ref)
 # ---- 3. Use it in the normal annotation flow ------------------------------
 obj <- annot_match_reference(obj, reference = ref, top_n_candidates = 5)
 
-source(system.file("examples", "llm_wrappers.R", package = "scAgentKit"))
-chat_fn <- make_chat_fn_anthropic()
+chat_fn <- chat_claude()
 
 obj <- annot_llm_annotate(
   obj,
   chat_fn = chat_fn,
   tissue  = "mouse colon (Ca vs Ctrl)"
 )
-obj <- annot_apply(obj, source = "llm", drop_rejected = TRUE)
+obj <- annot_apply(obj, source = "llm", drop_rejected = FALSE)
 obj <- sc_plot_umap(obj, group_bys = "cell_type", tag = "annotated")
 
-# ---- 4. Generate the self-contained HTML report ---------------------------
-# Single file, no companion image folder. Safe to email / attach to a
-# paper submission / commit alongside the manuscript repo.
+# ---- 4. Generate an HTML review report ------------------------------------
+# Review the report and its provenance metadata before sharing or archiving it.
 report_html(
   obj,
   path  = "analysis_report.html",
@@ -62,9 +59,9 @@ report_html(
 #   - Figure gallery (all PNGs embedded as base64)
 #   - LLM annotations (cluster, annotation, confidence,
 #     supporting/contradicting markers, action, reasoning)
-#   - Reproducible R script (full snippet)
+#   - Generated R script trace (review before execution)
 
 # ---- 5. Also emit the plain-text artifacts (complementary) ----------------
-export_script(obj,    "reproducible_script.R")
+export_script(obj,    "generated_script_trace.R")
 export_decisions(obj, "decisions.json")
 save_checkpoint(obj,  "checkpoints/06_annotated.qs")

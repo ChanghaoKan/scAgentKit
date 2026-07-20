@@ -16,7 +16,9 @@ qc_add_metrics(
 \arguments{
 \item{obj}{An AgentSeurat object.}
 
-\item{species}{Character, one of "mouse" or "human". Defaults to "mouse".
+\item{species}{Character, one of `"auto"`, `"mouse"`, or `"human"`.
+Defaults to `"auto"`, which infers mouse versus human from gene-name
+conventions and asks for an explicit choice when detection is ambiguous.
 Ignored if all three custom patterns are supplied.}
 
 \item{mt_pattern}{Optional custom regex for mitochondrial genes.}

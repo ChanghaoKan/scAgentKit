@@ -1,7 +1,7 @@
 #' Normalize counts (LogNormalize by default)
 #'
 #' Wrapper around [Seurat::NormalizeData()] that records parameters and
-#' emits a reproducible script snippet. Operates only on single Seurat
+#' emits a generated script snippet. Operates only on single Seurat
 #' objects (`data_type == "seurat"`); normalize *before* splitting if you
 #' need per-sample intermediate steps, or *after* merging for integrated
 #' workflows.

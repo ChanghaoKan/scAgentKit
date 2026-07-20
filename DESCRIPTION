@@ -1,25 +1,24 @@
 Package: scAgentKit
 Type: Package
-Title: LLM-Orchestrated, Auditable scRNA-seq Pipeline
-Version: 0.3.0
+Title: Human-in-the-Loop, Auditable scRNA-Seq Toolkit
+Version: 0.4.0
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
-Description: End-to-end single-cell RNA-seq pipeline (QC, integration,
-    dimensionality reduction, clustering, annotation, sub-annotation)
-    with vision-capable LLM-driven decisions at every analyst-judgement
-    step. Built on agentomicsCore, scAgentKit logs every decision with
-    rationale and exports a fully reproducible R script. Distinctive
-    features include cycling-cluster lineage rescue, structured
-    contamination criteria for cluster annotation, hybrid (LLM +
-    objective) confidence scoring, marker-citation hallucination
-    validation, and per-step LLM token / cost tracking.
+Description: Experimental single-cell RNA-seq toolkit covering quality
+    control, integration, dimensionality reduction, clustering, annotation,
+    and sub-annotation. Built on agentomicsCore, it supports optional
+    model-assisted decisions while retaining analyst review, decision
+    records, parameters, figures, and generated script snippets. Includes
+    cycling-cluster lineage cues, structured contamination prompts, hybrid
+    confidence heuristics, marker-citation checks, and best-effort token
+    usage capture when providers return usage metadata.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends:
-    R (>= 4.1.0)
+    R (>= 4.2.0)
 Imports:
-    agentomicsCore (>= 0.1.0),
+    agentomicsCore (>= 0.1.1),
     methods,
     Seurat (>= 5.0.0),
     SeuratObject,
@@ -28,6 +27,9 @@ Imports:
     Matrix,
     magrittr,
     jsonlite
+Remotes:
+    ChanghaoKan/agentomicsCore@v0.1.1,
+    SeuratData=github::satijalab/seurat-data
 Suggests:
     harmony,
     scDblFinder,
