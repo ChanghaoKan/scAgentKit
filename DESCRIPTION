@@ -29,7 +29,7 @@ Imports:
     jsonlite
 Remotes:
     ChanghaoKan/agentomicsCore@v0.1.1,
-    satijalab/seurat-data
+    SeuratData=github::satijalab/seurat-data
 Suggests:
     harmony,
     scDblFinder,
