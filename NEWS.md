@@ -1,4 +1,4 @@
-# scAgentKit 0.4.0 (2026-07-20)
+# scAgentKit 0.4.0 (2026-07-21)
 
 * Make `annot_apply()` non-destructive by default: clusters flagged by an
   LLM as `reject` are retained unless the analyst explicitly sets
