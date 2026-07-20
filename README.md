@@ -1,7 +1,7 @@
 # scAgentKit
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![R: >= 4.1](https://img.shields.io/badge/R-%3E%3D%204.1-blue)](https://www.r-project.org/)
+[![R: >= 4.2](https://img.shields.io/badge/R-%3E%3D%204.2-blue)](https://www.r-project.org/)
 [![Seurat: >= 5.0](https://img.shields.io/badge/Seurat-%3E%3D%205.0-orange)](https://satijalab.org/seurat/)
 [![R-CMD-check](https://github.com/ChanghaoKan/scAgentKit/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ChanghaoKan/scAgentKit/actions/workflows/R-CMD-check.yaml)
 
@@ -65,7 +65,7 @@ This is a research-software prototype, not an autonomous analyst. The biological
 
 ### Prerequisites
 
-- R >= 4.1.0
+- R >= 4.2.0
 - Seurat >= 5.0.0
 
 ### Install from GitHub
