@@ -7,3 +7,6 @@
 *.tar.gz
 .DS_Store
 check/
+workbench/.local/
+workbench/**/__pycache__/
+workbench/test-output/

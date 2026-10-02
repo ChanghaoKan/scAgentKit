@@ -1501,6 +1501,22 @@ Rscript -e 'devtools::check()'
 
 ---
 
+## Local PBMC3k evidence workbench
+
+The optional [local research workbench](workbench/README.md) displays frozen
+PBMC3k coordinates, marker measurements, database candidates and cached model
+results. It records reasoned decisions with exact cell scopes, separate
+type/state/QC dimensions, append-only undo, portable handoffs and stale-input
+detection. It uses Python's standard library and a browser, and makes no model
+or external API calls.
+
+```sh
+sh workbench/run-local.sh /path/to/frozen/phase1/results --port 8765
+```
+
+Open `http://127.0.0.1:8765`. Frozen data and local sessions are not included
+in the repository. Review statuses describe workflow, not biological truth.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
