@@ -35,7 +35,10 @@ doing so removes their cells from the returned object. Ignored when
 }
 \value{
 Updated AgentSeurat. The Seurat metadata gains `column_name`;
-  the set of rejected clusters (if any) is recorded in the decision log.
+the set of rejected clusters (if any) is recorded in the decision log.
+Generated scripts preserve labels and cluster IDs as R literals and
+require the original input cell-ID set and per-cell cluster assignments
+before replaying offline. Input cells may be reordered.
 }
 \description{
 Takes either the LLM annotation table produced by [annot_llm_annotate()]

@@ -4,7 +4,7 @@ make_annot_apply_fixture <- function() {
     nrow = 2,
     dimnames = list(c("G1", "G2"), paste0("C", 1:4))
   )
-  seu <- Seurat::CreateSeuratObject(counts = counts)
+  seu <- Seurat::CreateSeuratObject(counts = Matrix::Matrix(counts, sparse = TRUE))
   seu$seurat_clusters <- c("0", "0", "1", "1")
   obj <- AgentSeurat(seu)
   obj@params$llm_annotations <- data.frame(

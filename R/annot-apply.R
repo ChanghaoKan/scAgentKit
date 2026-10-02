@@ -24,6 +24,9 @@
 #'
 #' @return Updated AgentSeurat. The Seurat metadata gains `column_name`;
 #'   the set of rejected clusters (if any) is recorded in the decision log.
+#'   Generated scripts preserve labels and cluster IDs as R literals and
+#'   require the original input cell-ID set and per-cell cluster assignments
+#'   before replaying offline. Input cells may be reordered.
 #' @export
 annot_apply <- function(obj,
                         source           = c("llm", "manual"),
@@ -74,6 +77,7 @@ annot_apply <- function(obj,
   }
 
   # ---- Apply mapping to metadata --------------------------------------
+  input_cell_ids <- colnames(obj@data)
   cluster_vec <- as.character(obj@data@meta.data$seurat_clusters)
   new_col <- unname(mapping[cluster_vec])
   # Any cluster not in mapping: label "Unannotated"
@@ -89,27 +93,38 @@ annot_apply <- function(obj,
   n_after <- ncol(obj@data)
 
   # ---- Generated script trace ----------------------------------------
-  mapping_str <- paste(
-    sprintf('  "%s" = "%s"', names(mapping), mapping),
-    collapse = ",\n"
-  )
+  # Labels and cluster IDs can contain arbitrary provider text. Serialize
+  # them as data rather than interpolating them into executable R syntax.
+  literal <- function(x) {
+    paste(utils::capture.output(dput(x, control = c("keepNA", "keepInteger", "showAttributes"))),
+          collapse = "\n")
+  }
   drop_block <- if (length(rejected) > 0) {
-    sprintf(
-'\n# Drop rejected clusters
-seurat_obj <- subset(seurat_obj,
-                     subset = !(seurat_clusters %%in%% c(%s)))',
-      paste(sprintf('"%s"', rejected), collapse = ", ")
+    paste0(
+      "\n# Drop rejected clusters by cell ID\n",
+      "annotation_keep_cell_ids <- colnames(seurat_obj)[",
+      "!(annotation_cluster_ids %in% rejected_clusters)]\n",
+      "seurat_obj <- seurat_obj[, annotation_keep_cell_ids]"
     )
   } else ""
 
-  script <- sprintf(
-'# ---- Apply annotations (%s) ----
-cell_type_map <- c(
-%s
-)
-seurat_obj$%s <- unname(cell_type_map[as.character(seurat_obj$seurat_clusters)])
-seurat_obj$%s[is.na(seurat_obj$%s)] <- "Unannotated"%s',
-    source, mapping_str, column_name, column_name, column_name, drop_block
+  script <- paste0(
+    "# ---- Apply saved annotations (", source, "); no model call ----\n",
+    "annotation_input_cell_ids <- ", literal(input_cell_ids), "\n",
+    "if (!setequal(annotation_input_cell_ids, colnames(seurat_obj))) ",
+    "stop(\"Replay input cell IDs differ from the saved input.\")\n",
+    "annotation_saved_cluster_ids <- ",
+    literal(stats::setNames(cluster_vec, input_cell_ids)), "\n",
+    "annotation_cluster_ids <- as.character(seurat_obj[[\"seurat_clusters\", drop = TRUE]])\n",
+    "if (!identical(annotation_cluster_ids, ",
+    "unname(annotation_saved_cluster_ids[colnames(seurat_obj)]))) ",
+    "stop(\"Replay input cluster assignments differ from the saved input.\")\n",
+    "cell_type_map <- ", literal(mapping), "\n",
+    "rejected_clusters <- ", literal(rejected), "\n",
+    "annotation_values <- unname(cell_type_map[annotation_cluster_ids])\n",
+    "annotation_values[is.na(annotation_values)] <- \"Unannotated\"\n",
+    "seurat_obj[[", literal(column_name), "]] <- annotation_values",
+    drop_block
   )
 
   if (is.null(rationale)) {
@@ -136,7 +151,9 @@ seurat_obj$%s[is.na(seurat_obj$%s)] <- "Unannotated"%s',
       n_mapped           = length(mapping),
       n_cells_before     = n_before,
       n_cells_after      = n_after,
-      manual_overrides   = manual_overrides
+      manual_overrides   = manual_overrides,
+      annotation_mapping = mapping,
+      input_cluster_assignments = stats::setNames(cluster_vec, input_cell_ids)
     ),
     rationale      = rationale,
     script_snippet = script,

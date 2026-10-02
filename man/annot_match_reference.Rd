@@ -19,7 +19,13 @@ return per cluster. Default 5.}
 \value{
 Updated AgentSeurat; a data frame of matches (columns:
   cluster, cell_type, overlap_count, celltype_size, score,
-  matched_markers) is stored at `obj@params$reference_matches`.
+  matched_markers) is stored at `obj@params$reference_matches`. All scored
+  candidates, including zero-overlap entries, are retained at
+  `obj@params$reference_matches_all` for offline evidence review. An empty
+  reference produces empty tables rather than an annotation. The reference
+  table and source provenance are saved in the object's parameters. When
+  current Seurat cluster metadata exists, \code{reference_match_input_cells}
+  retains its exact cell-ID to cluster mapping for later alignment checks.
 }
 \description{
 For each cluster's top marker list, computes an overlap score against

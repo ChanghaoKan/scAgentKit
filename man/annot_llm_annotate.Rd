@@ -17,7 +17,8 @@ annot_llm_annotate(
   validate_markers = TRUE,
   parallel = FALSE,
   verbose = TRUE,
-  rationale = NULL
+  rationale = NULL,
+  reference_mode = c("guided", "independent")
 )
 }
 \arguments{
@@ -36,7 +37,7 @@ schema described in the system prompt.}
 \item{expected_celltypes}{Optional character vector of cell types that
 should plausibly be present in this tissue. If supplied, the LLM is
 instructed to prefer these and to flag novel types. If NULL,
-`annot_llm_annotate()` will attempt to auto-detect a celltype column
+in guided mode, `annot_llm_annotate()` attempts to auto-detect a celltype column
 in the Seurat metadata and use those values as a *prior* (see
 `strict_vocabulary`).}
 
@@ -53,7 +54,7 @@ propagate annotation errors.}
 \item{clusters}{Optional integer or character vector restricting which
 clusters to annotate (for iterative review). Default NULL = all.}
 
-\item{max_retries}{Integer, JSON-parse retries on malformed output.
+\item{max_retries}{Integer, JSON-parse and annotation-schema retries on malformed output.
 Default 2.}
 
 \item{n_samples}{Integer, number of independent LLM calls per cluster.
@@ -68,7 +69,8 @@ but repeated calls may add limited independent information.}
 
 \item{validate_markers}{Logical, default TRUE. When TRUE, the
 `supporting_markers` and `contradicting_markers` returned by the LLM
-are checked against the actual top-marker list. Any genes not in
+are checked against the differential and lineage-rescue marker lists
+actually displayed in the prompt. Any genes not in
 the supplied evidence are stored in the legacy-named
 `hallucinated_markers` field. This means "unsupported by this input
 marker list", not necessarily biologically false. The corresponding
@@ -86,6 +88,12 @@ into the parent's accumulator on completion. `temperature = 0` and
 \item{verbose}{Logical, print progress per cluster. Default TRUE.}
 
 \item{rationale}{Optional LLM-supplied top-level rationale.}
+
+\item{reference_mode}{Character, `"guided"` (default) includes reference
+candidates in the LLM prompt. `"independent"` supplies only marker and
+tissue evidence, disables automatic metadata cell-type priors, and saves
+reference candidates separately for later comparison. Explicit
+`expected_celltypes` remain available in either mode.}
 }
 \value{
 Updated AgentSeurat. A data frame of annotations is stored at
@@ -95,7 +103,13 @@ Updated AgentSeurat. A data frame of annotations is stored at
   hybrid_confidence_label, confidence_disagreement,
   supporting_markers, contradicting_markers, hallucinated_markers,
   alternative_annotations, recommended_action, ensemble_agreement,
-  ensemble_n, reasoning.
+  ensemble_n, annotation_status, annotation_error, annotation_attempts,
+  reasoning. Prompts, marker evidence, and each raw response attempt are
+  stored in `obj@params$llm_annotation_responses` for offline review,
+  with the cell/cluster snapshot in `llm_annotation_input_cells`.
+  The step records success only when all requested responses validate.
+  Exported script snippets restore saved decisions without provider
+  calls and require identical cell order and per-cell cluster IDs.
 }
 \description{
 For each cluster, assembles an evidence bundle (top markers, reference
@@ -136,12 +150,14 @@ heuristic signals from marker/reference evidence and model output, each in
 [0, 1]. The score and cutoffs are not calibrated probabilities:
 \itemize{
   \item `ref_overlap` (weight 0.30): the cluster's best reference
-    overlap score from `annot_match_reference`, capped at 1.
+    overlap score for the same cell-type label as the LLM annotation
+    (ignoring case and surrounding whitespace), capped at 1. Unrelated
+    candidate labels do not increase this score.
   \item `specificity` (weight 0.30): median `pct.1 - pct.2` of the
     cluster's top markers.
   \item `non_hallucination` (weight 0.20): fraction of the LLM's
     `supporting_markers` that actually appear in the cluster's
-    top-marker list.
+    displayed differential or lineage-rescue marker lists.
   \item `proportion_plausibility` (weight 0.20): 1 if the LLM
     reported `reasonable`, 0.5 for `suspicious`, 0 for `abnormal`
     and 0.5 when missing.

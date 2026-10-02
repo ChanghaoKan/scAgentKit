@@ -33,7 +33,10 @@ exists. Default FALSE.}
 }
 \value{
 Data frame shaped for [annot_match_reference()], with the
-  `species` and `tissue_filter` attributes set.
+  `species` and `tissue_filter` attributes set. Source URL, cache path,
+  file MD5, source version, and selected marker column are recorded as
+  attributes. A manually populated cache without a \code{.source-url} sidecar
+  has an unverified source URL; its path and content MD5 remain recorded.
 }
 \description{
 Fetches marker-to-celltype records from the CellMarker 2.0 download
@@ -46,6 +49,8 @@ CellMarker 2.0 does not expose a clean REST endpoint; instead it
 publishes the full curated table as a single XLSX file. We mirror the
 full table on first use (\code{~50 MB}), cache it locally, and apply
 tissue / species filters in R. Subsequent calls are fast and offline.
+Gene symbols are taken from \code{Symbol}, then \code{gene_symbol}, then \code{marker};
+the latter can contain protein aliases that do not match RNA features.
 
 Source: Hu et al., CellMarker 2.0, Nucleic Acids Research 2023.
 Use stable mirror address (original yikedaxue.slwshop.cn often returned 502 Bad Gateway):

@@ -869,12 +869,29 @@ export_script(obj, "analysis.R")
 |----------|---------|----------------|
 | `annot_load_reference()` | Load marker reference database | `path`, `tissue_filter` |
 | `annot_match_reference()` | Score clusters vs reference | `reference`, `top_n_candidates` |
-| `annot_llm_annotate()` | LLM-driven annotation | `chat_fn`, `tissue`, `expected_celltypes` |
+| `annot_llm_annotate()` | LLM-driven annotation | `chat_fn`, `tissue`, `expected_celltypes`, `reference_mode` |
+| `annot_review_evidence()` | Offline database/LLM agreement, conflict, or unknown review | `label_map` |
 | `annot_apply()` | Apply annotations; rejected clusters are retained by default | `source`, `drop_rejected`, `manual_overrides` |
 | `annot_clean_celltypes()` | Merge & clean cell type names | `merge_plural`, `min_cells`, `vision` |
 | `annot_collapse_to_broad()` | Fine → broad label vector | `x`, `extra_map`, `keep_unmapped` |
 | `annot_subcluster()` | Per-lineage fine annotation | `target`, `subcluster_resolution`, `tissue` |
 | `annot_compare_with_reference()` | Compare with author labels | `reference_col`, `predicted_col` |
+
+`annot_llm_annotate(reference_mode = "guided")` retains the existing behavior:
+database candidates accompany the marker evidence in the initial prompt.
+Use `reference_mode = "independent"` for an initial LLM assessment that sees
+markers and tissue context without database candidates or automatically detected
+author-label priors. Explicit caller-supplied vocabularies remain available.
+Then call `annot_review_evidence()` on the saved results to inspect agreement,
+conflict, and unknown evidence before applying labels. This review makes no model
+call and leaves cell removal and final labels to the analyst. Supply an explicit
+`label_map` when the two branches use different label granularities.
+
+Automatic reference download currently uses CellMarker 2.0. ACT exports can be
+loaded as a local reference; the package does not implement the original ACT
+algorithm or an ACT query service. Reference overlap and hybrid confidence are
+review heuristics, not calibrated accuracy estimates. The offline PBMC3k harness
+and its exact limitations are documented in [benchmark/README.md](benchmark/README.md).
 
 ### Visualization
 
