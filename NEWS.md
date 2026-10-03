@@ -1,3 +1,10 @@
+# scAgentKit 0.5.0.9000
+
+- Add server-side `sc_run` with typed QC/annotation proposals, exact approvals, checkpoints and headless resume.
+- Add aggregate-transfer previews, provider budget holds/caches, input/config/implementation binding, and explicit scientific result acceptance.
+- Reuse existing Seurat preparation, marker/reference and project bundle functions; preserve source objects and annotation columns.
+- Batch integration and pending QC browser approvals remain outside this version.
+
 # scAgentKit 0.4.0.9000 (local development)
 
 * Parse cleaning recommendations as strict JSON; preserve the caller's deletion

@@ -1,5 +1,12 @@
 # scAgentKit
 
+The server-first R coordinator is available on this development branch. Start with
+`sc_run(input, project_dir, context=...)`, inspect and approve the exact saved
+proposal, then `sc_run_resume(project_dir)`. It persists checkpoints and reviewed
+outputs on the data machine; no browser or manual ZIP transfer is required.
+See [the runnable guide](docs/SERVER_FIRST.md) and `inst/examples/server_first.R`.
+
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![R: >= 4.2](https://img.shields.io/badge/R-%3E%3D%204.2-blue)](https://www.r-project.org/)
 [![Seurat: >= 5.0](https://img.shields.io/badge/Seurat-%3E%3D%205.0-orange)](https://satijalab.org/seurat/)
