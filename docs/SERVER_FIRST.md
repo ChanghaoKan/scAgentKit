@@ -113,11 +113,12 @@ The following starts a **new** project and initially pauses at an outgoing previ
 ```r
 provider <- list(name = "deepseek", model = "deepseek-flash",
   api_key_env = "DEEPSEEK_API_KEY", reservation_usd = 0.05,
+  pricing = list(input_per_million = 0.30, output_per_million = 1.20,
+    cached_input_per_million = 0.006),
   generation = list(temperature = 0, max_tokens = 1200L,
     thinking = list(type = "disabled")))
-# Alternative: list(name="grok", model="grok-4.20-0309-non-reasoning",
-#   api_key_env="XAI_API_KEY", reservation_usd=0.05,
-#   generation=list(temperature=0, max_tokens=1200L))
+# For Grok or another provider, also fill pricing from its verified current
+# model-specific rates before starting; do not reuse these DeepSeek rates.
 run <- sc_run(toy, "/durable/path/to/provider-toy", context = server_demo_context(),
   provider = provider, budget = 0.20, review = list(allow_external = TRUE))
 preview <- sc_run_inspect("/durable/path/to/provider-toy")
@@ -130,6 +131,23 @@ run <- sc_run_resume("/durable/path/to/provider-toy")
 # Now inspect and approve the separate QC proposal. A later annotation request
 # has its own aggregate transfer preview before the annotation approval node.
 ```
+
+This complete-run configuration includes the three USD-per-million pricing
+fields used by the implementation. The DeepSeek Flash values above use the
+conservative peak rates checked on 2026-10-03: input cache miss 0.30, output 1.20,
+and input cache hit 0.006. Off-peak rates are lower; these settings deliberately
+keep a conservative usage estimate rather than claiming an exact invoice.
+Recheck the [official model pricing](https://api-docs.deepseek.com/quick_start/pricing/)
+before starting a new project and replace the values if the tariff changed.
+Do not change pricing in a saved run: it is part of the provider configuration
+bound to its approved requests. Start a fresh project for changed settings.
+
+With returned input/output usage and these rates, the coordinator settles each
+request reservation and can continue from QC to the separate annotation request.
+A missing usage response still retains its hold and pauses new requests. Omitting
+`pricing` is appropriate only for a deliberate single-request smoke, or a custom
+`chat_fn` that returns a known `cost_usd`; a factory response with usage but no
+pricing cannot calculate its cost and will hold the reservation after that call.
 
 `allow_external = TRUE` enables proposing a transfer; the exact payload still
 needs approval. To use an existing factory or custom runtime function, pass it as
