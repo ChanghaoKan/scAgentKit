@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import fcntl
 import json
+import math
 import os
 import re
 import tempfile
@@ -19,12 +20,32 @@ except ImportError:
     from evidence import ALLOWED_FILES, DATASET_ID, canonical, digest, revision_for, snapshot, strict_json
 
 FORMAT = "scagentkit.workbench.handoff.v1"
+DIRECTED_FORMAT = "scagentkit.workbench.handoff.v2"
 # Leave room for the {"package": ...} HTTP import wrapper. Export uses compact JSON.
 MAX_SESSION_BYTES = 32 * 1024 * 1024 - 1024
 ZERO_HASH = "0" * 64
 HASH_RE = re.compile(r"^[a-f0-9]{64}$")
 DIMENSIONS = ("type", "state", "QC")
 STATUSES = ("proposed", "reviewed", "accepted")
+
+
+def portable_content(value):
+    """Keep capsule numbers stable across Python and browser JSON round trips.
+
+    JSON has one numeric type. Integral safe floats become integers before
+    hashing; unusually large numbers are refused rather than rounded by JS.
+    This applies only to new evidence capsules, never existing event hashes.
+    """
+    if isinstance(value, dict):
+        return {key: portable_content(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [portable_content(item) for item in value]
+    if type(value) in (int, float):
+        if abs(value) > 9007199254740991 or not math.isfinite(value):
+            raise StoreError("Directed capsule contains a number outside the portable JSON range")
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+    return value
 
 
 class StoreError(ValueError):
@@ -59,10 +80,34 @@ def _replay(events):
 
 
 def validate_package(package, current_evidence=None):
-    if not isinstance(package, dict) or set(package) != {"format", "datasetId", "revisions", "events"}:
+    if not isinstance(package, dict):
         raise StoreError("Unrecognized handoff package structure")
-    if package["format"] != FORMAT or package["datasetId"] != DATASET_ID:
+    version = package.get("format")
+    fields = {"format", "datasetId", "revisions", "events"}
+    if version == DIRECTED_FORMAT:
+        fields.add("artifacts")
+    if set(package) != fields:
+        raise StoreError("Unrecognized handoff package structure")
+    if version not in (FORMAT, DIRECTED_FORMAT) or package["datasetId"] != DATASET_ID:
         raise StoreError("Handoff format or dataset does not match")
+    artifacts = package.get("artifacts", {})
+    if not isinstance(artifacts, dict) or len(artifacts) > 1000:
+        raise StoreError("Invalid directed evidence artifacts")
+    for identity, artifact in artifacts.items():
+        if (not isinstance(identity, str) or not HASH_RE.fullmatch(identity)
+                or not isinstance(artifact, dict)
+                or set(artifact) != {"kind", "id", "sha256", "content"}
+                or artifact["kind"] != "directed_proposal" or artifact["id"] != identity
+                or artifact["sha256"] != identity
+                or identity not in (digest(portable_content(artifact["content"])), digest(artifact["content"]))):
+            raise StoreError("Invalid directed evidence artifact identity / hash")
+        content = artifact["content"]
+        required = {"schemaVersion", "clusterId", "revision", "sourceHash", "extractorHash", "taxonomyHash", "bundleHash", "planHash", "provisional"}
+        if (not isinstance(content, dict) or set(content) != required or content["schemaVersion"] != 1
+                or content["clusterId"] != "6" or not isinstance(content["provisional"], dict)
+                or any(not isinstance(content[name], str) or not HASH_RE.fullmatch(content[name])
+                       for name in ("revision", "sourceHash", "extractorHash", "taxonomyHash", "bundleHash", "planHash"))):
+            raise StoreError("Invalid directed evidence artifact content")
     revisions = package["revisions"]
     if not isinstance(revisions, dict) or len(revisions) > 200:
         raise StoreError("Invalid revision snapshots")
@@ -111,6 +156,8 @@ def validate_package(package, current_evidence=None):
         kind = event.get("kind")
         if kind == "decision":
             required |= {"label", "status", "supersedes"}
+            if "evidenceRefs" in event and version == DIRECTED_FORMAT:
+                required.add("evidenceRefs")
         elif kind == "undo":
             required |= {"targetEventId"}
         else:
@@ -148,6 +195,21 @@ def validate_package(package, current_evidence=None):
             _plain(event["label"], "label", 160)
             if event["status"] not in STATUSES:
                 raise StoreError("Invalid workflow status")
+            if "evidenceRefs" in event:
+                references = event["evidenceRefs"]
+                if not isinstance(references, list) or not references or len(references) > 8:
+                    raise StoreError("Invalid directed evidence references")
+                seen = set()
+                for reference in references:
+                    if (not isinstance(reference, dict) or set(reference) != {"kind", "id", "sha256"}
+                            or reference["kind"] != "directed_proposal" or not isinstance(reference["id"], str)
+                            or reference["id"] in seen or reference["id"] not in artifacts
+                            or reference != {key: artifacts[reference["id"]][key] for key in ("kind", "id", "sha256")}):
+                        raise StoreError("Invalid or duplicate directed evidence reference")
+                    content = artifacts[reference["id"]]["content"]
+                    if content["revision"] != scope["revision"] or content["clusterId"] != scope["clusterId"] or scope["dimension"] != "type":
+                        raise StoreError("Directed evidence reference is outside this decision scope")
+                    seen.add(reference["id"])
             expected_previous = active.get(key)
             if event["supersedes"] != expected_previous:
                 raise StoreError("Decision supersedes reference is not the active decision in its scope")
@@ -228,9 +290,12 @@ class SessionStore:
     def _view(package, evidence, integrity_error=None, evidence_error=None):
         revision = evidence["revision"] if evidence and not evidence_error else None
         current, undone = _replay(package["events"])
-        events = [dict(event, stale=event["scope"]["revision"] != revision,
+        registry = evidence.get("directedArtifacts", {}) if evidence and not evidence_error else {}
+        def is_stale(event):
+            return event["scope"]["revision"] != revision or any(reference["id"] not in registry for reference in event.get("evidenceRefs", []))
+        events = [dict(event, stale=is_stale(event),
                        undone=event["id"] in undone) for event in package["events"]]
-        decisions = [dict(event, stale=event["scope"]["revision"] != revision, undone=False)
+        decisions = [dict(event, stale=is_stale(event), undone=False)
                      for event in current.values()]
         return {"schemaVersion": 1, "revision": revision, "datasetId": DATASET_ID,
                 "events": events, "decisions": decisions,
@@ -265,6 +330,8 @@ class SessionStore:
                 raise StoreError("Import conflicts with immutable local history; use a separate empty session file", 409)
             if any(incoming["revisions"].get(key) != value for key, value in existing["revisions"].items()):
                 raise StoreError("Import changes a recorded revision snapshot", 409)
+            if any(incoming.get("artifacts", {}).get(key) != value for key, value in existing.get("artifacts", {}).items()):
+                raise StoreError("Import changes a recorded directed evidence capsule", 409)
             self._write(copy.deepcopy(incoming))
             return self._view(incoming, evidence)
 
@@ -273,6 +340,8 @@ class SessionStore:
             raise StoreError("Request must be a JSON object")
         fields = {"revision", "requestId", "reason"}
         fields |= {"clusterId", "dimension", "label", "status"} if kind == "decision" else {"targetEventId"}
+        if kind == "decision" and "evidenceRefs" in payload:
+            fields.add("evidenceRefs")
         if set(payload) != fields:
             raise StoreError("Missing or unexpected %s request fields" % kind)
         request_id = _plain(payload["requestId"], "requestId", 160)
@@ -303,6 +372,21 @@ class SessionStore:
                          "dimension": dimension, "cellIds": list(cluster["cellIds"])}
                 previous = current.get(_scope_key(scope))
                 fields = {"label": label, "status": payload["status"], "supersedes": previous["id"] if previous else None}
+                if "evidenceRefs" in payload:
+                    references = payload["evidenceRefs"]
+                    registry = evidence.get("directedArtifacts", {})
+                    if not isinstance(references, list) or not references or len(references) > 8:
+                        raise StoreError("A current directed evidence reference is required")
+                    for reference in references:
+                        if (not isinstance(reference, dict) or set(reference) != {"kind", "id", "sha256"}
+                                or not isinstance(reference.get("id"), str) or reference["id"] not in registry
+                                or reference != {key: registry[reference["id"]][key] for key in ("kind", "id", "sha256")}):
+                            raise StoreError("Directed evidence changed. Refresh and inspect the new proposal before recording", 409)
+                        if registry[reference["id"]]["content"]["clusterId"] != cluster_id or dimension != "type":
+                            raise StoreError("Directed evidence reference is outside this decision scope")
+                    package["format"] = DIRECTED_FORMAT
+                    package.setdefault("artifacts", {}).update({reference["id"]: copy.deepcopy(registry[reference["id"]]) for reference in references})
+                    fields["evidenceRefs"] = copy.deepcopy(references)
             else:
                 target_id = _plain(payload["targetEventId"], "targetEventId", 64)
                 target = next((event for event in package["events"] if event["id"] == target_id), None)

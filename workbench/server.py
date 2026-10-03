@@ -8,14 +8,16 @@ import mimetypes
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 
 try:
     from .evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from .store import SessionStore, StoreError
+    from .directed_runtime import DirectedRuntime
 except ImportError:
     from evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from store import SessionStore, StoreError
+    from directed_runtime import DirectedRuntime
 
 STATIC = Path(__file__).resolve().parent / "static"
 MAX_BODY = 32 * 1024 * 1024
@@ -27,12 +29,13 @@ CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; "
 class WorkbenchServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, loader, store, static_dir=STATIC):
+    def __init__(self, address, loader, store, static_dir=STATIC, directed=None):
         if address[0] != "127.0.0.1":
             raise ValueError("Workbench must bind to 127.0.0.1")
         self.loader = loader
         self.store = store
         self.static_dir = Path(static_dir).resolve()
+        self.directed = directed
         super().__init__(address, Handler)
 
 
@@ -77,7 +80,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _evidence(self):
-        return self.server.loader.load()
+        evidence = self.server.loader.load()
+        return self.server.directed.augment(evidence) if self.server.directed else evidence
 
     def _error(self, error, status=422):
         self._respond(status, {"error": str(error), "readOnly": True if isinstance(error, EvidenceError) else False})
@@ -88,6 +92,18 @@ class Handler(BaseHTTPRequestHandler):
             route = urlsplit(self.path).path
             if route == "/api/evidence":
                 self._respond(200, self._evidence())
+            elif route == "/api/directed":
+                if not self.server.directed:
+                    raise StoreError("Directed expression tools are not configured; supply --directed-source", 409)
+                query = parse_qs(urlsplit(self.path).query)
+                if set(query) - {"clusterId"} or len(query.get("clusterId", ["6"])) != 1:
+                    raise StoreError("Only one clusterId may be selected")
+                cluster_id = query.get("clusterId", ["6"])[0]
+                evidence = self._evidence()
+                if cluster_id not in {cluster["id"] for cluster in evidence["clusters"]}:
+                    raise StoreError("Unknown cluster scope")
+                session = self.server.store.session(evidence)
+                self._respond(200, self.server.directed.describe(evidence, cluster_id, session))
             elif route == "/api/session":
                 try:
                     evidence = self._evidence()
@@ -125,7 +141,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             self._trusted_request()
             route = urlsplit(self.path).path
-            if route not in ("/api/decision", "/api/undo", "/api/import"):
+            if route not in ("/api/decision", "/api/undo", "/api/import", "/api/directed/execute"):
                 raise StoreError("Route does not exist", 404)
             if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
                 raise StoreError("Requests require application/json", 415)
@@ -149,10 +165,17 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.store.decision(payload, evidence)
             elif route == "/api/undo":
                 result = self.server.store.undo(payload, evidence)
+            elif route == "/api/directed/execute":
+                if not self.server.directed:
+                    raise StoreError("Directed expression tools are not configured", 409)
+                if self.server.store.session(evidence)["readOnly"]:
+                    raise StoreError("Session integrity failed; preserve history before proceeding", 409)
+                self._respond(200, self.server.directed.execute(evidence, payload))
+                return
             else:
                 if set(payload) == {"package"}:
                     incoming = payload["package"]
-                elif set(payload) == {"format", "datasetId", "revisions", "events"}:
+                elif set(payload) in ({"format", "datasetId", "revisions", "events"}, {"format", "datasetId", "revisions", "events", "artifacts"}):
                     incoming = payload
                 else:
                     raise StoreError("Import requires a direct handoff package or exactly one package field")
@@ -175,6 +198,10 @@ def main(argv=None):
     parser.add_argument("--session", default=str(Path(__file__).resolve().parent / ".local" / "session.json"), help="Local append-only session file")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--verbose", action="store_true", help="Log local route names only")
+    parser.add_argument("--directed-source", help="Explicit local frozen Seurat RDS for read-only RNA evidence; no generic upload")
+    parser.add_argument("--directed-cache", help="Separate immutable local expression cache directory")
+    parser.add_argument("--r-library", help="Existing R package library for the allowlisted expression tool")
+    parser.add_argument("--rscript", default="Rscript", help="Existing Rscript executable")
     args = parser.parse_args(argv)
     if not 0 <= args.port <= 65535:
         parser.error("port must be between 0 and 65535")
@@ -183,7 +210,8 @@ def main(argv=None):
         evidence = loader.load()
     except EvidenceError as error:
         parser.exit(2, "Evidence rejected: %s\n" % error)
-    server = WorkbenchServer(("127.0.0.1", args.port), loader, SessionStore(args.session))
+    directed = DirectedRuntime(args.results_root, args.directed_source, args.directed_cache, args.r_library, args.rscript) if args.directed_source else None
+    server = WorkbenchServer(("127.0.0.1", args.port), loader, SessionStore(args.session), directed=directed)
     server.verbose = args.verbose
     print("scAgentKit workbench: http://127.0.0.1:%s" % server.server_address[1], flush=True)
     print("2638 cells · 9 clusters · 36 cached calls · evidence %s" % evidence["revision"][:12], flush=True)
