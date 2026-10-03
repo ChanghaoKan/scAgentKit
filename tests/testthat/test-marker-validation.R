@@ -43,3 +43,11 @@ test_that(".validate_cited_markers trims whitespace", {
   res <- scAgentKit:::.validate_cited_markers(parsed, input)
   expect_length(res$hallucinated, 0)
 })
+
+test_that(".validate_cited_markers flags citations when no evidence was supplied", {
+  res <- scAgentKit:::.validate_cited_markers(
+    list(supporting_markers = "FAKE1", contradicting_markers = "BOGUS"), character(0)
+  )
+  expect_setequal(res$hallucinated, c("FAKE1", "BOGUS"))
+  expect_equal(res$rate, 1)
+})

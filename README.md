@@ -30,6 +30,7 @@ This is a research-software prototype, not an autonomous analyst. The biological
 - **Ensemble + hybrid confidence + marker-citation validation** (see `?annot_llm_annotate`).
 - **Cell Ontology mapping** via exact-match-only (`annot_map_to_cl`).
 - **Checkpoint versioning.** `@version` slot + `upgrade_checkpoint()` for backward compatibility.
+- **Local project review.** `sc_project_export()` creates portable evidence from explicit Seurat layers; the optional localhost GUI records scoped, reversible decisions. `sc_review_validate()` and `sc_review_apply()` align accepted decisions by exact cell ID into new columns of a returned copy. See the [local project quickstart](workbench/PROJECT_QUICKSTART.md).
 - **Development checks.** A Docker development environment pins the R base image and core release reference; GitHub Actions runs `R CMD check` on Ubuntu.
 - **Experimental evaluation scaffolding.** `benchmark/` contains a partial harness and planned studies, not published results.
 
@@ -869,12 +870,29 @@ export_script(obj, "analysis.R")
 |----------|---------|----------------|
 | `annot_load_reference()` | Load marker reference database | `path`, `tissue_filter` |
 | `annot_match_reference()` | Score clusters vs reference | `reference`, `top_n_candidates` |
-| `annot_llm_annotate()` | LLM-driven annotation | `chat_fn`, `tissue`, `expected_celltypes` |
+| `annot_llm_annotate()` | LLM-driven annotation | `chat_fn`, `tissue`, `expected_celltypes`, `reference_mode` |
+| `annot_review_evidence()` | Offline database/LLM agreement, conflict, or unknown review | `label_map` |
 | `annot_apply()` | Apply annotations; rejected clusters are retained by default | `source`, `drop_rejected`, `manual_overrides` |
 | `annot_clean_celltypes()` | Merge & clean cell type names | `merge_plural`, `min_cells`, `vision` |
 | `annot_collapse_to_broad()` | Fine → broad label vector | `x`, `extra_map`, `keep_unmapped` |
 | `annot_subcluster()` | Per-lineage fine annotation | `target`, `subcluster_resolution`, `tissue` |
 | `annot_compare_with_reference()` | Compare with author labels | `reference_col`, `predicted_col` |
+
+`annot_llm_annotate(reference_mode = "guided")` retains the existing behavior:
+database candidates accompany the marker evidence in the initial prompt.
+Use `reference_mode = "independent"` for an initial LLM assessment that sees
+markers and tissue context without database candidates or automatically detected
+author-label priors. Explicit caller-supplied vocabularies remain available.
+Then call `annot_review_evidence()` on the saved results to inspect agreement,
+conflict, and unknown evidence before applying labels. This review makes no model
+call and leaves cell removal and final labels to the analyst. Supply an explicit
+`label_map` when the two branches use different label granularities.
+
+Automatic reference download currently uses CellMarker 2.0. ACT exports can be
+loaded as a local reference; the package does not implement the original ACT
+algorithm or an ACT query service. Reference overlap and hybrid confidence are
+review heuristics, not calibrated accuracy estimates. The offline PBMC3k harness
+and its exact limitations are documented in [benchmark/README.md](benchmark/README.md).
 
 ### Visualization
 
@@ -1483,6 +1501,22 @@ Rscript -e 'devtools::check()'
 ```
 
 ---
+
+## Local PBMC3k evidence workbench
+
+The optional [local research workbench](workbench/README.md) displays frozen
+PBMC3k coordinates, marker measurements, database candidates and cached model
+results. It records reasoned decisions with exact cell scopes, separate
+type/state/QC dimensions, append-only undo, portable handoffs and stale-input
+detection. It uses Python's standard library and a browser, and makes no model
+or external API calls.
+
+```sh
+sh workbench/run-local.sh /path/to/frozen/phase1/results --port 8765
+```
+
+Open `http://127.0.0.1:8765`. Frozen data and local sessions are not included
+in the repository. Review statuses describe workflow, not biological truth.
 
 ## License
 

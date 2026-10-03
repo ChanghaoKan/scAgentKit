@@ -35,6 +35,9 @@ values are excluded (likely cell-id / barcode columns). Default 200.}
 Updated AgentSeurat. The scored table is stored at
   `obj@params$batch_candidates`; if `chat_fn` was supplied, a
   recommendation is stored at `obj@params$batch_recommendation`.
+  Includes `status`, `error`, `attempts`, `response_audit`, and `prompts`.
+  If JSON/schema validation fails, `recommended` is `NULL` and `status`
+  is `"failed"`; select a batch variable explicitly before integration.
 }
 \description{
 Scans all metadata columns and ranks them as candidates for

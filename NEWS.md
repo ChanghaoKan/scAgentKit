@@ -1,3 +1,23 @@
+# scAgentKit 0.4.0.9000 (local development)
+
+* Parse cleaning recommendations as strict JSON; preserve the caller's deletion
+  setting, retain cells on failure, and save prompts, responses, cell IDs,
+  final labels, and successful or failed audit records for offline replay.
+* Validate annotation, PC, resolution, and batch recommendation schemas; reject
+  malformed types, invalid enums, unsupported candidates, and wrong cluster IDs.
+* Use the same differential and cycling rescue evidence in annotation prompts
+  and marker-citation checks. Model failure remains visible for analyst review.
+* Add optional independent database/LLM initial assessment while retaining
+  reference-guided annotation as the default. Add offline evidence review with
+  explicit label mapping and agreement, conflict, or unknown outcomes.
+* Preserve reference source provenance, apply available species filtering, and
+  handle empty references or no positive marker matches without crashing.
+* Repair the PC benchmark API calls and add an offline PBMC3k Seurat5 comparison
+  and saved-decision replay harness. Reference labels stay outside analysis
+  input; mock tests are not annotation accuracy evidence.
+
+---
+
 # scAgentKit 0.4.0 (2026-07-21)
 
 * Make `annot_apply()` non-destructive by default: clusters flagged by an

@@ -53,6 +53,9 @@
 #'
 #' @return Updated AgentSeurat. Recommendation stored at
 #'   `obj@params$resolution_recommendation`.
+#'   Includes `status`, `error`, `attempts`, `response_audit`, and `prompts`.
+#'   If JSON/schema validation fails, `chosen` is `NA_real_` and `status`
+#'   is `"failed"`; choose a resolution explicitly before clustering.
 #' @param vision_panels Optional numeric vector of swept resolution values
 #'   whose UMAPs should be included in the vision input. Values not present
 #'   in the sweep are ignored. By default, representative resolutions near
@@ -97,6 +100,9 @@ sc_resolution_recommend <- function(obj,
     stop("Need at least 2 resolution columns (RNA_snn_res.*). Run sc_cluster_sweep() first.")
   }
   res_values <- as.numeric(sub("RNA_snn_res\\.", "", res_cols))
+  if (any(!is.finite(res_values)) || any(res_values <= 0) || anyDuplicated(res_values)) {
+    stop("Resolution metadata columns must encode unique positive finite resolutions.")
+  }
   ord        <- order(res_values)
   res_cols   <- res_cols[ord]
   res_values <- res_values[ord]
@@ -266,76 +272,31 @@ sc_resolution_recommend <- function(obj,
     "\n\nReturn the JSON object now."
   )
 
-  # 7. Call LLM
+  # Validate the full task schema on every attempt; never snap invented
+  # resolutions or numeric strings to a legitimate swept candidate.
   parsed <- .resolution_call_with_retry(
     chat_fn, system_prompt, user_prompt,
-    image_path = img_to_send, max_retries = max_retries
+    image_path = img_to_send, max_retries = max_retries,
+    res_values = res_values,
+    panels_used = if (isTRUE(vision)) panels_used else numeric(),
+    require_visual_notes = isTRUE(vision)
   )
-
-  # 7b. Vision-mode quality check: if `chosen_resolution` is outside the
-  # panels we showed, OR `visual_notes` is empty, re-prompt once with an
-  # explicit correction. Many models (especially Grok, Qwen) skip these
-  # constraints on the first pass; one correction usually fixes it.
-  if (isTRUE(vision) && length(panels_used) > 0) {
-    chosen_raw <- suppressWarnings(as.numeric(
-      parsed$chosen_resolution %||% NA))
-    snapped <- if (!is.na(chosen_raw)) {
-      panels_used[which.min(abs(panels_used - chosen_raw))]
-    } else NA_real_
-    out_of_panel <- is.na(chosen_raw) ||
-      abs(chosen_raw - snapped) > 1e-6
-    notes <- as.character(
-      parsed$visual_notes %||% parsed$clustree_notes %||% "")
-    notes_empty <- !nzchar(trimws(notes))
-    if (out_of_panel || notes_empty) {
-      problems <- c(
-        if (out_of_panel) sprintf(
-          "Your `chosen_resolution` was %s but it must be one of: %s.",
-          format(chosen_raw), panels_str),
-        if (notes_empty)
-          "Your `visual_notes` field was empty; you must describe what you observed in EACH UMAP panel."
-      )
-      correction <- paste0(
-        "Your previous response had problems:\n  - ",
-        paste(problems, collapse = "\n  - "),
-        "\n\nReturn a corrected JSON object now, fixing those issues. ",
-        "Re-state ALL fields in your reply."
-      )
-      parsed2 <- tryCatch(
-        .resolution_call_with_retry(
-          chat_fn, system_prompt,
-          paste0(user_prompt, "\n\n---\n\n", correction),
-          image_path = img_to_send, max_retries = 1
-        ),
-        error = function(e) NULL
-      )
-      if (!is.null(parsed2) &&
-          !is.null(parsed2$chosen_resolution) &&
-          !is.na(suppressWarnings(as.numeric(parsed2$chosen_resolution)))) {
-        parsed <- parsed2
-      }
-    }
-  }
-
-  # Snap to nearest swept resolution
   chosen <- parsed$chosen_resolution
-  if (!is.numeric(chosen) || length(chosen) != 1) {
-    chosen <- suppressWarnings(as.numeric(chosen[[1]]))
-  }
-  if (is.numeric(chosen) && !is.na(chosen)) {
-    chosen <- res_values[which.min(abs(res_values - chosen))]
-  }
 
   recommendation <- list(
     chosen         = chosen,
-    confidence     = as.character(parsed$confidence %||% NA),
-    alternatives   = as.numeric(parsed$alternatives %||% numeric(0)),
-    reasoning      = as.character(parsed$reasoning %||% NA),
-    visual_notes   = as.character(
-      parsed$visual_notes %||% parsed$clustree_notes %||% NA),
+    confidence     = parsed$confidence,
+    alternatives   = parsed$alternatives,
+    reasoning      = parsed$reasoning,
+    visual_notes   = parsed$visual_notes %||% parsed$clustree_notes %||% NA,
     evidence       = stats_df,
     mode           = if (isTRUE(vision)) "vision" else "numeric_only",
-    image_sent     = img_to_send
+    image_sent     = img_to_send,
+    status         = parsed$status,
+    error          = parsed$error,
+    attempts       = parsed$attempts,
+    response_audit = parsed$response_audit,
+    prompts        = list(system = system_prompt, user = user_prompt)
   )
 
   script <- sprintf(
@@ -350,8 +311,8 @@ sc_resolution_recommend <- function(obj,
   )
 
   rationale <- sprintf(
-    "LLM recommended resolution = %s (confidence: %s, mode: %s). Alternatives: %s.",
-    format(chosen), recommendation$confidence, recommendation$mode,
+    "Resolution recommendation = %s (confidence: %s, mode: %s, status: %s). Alternatives: %s.",
+    format(chosen), recommendation$confidence, recommendation$mode, recommendation$status,
     paste(recommendation$alternatives, collapse = ", ")
   )
 
@@ -366,11 +327,13 @@ sc_resolution_recommend <- function(obj,
       recommended           = chosen,
       confidence            = recommendation$confidence,
       alternatives          = recommendation$alternatives,
+      decision_status       = recommendation$status,
       mode                  = recommendation$mode,
       image_sent            = img_to_send
     ),
     rationale      = rationale,
-    script_snippet = script
+    script_snippet = script,
+    success        = identical(recommendation$status, "ok")
   )
   obj@params$resolution_recommendation <- recommendation
   obj <- .attach_step_tokens(obj, "sc_resolution_recommend", .tok_before)
@@ -461,43 +424,30 @@ sc_resolution_recommend <- function(obj,
   )
 }
 
-# Retry loop. image_path is forwarded to chat_fn when non-NULL.
+# Retry through the shared strict parser, retaining every provider response.
 .resolution_call_with_retry <- function(chat_fn, system_prompt, user_prompt,
                                         image_path = NULL,
-                                        max_retries = 2) {
-  last_err <- NULL
-  for (i in seq_len(max_retries + 1)) {
-    raw <- tryCatch(
-      if (is.null(image_path)) {
-        chat_fn(system_prompt, user_prompt)
-      } else {
-        chat_fn(system_prompt, user_prompt, image_path = image_path)
-      },
-      error = function(e) { last_err <<- e; NULL }
-    )
-    if (is.null(raw)) next
-    raw <- sub("^```(?:json)?\\s*", "", raw)
-    raw <- sub("\\s*```\\s*$", "", raw)
-    raw <- trimws(raw)
-    parsed <- tryCatch(jsonlite::fromJSON(raw, simplifyVector = TRUE),
-                       error = function(e) { last_err <<- e; NULL })
-    if (!is.null(parsed)) return(parsed)
-    if (i <= max_retries) {
-      user_prompt <- paste0(user_prompt,
-        "\n\nYour previous response was not valid JSON. ",
-        "Return ONLY the JSON object.")
-    }
-  }
-  list(
-    chosen_resolution = NA,
-    confidence        = "low",
-    alternatives      = numeric(0),
-    visual_notes      = NA_character_,
-    reasoning         = sprintf(
-      "LLM call failed: %s",
-      if (is.null(last_err)) "unknown" else conditionMessage(last_err)
+                                        max_retries = 2,
+                                        res_values,
+                                        panels_used = numeric(),
+                                        require_visual_notes = FALSE) {
+  parsed <- .call_with_retry(
+    chat_fn, system_prompt, user_prompt,
+    max_retries = max_retries, image_path = image_path,
+    validator = function(x) .validate_resolution_decision(
+      x, res_values, panels_used, require_visual_notes
     )
   )
+  audit <- .decision_audit(parsed)
+  if (!identical(audit$status, "ok")) {
+    warning("Resolution decision failed validation; no resolution recommended. Choose explicitly before clustering.",
+            call. = FALSE)
+    return(c(list(chosen_resolution = NA_real_, confidence = "low",
+                  alternatives = numeric(), visual_notes = NA_character_,
+                  reasoning = parsed$reasoning), audit))
+  }
+  c(parsed[intersect(c("chosen_resolution", "confidence", "alternatives",
+                       "visual_notes", "clustree_notes", "reasoning"), names(parsed))], audit)
 }
 
 # Null-coalescing operator (local copy for package independence)

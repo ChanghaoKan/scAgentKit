@@ -38,7 +38,7 @@
 #' @param expected_celltypes Optional character vector of cell types that
 #'   should plausibly be present in this tissue. If supplied, the LLM is
 #'   instructed to prefer these and to flag novel types. If NULL,
-#'   `annot_llm_annotate()` will attempt to auto-detect a celltype column
+#'   in guided mode, `annot_llm_annotate()` attempts to auto-detect a celltype column
 #'   in the Seurat metadata and use those values as a *prior* (see
 #'   `strict_vocabulary`).
 #' @param strict_vocabulary Logical, default FALSE. When TRUE, the LLM is
@@ -52,7 +52,8 @@
 #'   propagate annotation errors.
 #' @param clusters Optional integer or character vector restricting which
 #'   clusters to annotate (for iterative review). Default NULL = all.
-#' @param max_retries Integer, JSON-parse retries on malformed output.
+#' @param max_retries Integer, JSON-parse and annotation-schema retries
+#'   on malformed output.
 #'   Default 2.
 #' @param n_samples Integer, number of independent LLM calls per cluster.
 #'   Default 1 (no ensembling, backwards compatible). When > 1, the LLM
@@ -65,7 +66,8 @@
 #'   but repeated calls may add limited independent information.
 #' @param validate_markers Logical, default TRUE. When TRUE, the
 #'   `supporting_markers` and `contradicting_markers` returned by the LLM
-#'   are checked against the actual top-marker list. Any genes not in
+#'   are checked against the differential and lineage-rescue marker lists
+#'   actually displayed in the prompt. Any genes not in
 #'   the supplied evidence are stored in the legacy-named
 #'   `hallucinated_markers` field. This means "unsupported by this input
 #'   marker list", not necessarily biologically false. The corresponding
@@ -80,6 +82,11 @@
 #'   `n_samples = 1` do not guarantee identical provider responses.
 #' @param verbose Logical, print progress per cluster. Default TRUE.
 #' @param rationale Optional LLM-supplied top-level rationale.
+#' @param reference_mode Character, `"guided"` (default) includes reference
+#'   candidates in the LLM prompt. `"independent"` supplies only marker and
+#'   tissue evidence, disables automatic metadata cell-type priors, and saves
+#'   reference candidates separately for later comparison. Explicit
+#'   `expected_celltypes` remain available in either mode.
 #'
 #' @return Updated AgentSeurat. A data frame of annotations is stored at
 #'   `obj@@params$llm_annotations` with columns: cluster,
@@ -88,7 +95,13 @@
 #'   hybrid_confidence_label, confidence_disagreement,
 #'   supporting_markers, contradicting_markers, hallucinated_markers,
 #'   alternative_annotations, recommended_action, ensemble_agreement,
-#'   ensemble_n, reasoning.
+#'   ensemble_n, annotation_status, annotation_error, annotation_attempts,
+#'   reasoning. Prompts, marker evidence, and each raw response attempt are
+#'   stored in `obj@@params$llm_annotation_responses` for offline review,
+#'   with the cell/cluster snapshot in `llm_annotation_input_cells`.
+#'   The step records success only when all requested responses validate.
+#'   Exported script snippets restore saved decisions without provider
+#'   calls and require identical cell order and per-cell cluster IDs.
 #'
 #' @section Hybrid confidence:
 #' The hybrid confidence score is a weighted combination of four
@@ -96,12 +109,14 @@
 #' [0, 1]. The score and cutoffs are not calibrated probabilities:
 #' \itemize{
 #'   \item `ref_overlap` (weight 0.30): the cluster's best reference
-#'     overlap score from `annot_match_reference`, capped at 1.
+#'     overlap score for the same cell-type label as the LLM annotation
+#'     (ignoring case and surrounding whitespace), capped at 1. Unrelated
+#'     candidate labels do not increase this score.
 #'   \item `specificity` (weight 0.30): median `pct.1 - pct.2` of the
 #'     cluster's top markers.
 #'   \item `non_hallucination` (weight 0.20): fraction of the LLM's
 #'     `supporting_markers` that actually appear in the cluster's
-#'     top-marker list.
+#'     displayed differential or lineage-rescue marker lists.
 #'   \item `proportion_plausibility` (weight 0.20): 1 if the LLM
 #'     reported `reasonable`, 0.5 for `suspicious`, 0 for `abnormal`
 #'     and 0.5 when missing.
@@ -123,22 +138,52 @@ annot_llm_annotate <- function(obj,
                                validate_markers   = TRUE,
                                parallel           = FALSE,
                                verbose            = TRUE,
-                               rationale          = NULL) {
+                               rationale          = NULL,
+                               reference_mode     = c("guided", "independent")) {
 
   stopifnot(methods::is(obj, "AgentSeurat"))
+  reference_mode <- match.arg(reference_mode)
   if (missing(chat_fn) || !is.function(chat_fn)) {
     stop("`chat_fn` must be a function(system_prompt, user_prompt) -> character.")
   }
-  if (missing(tissue)) {
+  if (missing(tissue) || !is.character(tissue) || length(tissue) != 1L ||
+      is.na(tissue) || !nzchar(trimws(tissue))) {
     stop("`tissue` is required (e.g. 'mouse colon', 'HCC tumor').")
+  }
+  if (!is.null(condition) &&
+      (!is.character(condition) || length(condition) != 1L || is.na(condition))) {
+    stop("`condition` must be NULL or one non-missing string.")
   }
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
     stop("Package 'jsonlite' is required for annot_llm_annotate.")
   }
-  if (!is.numeric(n_samples) || n_samples < 1) {
+  if (!is.numeric(n_samples) || length(n_samples) != 1L ||
+      !is.finite(n_samples) || n_samples < 1 || n_samples != floor(n_samples) ||
+      n_samples > .Machine$integer.max) {
     stop("`n_samples` must be a positive integer.")
   }
   n_samples <- as.integer(n_samples)
+  if (!is.numeric(max_retries) || length(max_retries) != 1L ||
+      !is.finite(max_retries) || max_retries < 0 ||
+      max_retries != floor(max_retries) || max_retries >= .Machine$integer.max) {
+    stop("`max_retries` must be a non-negative integer.")
+  }
+  max_retries <- as.integer(max_retries)
+  if (!is.logical(strict_vocabulary) || length(strict_vocabulary) != 1L ||
+      is.na(strict_vocabulary)) {
+    stop("`strict_vocabulary` must be TRUE or FALSE.")
+  }
+  for (field in c("validate_markers", "parallel", "verbose")) {
+    value <- get(field)
+    if (!is.logical(value) || length(value) != 1L || is.na(value)) {
+      stop(sprintf("`%s` must be TRUE or FALSE.", field))
+    }
+  }
+  if (!is.null(expected_celltypes) &&
+      (!is.character(expected_celltypes) || !length(expected_celltypes) ||
+       anyNA(expected_celltypes) || any(!nzchar(trimws(expected_celltypes))))) {
+    stop("`expected_celltypes` must contain non-empty, non-missing strings.")
+  }
   if (n_samples > 1 && isTRUE(verbose)) {
     message(sprintf(
       "[annot_llm_annotate] ensemble mode: n_samples = %d. ",
@@ -153,6 +198,13 @@ annot_llm_annotate <- function(obj,
   if (is.null(filtered)) {
     stop("No filtered markers; run sc_markers_summary() first.")
   }
+  if (!is.data.frame(filtered) ||
+      !all(c("cluster", "gene", "pct.1", "pct.2") %in% names(filtered)) ||
+      !nrow(filtered) || anyNA(filtered$cluster) || anyNA(filtered$gene) ||
+      any(!nzchar(trimws(as.character(filtered$cluster)))) ||
+      any(!nzchar(trimws(as.character(filtered$gene))))) {
+    stop("`markers_filtered` must contain non-empty cluster and gene IDs, pct.1 and pct.2.")
+  }
 
   # v0.1.6 / v0.1.24: if expected_celltypes not supplied, try to auto-detect
   # from an existing author celltype column. The detected vocabulary is now
@@ -160,7 +212,7 @@ annot_llm_annotate <- function(obj,
   # strict constraint. To recover the v0.1.6-v0.1.23 strict-match behaviour,
   # pass `strict_vocabulary = TRUE` explicitly.
   auto_detected_col <- NA_character_
-  if (is.null(expected_celltypes)) {
+  if (is.null(expected_celltypes) && reference_mode == "guided") {
     auto_detected_col <- .detect_celltype_col(obj@data@meta.data)
     if (!is.na(auto_detected_col)) {
       vals <- unique(as.character(obj@data@meta.data[[auto_detected_col]]))
@@ -184,6 +236,10 @@ annot_llm_annotate <- function(obj,
 
   all_clusters <- sort(unique(as.character(filtered$cluster)))
   if (!is.null(clusters)) {
+    if (!is.atomic(clusters) || !length(clusters) || anyNA(clusters) ||
+        any(!as.character(clusters) %in% all_clusters)) {
+      stop("`clusters` must identify clusters present in the filtered markers.")
+    }
     all_clusters <- intersect(all_clusters, as.character(clusters))
   }
 
@@ -192,6 +248,10 @@ annot_llm_annotate <- function(obj,
   if (!"seurat_clusters" %in% colnames(cell_meta)) {
     stop("seurat_clusters not found in metadata.")
   }
+  if (anyNA(cell_meta$seurat_clusters) ||
+      !all(all_clusters %in% as.character(cell_meta$seurat_clusters))) {
+    stop("Filtered marker cluster IDs must be present in seurat_clusters metadata.")
+  }
   total_cells <- nrow(cell_meta)
   cluster_sizes <- table(as.character(cell_meta$seurat_clusters))
   cluster_pcts  <- 100 * as.numeric(cluster_sizes) / total_cells
@@ -199,7 +259,8 @@ annot_llm_annotate <- function(obj,
 
   system_prompt <- .build_system_prompt(
     tissue, condition, expected_celltypes,
-    strict_vocabulary = isTRUE(strict_vocabulary)
+    strict_vocabulary = isTRUE(strict_vocabulary),
+    reference_mode = reference_mode
   )
 
   # Cycling-dominance map (from sc_markers_summary)
@@ -217,7 +278,8 @@ annot_llm_annotate <- function(obj,
   # gives low log2FC). We rescue those here by looking at high-expression
   # genes within the cluster, regardless of differential significance.
   cycling_rescue <- list()
-  cycling_clusters <- names(is_cycling)[is_cycling]
+  cycling_clusters <- names(is_cycling)[!is.na(is_cycling) & is_cycling &
+                                        names(is_cycling) %in% all_clusters]
   if (length(cycling_clusters) > 0) {
     if (isTRUE(verbose)) {
       message(sprintf("  [annotate] computing lineage rescue markers for %d cycling cluster(s): %s",
@@ -238,11 +300,18 @@ annot_llm_annotate <- function(obj,
   # future_lapply.
   worker <- function(cid) {
     rec_before <- length(.token_state$records)
+    marker_evidence <- .annotation_marker_evidence(
+      cid, filtered, cycling_rescue[[as.character(cid)]]
+    )
+    marker_evidence$cycling_dominant <- isTRUE(is_cycling[as.character(cid)])
 
     user_prompt <- .build_user_prompt(
       cid, filtered, matches, cluster_sizes, cluster_pcts,
       is_cycling = isTRUE(is_cycling[as.character(cid)]),
-      cycling_rescue = cycling_rescue[[as.character(cid)]]
+      cycling_rescue = cycling_rescue[[as.character(cid)]],
+      marker_evidence = marker_evidence,
+      reference_mode = reference_mode,
+      strict_vocabulary = isTRUE(strict_vocabulary) && !is.null(expected_celltypes)
     )
 
     if (verbose) {
@@ -254,24 +323,25 @@ annot_llm_annotate <- function(obj,
       }
     }
 
+    validator <- function(parsed) .validate_annotation_response(
+      parsed, expected_cluster = cid,
+      vocabulary = if (isTRUE(strict_vocabulary)) expected_celltypes else NULL
+    )
     parsed <- if (n_samples == 1) {
       out <- .call_with_retry(chat_fn, system_prompt, user_prompt,
-                              max_retries = max_retries)
-      out$ensemble_agreement <- 1.0
-      out$ensemble_n          <- 1L
+                              max_retries = max_retries, validator = validator)
+      out$ensemble_agreement <- if (out$annotation_status == "ok") 1 else 0
+      out$ensemble_n          <- if (out$annotation_status == "ok") 1L else 0L
       out
     } else {
       .ensemble_annotate(chat_fn, system_prompt, user_prompt,
                          n_samples = n_samples,
-                         max_retries = max_retries)
+                         max_retries = max_retries, validator = validator)
     }
     parsed$cluster <- cid
 
     if (isTRUE(validate_markers)) {
-      cluster_top <- as.character(
-        filtered$gene[as.character(filtered$cluster) == as.character(cid)]
-      )
-      val <- .validate_cited_markers(parsed, cluster_top)
+      val <- .validate_cited_markers(parsed, marker_evidence$citation_genes)
       parsed$hallucinated_markers <- val$hallucinated
       parsed$hallucination_rate   <- val$rate
     } else {
@@ -285,10 +355,10 @@ annot_llm_annotate <- function(obj,
       matches[as.character(matches$cluster) == as.character(cid), ,
               drop = FALSE]
     } else NULL
-    hc <- .compute_hybrid_confidence(
-      parsed              = parsed,
-      cluster_markers     = cluster_rows,
-      reference_rows      = ref_rows
+    hc <- if (parsed$annotation_status == "failed") {
+      list(score = NA_real_, label = "low", disagreement = FALSE)
+    } else .compute_hybrid_confidence(
+      parsed = parsed, cluster_markers = cluster_rows, reference_rows = ref_rows
     )
     parsed$hybrid_confidence       <- hc$score
     parsed$hybrid_confidence_label <- hc$label
@@ -299,7 +369,15 @@ annot_llm_annotate <- function(obj,
       .token_state$records[(rec_before + 1L):rec_after]
     } else list()
 
-    list(parsed = parsed, token_records = local_records)
+    list(parsed = parsed, token_records = local_records,
+         response_audit = list(
+           cluster = cid, system_prompt = system_prompt,
+           user_prompt = user_prompt, marker_evidence = marker_evidence,
+           reference_mode = reference_mode,
+           source_reference_candidates = ref_rows,
+           samples = if (n_samples == 1L) list(attr(parsed, "response_audit"))
+                     else attr(parsed, "response_audit")
+         ))
   }
 
   # Decide on execution strategy. Parallel mode requires future.apply.
@@ -340,38 +418,54 @@ annot_llm_annotate <- function(obj,
 
   # Collapse into a data frame
   ann_df <- .annotations_to_df(annotations)
+  response_audit <- lapply(results, `[[`, "response_audit")
+  step_success <- all(ann_df$annotation_status == "ok")
+  status_summary <- list(
+    status = if (step_success) "ok" else if (all(ann_df$annotation_status == "failed")) "failed" else "partial",
+    ok_clusters = ann_df$cluster[ann_df$annotation_status == "ok"],
+    partial_clusters = ann_df$cluster[ann_df$annotation_status == "partial"],
+    failed_clusters = ann_df$cluster[ann_df$annotation_status == "failed"],
+    reference_mode = reference_mode
+  )
+  next_stage <- if (step_success) "llm_annotated" else if (status_summary$status == "failed")
+    "llm_annotation_failed" else "llm_annotation_review"
 
-  # Build the script snippet (records configuration, not the LLM output)
+  # Replay restores these decisions rather than resampling a model.
   script <- sprintf(
-'# ---- LLM annotation (tissue = %s%s; n_samples = %d; strict_vocabulary = %s) ----
-# LLM reconciliation: for each cluster, marker list + reference candidates
-# are sent to an LLM which returns a strict JSON with:
+'# ---- LLM annotation (tissue = %s%s; n_samples = %d; strict_vocabulary = %s; reference_mode = %s) ----
+# LLM reconciliation: per-cluster displayed evidence was sent to an LLM
+# which returned a strict JSON with:
 #   primary_annotation, confidence, supporting_markers,
 #   contradicting_markers, alternative_annotations, reasoning.
 # Per-cluster JSON output is stored in obj@params$llm_annotations,
 # augmented with hybrid_confidence (heuristic), hallucinated_markers,
 # ensemble_agreement.
+# Prompts, displayed marker evidence, and raw attempts are stored in
+# obj@params$llm_annotation_responses for review and offline replay.
 # (Reproducibility caveat: LLM calls are non-deterministic; set the
 #  seed/temperature on the provider side to improve reproducibility.)',
-    tissue,
-    if (is.null(condition)) "" else sprintf(", condition = %s", condition),
+    gsub("[\r\n]", " ", tissue),
+    if (is.null(condition)) "" else sprintf(", condition = %s", gsub("[\r\n]", " ", condition)),
     n_samples,
-    as.character(isTRUE(strict_vocabulary))
+    as.character(isTRUE(strict_vocabulary)), reference_mode
   )
+  script <- paste(script, .llm_annotation_replay_script(
+    obj, ann_df, response_audit, status_summary, next_stage, token_summary
+  ), sep = "\n")
 
   if (is.null(rationale)) {
     n_disagree <- sum(ann_df$confidence_disagreement, na.rm = TRUE)
     n_halluc   <- sum(nzchar(ann_df$hallucinated_markers), na.rm = TRUE)
     rationale <- sprintf(
       paste0(
-        "LLM-annotated %d clusters in tissue context '%s' (n_samples=%d). ",
+        "LLM annotation attempted for %d clusters in tissue context '%s' (n_samples=%d; status=%s). ",
         "Marker-citation grounding: contradicting_markers requested and marker ",
         "citations checked against the input list (%d clusters cited markers absent ",
         "from that list); this check does not establish biological accuracy. ",
         "hybrid confidence cross-checked against LLM self-report ",
         "(%d clusters in disagreement)."
       ),
-      length(all_clusters), tissue, n_samples, n_halluc, n_disagree
+      length(all_clusters), tissue, n_samples, status_summary$status, n_halluc, n_disagree
     )
   }
 
@@ -384,26 +478,74 @@ annot_llm_annotate <- function(obj,
       condition           = condition,
       expected_celltypes  = expected_celltypes,
       strict_vocabulary   = isTRUE(strict_vocabulary),
+      reference_mode      = reference_mode,
+      metadata_prior_column = auto_detected_col,
+      max_retries         = max_retries,
       n_samples           = n_samples,
       validate_markers    = isTRUE(validate_markers),
       parallel            = isTRUE(parallel),
       n_clusters          = length(all_clusters),
-      clusters_annotated  = all_clusters
+      clusters_annotated  = all_clusters,
+      llm_annotation_summary = status_summary
     ),
     rationale      = rationale,
     script_snippet = script,
-    new_stage      = "llm_annotated"
+    new_stage      = next_stage,
+    success        = step_success
   )
   obj@params$llm_annotations <- ann_df
+  obj@params$llm_annotation_responses <- response_audit
+  obj@params$llm_annotation_input_cells <- data.frame(
+    cell_id = colnames(obj@data), cluster = as.character(obj@data$seurat_clusters),
+    stringsAsFactors = FALSE
+  )
   obj@token_usage$annot_llm_annotate <- token_summary
   obj
 }
 
 # ---- Internal helpers ------------------------------------------------------
 
+# Save data as escaped R literals. Exact cell order and per-cell cluster IDs
+# protect replay from accidentally assigning decisions to a different input.
+.llm_annotation_replay_script <- function(obj, annotations, response_audit,
+                                          summary, stage, token_summary) {
+  cache <- list(cell_ids = colnames(obj@data),
+                cluster_ids = as.character(obj@data$seurat_clusters),
+                input_cells = data.frame(cell_id = colnames(obj@data),
+                  cluster = as.character(obj@data$seurat_clusters), stringsAsFactors = FALSE),
+                annotations = annotations, response_audit = response_audit,
+                summary = summary, stage = stage, token_summary = token_summary)
+  # Decimal deparsing/parsing can move arbitrary IEEE doubles by one or
+  # more ULPs even with digits17. Hex literals preserve the exact bits.
+  literal <- paste(utils::capture.output(dput(cache, control = c(
+    "keepNA", "keepInteger", "showAttributes", "hexNumeric"
+  ))), collapse = "\n")
+  paste0(
+    "# Offline replay of saved annotation decisions; no provider calls.\n",
+    ".scagentkit_annotation_target <- if (exists('seurat_obj', inherits = FALSE)) {\n",
+    "  'seurat'\n} else if (exists('obj', inherits = FALSE) && methods::is(obj, 'AgentSeurat')) {\n",
+    "  'agent'\n} else stop('Annotation replay requires seurat_obj or an AgentSeurat obj.')\n",
+    ".scagentkit_annotation_cache <- local({\n  cached <- ", literal, "\n",
+    "  current <- if (.scagentkit_annotation_target == 'seurat') seurat_obj else obj@data\n",
+    "  if (!identical(colnames(current), cached$cell_ids) ||\n",
+    "      !identical(as.character(current$seurat_clusters), cached$cluster_ids))\n",
+    "    stop('Annotation replay requires identical cell IDs/order and per-cell cluster IDs.')\n",
+    "  cached\n})\n",
+    "if (.scagentkit_annotation_target == 'agent') {\n",
+    "  obj@params$llm_annotations <- .scagentkit_annotation_cache$annotations\n",
+    "  obj@params$llm_annotation_responses <- .scagentkit_annotation_cache$response_audit\n",
+    "  obj@params$llm_annotation_input_cells <- .scagentkit_annotation_cache$input_cells\n",
+    "  obj@params$llm_annotation_summary <- .scagentkit_annotation_cache$summary\n",
+    "  obj@token_usage$annot_llm_annotate <- .scagentkit_annotation_cache$token_summary\n",
+    "  obj@stage <- .scagentkit_annotation_cache$stage\n}\n",
+    "rm(.scagentkit_annotation_target)"
+  )
+}
+
 # Construct the system prompt with the strict JSON schema.
 .build_system_prompt <- function(tissue, condition, expected_celltypes,
-                                 strict_vocabulary = FALSE) {
+                                 strict_vocabulary = FALSE,
+                                 reference_mode = "guided") {
 
   expected_line <- if (is.null(expected_celltypes)) {
     "No prior cell type list supplied; use your knowledge of the tissue."
@@ -411,7 +553,7 @@ annot_llm_annotate <- function(obj,
     # Auto-detected from author's metadata column. Use the exact strings.
     sprintf(
       paste0(
-        "VOCABULARY (strict): the dataset author already used these exact ",
+        "VOCABULARY (strict): the caller supplied these exact ",
         "cell-type strings: %s. Use the SAME strings verbatim -- do NOT ",
         "subdivide (e.g. don't split T/NK into T cell + NK cell), do NOT ",
         "rename (e.g. don't return 'Macrophage' if the author uses 'Myeloid'). ",
@@ -440,7 +582,8 @@ annot_llm_annotate <- function(obj,
     expected_line, "\n\n",
     "For each cluster, you will receive:\n",
     "  - Top marker genes ranked by specificity (pct.1 - pct.2)\n",
-    "  - Candidate cell types from a reference database with overlap scores\n",
+    if (reference_mode == "guided")
+      "  - Candidate cell types from a reference database with overlap scores\n" else "",
     "  - Cluster size and percentage of the dataset\n\n",
     "Return ONE JSON object with this exact shape. Do not include markdown\n",
     "fences, comments, or any text outside the JSON.\n\n",
@@ -455,6 +598,11 @@ annot_llm_annotate <- function(obj,
     '  "reasoning": "<1-3 sentences; cite markers explicitly>"\n',
     "}\n\n",
     "Rules:\n",
+    "0. All eight fields above are required. Use scalar strings for names,\n",
+    "   enums, and reasoning, and JSON arrays of non-empty strings for\n",
+    "   marker and alternative lists (empty arrays are allowed). Annotate\n",
+    "   only the requested cluster. An optional string field 'cluster'\n",
+    "   must exactly match its ID; do not return multiple cluster objects.\n",
     "1. If top markers do not clearly support any single cell type, set\n",
     "   primary_annotation to \"Unknown\" and confidence to \"low\".\n",
     "2. contradicting_markers MUST list any markers in the top list that are\n",
@@ -473,17 +621,35 @@ annot_llm_annotate <- function(obj,
   )
 }
 
+# One bundle controls both rendering and citation checks. In particular,
+# only the first 30 rescue rows are displayed and therefore admissible.
+.annotation_marker_evidence <- function(cid, filtered, cycling_rescue = NULL) {
+  differential <- filtered[as.character(filtered$cluster) == as.character(cid),
+                           , drop = FALSE]
+  rescue <- if (is.null(cycling_rescue)) NULL else head(cycling_rescue, 30L)
+  genes <- unique(c(as.character(differential$gene), as.character(rescue$gene)))
+  list(differential = differential, lineage_rescue = rescue,
+       citation_genes = genes)
+}
+
 # Construct the per-cluster user prompt.
 .build_user_prompt <- function(cid, filtered, matches,
                                cluster_sizes, cluster_pcts,
                                is_cycling = FALSE,
-                               cycling_rescue = NULL) {
+                               cycling_rescue = NULL,
+                               marker_evidence = NULL,
+                               reference_mode = "guided",
+                               strict_vocabulary = FALSE) {
 
-  cluster_rows <- filtered[as.character(filtered$cluster) == cid, , drop = FALSE]
+  if (is.null(marker_evidence)) {
+    marker_evidence <- .annotation_marker_evidence(cid, filtered, cycling_rescue)
+  }
+  cluster_rows <- marker_evidence$differential
   cluster_genes <- cluster_rows$gene
+  cycling_rescue <- marker_evidence$lineage_rescue
 
   # Reference candidates for this cluster
-  ref_rows <- if (!is.null(matches)) {
+  ref_rows <- if (reference_mode == "guided" && !is.null(matches)) {
     matches[as.character(matches$cluster) == cid, , drop = FALSE]
   } else NULL
   ref_block <- if (is.null(ref_rows) || nrow(ref_rows) == 0) {
@@ -534,14 +700,25 @@ annot_llm_annotate <- function(obj,
       "  markers there (ALB/KRT18=hepatocyte, CD3D=T cell, CD68=myeloid, ",
       "  CD79A=B cell, etc.) tell you the lineage even though differential ",
       "  filtering missed them.\n",
-      "  STEP 2 -- Cross-check with reference database candidates above.\n",
-      "  STEP 3 -- Choose ONE of these structured names ",
-      "(MANDATORY format -- do NOT use plain lineage names for cycling ",
-      "clusters, do NOT use 'Unknown'):\n",
-      "      A. 'Cycling cells (lineage candidate: <X>)'  ",
-      "if rescue list shows clear lineage markers for <X>. Use confidence='medium' or 'high' depending on signal strength.\n",
-      "      B. 'Cycling cells (lineage uncertain)'  ",
-      "ONLY if neither rescue list nor reference candidates give a usable lineage signal. Use confidence='low'.\n",
+      if (reference_mode == "guided")
+        "  STEP 2 -- Cross-check with reference database candidates above.\n"
+      else "  STEP 2 -- Cross-check with the differential marker evidence above.\n",
+      if (isTRUE(strict_vocabulary)) paste0(
+        "  STEP 3 -- The strict vocabulary takes precedence for primary_annotation.\n",
+        "  Return a vocabulary label verbatim, or 'Unknown' with confidence='low'.\n",
+        "  Do not decorate the primary label with a cycling prefix or lineage suffix.\n",
+        "  Describe the cycling state and lineage candidate or uncertainty in reasoning.\n"
+      ) else paste0(
+        "  STEP 3 -- Choose ONE of these structured names ",
+        "(MANDATORY format -- do NOT use plain lineage names for cycling ",
+        "clusters, do NOT use 'Unknown'):\n",
+        "      A. 'Cycling cells (lineage candidate: <X>)'  ",
+        "if rescue list shows clear lineage markers for <X>. Use confidence='medium' or 'high' depending on signal strength.\n",
+        "      B. 'Cycling cells (lineage uncertain)'  ",
+        if (reference_mode == "guided")
+          "ONLY if neither rescue list nor reference candidates give a usable lineage signal. Use confidence='low'.\n"
+        else "ONLY if the supplied markers give no usable lineage signal. Use confidence='low'.\n"
+      ),
       "  In the reasoning field, name the specific rescue-list genes that ",
       "drove your lineage assignment (e.g. 'rescue list shows ALB/KRT18/",
       "APOA1 -> hepatocyte lineage despite cycling-dominant differential ",
@@ -554,45 +731,136 @@ annot_llm_annotate <- function(obj,
     sprintf("Size: %d cells (%.2f%% of dataset)\n", size, pct),
     sprintf("Top %d differential markers (ranked by pct.1 - pct.2):\n  %s\n",
             length(cluster_genes), paste(cluster_genes, collapse = ", ")),
-    "Reference database candidates:\n", ref_block, "\n",
+    if (reference_mode == "guided") paste0("Reference database candidates:\n", ref_block, "\n") else "",
     rescue_block,
     cycling_note,
     "\nReturn the JSON object now."
   )
 }
 
-# Call chat_fn with JSON-parse retry. Returns a named list (parsed JSON).
+# Validate parsed JSON with simplification disabled so a JSON scalar cannot
+# masquerade as a one-element array. Optional cluster echoes are accepted for
+# backwards compatibility, but cannot override the requested cluster ID.
+.validate_annotation_response <- function(parsed, expected_cluster = NULL,
+                                          vocabulary = NULL) {
+  required <- c("primary_annotation", "confidence", "supporting_markers",
+                "contradicting_markers", "alternative_annotations",
+                "proportion_assessment", "recommended_action", "reasoning")
+  if (!is.list(parsed) || is.null(names(parsed)) ||
+      anyNA(names(parsed)) || anyDuplicated(names(parsed)) ||
+      (!setequal(names(parsed), required) &&
+       !setequal(names(parsed), c(required, "cluster")))) {
+    stop("Annotation JSON must be one object with exactly the eight required fields and optional cluster.")
+  }
+  scalar <- function(value, field) {
+    if (!is.character(value) || length(value) != 1L || is.na(value) ||
+        !nzchar(trimws(value))) {
+      stop(sprintf("Annotation field '%s' must be a non-empty scalar string.", field))
+    }
+    value
+  }
+  for (field in c("primary_annotation", "confidence", "proportion_assessment",
+                  "recommended_action", "reasoning")) {
+    parsed[[field]] <- scalar(parsed[[field]], field)
+  }
+  enums <- list(confidence = c("high", "medium", "low"),
+                proportion_assessment = c("reasonable", "suspicious", "abnormal"),
+                recommended_action = c("accept", "flag_for_review", "reject", "mark_unknown"))
+  for (field in names(enums)) {
+    if (!parsed[[field]] %in% enums[[field]]) {
+      stop(sprintf("Annotation field '%s' has an invalid enum value.", field))
+    }
+  }
+  for (field in c("supporting_markers", "contradicting_markers", "alternative_annotations")) {
+    value <- parsed[[field]]
+    if (!is.list(value) || !is.null(names(value)) ||
+        !all(vapply(value, function(x) {
+          is.character(x) && length(x) == 1L && !is.na(x) && nzchar(trimws(x))
+        }, logical(1)))) {
+      stop(sprintf("Annotation field '%s' must be a JSON array of non-empty strings.", field))
+    }
+    parsed[[field]] <- if (length(value)) unlist(value, use.names = FALSE) else character(0)
+  }
+  if ("cluster" %in% names(parsed)) {
+    parsed$cluster <- scalar(parsed$cluster, "cluster")
+    if (!is.null(expected_cluster) && !identical(parsed$cluster, as.character(expected_cluster))) {
+      stop("Annotation cluster ID does not match the requested cluster.")
+    }
+  }
+  if (!is.null(vocabulary) &&
+      !parsed$primary_annotation %in% c(vocabulary, "Unknown")) {
+    stop("Annotation primary_annotation is outside the strict vocabulary.")
+  }
+  parsed
+}
+
+# Call chat_fn with JSON/schema retry. The validator is task-specific; other
+# workflows keep their existing parser behaviour when none is supplied.
 .call_with_retry <- function(chat_fn, system_prompt, user_prompt, max_retries,
-                             image_path = NULL) {
+                             image_path = NULL, validator = NULL) {
+  if (!is.numeric(max_retries) || length(max_retries) != 1L ||
+      !is.finite(max_retries) || max_retries < 0 ||
+      max_retries != floor(max_retries) || max_retries >= .Machine$integer.max) {
+    stop("`max_retries` must be a non-negative integer below .Machine$integer.max.")
+  }
   last_err <- NULL
+  audit <- list()
   for (i in seq_len(max_retries + 1)) {
     raw <- tryCatch(
-      chat_fn(system_prompt, user_prompt, image_path = image_path),
+      if (is.null(image_path)) chat_fn(system_prompt, user_prompt)
+      else chat_fn(system_prompt, user_prompt, image_path = image_path),
       error = function(e) { last_err <<- e; NULL }
     )
-    if (is.null(raw)) next
-
-    # Strip markdown fences if any (defensive)
-    raw <- sub("^```(?:json)?\\s*", "", raw)
-    raw <- sub("\\s*```\\s*$", "", raw)
-    raw <- trimws(raw)
+    attempt <- list(attempt = i, system_prompt = system_prompt,
+                    user_prompt = user_prompt, image_path = image_path, raw_response = raw,
+                    status = "failed", error = NULL)
+    if (is.null(raw)) {
+      attempt$error <- if (is.null(last_err)) "Provider returned NULL." else conditionMessage(last_err)
+      audit[[i]] <- attempt
+      next
+    }
 
     parsed <- tryCatch(
-      jsonlite::fromJSON(raw, simplifyVector = TRUE),
+      {
+        if (!is.character(raw) || length(raw) != 1L || is.na(raw) ||
+            !nzchar(trimws(raw))) stop("Provider must return one non-empty JSON string.")
+        if (is.null(validator)) {
+          # Preserve defensive fence handling for existing non-annotation callers.
+          raw <- sub("^```(?:json)?\\s*", "", raw)
+          raw <- sub("\\s*```\\s*$", "", raw)
+        } else if (!grepl("^\\s*\\{", raw)) {
+          stop("Response must be a JSON object without prose or fences.")
+        }
+        out <- jsonlite::fromJSON(trimws(raw), simplifyVector = is.null(validator))
+        if (!is.null(validator)) out <- validator(out)
+        out
+      },
       error = function(e) { last_err <<- e; NULL }
     )
-    if (!is.null(parsed)) return(parsed)
+    if (!is.null(parsed)) {
+      attempt$status <- "ok"
+      audit[[i]] <- attempt
+      if (!is.null(validator)) {
+        parsed$annotation_status <- "ok"
+        parsed$annotation_error <- NA_character_
+        parsed$annotation_attempts <- i
+      }
+      attr(parsed, "response_audit") <- audit
+      return(parsed)
+    }
+    attempt$error <- conditionMessage(last_err)
+    audit[[i]] <- attempt
 
     if (i <= max_retries) {
       user_prompt <- paste0(
         user_prompt,
-        "\n\nYour previous response could not be parsed as JSON. ",
-        "Return ONLY the JSON object, no prose, no fences."
+        "\n\nYour previous response was invalid: ", conditionMessage(last_err),
+        " Return ONLY one JSON object matching the required schema, no prose, no fences."
       )
     }
   }
   # Return a structured failure row rather than crashing the batch
-  list(
+  fail <- list(
     primary_annotation      = NA_character_,
     confidence              = "low",
     supporting_markers      = character(0),
@@ -603,6 +871,13 @@ annot_llm_annotate <- function(obj,
     reasoning               = sprintf("LLM call failed: %s",
                                       if (is.null(last_err)) "unknown" else conditionMessage(last_err))
   )
+  if (!is.null(validator)) {
+    fail$annotation_status <- "failed"
+    fail$annotation_error <- if (is.null(last_err)) "Provider returned no response." else conditionMessage(last_err)
+    fail$annotation_attempts <- length(audit)
+  }
+  attr(fail, "response_audit") <- audit
+  fail
 }
 
 # Collapse a list of per-cluster annotations into a data frame.
@@ -630,6 +905,9 @@ annot_llm_annotate <- function(obj,
       recommended_action      = as.character(a$recommended_action %||% NA),
       ensemble_n              = as.integer(a$ensemble_n %||% NA),
       ensemble_agreement      = as.numeric(a$ensemble_agreement %||% NA),
+      annotation_status       = as.character(a$annotation_status %||% NA),
+      annotation_error        = as.character(a$annotation_error %||% NA),
+      annotation_attempts     = as.integer(a$annotation_attempts %||% NA),
       reasoning               = as.character(a$reasoning %||% NA),
       stringsAsFactors        = FALSE
     )
@@ -655,7 +933,7 @@ annot_llm_annotate <- function(obj,
   cited_contradict  <- as.character(parsed$contradicting_markers %||% character(0))
   all_cited         <- unique(c(cited_support, cited_contradict))
 
-  if (length(cluster_top_genes) == 0 || length(all_cited) == 0) {
+  if (length(all_cited) == 0) {
     return(list(hallucinated = character(0), rate = NA_real_))
   }
 
@@ -686,7 +964,7 @@ annot_llm_annotate <- function(obj,
 #   cluster_markers : rows of obj@params$markers_filtered for this cluster
 #                     (must contain pct.1, pct.2)
 #   reference_rows  : rows of obj@params$reference_matches for this cluster
-#                     (may be NULL); must contain `score` column
+#                     (may be NULL); must contain `score` and `cell_type`
 #
 # Returns list(score, label, disagreement):
 #   score        : numeric in [0, 1]
@@ -696,11 +974,19 @@ annot_llm_annotate <- function(obj,
 .compute_hybrid_confidence <- function(parsed,
                                        cluster_markers,
                                        reference_rows) {
-  # Signal 1: best reference overlap score for this cluster (cap at 1).
-  ref_overlap <- if (!is.null(reference_rows) && nrow(reference_rows) > 0) {
-    max(0, min(1, suppressWarnings(max(as.numeric(reference_rows$score),
-                                        na.rm = TRUE))))
-  } else 0
+  # Signal 1: overlap for the same lexical label as the model's annotation.
+  # An unrelated high-scoring candidate cannot increase its confidence.
+  label <- parsed$primary_annotation
+  ref_overlap <- 0
+  if (is.character(label) && length(label) == 1L && !is.na(label) &&
+      !is.null(reference_rows) && nrow(reference_rows) > 0 &&
+      all(c("cell_type", "score") %in% names(reference_rows))) {
+    same_label <- tolower(trimws(as.character(reference_rows$cell_type))) ==
+                  tolower(trimws(label))
+    scores <- suppressWarnings(as.numeric(reference_rows$score[!is.na(same_label) & same_label]))
+    scores <- scores[is.finite(scores)]
+    if (length(scores)) ref_overlap <- max(0, min(1, max(scores)))
+  }
 
   # Signal 2: marker specificity = median pct.1 - pct.2 of cluster's top
   # markers. Already in [-1, 1] but in practice mostly [0, 1] after the
@@ -714,15 +1000,16 @@ annot_llm_annotate <- function(obj,
   } else 0
 
   # Signal 3: non-hallucination rate.
-  halluc_rate <- as.numeric(parsed$hallucination_rate %||% NA)
-  non_halluc <- if (is.na(halluc_rate)) 0.5 else 1 - halluc_rate
+  halluc_rate <- suppressWarnings(as.numeric(parsed$hallucination_rate))
+  non_halluc <- if (length(halluc_rate) != 1L || !is.finite(halluc_rate)) 0.5
+               else 1 - max(0, min(1, halluc_rate))
 
   # Signal 4: proportion plausibility from the LLM's own assessment.
   # Used as a secondary signal -- the LLM tends to flag obvious mismatches.
-  prop_str <- tolower(as.character(parsed$proportion_assessment %||% ""))
-  proportion <- if (prop_str == "reasonable") 1
-                else if (prop_str == "suspicious") 0.5
-                else if (prop_str == "abnormal") 0
+  prop_str <- tolower(as.character(parsed$proportion_assessment))
+  proportion <- if (identical(prop_str, "reasonable")) 1
+                else if (identical(prop_str, "suspicious")) 0.5
+                else if (identical(prop_str, "abnormal")) 0
                 else 0.5  # missing / unknown
 
   score <- 0.30 * ref_overlap +
@@ -735,8 +1022,8 @@ annot_llm_annotate <- function(obj,
            else if (score >= 0.4) "medium"
            else "low"
 
-  llm_label <- tolower(as.character(parsed$confidence %||% ""))
-  disagreement <- if (llm_label %in% c("high", "low") &&
+  llm_label <- tolower(as.character(parsed$confidence))
+  disagreement <- if (length(llm_label) == 1L && llm_label %in% c("high", "low") &&
                        label %in% c("high", "low")) {
     llm_label != label   # only flag opposite bands; high vs medium OK
   } else FALSE
@@ -763,18 +1050,19 @@ annot_llm_annotate <- function(obj,
 #   ensemble_agreement        : fraction of samples that matched majority
 #   ensemble_n                : number of valid samples
 .ensemble_annotate <- function(chat_fn, system_prompt, user_prompt,
-                                n_samples, max_retries) {
+                                n_samples, max_retries,
+                                validator = .validate_annotation_response) {
 
   samples <- vector("list", n_samples)
   for (i in seq_len(n_samples)) {
     samples[[i]] <- .call_with_retry(
       chat_fn, system_prompt, user_prompt,
-      max_retries = max_retries
+      max_retries = max_retries, validator = validator
     )
   }
   # Drop fully-failed calls (NA primary_annotation)
   valid_idx <- vapply(samples, function(s) {
-    !is.null(s$primary_annotation) &&
+    identical(s$annotation_status, "ok") && !is.null(s$primary_annotation) &&
       !is.na(s$primary_annotation) &&
       nzchar(as.character(s$primary_annotation))
   }, logical(1))
@@ -783,6 +1071,8 @@ annot_llm_annotate <- function(obj,
     fail <- samples[[1]]
     fail$ensemble_agreement <- 0
     fail$ensemble_n          <- 0L
+    fail$annotation_attempts <- sum(vapply(samples, function(s) s$annotation_attempts, integer(1)))
+    attr(fail, "response_audit") <- lapply(samples, attr, "response_audit")
     return(fail)
   }
   valid <- samples[valid_idx]
@@ -832,7 +1122,13 @@ annot_llm_annotate <- function(obj,
       as.character(modal$reasoning %||% "")
     ),
     ensemble_agreement      = round(agreement, 3),
-    ensemble_n              = length(valid)
+    ensemble_n              = length(valid),
+    annotation_status       = if (all(valid_idx)) "ok" else "partial",
+    annotation_error        = if (all(valid_idx)) NA_character_ else paste(
+      unique(vapply(samples[!valid_idx], function(s) s$annotation_error, character(1))),
+      collapse = "; "
+    ),
+    annotation_attempts     = sum(vapply(samples, function(s) s$annotation_attempts, integer(1)))
   )
   # If disagreement is high, push action toward flag_for_review
   if (agreement < 0.6 && out$recommended_action == "accept") {
@@ -840,6 +1136,11 @@ annot_llm_annotate <- function(obj,
     out$reasoning <- paste0(out$reasoning,
                             " (ensemble disagreement < 60%: escalated to flag_for_review.)")
   }
+  if (!all(valid_idx) && out$recommended_action == "accept") {
+    out$recommended_action <- "flag_for_review"
+    out$reasoning <- paste0(out$reasoning, " (one or more ensemble samples failed validation.)")
+  }
+  attr(out, "response_audit") <- lapply(samples, attr, "response_audit")
   out
 }
 

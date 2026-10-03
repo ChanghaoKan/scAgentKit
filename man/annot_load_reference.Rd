@@ -14,12 +14,13 @@ reference to entries where `tissue` is either the requested tissue or
 `"all"`. Recommended to avoid hits from irrelevant tissues
 contaminating the score.}
 
-\item{species}{Optional character; preserved as an attribute for
-documentation.}
+\item{species}{Optional character. If the table has a \code{species} column,
+keep case-insensitive exact matches; otherwise record it as context.}
 }
 \value{
 Data frame of the reference, with columns at least
-  `cell_type` and `marker`.
+  `cell_type` and `marker`. Source path, file MD5, and input row count are
+  preserved as attributes for audit and offline reproduction.
 }
 \description{
 Loads a reference table mapping marker genes to cell types. The table

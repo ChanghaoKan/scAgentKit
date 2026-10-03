@@ -9,6 +9,8 @@
 #' publishes the full curated table as a single XLSX file. We mirror the
 #' full table on first use (\code{~50 MB}), cache it locally, and apply
 #' tissue / species filters in R. Subsequent calls are fast and offline.
+#' Gene symbols are taken from `Symbol`, then `gene_symbol`, then `marker`;
+#' the latter can contain protein aliases that do not match RNA features.
 #'
 #' Source: Hu et al., CellMarker 2.0, Nucleic Acids Research 2023.
 #' Use stable mirror address (original yikedaxue.slwshop.cn often returned 502 Bad Gateway):
@@ -33,7 +35,10 @@
 #' @param url Override the source URL (for mirrors or pinned versions).
 #'
 #' @return Data frame shaped for [annot_match_reference()], with the
-#'   `species` and `tissue_filter` attributes set.
+#'   `species` and `tissue_filter` attributes set. Source URL, cache path,
+#'   file MD5, source version, and selected marker column are recorded as
+#'   attributes. A manually populated cache without a `.source-url` sidecar
+#'   has an unverified source URL; its path and content MD5 remain recorded.
 #' @export
 #'
 #' @examples
@@ -48,7 +53,8 @@ annot_query_cellmarker <- function(species,
                                    force_refresh = FALSE,
                                    url           = NULL) {
 
-  if (missing(species) || !species %in% c("human", "mouse")) {
+  if (missing(species) || !is.character(species) || length(species) != 1L ||
+      is.na(species) || !species %in% c("human", "mouse")) {
     stop('species must be "human" or "mouse".')
   }
   if (!requireNamespace("readxl", quietly = TRUE)) {
@@ -74,6 +80,14 @@ annot_query_cellmarker <- function(species,
   dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
   cache_file <- file.path(cache_dir,
                           sprintf("CellMarker2_%s.xlsx", species))
+  cache_url_file <- paste0(cache_file, ".source-url")
+  recorded_url <- if (file.exists(cache_url_file)) {
+    readLines(cache_url_file, n = 1L, warn = FALSE)
+  } else character()
+  if (!isTRUE(force_refresh) && file.exists(cache_file) && length(recorded_url) &&
+      !identical(recorded_url, url)) {
+    stop("Cached CellMarker table came from a different URL. Use force_refresh = TRUE or a separate cache_dir.")
+  }
 
   if (force_refresh || !file.exists(cache_file)) {
     message(sprintf("[annot_query_cellmarker] downloading %s table ...", species))
@@ -86,13 +100,15 @@ annot_query_cellmarker <- function(species,
              "\n(Original error: ", conditionMessage(e), ")")
       }
     )
+    writeLines(url, cache_url_file)
+    recorded_url <- url
   }
 
-  raw <- suppressMessages(readxl::read_excel(cache_file))
+  raw <- suppressMessages(.cellmarker_read_excel(cache_file))
   raw <- as.data.frame(raw, stringsAsFactors = FALSE)
 
   # CellMarker 2.0 column names. The canonical ones are:
-  #   cell_name, marker, tissue_type, cancer_type, species, ...
+  #   cell_name, marker, Symbol, tissue_type, cancer_type, species, ...
   # Map to our simpler schema.
   col <- function(candidates) {
     hit <- intersect(candidates, colnames(raw))
@@ -103,7 +119,7 @@ annot_query_cellmarker <- function(species,
     hit[1]
   }
   cn_celltype <- col(c("cell_name", "cellName", "cell_type"))
-  cn_marker   <- col(c("marker", "Symbol", "gene_symbol"))
+  cn_marker   <- col(c("Symbol", "gene_symbol", "marker"))
   cn_tissue   <- col(c("tissue_type", "tissueType", "tissue"))
   cn_cancer   <- col(c("cancer_type", "cancerType", "cancer"))
 
@@ -143,6 +159,14 @@ annot_query_cellmarker <- function(species,
   attr(ref, "tissue_filter") <- tissue
   attr(ref, "cancer_only")   <- cancer_only
   attr(ref, "n_celltypes")   <- length(unique(ref$cell_type))
+  attr(ref, "source_path") <- normalizePath(cache_file, mustWork = TRUE)
+  attr(ref, "source_md5") <- unname(tools::md5sum(cache_file))
+  attr(ref, "source_url") <- if (length(recorded_url)) recorded_url else NA_character_
+  attr(ref, "requested_url") <- url
+  attr(ref, "source_url_verified") <- length(recorded_url) == 1L
+  attr(ref, "source_version") <- "CellMarker2.0"
+  attr(ref, "marker_column") <- cn_marker
+  attr(ref, "n_input_rows") <- nrow(raw)
 
   message(sprintf(
     "[annot_query_cellmarker] %d (cell_type, marker) pairs across %d cell types%s.",
@@ -151,6 +175,8 @@ annot_query_cellmarker <- function(species,
   ))
   ref
 }
+
+.cellmarker_read_excel <- function(path) readxl::read_excel(path)
 
 
 # Explode rows whose marker field lists multiple genes

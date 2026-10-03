@@ -1,7 +1,7 @@
 Package: scAgentKit
 Type: Package
 Title: Human-in-the-Loop, Auditable scRNA-Seq Toolkit
-Version: 0.4.0
+Version: 0.4.0.9000
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
 Description: Experimental single-cell RNA-seq toolkit covering quality
@@ -26,7 +26,8 @@ Imports:
     ggplot2,
     Matrix,
     magrittr,
-    jsonlite
+    jsonlite,
+    digest
 Remotes:
     ChanghaoKan/agentomicsCore@v0.1.1,
     SeuratData=github::satijalab/seurat-data
