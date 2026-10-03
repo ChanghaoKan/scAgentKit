@@ -16,14 +16,19 @@
   </header>
   <main>
     <section class="project-head">
-      <div><div class="eyebrow">ANNOTATION REVIEW / PBMC3k</div><h1>Evidence, then a decision.</h1><p>Inspect one cluster, record your reasoning, and leave a trail someone else can replay.</p></div>
-      <div class="handoff-actions"><button id="import-session" data-testid="import-session" class="button quiet">Import handoff</button><button id="export-session" data-testid="export-session" class="button primary">Export handoff <span aria-hidden="true">↗</span></button><input id="import-file" data-testid="import-file" type="file" accept="application/json,.json" hidden></div>
+      <div><div id="project-eyebrow" class="eyebrow">ANNOTATION REVIEW / LOCAL PROJECT</div><h1>Evidence, then a decision.</h1><p>Inspect one cluster, record your reasoning, and leave a trail someone else can replay.</p></div>
+      <div class="handoff-actions"><button id="import-session" data-testid="import-session" class="button quiet">Import review journal</button><button id="export-session" data-testid="export-session" class="button primary">Export review journal <span aria-hidden="true">↗</span></button><input id="import-file" data-testid="import-file" type="file" accept="application/json,.json" hidden></div>
+    </section>
+    <section id="project-controls" class="project-controls panel" aria-label="Local evidence projects" hidden>
+      <label for="project-select">Evidence project<select id="project-select" data-testid="project-select"></select></label>
+      <div class="project-actions"><button id="import-project" data-testid="import-project" class="button quiet">Import project ZIP</button><button id="export-project" data-testid="export-project" class="button quiet">Export project ZIP</button><input id="project-file" data-testid="project-file" type="file" accept="application/zip,.zip" hidden></div>
+      <p id="project-context" class="microcopy">The evidence project contains local source evidence. The separate review journal contains your decisions.</p>
     </section>
     <div id="error-banner" data-testid="error-banner" role="alert" class="banner error" hidden></div>
     <div id="notice" data-testid="notice" role="status" aria-live="polite" class="banner notice" hidden></div>
-    <section class="metrics" aria-label="Frozen run overview">
-      <div class="metric"><span>Cells retained</span><strong id="retained-count">—</strong><small id="input-count">Loading local run…</small></div>
-      <div class="metric"><span>Clusters</span><strong id="cluster-count">—</strong><small>Fixed Seurat workflow</small></div>
+    <section class="metrics" aria-label="Project overview">
+      <div class="metric"><span id="cells-metric-label">Cells in scope</span><strong id="retained-count">—</strong><small id="input-count">Loading local project…</small></div>
+      <div class="metric"><span>Clusters</span><strong id="cluster-count">—</strong><small id="cluster-detail">Declared cluster membership</small></div>
       <div class="metric"><span>Strict model results</span><strong id="strict-count">—</strong><small id="call-count">4 conditions · saved calls</small></div>
       <div class="metric attention"><span>Failures to inspect</span><strong id="failure-count">—</strong><small id="failure-detail">Format / transport</small></div>
     </section>
@@ -31,14 +36,14 @@
     <div class="review-layout">
       <aside class="cluster-sidebar panel">
         <div class="sidebar-title"><h2>Clusters</h2><span id="review-progress">0 reviewed</span></div>
-        <p class="microcopy">Choose a cluster or a UMAP point.</p>
+        <p class="microcopy">Choose a cluster or an embedding point.</p>
         <div id="cluster-list" class="cluster-list" aria-label="Clusters"></div>
-        <div class="sidebar-note"><strong>Review priority</strong><p>Cluster 6 has a CD8 / NK disagreement. Agreement alone is not biological validation.</p></div>
+        <div class="sidebar-note"><strong>Review priority</strong><p id="review-priority">Inspect evidence gaps and disagreements. Agreement alone is not biological validation.</p></div>
       </aside>
       <div class="review-main">
-        <section class="cluster-head"><div><div class="eyebrow">CURRENT SELECTION</div><h2 id="selection-title">Cluster 6</h2></div><div class="cluster-head-right"><span id="cell-count" data-testid="cell-count" class="pill">— cells</span><span id="cluster-issue" class="pill amber">Evidence loading</span></div></section>
+        <section class="cluster-head"><div><div class="eyebrow">CURRENT SELECTION</div><h2 id="selection-title">Choose a cluster</h2></div><div class="cluster-head-right"><span id="cell-count" data-testid="cell-count" class="pill">— cells</span><span id="cluster-issue" class="pill amber">Evidence loading</span></div></section>
         <div class="focus-grid">
-          <section class="panel umap-panel"><div class="panel-heading"><div><h3>UMAP</h3><p>Actual frozen coordinates · each point is one retained cell</p></div><label class="toggle"><input id="show-all" type="checkbox"> Color all clusters</label></div><div id="umap-chart" data-testid="umap-chart" class="umap-chart"></div><div id="umap-legend" class="umap-legend"></div><div class="chart-note">Distance reflects this embedding. It does not establish a cell type.</div></section>
+          <section class="panel umap-panel"><div class="panel-heading"><div><h3 id="embedding-title">Embedding</h3><p id="embedding-detail">Actual exported coordinates · each point is one cell</p></div><label class="toggle"><input id="show-all" type="checkbox"> Color all clusters</label></div><div id="umap-chart" data-testid="umap-chart" class="umap-chart"></div><div id="umap-legend" class="umap-legend"></div><div class="chart-note">Distance reflects this embedding. It does not establish a cell type.</div></section>
           <section class="panel decision-panel"><div class="panel-heading"><div><h3>Your decision</h3><p>A review record; never a replacement for source evidence.</p></div><span id="decision-badge" class="pill muted">No decision</span></div>
             <div id="current-decision" class="current-decision"></div>
             <form id="decision-form">
@@ -51,7 +56,7 @@
             </form>
           </section>
         </div>
-        <section class="panel evidence-panel"><div class="evidence-header"><h3>Compare the evidence</h3><span class="microcopy">Source predictions stay intact</span></div><div class="tabs" role="tablist" aria-label="Evidence views"><button id="evidence-models" data-testid="evidence-models" role="tab" aria-selected="true" data-tab="models">Model results <span>4</span></button><button id="evidence-directed" data-testid="evidence-directed" role="tab" aria-selected="false" data-tab="directed">Directed evidence <span>Local RNA</span></button><button id="evidence-database" data-testid="evidence-database" role="tab" aria-selected="false" data-tab="database">Database candidates</button><button id="evidence-markers" data-testid="evidence-markers" role="tab" aria-selected="false" data-tab="markers">Up to 30 markers</button><button id="evidence-history" data-testid="evidence-history" role="tab" aria-selected="false" data-tab="history">Decision history <span id="history-count">0</span></button></div><div id="evidence-content" role="tabpanel" class="evidence-content"></div></section>
+        <section class="panel evidence-panel"><div class="evidence-header"><h3>Compare the evidence</h3><span class="microcopy">Source predictions stay intact</span></div><div class="tabs" role="tablist" aria-label="Evidence views"><button id="evidence-models" data-testid="evidence-models" role="tab" aria-selected="true" data-tab="models">Model results <span id="selection-model-count">0</span></button><button id="evidence-directed" data-testid="evidence-directed" role="tab" aria-selected="false" data-tab="directed">Directed evidence <span>Local RNA</span></button><button id="evidence-database" data-testid="evidence-database" role="tab" aria-selected="false" data-tab="database">Database candidates</button><button id="evidence-markers" data-testid="evidence-markers" role="tab" aria-selected="false" data-tab="markers">Up to 30 markers</button><button id="evidence-history" data-testid="evidence-history" role="tab" aria-selected="false" data-tab="history">Decision history <span id="history-count">0</span></button></div><div id="evidence-content" role="tabpanel" class="evidence-content"></div></section>
       </div>
     </div>
     <footer><span>scAgentKit · local research workbench</span><span>Evidence ≠ certainty · decisions are reversible · no model calls</span></footer>

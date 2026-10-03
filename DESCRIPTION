@@ -26,7 +26,8 @@ Imports:
     ggplot2,
     Matrix,
     magrittr,
-    jsonlite
+    jsonlite,
+    digest
 Remotes:
     ChanghaoKan/agentomicsCore@v0.1.1,
     SeuratData=github::satijalab/seurat-data

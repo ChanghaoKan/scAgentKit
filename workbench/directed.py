@@ -128,8 +128,11 @@ def _cluster(evidence, cluster_id):
 
 
 def _scope(evidence, cluster, dimension="type"):
-    return {"datasetId": evidence["dataset"]["id"], "revision": evidence["revision"],
-            "clusterId": cluster["id"], "dimension": dimension, "cellIds": list(cluster["cellIds"])}
+    scope = {"datasetId": evidence["dataset"]["id"], "revision": evidence["revision"],
+             "clusterId": cluster["id"], "dimension": dimension, "cellIds": list(cluster["cellIds"])}
+    if evidence.get("sourceFingerprint"):
+        scope["sourceFingerprint"] = evidence["sourceFingerprint"]
+    return scope
 
 
 def _human(session, cluster_id):
@@ -272,14 +275,27 @@ def _measure(expression, cluster, thresholds, evidence=None):
     if str(scope.get("cluster_id")) != cluster["id"] or scope.get("cell_ids") != cluster["cellIds"] or scope.get("n_cells") != cluster["cellCount"]:
         raise DirectedError("Expression scope must exactly match current cluster and cell IDs")
     source = expression.get("source")
+    generic = expression.get("schema_version") == "scAgentKit.directed_expression.v2"
     if (not isinstance(source, dict) or source.get("assay") != "RNA"
-            or source.get("layers") != {"counts": "counts", "data": "data"}):
+            or (not generic and source.get("layers") != {"counts": "counts", "data": "data"})):
         raise DirectedError("Only the existing RNA assay is allowed")
-    for key in ("rds_sha256", "cell_map_sha256", "extractor_sha256"):
-        value = source.get(key)
-        if not isinstance(value, str) or len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
-            raise DirectedError("Missing actual source hash: " + key)
-    if evidence is not None:
+    if generic:
+        identity = evidence.get("identity", {}) if evidence else {}
+        fingerprint = source.get("object_fingerprint")
+        if (not isinstance(fingerprint, str) or len(fingerprint) != 64
+                or any(character not in "0123456789abcdef" for character in fingerprint)
+                or identity.get("algorithm") != "scagentkit.source.v1"
+                or fingerprint != identity.get("fingerprint")
+                or fingerprint != evidence.get("sourceFingerprint")
+                or source.get("assay") != identity.get("assay")
+                or source.get("layers") != {"counts": identity.get("countsLayer"), "data": identity.get("normalizedLayer")}):
+            raise DirectedError("Targeted RNA asset must match the actual generic object identity and explicit layers")
+    else:
+        for key in ("rds_sha256", "cell_map_sha256", "extractor_sha256"):
+            value = source.get(key)
+            if not isinstance(value, str) or len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+                raise DirectedError("Missing actual source hash: " + key)
+    if evidence is not None and not generic:
         recorded_sources = {row["id"]: row["sha256"] for row in evidence.get("sources", [])}
         for source_key, source_id in (("cell_map_sha256", "pbmc3k_reference_inputs/input_cells.csv"),
                                       ("retained_labels_sha256", "pbmc3k_verified/scagentkit_fixed_labels.csv"),

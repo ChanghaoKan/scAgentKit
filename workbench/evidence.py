@@ -52,7 +52,18 @@ def strict_json(value):
         return result
     def constant(value):
         raise ValueError("Non-finite JSON value")
-    return json.loads(value, object_pairs_hook=pairs, parse_constant=constant)
+    def floating(value):
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError("Non-finite JSON number")
+        return result
+    def integer(value):
+        result = int(value)
+        if abs(result) > 9007199254740991:
+            raise ValueError("JSON integer exceeds the exactly representable range")
+        return result
+    return json.loads(value, object_pairs_hook=pairs, parse_constant=constant,
+                      parse_float=floating, parse_int=integer)
 
 
 def revision_for(sources):

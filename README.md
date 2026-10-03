@@ -30,6 +30,7 @@ This is a research-software prototype, not an autonomous analyst. The biological
 - **Ensemble + hybrid confidence + marker-citation validation** (see `?annot_llm_annotate`).
 - **Cell Ontology mapping** via exact-match-only (`annot_map_to_cl`).
 - **Checkpoint versioning.** `@version` slot + `upgrade_checkpoint()` for backward compatibility.
+- **Local project review.** `sc_project_export()` creates portable evidence from explicit Seurat layers; the optional localhost GUI records scoped, reversible decisions. `sc_review_validate()` and `sc_review_apply()` align accepted decisions by exact cell ID into new columns of a returned copy. See the [local project quickstart](workbench/PROJECT_QUICKSTART.md).
 - **Development checks.** A Docker development environment pins the R base image and core release reference; GitHub Actions runs `R CMD check` on Ubuntu.
 - **Experimental evaluation scaffolding.** `benchmark/` contains a partial harness and planned studies, not published results.
 
