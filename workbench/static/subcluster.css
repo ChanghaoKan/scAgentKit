@@ -1,0 +1,35 @@
+.sub-cluster-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:16px 0}.sub-cluster-choice{display:flex;gap:9px;align-items:center;padding:12px;border:1px solid var(--border,#d8dde3);border-radius:10px}.sub-cluster-choice input{width:auto}.sub-actions{display:flex;gap:10px;flex-wrap:wrap}.sub-child-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border,#d8dde3)}#sub-child-panel>section{margin-top:24px;border-top:1px solid var(--border,#d8dde3);padding-top:20px}#sub-child-origin{margin:16px 0}#sub-applications pre{max-height:400px;overflow:auto}#sub-apply-panel .button{margin:12px 8px 0 0}
+
+/* Compact selected-cell workspace; no control or validation visibility changes. */
+body.compact-scope { font-size: 14px; }
+body.compact-scope > main { max-width: 1360px; }
+body.compact-scope .project-head p, body.compact-scope .candidate-current-scope { font-size: 13px; }
+body.compact-scope main > .qc-section { padding: 20px; margin-bottom: 16px; }
+body.compact-scope .qc-section > h2 { font-size: 18px; margin: 0 0 16px; }
+body.compact-scope .qc-section p, body.compact-scope .qc-boundary { font-size: 14px; line-height: 1.55; }
+body.compact-scope :is(label, input, select, textarea, button) { font-size: 14px; }
+body.compact-scope .microcopy { font-size: 12px; line-height: 1.55; margin: 8px 0 12px; }
+body.compact-scope .compact-action-note { font-size: 13px; line-height: 1.55; margin: 8px 0 12px; }
+body.compact-scope .compact-help { margin: 8px 0 12px; border: 0; padding: 0; background: transparent; }
+body.compact-scope .compact-help > summary { font-size: 13px; color: #40516a; cursor: pointer; padding: 4px 0; }
+body.compact-scope .compact-help[open] > summary { margin-bottom: 8px; }
+body.compact-scope .compact-help p { line-height: 1.55; margin: 8px 0; }
+body.compact-scope .sub-source-note { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; padding: 12px 0; margin: 0 0 16px; border-top: 1px solid #e1e5e9; border-bottom: 1px solid #e1e5e9; }
+body.compact-scope .sub-source-note > p { margin: 0; }
+body.compact-scope .sub-source-note > details { margin: 0 0 0 auto; max-width: 100%; }
+body.compact-scope .sub-source-note > details[open] { flex-basis: 100%; margin-left: 0; }
+body.compact-scope .sub-cluster-list { gap: 8px; margin: 16px 0 12px; }
+body.compact-scope .sub-cluster-choice { padding: 12px; border-radius: 6px; }
+body.compact-scope #sub-create-form > .form-row:first-child { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.compact-scope .form-row { gap: 16px; }
+body.compact-scope #sub-child-panel > section { margin-top: 16px; padding-top: 16px; }
+body.compact-scope .sub-context-panel { margin: 16px 0; padding: 16px 0; }
+body.compact-scope .sub-context-status { font-size: 13px; line-height: 1.55; }
+body.compact-scope #sub-child-origin { margin: 8px 0; }
+@media (max-width: 900px) { body.compact-scope #sub-create-form > .form-row:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  body.compact-scope main > .qc-section { padding: 16px; }
+  body.compact-scope #sub-create-form > .form-row:first-child, body.compact-scope .form-row { grid-template-columns: 1fr; }
+  body.compact-scope .sub-source-note { display: block; }
+  body.compact-scope .sub-source-note > details { margin-top: 8px; }
+}

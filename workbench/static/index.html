@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f7f8fa">
+  <title>scAgentKit · Research workbench</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="/ortholog-map.js" defer></script><script src="/gene-links.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="scAgentKit workbench"><span class="brand-mark">sc</span><strong>scAgentKit</strong><span class="brand-context">Research workbench</span></a>
+    <div class="header-tools"><span class="local-badge"><span class="status-dot"></span> Local · cached evidence</span><button id="refresh-evidence" data-testid="refresh-evidence" class="button quiet">Refresh evidence</button></div>
+  </header>
+  <main>
+    <section class="project-head">
+      <div><div id="project-eyebrow" class="eyebrow">ANNOTATION REVIEW / LOCAL PROJECT</div><h1>Evidence, then a decision.</h1><p>Inspect one cluster, record your reasoning, and leave a trail someone else can replay.</p></div>
+      <div class="handoff-actions"><button id="import-session" data-testid="import-session" class="button quiet">Import review journal</button><button id="export-session" data-testid="export-session" class="button primary">Export review journal <span aria-hidden="true">↗</span></button><input id="import-file" data-testid="import-file" type="file" accept="application/json,.json" hidden></div>
+    </section>
+    <section id="project-controls" class="project-controls panel" aria-label="Local evidence projects" hidden>
+      <label for="project-select">Evidence project<select id="project-select" data-testid="project-select"></select></label>
+      <div class="project-actions"><button id="import-project" data-testid="import-project" class="button quiet">Import project ZIP</button><button id="export-project" data-testid="export-project" class="button quiet">Export project ZIP</button><input id="project-file" data-testid="project-file" type="file" accept="application/zip,.zip" hidden></div>
+      <p id="project-context" class="microcopy">The evidence project contains local source evidence. The separate review journal contains your decisions.</p>
+    </section>
+    <div id="error-banner" data-testid="error-banner" role="alert" class="banner error" hidden></div>
+    <div id="notice" data-testid="notice" role="status" aria-live="polite" class="banner notice" hidden></div>
+    <section class="metrics" aria-label="Project overview">
+      <div class="metric"><span id="cells-metric-label">Cells in scope</span><strong id="retained-count">—</strong><small id="input-count">Loading local project…</small></div>
+      <div class="metric"><span>Clusters</span><strong id="cluster-count">—</strong><small id="cluster-detail">Declared cluster membership</small></div>
+      <div class="metric"><span>Strict model results</span><strong id="strict-count">—</strong><small id="call-count">4 conditions · saved calls</small></div>
+      <div class="metric attention"><span>Failures to inspect</span><strong id="failure-count">—</strong><small id="failure-detail">Format / transport</small></div>
+    </section>
+    <div class="revision-bar"><span class="revision-label">EVIDENCE REVISION</span><code id="revision" data-testid="revision">—</code><span>Content fingerprint · local files only</span><details id="source-details"><summary>Run evidence &amp; limits</summary><div id="source-content"></div></details></div>
+    <div class="review-layout">
+      <aside class="cluster-sidebar panel">
+        <div class="sidebar-title"><h2>Clusters</h2><span id="review-progress">0 reviewed</span></div>
+        <p class="microcopy">Choose a cluster or an embedding point.</p>
+        <div id="cluster-list" class="cluster-list" aria-label="Clusters"></div>
+        <div class="sidebar-note"><strong>Review priority</strong><p id="review-priority">Inspect evidence gaps and disagreements. Agreement alone is not biological validation.</p></div>
+      </aside>
+      <div class="review-main">
+        <section class="cluster-head"><div><div class="eyebrow">CURRENT SELECTION</div><h2 id="selection-title">Choose a cluster</h2></div><div class="cluster-head-right"><span id="cell-count" data-testid="cell-count" class="pill">— cells</span><span id="cluster-issue" class="pill amber">Evidence loading</span></div></section>
+        <div class="focus-grid">
+          <section class="panel umap-panel"><div class="panel-heading"><div><h3 id="embedding-title">Embedding</h3><p id="embedding-detail">Actual exported coordinates · each point is one cell</p></div><label class="toggle"><input id="show-all" type="checkbox"> Color all clusters</label></div><div id="umap-chart" data-testid="umap-chart" class="umap-chart"></div><div id="umap-legend" class="umap-legend"></div><div class="chart-note">Distance reflects this embedding. It does not establish a cell type.</div></section>
+          <section class="panel decision-panel"><div class="panel-heading"><div><h3>Your decision</h3><p>A review record; never a replacement for source evidence.</p></div><span id="decision-badge" class="pill muted">No decision</span></div>
+            <div id="current-decision" class="current-decision"></div>
+            <form id="decision-form">
+              <div class="form-row"><label>Dimension<select id="dimension" data-testid="dimension"><option value="type">Cell type</option><option value="state">Cell state</option><option value="QC">QC / anomaly</option></select></label><label>Review status<select id="review-status" data-testid="review-status"><option value="proposed">Proposed</option><option value="reviewed">Reviewed</option><option value="accepted">Accepted</option></select></label></div>
+              <label>Label<div class="label-row"><input id="label" data-testid="label" maxlength="160" placeholder="Choose a candidate or write a label" required><button id="retain-unknown" data-testid="retain-unknown" type="button" class="button quiet small">Keep unknown</button></div></label>
+              <label>Reason <span class="required-note">required for every change</span><textarea id="reason" data-testid="reason" rows="3" maxlength="4000" placeholder="Which evidence supports this, and what remains unresolved?" required></textarea></label>
+              <div id="scope-summary" data-testid="scope-summary" class="scope-summary"></div>
+              <button id="save-decision" data-testid="save-decision" type="submit" class="button primary full">Record decision</button>
+              <p class="microcopy">Proposed → reviewed → accepted describes your review process, not biological truth. “Unknown” is a valid decision.</p>
+            </form>
+          </section>
+        </div>
+        <section class="panel evidence-panel"><div class="evidence-header"><h3>Compare the evidence</h3><span class="microcopy">Source predictions stay intact</span></div><div class="tabs" role="tablist" aria-label="Evidence views"><button id="evidence-models" data-testid="evidence-models" role="tab" aria-selected="true" data-tab="models">Model results <span id="selection-model-count">0</span></button><button id="evidence-directed" data-testid="evidence-directed" role="tab" aria-selected="false" data-tab="directed">Directed evidence <span>Local RNA</span></button><button id="evidence-database" data-testid="evidence-database" role="tab" aria-selected="false" data-tab="database">Database candidates</button><button id="evidence-markers" data-testid="evidence-markers" role="tab" aria-selected="false" data-tab="markers">Up to 30 markers</button><button id="evidence-history" data-testid="evidence-history" role="tab" aria-selected="false" data-tab="history">Decision history <span id="history-count">0</span></button></div><div id="evidence-content" role="tabpanel" class="evidence-content"></div></section>
+      </div>
+    </div>
+    <footer><span>scAgentKit · local research workbench</span><span>Evidence ≠ certainty · decisions are reversible · no model calls</span></footer>
+  </main>
+  <dialog id="undo-dialog"><form id="undo-form"><h2>Undo by adding a record</h2><p id="undo-description"></p><label>Reason<textarea id="undo-reason" rows="3" maxlength="4000" required></textarea></label><div class="dialog-actions"><button type="button" id="cancel-undo" class="button quiet">Cancel</button><button id="confirm-undo" type="submit" class="button primary">Append undo event</button></div></form></dialog>
+</body>
+</html>

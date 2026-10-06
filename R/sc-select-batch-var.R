@@ -46,6 +46,9 @@
 #' @return Updated AgentSeurat. The scored table is stored at
 #'   `obj@params$batch_candidates`; if `chat_fn` was supplied, a
 #'   recommendation is stored at `obj@params$batch_recommendation`.
+#'   Includes `status`, `error`, `attempts`, `response_audit`, and `prompts`.
+#'   If JSON/schema validation fails, `recommended` is `NULL` and `status`
+#'   is `"failed"`; select a batch variable explicitly before integration.
 #' @export
 sc_select_batch_var <- function(obj,
                                 chat_fn     = NULL,
@@ -143,10 +146,11 @@ sc_select_batch_var <- function(obj,
 
   rationale <- if (!is.null(recommendation)) {
     sprintf(
-      "Scored %d batch-variable candidates; LLM recommended '%s' (confidence: %s).",
+      "Scored %d batch-variable candidates; recommendation '%s' (confidence: %s, status: %s).",
       nrow(scored),
       as.character(recommendation$recommended %||% NA),
-      as.character(recommendation$confidence %||% NA)
+      as.character(recommendation$confidence %||% NA),
+      recommendation$status
     )
   } else {
     sprintf("Scored %d batch-variable candidates; top: %s (score=%s).",
@@ -171,15 +175,15 @@ sc_select_batch_var <- function(obj,
     params         = list(
       candidates_top   = scored$column,
       candidates_score = scored$score,
-      llm_recommended  = if (!is.null(recommendation)) recommendation$recommended else NA
+      llm_recommended  = if (!is.null(recommendation)) recommendation$recommended %||% NA else NA,
+      decision_status = if (!is.null(recommendation)) recommendation$status else "not_requested"
     ),
     rationale      = rationale,
-    script_snippet = script
+    script_snippet = script,
+    success        = is.null(recommendation) || identical(recommendation$status, "ok")
   )
 
-  # NOTE: .record_step writes its `params` arg into obj@params (overwriting
-  # the slot). We re-attach the rich batch_candidates / batch_recommendation
-  # fields AFTER recording so callers can inspect them.
+  # Retain the candidate table and complete provider audit for inspection.
   obj@params$batch_candidates <- scored
   if (!is.null(recommendation)) {
     obj@params$batch_recommendation <- recommendation
@@ -240,37 +244,24 @@ sc_select_batch_var <- function(obj,
     "\n\nReturn the JSON object now."
   )
 
-  last_err <- NULL
-  valid_cols <- scored$column
-  for (i in seq_len(max_retries + 1)) {
-    raw <- tryCatch(chat_fn(system_prompt, user_prompt),
-                    error = function(e) { last_err <<- e; NULL })
-    if (is.null(raw)) next
-    raw <- sub("^```(?:json)?\\s*", "", raw)
-    raw <- sub("\\s*```\\s*$", "", raw)
-    raw <- trimws(raw)
-    parsed <- tryCatch(jsonlite::fromJSON(raw, simplifyVector = TRUE),
-                       error = function(e) { last_err <<- e; NULL })
-    if (!is.null(parsed) &&
-        !is.null(parsed$recommended) &&
-        parsed$recommended %in% valid_cols) {
-      return(parsed)
-    }
-    if (i <= max_retries) {
-      user_prompt <- paste0(user_prompt,
-        "\n\nYour previous response was invalid. The `recommended` ",
-        "field must be exactly one of: ",
-        paste(valid_cols, collapse = ", "),
-        ". Return ONLY the JSON object.")
-    }
-  }
-  list(
-    recommended  = scored$column[1],   # fallback to top-scored
-    confidence   = "low",
-    alternatives = scored$column[-1][seq_len(min(2, nrow(scored) - 1))],
-    warnings     = list("LLM call failed; defaulted to highest-scored candidate."),
-    reasoning    = sprintf("LLM error: %s",
-                           if (is.null(last_err)) "unknown"
-                           else conditionMessage(last_err))
+  parsed <- .call_with_retry(
+    chat_fn, system_prompt, user_prompt, max_retries = max_retries,
+    validator = function(x) .validate_batch_decision(x, scored$column)
   )
+  audit <- .decision_audit(parsed)
+  prompts <- list(system = system_prompt, user = user_prompt)
+  if (!identical(audit$status, "ok")) {
+    warning("Batch decision failed validation; no batch variable recommended. Select explicitly from the candidate table.",
+            call. = FALSE)
+    return(c(list(
+      recommended = NULL,
+      confidence = "low",
+      alternatives = character(),
+      warnings = "LLM call failed; select a batch variable explicitly before integration.",
+      reasoning = parsed$reasoning,
+      prompts = prompts
+    ), audit))
+  }
+  c(parsed[c("recommended", "confidence", "alternatives", "warnings", "reasoning")],
+    audit, list(prompts = prompts))
 }

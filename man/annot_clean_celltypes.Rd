@@ -25,12 +25,17 @@ annot_clean_celltypes(
 are considered low-quality. Default 50.}
 
 \item{action}{Character. What to do with low-quality clusters:
-`"flag"` (default), `"remove"`, or `"keep"`.}
+`"flag"` (default), `"remove"`, or `"keep"`. Only an explicit
+\code{action = "remove"} permits cell removal. Vision advice cannot escalate
+`"keep"` to `"flag"` or either retaining action to `"remove"`.}
 
 \item{vision}{Logical. If TRUE, generate UMAP and ask vision-capable LLM
 to judge whether small clusters are real or contaminants.}
 
-\item{chat_fn}{Vision-capable chat function (required when `vision = TRUE`).}
+\item{chat_fn}{Vision-capable function accepting \code{system_prompt},
+\code{user_prompt}, and \code{image_path} (required when \code{vision = TRUE}). It must
+return a JSON object with exactly two fields: \code{decision} (one of
+`"flag"`, `"remove"`, `"keep"`) and nonempty string \code{reasoning}.}
 
 \item{tissue}{Tissue context passed to LLM (e.g. "mouse colorectal cancer").}
 
@@ -38,10 +43,20 @@ to judge whether small clusters are real or contaminants.}
 }
 \value{
 Updated AgentSeurat with cleaned `cell_type` and
-  `cell_type_quality` columns.
+\code{cell_type_quality} columns. Calls and their final actions are recorded
+in the decision log, including raw vision responses and validation
+failures. Vision or removal failures keep all cells. Generated scripts
+replay the saved result without another model call.
 }
 \description{
-Merges singular/plural variants, flags or removes low-quality clusters
-(very small clusters are often contaminants/doublets), and optionally
-uses vision to let the LLM visually judge cluster quality from the UMAP.
+Merges singular/plural variants and marks small cell-type groups for review.
+Small size alone does not establish contamination. Optional vision advice
+can reduce the caller's requested action, but cannot authorize deletion.
+}
+\details{
+\code{cell_type_quality} is \code{"normal"} for groups meeting the size
+threshold, \code{"candidate"} for retained small groups, and \code{"flagged"} when
+the final action is \code{"flag"}. These are review states, not validated
+biological quality labels. A vision recommendation applies to all small
+groups; heterogeneous groups should be reviewed individually.
 }

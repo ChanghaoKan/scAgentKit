@@ -38,7 +38,7 @@
 #' @param out_dir Where to save panels. Default
 #'   `"figures/select_pcs_visual"`.
 #' @param panel_width,panel_height,panel_dpi PNG sizing per-panel.
-#' @param max_retries Integer. JSON-parse retry count.
+#' @param max_retries Integer. JSON/schema retry count.
 #' @param rationale Optional override.
 #'
 #' @return Updated AgentSeurat. Recommendation lives at
@@ -47,7 +47,10 @@
 #'   `chosen_variance` (cumulative variance fraction at chosen ndim),
 #'   `confidence`, `reasoning`, `candidates_compared` (data frame of
 #'   ndim and variance for each panel),
-#'   `panel_path`. Chosen ndim is also written to `obj@@params$ndim`.
+#'   `panel_path`, `status`, `error`, `attempts`, `response_audit`, and
+#'   `prompts`. Chosen ndim is also written to `obj@@params$ndim`.
+#'   Invalid responses fall back to the median candidate with low
+#'   confidence and `status = "fallback"`; the raw replies remain in the audit.
 #' @export
 sc_select_pcs_visual <- function(obj,
                                  chat_fn,
@@ -77,7 +80,12 @@ sc_select_pcs_visual <- function(obj,
   pca_obj <- obj@data[["pca"]]
   stdev   <- pca_obj@stdev
   if (length(stdev) == 0) stop("PCA stdev empty; rerun sc_pca().")
-  var_each <- stdev^2 / sum(stdev^2)
+  total_var <- sum(stdev^2)
+  if (any(!is.finite(stdev)) || any(stdev < 0) ||
+      !is.finite(total_var) || total_var <= 0) {
+    stop("PCA stdev must be finite, non-negative, and have positive total variance.")
+  }
+  var_each <- stdev^2 / total_var
   cum_var  <- cumsum(var_each)
   max_pc   <- length(stdev)
 
@@ -91,8 +99,10 @@ sc_select_pcs_visual <- function(obj,
   }
   if (!is.null(variance_thresholds)) {
     variance_mode <- TRUE
-    if (any(variance_thresholds <= 0 | variance_thresholds >= 1)) {
-      stop("variance_thresholds must be in (0, 1).")
+    if (!is.numeric(variance_thresholds) || !length(variance_thresholds) ||
+        any(!is.finite(variance_thresholds)) ||
+        any(variance_thresholds <= 0 | variance_thresholds >= 1)) {
+      stop("variance_thresholds must be finite numeric values in (0, 1).")
     }
     variance_thresholds <- sort(unique(variance_thresholds))
     candidates_int <- vapply(variance_thresholds, function(t) {
@@ -109,6 +119,12 @@ sc_select_pcs_visual <- function(obj,
            "Spread your variance_thresholds wider, or pass `candidates` directly.")
     }
   } else {
+    if (!is.numeric(candidates) || !length(candidates) ||
+        any(!is.finite(candidates)) || any(candidates < 1) ||
+        any(candidates != floor(candidates)) ||
+        any(candidates > .Machine$integer.max)) {
+      stop("candidates must contain positive finite integer PC counts.")
+    }
     candidates_int <- sort(unique(as.integer(candidates)))
     if (length(candidates_int) < 2) {
       stop("Need at least 2 candidate ndim values to compare.")
@@ -239,18 +255,12 @@ sc_select_pcs_visual <- function(obj,
                     nrow(panels_meta), combined_path))
   }
 
-  parsed <- .call_with_retry(chat_fn, system_prompt, user_prompt,
-                             max_retries = max_retries,
-                             image_path  = combined_path)
+  parsed <- .pcs_call_with_retry(chat_fn, system_prompt, user_prompt,
+                                candidates = panels_meta$ndim,
+                                max_retries = max_retries,
+                                image_path = combined_path)
 
-  chosen <- as.integer(parsed$chosen_ndim %||% parsed$chosen %||% NA_integer_)
-  if (is.na(chosen) || !chosen %in% panels_meta$ndim) {
-    warning(sprintf("LLM returned chosen=%s which is not in candidates (%s). ",
-                    parsed$chosen_ndim %||% parsed$chosen,
-                    paste(panels_meta$ndim, collapse = ",")),
-            "Falling back to median candidate.")
-    chosen <- panels_meta$ndim[ceiling(nrow(panels_meta) / 2)]
-  }
+  chosen <- parsed$chosen_ndim
   chosen_var <- panels_meta$variance[panels_meta$ndim == chosen][1]
 
   recommendation <- list(
@@ -259,7 +269,12 @@ sc_select_pcs_visual <- function(obj,
     confidence          = parsed$confidence,
     reasoning           = parsed$reasoning,
     candidates_compared = panels_meta,
-    panel_path          = combined_path
+    panel_path          = combined_path,
+    status              = parsed$status,
+    error               = parsed$error,
+    attempts            = parsed$attempts,
+    response_audit      = parsed$response_audit,
+    prompts             = list(system = system_prompt, user = user_prompt)
   )
 
   obj@params$ndim                       <- chosen
@@ -269,16 +284,16 @@ sc_select_pcs_visual <- function(obj,
     obj,
     step        = "sc_select_pcs_visual",
     path        = combined_path,
-    description = sprintf("UMAP panels at %s; LLM chose ndim=%d (variance %.0f%%, %s confidence).",
+    description = sprintf("UMAP panels at %s; ndim=%d (variance %.0f%%, %s confidence; status=%s).",
                           paste(panels_meta$label, collapse = " | "),
-                          chosen, 100 * chosen_var, parsed$confidence)
+                          chosen, 100 * chosen_var, parsed$confidence, parsed$status)
   )
 
   if (is.null(rationale)) {
     rationale <- sprintf(
-      "Visual ndim selection: panels at %s. LLM chose ndim=%d (variance %.1f%%; %s confidence). %s",
+      "Visual ndim selection: panels at %s. ndim=%d (variance %.1f%%; %s confidence; status=%s). %s",
       paste(panels_meta$label, collapse = ", "),
-      chosen, 100 * chosen_var, parsed$confidence, parsed$reasoning
+      chosen, 100 * chosen_var, parsed$confidence, parsed$status, parsed$reasoning
     )
   }
   script <- sprintf(
@@ -298,11 +313,13 @@ sc_select_pcs_visual <- function(obj,
       variance_at_each    = panels_meta$variance,
       chosen              = chosen,
       chosen_variance     = chosen_var,
-      confidence          = parsed$confidence
+      confidence          = parsed$confidence,
+      decision_status     = parsed$status
     ),
     rationale      = rationale,
     script_snippet = script,
-    new_stage      = "pcs_selected"
+    new_stage      = "pcs_selected",
+    success        = identical(parsed$status, "ok")
   )
   .attach_step_tokens(obj, "sc_select_pcs_visual", .tok_before)
 }
