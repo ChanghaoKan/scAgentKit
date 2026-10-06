@@ -2,39 +2,32 @@
 % Please edit documentation in R/sc-cellcycle-regress.R
 \name{sc_cellcycle_regress}
 \alias{sc_cellcycle_regress}
-\title{Regress out cell cycle signal (optional, after scoring)}
+\title{Explicitly choose cell-cycle regression}
 \usage{
-sc_cellcycle_regress(obj, mode = c("full", "difference"), rationale = NULL)
+sc_cellcycle_regress(obj, mode = "none", rationale = NULL)
 }
 \arguments{
-\item{obj}{An AgentSeurat object after [sc_cellcycle_score()].}
-
-\item{mode}{Character, one of `"full"` or `"difference"`. No default;
-the caller must commit to a strategy.}
-
-\item{rationale}{Optional LLM-supplied rationale.}
+\item{obj}{An AgentSeurat; scores are needed only for regression modes.}
+\item{mode}{One of \code{"none"}, \code{"full"}, or \code{"difference"};
+default \code{"none"}.}
+\item{rationale}{Optional rationale for the audit record.}
 }
 \value{
-Updated AgentSeurat (stage "scaled"); downstream reductions
-  invalidated.
+For \code{none}, the unchanged object. Otherwise an updated AgentSeurat
+at stage \code{"scaled"}, with downstream analyses requiring recomputation.
 }
 \description{
-Convenience wrapper that calls [sc_scale()] with the appropriate
-`vars.to.regress`. Two common strategies:
+\code{mode = "none"} returns the object unchanged and performs no scaling.
+\code{mode = "full"} calls \code{\link{sc_scale}} with \code{S.Score} and
+\code{G2M.Score} to reduce both phase and cycling-versus-noncycling variation.
+\code{mode = "difference"} regresses \code{CC.Difference} to suppress the
+S-versus-G2M phase contrast while preserving the distinction between cycling
+and noncycling cells. Neither mode deletes cells.
 }
 \details{
-\itemize{
-  \item \code{mode = "full"}: regress `c("S.Score", "G2M.Score")`.
-    Removes the entire cell cycle signal. Use when cell cycle is pure
-    noise for your biology (most cases).
-  \item \code{mode = "difference"}: regress `"CC.Difference"`.
-    Removes only the *cycling vs non-cycling* contrast while preserving
-    the proliferating identity. Use when proliferating cells are a
-    biological group of interest (e.g. stem / progenitor / tumor
-    cells) and you want to keep them clustered together rather than
-    split across cycle phases.
-}
-
-After calling this, you must re-run [sc_pca()] (and anything
-downstream) since the scaled data has changed.
+Full or difference regression requires finite, nonconstant scores and an
+estimable retained-cell design. Re-run \code{\link{sc_pca}} and downstream
+analyses after either regression mode changes scaled data. A scientific
+rationale and lineage context should guide the explicit choice; full is not
+a default.
 }

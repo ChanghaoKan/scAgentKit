@@ -1,3 +1,43 @@
+# scAgentKit 0.5.0.9000
+
+- Add independently reviewed raw-count child projects from frozen parent cluster selections, with explicit QC/batch/cycle/reference choices and no inherited parent embedding or cluster truth.
+- Apply reviewed child subtypes by literal cell ID to new parent derivatives, with stale/conflicting scope rejection, idempotent receipts, linked immutable application versions and undo; the original parent remains unchanged.
+
+- Add an explicitly reviewed, design-guarded Harmony strategy stage with a fresh embedding, RNA-based marker evidence and cached-PCA recovery; correction still defaults to `none` and processed entry reuses its supplied foundation.
+- Add `.80`/`.85` `computed_top50` policies with saved actual candidate counts and a disclosed first-`min(50, computed PCs)` variance denominator; no full-expression variance or universal optimal-dimension claim.
+
+- Add a first-use R helper and offline raw-input example with saved inspection snapshots, typed decisions, context/provider configuration and fresh-process recovery.
+- Reject annotation-column conflicts before computation and report unreadable input RDS files at entry. Missing built-in provider credentials pause for configuration before dispatch or reservation; existing caches remain readable without a key.
+
+- Add server-side `sc_run` with typed QC/annotation proposals, exact approvals, checkpoints and headless resume.
+- Add aggregate-transfer previews, provider budget holds/caches, input/config/implementation binding, and explicit scientific result acceptance.
+- Reuse existing Seurat preparation, marker/reference and project bundle functions; preserve source objects and annotation columns.
+- Add immutable QC impact previews with exact cell scope, actual sample/capture distributions, filter overlaps, missing measurements, and explicit comparison rules.
+- Bind QC decisions to preview parameters, input, evidence, implementation and revision; changed previews reject stale decisions. Support audited keep/revise/repreview/reject in R and the optional loopback workbench connected to the same run directory.
+- Add immutable annotation review with exact per-cluster cell scope, supplied marker statistics, saved independent reference provenance, and honest mock/provider/manual source records.
+- Add a unified project workbench and `sc_run_review()` for QC/annotation keep, revise, reject and executed annotation undo. Project, input, proposal, review and revision are checked under one R lock; no review action computes or dispatches a provider.
+- Browser review saves decisions only; run subsequent computation with `sc_run_resume()` in R. Batch correction requires the separate explicit guarded strategy choice described above.
+
+# scAgentKit 0.4.0.9000 (local development)
+
+* Parse cleaning recommendations as strict JSON; preserve the caller's deletion
+  setting, retain cells on failure, and save prompts, responses, cell IDs,
+  final labels, and successful or failed audit records for offline replay.
+* Validate annotation, PC, resolution, and batch recommendation schemas; reject
+  malformed types, invalid enums, unsupported candidates, and wrong cluster IDs.
+* Use the same differential and cycling rescue evidence in annotation prompts
+  and marker-citation checks. Model failure remains visible for analyst review.
+* Add optional independent database/LLM initial assessment while retaining
+  reference-guided annotation as the default. Add offline evidence review with
+  explicit label mapping and agreement, conflict, or unknown outcomes.
+* Preserve reference source provenance, apply available species filtering, and
+  handle empty references or no positive marker matches without crashing.
+* Repair the PC benchmark API calls and add an offline PBMC3k Seurat5 comparison
+  and saved-decision replay harness. Reference labels stay outside analysis
+  input; mock tests are not annotation accuracy evidence.
+
+---
+
 # scAgentKit 0.4.0 (2026-07-21)
 
 * Make `annot_apply()` non-destructive by default: clusters flagged by an

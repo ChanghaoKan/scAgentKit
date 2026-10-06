@@ -18,7 +18,8 @@
 #'   passes `seq_len(ndim)` to Harmony's `dims.use` argument. Defaults to
 #'   `obj@@params$ndim` if [sc_select_pcs()] has been called.
 #' @param max_iter Maximum Harmony iterations. Passed to Harmony's
-#'   `max.iter.harmony` argument. Default 10.
+#'   modern `max_iter` argument. Default 10. PCA input is selected with the
+#'   exact `reduction.use` argument; dimension projection is disabled.
 #' @param seed Integer, random seed. Default 999.
 #' @param rationale Optional LLM-supplied rationale.
 #'
@@ -61,11 +62,12 @@ sc_harmony <- function(obj,
   seu <- obj@data
   seu <- harmony::RunHarmony(
     seu,
-    reduction      = "pca",
+    reduction.use  = "pca",
     group.by.vars  = group_by_vars,
     dims.use       = dims_use,
     reduction.save = "harmony",
-    max.iter.harmony = max_iter
+    project.dim = FALSE,
+    max_iter = max_iter
   )
   obj@data <- seu
 
@@ -79,11 +81,12 @@ sc_harmony <- function(obj,
 '# ---- Harmony batch integration ----
 set.seed(%d)
 seurat_obj <- harmony::RunHarmony(seurat_obj,
-                                  reduction        = "pca",
+                                  reduction.use    = "pca",
                                   group.by.vars    = %s,
                                   dims.use         = seq_len(%d),
                                   reduction.save   = "harmony",
-                                  max.iter.harmony = %d)',
+                                  project.dim      = FALSE,
+                                  max_iter         = %d)',
     seed, vars_str, ndim, max_iter
   )
 

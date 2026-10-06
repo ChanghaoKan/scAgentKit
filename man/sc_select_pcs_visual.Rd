@@ -43,7 +43,7 @@ otherwise computes a temporary leiden clustering at res 0.5.}
 
 \item{panel_width, panel_height, panel_dpi}{PNG sizing per-panel.}
 
-\item{max_retries}{Integer. JSON-parse retry count.}
+\item{max_retries}{Integer. JSON/schema retry count.}
 
 \item{rationale}{Optional override.}
 }
@@ -54,7 +54,10 @@ Updated AgentSeurat. Recommendation lives at
   `chosen_variance` (cumulative variance fraction at chosen ndim),
   `confidence`, `reasoning`, `candidates_compared` (data frame of
   ndim and variance for each panel),
-  `panel_path`. Chosen ndim is also written to `obj@params$ndim`.
+  `panel_path`, `status`, `error`, `attempts`, `response_audit`, and
+  `prompts`. Chosen ndim is also written to `obj@params$ndim`.
+  Invalid responses fall back to the median candidate with low
+  confidence and `status = "fallback"`; the raw replies remain in the audit.
 }
 \description{
 Generates UMAP panels at several candidate dimensionalities, asks a

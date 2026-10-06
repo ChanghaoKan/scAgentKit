@@ -2,50 +2,52 @@
 % Please edit documentation in R/sc-cellcycle.R
 \name{sc_cellcycle_score}
 \alias{sc_cellcycle_score}
-\title{Score cell cycle phase (optional QC step)}
+\title{Score cell cycle phase without filtering cells}
 \usage{
 sc_cellcycle_score(
   obj,
-  species = c("human", "mouse"),
+  species = "human",
   s_genes = NULL,
   g2m_genes = NULL,
-  rationale = NULL
+  rationale = NULL,
+  source = NULL,
+  version = NULL,
+  symbol_mapping = NULL
 )
 }
 \arguments{
-\item{obj}{An AgentSeurat object at stage >= "normalized".}
-
-\item{species}{Character, `"human"` or `"mouse"`. Default `"human"`.}
-
-\item{s_genes}{Optional character vector of S-phase genes; overrides
-the Seurat default.}
-
-\item{g2m_genes}{Optional character vector of G2/M-phase genes; overrides
-the Seurat default.}
-
-\item{rationale}{Optional LLM-supplied rationale.}
+\item{obj}{An AgentSeurat with a single Seurat object and normalized data.}
+\item{species}{Human or mouse, including their explicit scientific-name aliases.
+Default \code{"human"}.}
+\item{s_genes, g2m_genes}{Both literal custom phase-gene vectors, or both NULL
+for the human Seurat default.}
+\item{rationale}{Optional rationale for the audit record.}
+\item{source, version}{Required provenance strings for custom gene lists.}
+\item{symbol_mapping}{Optional complete one-to-one canonical-to-input symbol
+mapping; see \code{\link{sc_cycle_gene_set}}.}
 }
 \value{
-Updated AgentSeurat. Metadata gains `S.Score`, `G2M.Score`,
-  `Phase`, `CC.Difference`. Nothing is removed or regressed out.
+Updated AgentSeurat with \code{S.Score}, \code{G2M.Score}, \code{Phase}, and
+\code{CC.Difference}. No cells are removed and no regression is performed.
 }
 \description{
-Runs [Seurat::CellCycleScoring()] using the standard Tirosh S/G2M gene
-sets (supplied internally by Seurat as `cc.genes`). Adds `S.Score`,
-`G2M.Score`, `Phase`, and `CC.Difference` columns to the metadata.
+Runs \code{Seurat::CellCycleScoring()} on normalized data using literal gene
+symbols. Human defaults load the installed Seurat
+\code{cc.genes.updated.2019} package data. Mouse requires both explicit lists
+with their source and version; no capitalization or ortholog conversion is
+performed. Custom human lists also require a source and version.
 }
 \details{
-This is an *optional* step. The standard workflow is:
-  1. Run `sc_cellcycle_score()` early (after normalization).
-  2. Cluster the data without regressing out cell cycle.
-  3. Inspect the UMAP colored by `Phase`. If a cluster is clearly being
-     driven by proliferation rather than biology, call
-     `sc_scale(obj, vars_to_regress = c("S.Score", "G2M.Score"))` or
-     pass `vars_to_regress = "CC.Difference"` to regress out only the
-     cycling-vs-noncycling signal while preserving proliferating
-     identity.
+Score first, inspect phase and lineage evidence, and then explicitly choose
+whether to regress. Full regression uses \code{S.Score} and \code{G2M.Score}.
+Difference regression uses \code{CC.Difference} to reduce S-versus-G2M phase
+effects while preserving the distinction between cycling and noncycling
+cells. Neither scoring nor regression deletes cycling cells.
 
-The Seurat `cc.genes` list is human (HGNC symbols). For mouse data,
-pass `species = "mouse"` and Title-case conversion will be applied
-(e.g. `MCM5` -> `Mcm5`), which works for almost all cc genes.
+Literal matching can be insufficient for Ensembl identifiers, aliases, or
+another species' symbols. Supply an explicit one-to-one \code{symbol_mapping}
+instead of inferring capitalization or orthology. Fewer than five expressed
+matching genes in either set fail before metadata mutation. Existing score
+columns are protected; use \code{sc_run()} diagnostics with a fresh prefix
+when prior scores must coexist.
 }

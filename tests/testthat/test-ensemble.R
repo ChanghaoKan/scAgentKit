@@ -53,8 +53,8 @@ test_that(".ensemble_annotate unions supporting_markers from modal responses", {
 })
 
 test_that(".ensemble_annotate worst-case action priority: reject > flag > accept", {
-  json_accept <- '{"primary_annotation":"T cell","confidence":"high","supporting_markers":[],"contradicting_markers":[],"alternative_annotations":[],"proportion_assessment":"reasonable","recommended_action":"accept","reasoning":""}'
-  json_reject <- '{"primary_annotation":"T cell","confidence":"low","supporting_markers":[],"contradicting_markers":[],"alternative_annotations":[],"proportion_assessment":"reasonable","recommended_action":"reject","reasoning":""}'
+  json_accept <- '{"primary_annotation":"T cell","confidence":"high","supporting_markers":[],"contradicting_markers":[],"alternative_annotations":[],"proportion_assessment":"reasonable","recommended_action":"accept","reasoning":"Accept this annotation."}'
+  json_reject <- '{"primary_annotation":"T cell","confidence":"low","supporting_markers":[],"contradicting_markers":[],"alternative_annotations":[],"proportion_assessment":"reasonable","recommended_action":"reject","reasoning":"Reject this annotation."}'
   chat_fn <- make_stub(list(json_accept, json_accept, json_reject))
 
   out <- scAgentKit:::.ensemble_annotate(

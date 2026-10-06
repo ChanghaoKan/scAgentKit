@@ -1,0 +1,190 @@
+{
+  "schema": "scagentkit.mouse-ortholog-map.v1",
+  "snapshot_id": "mgi-mouse-human-2026-10-05.v1",
+  "source_taxon": 10090,
+  "target_taxon": 9606,
+  "entry_fields": [
+    "mgi_id",
+    "mouse_symbol",
+    "mouse_ncbi_gene_id",
+    "aliases",
+    "human_candidates",
+    "alias_source_id"
+  ],
+  "candidate_fields": [
+    "human_symbol",
+    "human_ncbi_gene_id",
+    "hgnc_id",
+    "relation",
+    "source_id",
+    "source_line",
+    "source_group_id"
+  ],
+  "sources": [
+    {
+      "id": "mgi_protein_coding",
+      "title": "MGI: Mouse Protein Coding Genes having one-to-one Orthology with Human Genes",
+      "url": "https://www.informatics.jax.org/downloads/reports/HOM_ProteinCoding.rpt",
+      "last_modified": "Mon, 05 Oct 2026 12:00:29 GMT",
+      "fetched_at_utc": "2026-10-05T18:59:55.333047+00:00",
+      "sha256": "2bc350fc189dfd68e2caecebaff0f9a3db18959956e5bb3008981635f87f68c9",
+      "bytes": 782212,
+      "license": "CC-BY-4.0",
+      "license_url": "https://www.informatics.jax.org/mgihome/other/copyright.shtml"
+    },
+    {
+      "id": "mgi_hmd",
+      "title": "MGI: Mouse/Human Orthology with Phenotype Annotations (IDs and symbols only)",
+      "url": "https://www.informatics.jax.org/downloads/reports/HMD_HumanPhenotype.rpt",
+      "last_modified": "Mon, 05 Oct 2026 12:00:26 GMT",
+      "fetched_at_utc": "2026-10-05T19:00:37.116173+00:00",
+      "sha256": "3caceb612e6c9054a714044589fb3dd960d84f24bff5cdf0bab2b4381358c0a7",
+      "bytes": 1989958,
+      "license": "CC-BY-4.0",
+      "license_url": "https://www.informatics.jax.org/mgihome/other/copyright.shtml"
+    },
+    {
+      "id": "mgi_marker_Ptprc",
+      "title": "MGI Ptprc mouse gene detail: Summary synonyms",
+      "url": "https://www.informatics.jax.org/marker/MGI:97810",
+      "last_modified": null,
+      "fetched_at_utc": "2026-10-05T19:06:05.471962+00:00",
+      "sha256": "5517d1051c1b835df860c1db4ac9fb1645be12ae2366754b4e78a6d246a7bf68",
+      "bytes": 190041,
+      "license": "CC-BY-4.0",
+      "license_url": "https://www.informatics.jax.org/mgihome/other/copyright.shtml"
+    },
+    {
+      "id": "mgi_marker_Lyz2",
+      "title": "MGI Lyz2 mouse gene detail: Summary synonyms",
+      "url": "https://www.informatics.jax.org/marker/MGI:96897",
+      "last_modified": null,
+      "fetched_at_utc": "2026-10-05T19:06:05.472570+00:00",
+      "sha256": "ea32bc30e7087bebb6f00b4fbf979492d2c6781cc6f03d72243eea45070a43df",
+      "bytes": 150707,
+      "license": "CC-BY-4.0",
+      "license_url": "https://www.informatics.jax.org/mgihome/other/copyright.shtml"
+    },
+    {
+      "id": "mgi_marker_Adh1",
+      "title": "MGI Adh1 mouse gene detail: Summary synonyms and homology",
+      "url": "https://www.informatics.jax.org/marker/MGI:87921",
+      "last_modified": null,
+      "fetched_at_utc": "2026-10-05T19:06:05.472699+00:00",
+      "sha256": "182e6a1ed8e5afb9437af8b21996558a323bf68157f6a19ac005cf86465b85c2",
+      "bytes": 170933,
+      "license": "CC-BY-4.0",
+      "license_url": "https://www.informatics.jax.org/mgihome/other/copyright.shtml"
+    }
+  ],
+  "attribution": "Mouse Genome Informatics (MGI), The Jackson Laboratory; orthology information from the Alliance of Genome Resources. Derived ID/symbol lookup, CC-BY-4.0. Retrieved 2026-10-05.",
+  "license_url": "https://www.informatics.jax.org/mgihome/other/copyright.shtml",
+  "mgi_link_documentation": "https://www.informatics.jax.org/mgihome/other/link_instructions.shtml",
+  "alias_assertions": [
+    {
+      "mgi_id": "MGI:97810",
+      "mouse_symbol": "Ptprc",
+      "aliases": [
+        "B220",
+        "CD45",
+        "Ly-5",
+        "Lyt-4",
+        "T200"
+      ],
+      "source_id": "mgi_marker_Ptprc",
+      "source_locator": "Mouse Summary > Synonyms (before Homology)",
+      "human_synonyms_excluded": true
+    },
+    {
+      "mgi_id": "MGI:96897",
+      "mouse_symbol": "Lyz2",
+      "aliases": [
+        "Lys",
+        "Lysm",
+        "Lyzs",
+        "Lzm",
+        "Lzm-s1",
+        "Lzp"
+      ],
+      "source_id": "mgi_marker_Lyz2",
+      "source_locator": "Mouse Summary > Synonyms (before Homology)",
+      "human_synonyms_excluded": true
+    },
+    {
+      "mgi_id": "MGI:87921",
+      "mouse_symbol": "Adh1",
+      "aliases": [
+        "Adh-1",
+        "Adh1-e",
+        "Adh-1e",
+        "Adh-1-t",
+        "Adh1-t",
+        "Adh-1t",
+        "Adh1tl",
+        "ADH-AA",
+        "class I alcohol dehydrogenase"
+      ],
+      "source_id": "mgi_marker_Adh1",
+      "source_locator": "Mouse Summary > Synonyms (before Homology)",
+      "human_synonyms_excluded": true
+    }
+  ],
+  "group_assertions": [
+    {
+      "mgi_id": "MGI:97810",
+      "source_group_id": "52253858",
+      "source_id": "mgi_marker_Ptprc",
+      "source_locator": "Homology > MGI Vertebrate Homology",
+      "url": "https://www.informatics.jax.org/homology/cluster/key/52253858"
+    },
+    {
+      "mgi_id": "MGI:96897",
+      "source_group_id": "52259352",
+      "source_id": "mgi_marker_Lyz2",
+      "source_locator": "Homology > MGI Vertebrate Homology",
+      "url": "https://www.informatics.jax.org/homology/cluster/key/52259352"
+    },
+    {
+      "mgi_id": "MGI:87921",
+      "source_group_id": "52263919",
+      "source_id": "mgi_marker_Adh1",
+      "source_locator": "Homology > MGI Vertebrate Homology",
+      "url": "https://www.informatics.jax.org/homology/cluster/key/52263919"
+    }
+  ],
+  "identifier_conflicts": [
+    {
+      "mgi_id": "MGI:2444426",
+      "field": "mouse_ncbi_gene_id",
+      "values": [
+        "115486979",
+        "210027"
+      ],
+      "source_id": "mgi_protein_coding",
+      "source_lines": [
+        13080,
+        13081
+      ],
+      "resolution": "field retained as null; MGI/symbol/human mapping agree"
+    }
+  ],
+  "coverage": {
+    "mouse_records": 20183,
+    "human_candidate_pairs": 28880,
+    "one_to_one_pairs": 16536,
+    "one_to_one_source_rows": 16537,
+    "group_candidate_pairs": 12344,
+    "mouse_records_with_aliases": 3,
+    "alias_strings": 20,
+    "multiple_human_candidate_records": 1754
+  },
+  "limitations": [
+    "Only the HOM_ProteinCoding report certifies one-to-one protein-coding orthology; HMD-only pairs remain homology group candidates.",
+    "HMD has no DB class/group ID field. source_group_id is null except three separately verified public mouse example pages; group_assertions record their sources.",
+    "Only Ptprc, Lyz2 and Adh1 mouse Summary aliases are included; alias spelling and case are exact. Human synonyms are excluded.",
+    "The source report supplies two mouse NCBI IDs for Slc35f3 (MGI:2444426); mouse_ncbi_gene_id is null for that entry and identifier_conflicts preserves both published values and source lines.",
+    "This static snapshot is not a live nomenclature service and does not cover every mouse feature or every historical alias; absence means not found in this snapshot, not absence of orthology.",
+    "Multiple candidates remain visible for user selection. No candidate is chosen automatically and no capitalization, orthology prediction, expression transfer or biological label inference is performed.",
+    "Only source IDs, symbols and provenance are derived. Phenotype, OMIM, images, expression, raw counts and per-cell information are excluded."
+  ]
+}

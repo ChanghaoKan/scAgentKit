@@ -58,6 +58,9 @@ reduces base64 payload size. Default 110.}
 \value{
 Updated AgentSeurat. Recommendation stored at
   `obj@params$resolution_recommendation`.
+  Includes `status`, `error`, `attempts`, `response_audit`, and `prompts`.
+  If JSON/schema validation fails, `chosen` is `NA_real_` and `status`
+  is `"failed"`; choose a resolution explicitly before clustering.
 }
 \description{
 After [sc_cluster_sweep()] has populated `RNA_snn_res.*` metadata and

@@ -27,7 +27,8 @@ passes `seq_len(ndim)` to Harmony's `dims.use` argument. Defaults to
 `obj@params$ndim` if [sc_select_pcs()] has been called.}
 
 \item{max_iter}{Maximum Harmony iterations. Passed to Harmony's
-`max.iter.harmony` argument. Default 10.}
+modern `max_iter` argument. Default 10. PCA input is selected with the
+exact `reduction.use` argument; dimension projection is disabled.}
 
 \item{seed}{Integer, random seed. Default 999.}
 

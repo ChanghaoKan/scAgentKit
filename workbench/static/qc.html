@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QC impact review · scAgentKit</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/qc.css"><script src="/qc.js" defer></script></head>
+<body>
+<header class="app-header candidate-header"><div class="brand"><strong>scAgentKit</strong><span class="brand-context">QC impact review</span></div><div class="header-tools"><span class="candidate-badge">Candidate preview</span><button id="qc-refresh" data-testid="qc-refresh" class="button quiet">Refresh saved preview</button></div></header>
+<main>
+  <div class="project-head"><div><p class="eyebrow">REVIEW BEFORE CHANGING THE CELL SET</p><h1>Review the effect of this QC proposal</h1><p id="qc-project" data-testid="qc-project">Loading the saved project…</p></div><span id="qc-status" data-testid="qc-status" class="pill muted">Loading</span></div>
+  <div id="qc-message" data-testid="qc-message" class="banner notice" role="status" hidden></div>
+  <div id="qc-metrics" data-testid="qc-metrics" class="metrics"></div>
+  <p class="qc-boundary">Counts and distributions describe the proposed cell set. Positive gene expression is supporting evidence, not a quality or identity gold standard. Quantiles and sensitivity alternatives do not choose a biologically optimal threshold.</p>
+  <div class="qc-layout">
+    <div class="qc-evidence">
+      <section class="panel qc-section"><h2>Proposed rules and exact scope</h2><div id="qc-rules" data-testid="qc-rules"></div><details><summary>Exact retained and removed cell IDs</summary><div id="qc-cell-scope" data-testid="qc-cell-scope"></div></details></section>
+      <section class="panel qc-section"><h2>Independent and overlapping removals</h2><p class="evidence-explainer">Independent counts can overlap. Exclusive counts and failure patterns identify the same literal cell IDs without summing overlapping reasons.</p><div id="qc-filter-impacts" data-testid="qc-filter-impacts"></div><h3>Measured co-failures</h3><div id="qc-overlap" data-testid="qc-overlap"></div><details><summary>Disjoint failure patterns and cell IDs</summary><div id="qc-patterns" data-testid="qc-patterns"></div></details></section>
+      <section class="panel qc-section"><h2>Before and after distributions</h2><p class="evidence-explainer">The plot shows observed p05–p95, p25–p75 and median. All three populations use the same metrics; missing measurements remain unknown. No density or cell identity is inferred.</p><div id="qc-distributions" data-testid="qc-distributions"></div><details><summary>Per sample/capture distributions</summary><div id="qc-group-distributions" data-testid="qc-group-distributions"></div></details></section>
+      <section class="panel qc-section"><h2>Missing measurements and gene evidence</h2><div id="qc-unavailable" data-testid="qc-unavailable"></div><p class="evidence-explainer">A missing gene is not zero expression; observed zero counts can reflect dropout. Positive panels may overlap and do not establish a cell type, singlet status or suitability for analysis.</p></section>
+      <section class="panel qc-section"><h2>Explicit sensitivity alternatives</h2><p class="evidence-explainer">Only the alternatives requested for this preview are evaluated. They are explanatory comparisons. Nothing is automatically adopted or tuned to a target cell count.</p><div id="qc-sensitivity" data-testid="qc-sensitivity"></div></section>
+      <section class="panel qc-section"><h2>Fingerprint binding</h2><div id="qc-fingerprints" data-testid="qc-fingerprints"></div></section>
+    </div>
+    <aside class="panel qc-decision">
+      <h2>Decide on the reviewed plan</h2><p class="evidence-explainer">An approval records this exact saved preview. Computation starts only when you resume in R.</p>
+      <form id="qc-decision-form">
+        <label>Reviewer<input id="qc-reviewer" data-testid="qc-reviewer" maxlength="200" required autocomplete="off"></label>
+        <label>Reason<textarea id="qc-reason" data-testid="qc-reason" maxlength="4000" required placeholder="Why this choice fits the experiment and the observed risks"></textarea></label>
+        <div class="qc-actions"><button type="button" id="qc-approve" data-testid="qc-approve" class="button primary" disabled>Approve this QC plan</button><button type="button" id="qc-reject" data-testid="qc-reject" class="button quiet" disabled>Reject</button></div>
+        <details class="qc-edit"><summary>Modify rules or preview alternatives</summary><p class="evidence-explainer">Edit supported typed JSON. Rebuilding the preview invalidates the earlier approval fingerprint and appends your reason to the audit.</p>
+          <label>QC proposal<textarea id="qc-proposal" data-testid="qc-proposal" class="qc-json" spellcheck="false" rows="15"></textarea></label>
+          <label>Sensitivity alternatives (array)<textarea id="qc-alternatives" data-testid="qc-alternatives" class="qc-json" spellcheck="false" rows="5"></textarea></label>
+          <label>Gene panels (named object)<textarea id="qc-panels" data-testid="qc-panels" class="qc-json" spellcheck="false" rows="4"></textarea></label>
+          <button type="button" id="qc-revise" data-testid="qc-revise" class="button quiet full" disabled>Save changes and rebuild preview</button>
+          <button type="button" id="qc-preview" data-testid="qc-preview" class="button quiet full" disabled>Rebuild alternatives for current rules</button>
+        </details>
+      </form>
+      <p id="qc-next" data-testid="qc-next" class="microcopy"></p>
+    </aside>
+  </div>
+  <footer><span>Server-side state and approvals · exact cell scope · append-only decisions</span><span>No browser API key · no automatic analysis or external transfer</span></footer>
+</main>
+</body></html>
