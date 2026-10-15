@@ -21,6 +21,24 @@ except ImportError:
 
 FORMAT = "scagentkit.workbench.handoff.v1"
 DIRECTED_FORMAT = "scagentkit.workbench.handoff.v2"
+SECRET_NAMES = ("DEEPSEEK_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROK_API_KEY",
+                "GOOGLE_API_KEY", "GEMINI_API_KEY", "AZURE_OPENAI_API_KEY", "COHERE_API_KEY",
+                "MISTRAL_API_KEY", "OPENROUTER_API_KEY", "HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN")
+_SECRET_NAME = re.compile(r"(API_?KEY|ACCESS_?KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL)", re.IGNORECASE)
+
+
+def scrub_secrets(env, keep=()):
+    """Remove credential-like variables from a subprocess environment in place.
+
+    A fixed list missed operator-chosen ``api_key_env`` names, so anything whose
+    name looks like a credential is removed unless explicitly kept.
+    """
+    for name in list(env):
+        if name not in keep and (name in SECRET_NAMES or _SECRET_NAME.search(name)):
+            env.pop(name, None)
+    return env
+
+
 # Leave room for the {"package": ...} HTTP import wrapper. Export uses compact JSON.
 MAX_SESSION_BYTES = 32 * 1024 * 1024 - 1024
 ZERO_HASH = "0" * 64

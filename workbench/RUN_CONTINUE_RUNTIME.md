@@ -66,10 +66,15 @@ Availability reasons include `ready`, `job_active`, `owner_still_alive`,
 `explicit_retry_required`, `complete`, `scientific_review_required`,
 `configuration_required`, `unsupported_failed_stage`, and `not_ready`.
 Failed/running R retries are restricted to the coordinator's local calculation
-stages: qc_evidence, qc_apply, analysis, markers, annotation_evidence,
-annotation_apply and finalize. Proposal failures need manual R configuration.
-A failure requires an explicit new request with `retry=true`; both the worker
-and recorded R process must be confirmed dead. An unknown/live owner blocks retry.
+stages: prefilter, qc_evidence, qc_apply, analysis, strategy_evidence,
+strategy_apply, strategy_selection, strategy_preprocess, strategy_basis,
+strategy_batch, strategy_neighbors, strategy_cluster, markers,
+annotation_evidence, annotation_apply and finalize (`LOCAL_RETRY_STAGES` in
+`run_continue_runtime.py`). Proposal failures need manual R configuration.
+A failure requires an explicit new request with `retry=true`. The worker and its
+R child hold the job flock for their whole lifetime, so acquiring the flock is
+the proof that no owner is still running; a missing launch record or a reused
+PID therefore cannot leave a job permanently active.
 
 All job state lives in the same project's `.workbench-jobs`, with private atomic
 JSON records and a cross-process flock. The detached worker and its fixed R child

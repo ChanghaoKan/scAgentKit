@@ -23,10 +23,10 @@ from datetime import datetime, timezone
 
 try:
     from .evidence import canonical, strict_json
-    from .store import StoreError
+    from .store import SECRET_NAMES, StoreError, scrub_secrets
 except ImportError:
     from evidence import canonical, strict_json
-    from store import StoreError
+    from store import SECRET_NAMES, StoreError, scrub_secrets
 
 ROOT = Path(__file__).resolve().parent
 SCHEMA = "scagentkit.run-continue.workbench.v1"
@@ -36,9 +36,7 @@ JOB_ID = re.compile(r"[a-f0-9]{32}\Z")
 ACTIVE = {"queued", "running"}
 TERMINAL = {"succeeded", "failed", "interrupted"}
 LOCAL_RETRY_STAGES = {"prefilter", "qc_evidence", "qc_apply", "analysis", "strategy_evidence", "strategy_apply", "strategy_selection", "strategy_preprocess", "strategy_basis", "strategy_batch", "strategy_neighbors", "strategy_cluster", "markers", "annotation_evidence", "annotation_apply", "finalize"}
-KEYS = ("DEEPSEEK_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROK_API_KEY",
-        "GOOGLE_API_KEY", "GEMINI_API_KEY", "AZURE_OPENAI_API_KEY", "COHERE_API_KEY",
-        "MISTRAL_API_KEY", "OPENROUTER_API_KEY", "HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN")
+KEYS = SECRET_NAMES
 MAX_JSON = 4 * 1024 * 1024
 
 
@@ -300,7 +298,10 @@ class RunContinueRuntime:
             raise StoreError("Continue retry must be an explicit boolean")
 
     def _reconcile(self, job, lock_held):
-        if job is not None and job["status"] in ACTIVE and lock_held and _owners_dead(self.base, job):
+        # The worker and its R child inherit the flock descriptor for their whole
+        # lifetime, so acquiring it proves no owner is running. Do not let a
+        # missing launch record or a reused PID keep the job active forever.
+        if job is not None and job["status"] in ACTIVE and lock_held:
             job = dict(job, status="interrupted", updated_at=_time(), error={
                 "code": "worker_interrupted", "message": "The local worker stopped. Inspect the saved run before explicitly retrying."})
             _atomic(_job_directory(self.base, job["job_id"]) / "job.json", job)
@@ -309,7 +310,7 @@ class RunContinueRuntime:
     def _availability(self, run, job, busy):
         status, stage = run["status"], run["stage"]
         needs_retry = job is not None and job["status"] in {"failed", "interrupted"}
-        owners_dead = job is None or job["status"] == "succeeded" or _owners_dead(self.base, job)
+        owners_dead = job is None or job["status"] == "succeeded" or not busy or _owners_dead(self.base, job)
         ready = status == "ready"
         failed_local = status in {"failed", "running"} and stage in LOCAL_RETRY_STAGES
         can_continue = not busy and ready and not needs_retry and owners_dead
@@ -395,9 +396,7 @@ class RunContinueRuntime:
             # launching a new job; a conflict must leave current.json intact.
             _once(request_path, {"job_id": job_id, "payload_hash": _payload_hash(payload)})
             _atomic(self.base / "current.json", {"job_id": job_id})
-            env = dict(os.environ)
-            for name in KEYS:
-                env.pop(name, None)
+            env = scrub_secrets(dict(os.environ))
             env.update({name: str(self.threads) for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS")})
             if self.library:
                 env["R_LIBS_USER"] = self.library

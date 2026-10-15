@@ -365,6 +365,23 @@ class ContinueRuntimeTests(unittest.TestCase):
         self.assertTrue(interrupted["availability"]["can_retry"])
         self.assertEqual(self.calls(), [])
 
+    def test_reused_live_pid_cannot_keep_an_unlocked_job_active(self):
+        class Reused:
+            pid = os.getpid()  # alive, but not the owner: it never held the flock
+            def wait(self): return 2
+        with patch.object(module.subprocess, "Popen", return_value=Reused()):
+            self.runtime.submit(self.payload)
+        interrupted = self.wait_terminal()
+        self.assertEqual(interrupted["job"]["status"], "interrupted")
+        self.assertEqual(self.calls(), [])
+
+    def test_scrub_secrets_removes_operator_chosen_credential_names(self):
+        from store import scrub_secrets
+        env = scrub_secrets({"MY_LAB_API_KEY": "x", "VAULT_TOKEN": "x", "DB_PASSWORD": "x",
+                             "DEEPSEEK_API_KEY": "x", "HOME": "/h", "PATH": "/bin", "LANG": "C"})
+        self.assertEqual(env, {"HOME": "/h", "PATH": "/bin", "LANG": "C"})
+        self.assertEqual(scrub_secrets({"KEEP_API_KEY": "x"}, keep=("KEEP_API_KEY",)), {"KEEP_API_KEY": "x"})
+
     def test_keys_removed_fixed_argv_and_no_stdout_stderr_or_operator_paths_in_public_job(self):
         key = "SECRET_UNIT_VALUE_DO_NOT_PERSIST"
         with patch.dict(os.environ, {name: key for name in module.KEYS}): self.runtime.submit(self.payload)

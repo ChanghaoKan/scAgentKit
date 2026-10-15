@@ -13,17 +13,15 @@ try:
     from .qc_runtime import QCRuntime, ROOT, HASH, MAX_RESULT
     from .run_review_runtime import RunReviewRuntime
     from .run_continue_runtime import RunContinueRuntime
-    from .store import StoreError
+    from .store import SECRET_NAMES, StoreError, scrub_secrets
 except ImportError:
     from evidence import canonical, strict_json
     from qc_runtime import QCRuntime, ROOT, HASH, MAX_RESULT
     from run_review_runtime import RunReviewRuntime
     from run_continue_runtime import RunContinueRuntime
-    from store import StoreError
+    from store import SECRET_NAMES, StoreError, scrub_secrets
 
-KEYS = ("DEEPSEEK_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROK_API_KEY",
-        "GOOGLE_API_KEY", "GEMINI_API_KEY", "AZURE_OPENAI_API_KEY", "COHERE_API_KEY", "MISTRAL_API_KEY",
-        "OPENROUTER_API_KEY", "HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN")
+KEYS = SECRET_NAMES
 CONTEXT_FIELDS = {"enabled", "lineage_hint", "identity_status", "tissue", "notes"}
 
 
@@ -204,8 +202,7 @@ class RunSubclusterRuntime(QCRuntime):
             argv = [self.rscript, "--vanilla", str(self.bridge), operation, str(self.project), str(self.workspace), str(request), str(response)]
             if self.inherit_model:
                 argv.append("true")
-            env = dict(os.environ)
-            for key in KEYS: env.pop(key, None)
+            env = scrub_secrets(dict(os.environ))
             if self.library: env["R_LIBS_USER"] = self.library
             try:
                 result = subprocess.run(argv, env=env, capture_output=True, timeout=self.timeout, shell=False)
