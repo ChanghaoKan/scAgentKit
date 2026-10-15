@@ -36,8 +36,10 @@ qc_add_metrics <- function(obj,
   stopifnot(methods::is(obj, "AgentSeurat"))
   species <- match.arg(species)
 
-  # Auto-detect species from gene-name conventions (^MT- vs ^mt-).
-  if (species == "auto") {
+  # Auto-detect species from gene-name conventions (^MT- vs ^mt-). Skip it
+  # when every pattern is supplied, as documented: species is then unused.
+  all_custom <- !is.null(mt_pattern) && !is.null(ribo_pattern) && !is.null(hb_pattern)
+  if (species == "auto" && !all_custom) {
     detected <- .detect_species(obj@data)
     if (is.na(detected)) {
       stop("Could not auto-detect species from gene names. ",

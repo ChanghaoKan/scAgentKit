@@ -6,6 +6,9 @@
 #'
 #' @param obj An AgentSeurat object.
 #' @param species Character, "mouse" or "human". Drives default patterns.
+#'   When omitted, species is detected from gene names as in
+#'   [qc_add_metrics()]; an undetectable species is an error rather than a
+#'   silent mouse default that matches nothing in human data.
 #' @param remove_mt Logical, remove mitochondrial genes. Default TRUE.
 #' @param remove_ribo Logical, remove ribosomal genes. Default TRUE.
 #' @param remove_hb Logical, remove hemoglobin genes. Default TRUE.
@@ -26,7 +29,14 @@ qc_remove_genes <- function(obj,
                             rationale    = NULL) {
 
   stopifnot(methods::is(obj, "AgentSeurat"))
-  species <- match.arg(species)
+  if (missing(species)) {
+    species <- .detect_species(obj@data)
+    if (is.na(species)) {
+      stop("Could not detect species from gene names; pass species = \"human\" or \"mouse\".",
+           call. = FALSE)
+    }
+  }
+  species <- match.arg(species, c("mouse", "human"))
 
   if (is.null(mt_pattern))   mt_pattern   <- if (species == "mouse") "^mt-"   else "^MT-"
   if (is.null(ribo_pattern)) ribo_pattern <- if (species == "mouse") "^Rp[sl]" else "^RP[SL]"

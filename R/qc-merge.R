@@ -24,18 +24,21 @@ qc_merge <- function(obj, join_layers = TRUE, rationale = NULL) {
   # If they do, do NOT add cell ids again (would create double prefix
   # like "HCC01T_HCC01T_AAACCTGAGGGCATGT" -- common with GSE data where
   # the original counts matrix was already in <sample>_<barcode> format).
+  # Every sample is checked: deciding from the first sample alone would
+  # double-prefix (or leave unprefixed) the others when they differ.
   sample_names <- names(seurat_list)
   add_ids <- TRUE
   if (!is.null(sample_names) && length(seurat_list) > 0) {
-    first_name <- sample_names[1]
-    first_cells <- colnames(seurat_list[[1]])
-    if (length(first_cells) > 0 &&
-        all(startsWith(first_cells, paste0(first_name, "_")))) {
+    prefixed <- vapply(seq_along(seurat_list), function(i) {
+      cells <- colnames(seurat_list[[i]])
+      length(cells) > 0 && all(startsWith(cells, paste0(sample_names[i], "_")))
+    }, logical(1))
+    if (all(prefixed)) {
       add_ids <- FALSE
-      message(sprintf(
-        "[qc_merge] cell names already prefixed with '%s_'; skipping add.cell.ids.",
-        first_name
-      ))
+      message("[qc_merge] cell names already carry their sample prefix; skipping add.cell.ids.")
+    } else if (any(prefixed)) {
+      stop("[qc_merge] some samples already prefix cell names with the sample name and others ",
+           "do not; harmonise cell names before merging.", call. = FALSE)
     }
   }
 
@@ -58,9 +61,9 @@ qc_merge <- function(obj, join_layers = TRUE, rationale = NULL) {
   script <- sprintf(
 '# ---- Merge per-sample objects ----
 combined_seurat <- merge(x = seurat_list[[1]],
-                         y = seurat_list[-1],
-                         add.cell.ids = names(seurat_list))
+                         y = seurat_list[-1]%s)
 %s',
+    if (add_ids) ",\n                         add.cell.ids = names(seurat_list)" else "",
     if (join_layers) 'combined_seurat[["RNA"]] <- JoinLayers(combined_seurat[["RNA"]])' else ''
   )
 

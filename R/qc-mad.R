@@ -19,6 +19,13 @@
 #' is applied (removing high-expression outliers), in linear space, as low
 #' values for these are biologically benign.
 #'
+#' A metric whose MAD is zero or numerically negligible within a group (for
+#' example `percent.hb` in non-blood tissue, where most cells are exactly 0)
+#' is not filtered in that group: a zero-width band would otherwise remove
+#' every cell with a single read. Skipped metrics are recorded in
+#' `params$skipped_metrics`. Cells whose `group_by` value is NA form their own
+#' group rather than being dropped.
+#'
 #' @param obj An AgentSeurat object with QC metrics.
 #' @param nmad Numeric, number of MADs to allow. Default 3.
 #' @param group_by Optional metadata column for grouping (only used when
@@ -48,7 +55,8 @@ qc_mad <- function(obj,
   # Upper-bound-only metrics (for these low values are not problematic)
   upper_only <- c("percent.mt", "percent.ribo", "percent.hb")
 
-  build_keep <- function(meta) {
+  skipped <- character(0)
+  build_keep <- function(meta, label = "all") {
     keep <- rep(TRUE, nrow(meta))
     for (m in metrics) {
       if (!m %in% colnames(meta)) next
@@ -63,6 +71,11 @@ qc_mad <- function(obj,
       }
       med <- stats::median(x, na.rm = TRUE)
       mad_val <- stats::mad(x, na.rm = TRUE)
+      if (!is.finite(mad_val) ||
+          mad_val <= sqrt(.Machine$double.eps) * max(1, abs(med), na.rm = TRUE)) {
+        skipped <<- c(skipped, sprintf("%s:%s", label, m))
+        next
+      }
       if (m %in% upper_only) {
         keep <- keep & (!is.na(x) & x <= med + nmad * mad_val)
       } else {
@@ -75,20 +88,22 @@ qc_mad <- function(obj,
     keep
   }
 
-  filter_one <- function(seu) {
+  filter_one <- function(seu, label = "all") {
     meta <- seu@meta.data
-    keep <- build_keep(meta)
+    keep <- build_keep(meta, label)
     cells_keep <- rownames(meta)[keep]
     subset(seu, cells = cells_keep)
   }
 
   filter_grouped <- function(seu, group_col) {
     meta <- seu@meta.data
-    groups <- unique(meta[[group_col]])
+    values <- meta[[group_col]]
+    groups <- unique(values)
     keep_cells <- character(0)
     for (g in groups) {
-      sub_meta <- meta[meta[[group_col]] == g, , drop = FALSE]
-      keep <- build_keep(sub_meta)
+      in_group <- if (is.na(g)) is.na(values) else !is.na(values) & values == g
+      sub_meta <- meta[in_group, , drop = FALSE]
+      keep <- build_keep(sub_meta, as.character(g))
       keep_cells <- c(keep_cells, rownames(sub_meta)[keep])
     }
     subset(seu, cells = keep_cells)
@@ -97,7 +112,8 @@ qc_mad <- function(obj,
   n_before <- .count_cells(obj)
 
   if (obj@data_type == "seurat_list") {
-    obj@data <- lapply(obj@data, filter_one)
+    labels <- names(obj@data) %||% as.character(seq_along(obj@data))
+    obj@data <- Map(filter_one, obj@data, labels)
   } else if (!is.null(group_by)) {
     obj@data <- filter_grouped(obj@data, group_by)
   } else {
@@ -114,8 +130,8 @@ qc_mad <- function(obj,
 
   if (obj@data_type == "seurat_list") {
     script <- sprintf(
-'# ---- MAD-based QC (per sample, %d MADs; log10 on %s) ----
-dynamic_filter_single <- function(seu, nmad = %d) {
+'# ---- MAD-based QC (per sample, %g MADs; log10 on %s) ----
+dynamic_filter_single <- function(seu, nmad = %g) {
   meta <- seu@meta.data
   keep <- rep(TRUE, nrow(meta))
   metrics     <- %s
@@ -127,6 +143,7 @@ dynamic_filter_single <- function(seu, nmad = %d) {
     x <- if (m %%in%% log_metrics) ifelse(x_raw > 0, log10(x_raw), NA_real_) else x_raw
     med <- median(x, na.rm = TRUE)
     mad <- mad(x,    na.rm = TRUE)
+    if (!is.finite(mad) || mad <= sqrt(.Machine$double.eps) * max(1, abs(med), na.rm = TRUE)) next
     if (m %%in%% upper_only) {
       keep <- keep & !is.na(x) & x <= med + nmad * mad
     } else {
@@ -141,7 +158,7 @@ seurat_list <- lapply(seurat_list, dynamic_filter_single)',
     )
   } else {
     script <- sprintf(
-'# ---- MAD-based QC (%s, %d MADs; log10 on %s) ----
+'# ---- MAD-based QC (%s, %g MADs; log10 on %s) ----
 # See dynamic_filter_single() definition in utils.',
       if (is.null(group_by)) "global" else sprintf("grouped by %s", group_by),
       nmad, paste(log_metrics, collapse = "/")
@@ -150,7 +167,7 @@ seurat_list <- lapply(seurat_list, dynamic_filter_single)',
 
   if (is.null(rationale)) {
     rationale <- sprintf(
-      "MAD filter (%d MADs; log10 on %s) on %s. Removed %d cells (%d -> %d, %.1f%%).",
+      "MAD filter (%g MADs; log10 on %s) on %s. Removed %d cells (%d -> %d, %.1f%%).",
       nmad,
       if (length(log_metrics) == 0) "(none)" else paste(log_metrics, collapse = "/"),
       paste(metrics, collapse = "/"),
@@ -170,7 +187,8 @@ seurat_list <- lapply(seurat_list, dynamic_filter_single)',
       log_metrics = log_metrics,
       n_before    = n_before,
       n_after     = n_after,
-      n_removed   = n_before - n_after
+      n_removed   = n_before - n_after,
+      skipped_metrics = unique(skipped)
     ),
     rationale      = rationale,
     script_snippet = script,
