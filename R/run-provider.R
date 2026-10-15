@@ -35,7 +35,9 @@
   keys <- Sys.getenv(env_names)
   for (key in keys[nzchar(keys)]) x <- gsub(key, "[REDACTED]", x, fixed = TRUE)
   x <- gsub("(?i)Bearer[[:space:]]+[A-Za-z0-9._~+/-]{8,}", "Bearer [REDACTED]", x, perl = TRUE)
-  gsub("(?i)(sk-|xai-)[A-Za-z0-9_-]{12,}", "[REDACTED]", x, perl = TRUE)
+  # Anchor the key prefix at a token boundary so ordinary prose such as
+  # "high-risk-stratification" is not mistaken for an "sk-" credential.
+  gsub("(?i)(?<![A-Za-z0-9_-])(sk-|xai-)[A-Za-z0-9_-]{12,}", "[REDACTED]", x, perl = TRUE)
 }
 
 .sc_run_provider_contains_secret <- function(x, env_names = NULL) {

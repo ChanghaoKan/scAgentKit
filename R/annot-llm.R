@@ -915,9 +915,6 @@ annot_llm_annotate <- function(obj,
   do.call(rbind, rows)
 }
 
-# Null-coalescing operator (used above).
-`%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
-
 
 # ---- v0.1.24 helpers: marker validation, hybrid confidence, ensemble ----
 

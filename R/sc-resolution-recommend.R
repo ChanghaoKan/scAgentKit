@@ -450,9 +450,6 @@ sc_resolution_recommend <- function(obj,
                        "visual_notes", "clustree_notes", "reasoning"), names(parsed))], audit)
 }
 
-# Null-coalescing operator (local copy for package independence)
-`%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
-
 
 # -------------------------------------------------------------------------
 # v0.1.16: build a multi-panel image for vision = TRUE.

@@ -166,11 +166,10 @@ export_script <- function(obj,
 # before this file is sourced.
 .token_state <- agentomicsCore::token_state
 
-# The %||% infix is re-exported via the @importFrom roxygen tag above;
-# any duplicate `%||%` definitions still living in the older source
-# files of scAgentKit (annot-llm.R, sc-resolution-recommend.R, etc.)
-# remain compatible because they are identical.
-
+# Single package-wide NULL-coalescing helper. Missing means NULL, a
+# zero-length value, or a scalar NA; every legacy caller relies on one of
+# these fallbacks. Do not redefine it elsewhere: without a Collate field the
+# alphabetically last definition silently wins for the whole namespace.
 `%||%` <- function(a, b) {
-  if (is.null(a) || length(a) == 0) b else a
+  if (is.null(a) || length(a) == 0L || (length(a) == 1L && is.atomic(a) && is.na(a))) b else a
 }

@@ -324,9 +324,6 @@ sc_select_pcs_visual <- function(obj,
   .attach_step_tokens(obj, "sc_select_pcs_visual", .tok_before)
 }
 
-# Helper: NULL-coalesce
-`%||%` <- function(a, b) if (is.null(a) || (length(a) == 1 && is.na(a))) b else a
-
 # Robust panel composition that does NOT require ImageMagick.
 #
 # Strategy:

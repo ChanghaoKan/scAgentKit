@@ -345,3 +345,11 @@ test_that("escaped credentials are discarded after JSON decoding including cache
   ledger <- .sc_run_provider_read(path)
   expect_null(ledger$entries[[1]]$raw); expect_null(ledger$entries[[1]]$content)
 })
+
+test_that("credential redaction anchors key prefixes at token boundaries", {
+  prose <- "Goal: high-risk-stratification of task-management cohorts."
+  expect_identical(.sc_run_provider_redact(prose), prose)
+  expect_identical(.sc_run_provider_redact("key=sk-proj-ABCDEFGHIJKLMNOP"), "key=[REDACTED]")
+  expect_identical(.sc_run_provider_redact("\"xai-abcdefghijklmnop\""), "\"[REDACTED]\"")
+  expect_identical(.sc_run_provider_redact("sk-ABCDEFGHIJKLMNOP"), "[REDACTED]")
+})
