@@ -197,3 +197,17 @@ test_that("terminal and undo crash points leave usable committed state", {
   }
   options(scAgentKit.run_crash=NULL)
 })
+
+test_that("a deleted source RDS or an edited convenience export does not lock the project", {
+  path <- tempfile(); inputfile <- tempfile(fileext = ".rds"); saveRDS(run_fixture(), inputfile)
+  counter <- new.env(); counter$calls <- 0L
+  sc_run(inputfile, path, context = run_context(), provider = list(name = "mock"), chat_fn = run_mock(counter))
+  unlink(inputfile)
+  expect_no_error(sc_run_inspect(path))
+  state <- .sc_run_load(path)
+  csv <- grep("^output:.*[.]csv$", names(state$files), value = TRUE)
+  if (length(csv)) {
+    cat("edited\n", file = file.path(path, state$files[[csv[1]]]$path), append = TRUE)
+    expect_no_error(sc_run_inspect(path))
+  }
+})

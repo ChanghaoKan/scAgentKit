@@ -228,6 +228,8 @@
 #' @param inherit_model Explicit TRUE to copy the parent's immutable provider,
 #'   per-project budget and transfer policy into a new child. No keys or runtime
 #'   callbacks are copied. Default FALSE creates a manual, zero-budget child.
+#' @param cluster_column Parent cluster column used for selection; NULL uses the
+#'   parent's saved column. Must match the column given to sc_run_subcluster_scope.
 #' @return Durable child status; no computation beyond local diagnostic evidence
 #'   executes until the exact centralized strategy approval.
 #' @export
@@ -237,7 +239,8 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
                               choices = list(qc = "retain_selected", doublet = "keep",
                                 batch = "none", cycle = "none", reference = "none"),
                               cycle_diagnostics = NULL, annotation_column = "sc_subtype",
-                              reviewer, reason, request_id, inherit_model = FALSE) {
+                              reviewer, reason, request_id, inherit_model = FALSE,
+                              cluster_column = NULL) {
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_run_review_hash_string(parent_scope_hash, "parent_scope_hash")
   request_id <- .sc_run_subcluster_request_id(request_id)
@@ -248,7 +251,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
     stop("The exact inspected expected_parent_revision is required.", call. = FALSE)
   paths <- .sc_run_subcluster_paths(parent_project, child_project)
   owner <- .sc_run_lock(paths$parent); on.exit(.sc_run_release(paths$parent, owner), add = TRUE)
-  parent <- .sc_run_subcluster_parent(paths$parent)
+  parent <- .sc_run_subcluster_parent(paths$parent, cluster_column)
   model_policy <- if (inherit_model) list(inherit_model = TRUE,
     provider = .sc_run_provider_spec(parent$state$config$provider)$metadata,
     budget = parent$state$config$budget,

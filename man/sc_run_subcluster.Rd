@@ -8,7 +8,8 @@ sc_run_subcluster(parent_project, child_project, clusters,
   choices = list(qc = "retain_selected", doublet = "keep",
     batch = "none", cycle = "none", reference = "none"),
   cycle_diagnostics = NULL, annotation_column = "sc_subtype",
-  reviewer, reason, request_id, inherit_model = FALSE)
+  reviewer, reason, request_id, inherit_model = FALSE,
+  cluster_column = NULL)
 }
 \arguments{
 \item{parent_project}{Completed immutable parent project directory.}
@@ -22,6 +23,7 @@ sc_run_subcluster(parent_project, child_project, clusters,
 \item{reviewer, reason}{Nonempty analyst identity and selection rationale retained in creation history.}
 \item{request_id}{Stable literal identifier of 1 through 128 letters, digits, periods, underscores or hyphens, beginning with a letter or digit. Reusing the same child path with the same request and settings is idempotent; mismatched requests are rejected.}
 \item{inherit_model}{Explicit TRUE copies only the parent's safe immutable provider configuration, per-project budget and transfer policy at creation. No keys, callbacks or prior transfer approvals are inherited. Default FALSE remains manual with budget zero. Suggestions use \code{sc_run_suggest}; Continue remains local.}
+\item{cluster_column}{Parent cluster column used for selection. NULL uses the parent's saved column. Pass the same column given to \code{sc_run_subcluster_scope} so its \code{parent_scope_hash} matches.}
 }
 \description{Freezes selected exact parent cell IDs and creates a fresh sparse raw-count Seurat input with source metadata aligned by cell ID. Child context inherits species and user facts. Parent normalization, scale data, reductions, graphs, active identities, cluster candidates and model history are not reused. The parent project and its files remain unchanged.}
 \details{The child receives an independent project identity, parameters, deterministic seed, checksummed checkpoints and decision history. It uses the normal typed analysis pipeline and stops for one exact whole-strategy approval before cell filtering, normalization, PCA, neighbors or clustering. At least 21 selected cells and three expressed features are required for the supported fixed k=20 graph/PCA; there is no small-cohort or invalid-resolution fallback.

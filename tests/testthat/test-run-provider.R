@@ -353,3 +353,25 @@ test_that("credential redaction anchors key prefixes at token boundaries", {
   expect_identical(.sc_run_provider_redact("\"xai-abcdefghijklmnop\""), "\"[REDACTED]\"")
   expect_identical(.sc_run_provider_redact("sk-ABCDEFGHIJKLMNOP"), "[REDACTED]")
 })
+
+test_that("a held external dispatch can be reconciled explicitly and is never resent implicitly", {
+  f <- run_provider_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  calls <- 0L
+  fn <- function(...) { calls <<- calls + 1L; stop("connection reset") }
+  failed <- .sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)
+  expect_identical(failed$status, "delivery_uncertain")
+  other <- f$request; other$user_prompt <- paste(other$user_prompt, "Second request.")
+  other$approved_payload_hash <- .sc_run_request_hash(other, f$provider)
+  expect_identical(.sc_run_call(f$root, other, f$provider, function(...) run_provider_good, 1, TRUE)$status, "accounting_hold")
+  expect_error(sc_run_provider_reconcile(f$root, "x", 0, "qa", "checked"), "request_hash")
+  entry <- sc_run_provider_reconcile(f$root, failed$request_hash, 0, "offline QA",
+    "Provider console shows no charge for this request.")
+  expect_identical(entry$status, "reconciled_no_response")
+  expect_identical(entry$cost_state, "known")
+  expect_error(sc_run_provider_reconcile(f$root, failed$request_hash, 0, "qa", "again"), "not held")
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)$status, "reconciled_no_response")
+  expect_identical(calls, 1L)
+  good <- function(...) { calls <<- calls + 1L; run_provider_good }
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, good, 1, TRUE, retry = TRUE)$status, "ok")
+  expect_identical(calls, 2L)
+})

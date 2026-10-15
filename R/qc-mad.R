@@ -19,10 +19,12 @@
 #' is applied (removing high-expression outliers), in linear space, as low
 #' values for these are biologically benign.
 #'
-#' A metric whose MAD is zero or numerically negligible within a group (for
-#' example `percent.hb` in non-blood tissue, where most cells are exactly 0)
-#' is not filtered in that group: a zero-width band would otherwise remove
-#' every cell with a single read. Skipped metrics are recorded in
+#' For the upper-only percentage metrics the MAD is floored at 1 percentage
+#' point. Without it, a metric that is exactly 0 in most cells (for example
+#' `percent.hb` in non-blood tissue) has MAD 0 and the band `x <= 0` removes
+#' every cell with a single read, while a genuine outlier (60% mt among cells
+#' at 5%) is still removed. A count metric whose MAD is zero or not finite in
+#' a group is not filtered there; such metrics are recorded in
 #' `params$skipped_metrics`. Cells whose `group_by` value is NA form their own
 #' group rather than being dropped.
 #'
@@ -71,8 +73,10 @@ qc_mad <- function(obj,
       }
       med <- stats::median(x, na.rm = TRUE)
       mad_val <- stats::mad(x, na.rm = TRUE)
-      if (!is.finite(mad_val) ||
-          mad_val <= sqrt(.Machine$double.eps) * max(1, abs(med), na.rm = TRUE)) {
+      if (m %in% upper_only) {
+        mad_val <- max(mad_val, 1, na.rm = TRUE)
+      } else if (!is.finite(mad_val) ||
+                 mad_val <= sqrt(.Machine$double.eps) * max(1, abs(med), na.rm = TRUE)) {
         skipped <<- c(skipped, sprintf("%s:%s", label, m))
         next
       }
@@ -143,7 +147,8 @@ dynamic_filter_single <- function(seu, nmad = %g) {
     x <- if (m %%in%% log_metrics) ifelse(x_raw > 0, log10(x_raw), NA_real_) else x_raw
     med <- median(x, na.rm = TRUE)
     mad <- mad(x,    na.rm = TRUE)
-    if (!is.finite(mad) || mad <= sqrt(.Machine$double.eps) * max(1, abs(med), na.rm = TRUE)) next
+    if (m %%in%% upper_only) mad <- max(mad, 1, na.rm = TRUE)
+    else if (!is.finite(mad) || mad <= sqrt(.Machine$double.eps) * max(1, abs(med), na.rm = TRUE)) next
     if (m %%in%% upper_only) {
       keep <- keep & !is.na(x) & x <= med + nmad * mad
     } else {

@@ -63,14 +63,23 @@
     previous <- hash
   }
   if (verify) {
-    for (record in state$files) {
+    # Convenience exports (CSV/PNG/JSON/report, bundle/, resume.R) may be
+    # opened and re-saved by analysts; editing one must not make the project
+    # unloadable. The final Seurat output stays bound because child projects
+    # and reintegration depend on its exact bytes.
+    convenience <- startsWith(names(state$files), "output:") &
+      names(state$files) != "output:output/seurat.rds"
+    for (record in state$files[!convenience]) {
       path <- file.path(root, record$path)
       if (!file.exists(path) || nzchar(Sys.readlink(path)) || !identical(.sc_project_sha_file(path), record$sha256))
         stop(paste0("Saved input/evidence/checkpoint changed: ", record$path, ". Stale approval rejected."), call. = FALSE)
     }
-    if (!is.null(state$source$path) && (!file.exists(state$source$path) ||
-        !identical(.sc_project_sha_file(state$source$path), state$source$rds_sha256)))
-      stop("Original input RDS changed; stale approval/resume rejected. Start a new project for the new input.", call. = FALSE)
+    # The project owns a checkpointed input copy, so a deleted or moved source
+    # RDS is allowed. A different file now at the recorded path still fails,
+    # because it signals that the analyst may believe a new input is in use.
+    if (!is.null(state$source$path) && file.exists(state$source$path) &&
+        !identical(.sc_project_sha_file(state$source$path), state$source$rds_sha256))
+      stop("Original input RDS changed at its recorded path; stale approval/resume rejected. Start a new project for the new input.", call. = FALSE)
     if (!is.null(state$pending) && !isTRUE(.sc_run_check_binding(state, state$pending)))
       stop("Pending proposal/input/evidence hashes changed; stale approval rejected.", call. = FALSE)
     if (isTRUE(verify_subcluster)) .sc_run_subcluster_guard(root, state)

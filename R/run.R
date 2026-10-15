@@ -226,12 +226,19 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   if (state$stage == "strategy_apply" && !isTRUE(.sc_run_get(root, state, "strategy_validated")$executable))
     return(.sc_run_public(.sc_run_strategy_manual_boundary(root, state)))
   if (state$status %in% c("failed", "running") && !isTRUE(retry)) return(.sc_run_public(state))
+  child <- !is.null(state$config$subcluster_origin)
+  if (child && !is.null(chat_fn))
+    stop("Scoped child projects resume locally without a provider; request model suggestions with sc_run_suggest() and adopt them for review.", call. = FALSE)
   if (is.null(provider)) provider <- state$config$provider
   if (!identical(.sc_run_provider_spec(provider, chat_fn)$metadata, state$config$provider)) stop("Provider/model/settings changed; start a new project or restore the approved provider configuration.", call. = FALSE)
   if (state$status %in% c("failed", "running")) {
     state <- .sc_run_event(state, "retry_requested", list(stage = state$stage))
     state$status <- "ready"; state$failure <- NULL; .sc_run_save(root, state)
   }
+  # A child may store an inherited model for its suggestion channel, but its
+  # coordinator stages are provider-free: resume them locally instead of
+  # failing on the saved provider name.
+  if (child) return(.sc_run_drive(root, state, provider = NULL, chat_fn = NULL, retry = retry, local_only = TRUE))
   .sc_run_drive(root, state, provider, chat_fn, retry)
 }
 .sc_run_request <- function(kind, evidence, config) {
@@ -556,6 +563,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       published <- .sc_run_load(root)
       if (stage %in% published$completed && published$stage != stage) return(.sc_run_public(published))
       state <- if (stage == "strategy_evidence") published else before
+      # Roll back the stage's in-memory effects but never the persisted
+      # history: the running event (and any mid-stage saves) are already
+      # committed, so the failure must append after them, not reuse their
+      # sequence and revision numbers.
+      state$history <- published$history; state$revision <- published$revision
       state$status <- "failed"; state$nodes[[stage]] <- "FAILED"
       state$failure <- list(stage = stage, message = result$error, retry = "Explicit retry only; external uncertain dispatches retain their reservations.")
       state <- .sc_run_event(state, "failed", state$failure); .sc_run_save(root, state)
@@ -835,6 +847,7 @@ sc_run_undo <- function(project_dir, decision_id, reviewer, reason) {
   state$files$annotated <- NULL; state$files$annotation_validated <- NULL; state$files$manual_annotation <- NULL
   state$stage <- "annotation_propose"; state$status <- "awaiting_configuration"; state$pending <- NULL; state$approved <- NULL; state$output <- NULL
   state$completed <- setdiff(state$completed, c("annotation_apply", "finalize"))
+  state$nodes[c("annotation_propose", "annotation_apply", "finalize")] <- "PLANNED"
   .sc_run_save(root, state)
   .sc_run_crash("undo:checkpoint")
   state <- .sc_run_cleanup(root, state)

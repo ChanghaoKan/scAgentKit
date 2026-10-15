@@ -103,9 +103,27 @@
   .sc_run_subcluster_origin_verify(origin)
   parent <- .sc_run_subcluster_parent(origin$parent_project, origin$parent$cluster_column)
   current <- .sc_run_subcluster_selection(parent, origin$selected_clusters)
-  if (!identical(origin, current))
+  if (!identical(origin, current) && !.sc_run_subcluster_benign_drift(origin, current, parent))
     stop("Parent input, revision, output or cluster scope changed; stale child authority rejected.", call. = FALSE)
   parent
+}
+# Recovering a stale parent lock (sc_run_unlock) or recording scientific
+# acceptance appends parent history without touching its input, output,
+# membership or counts. Those audit-only events must not invalidate every
+# child; any other parent change still does.
+.sc_run_subcluster_benign_drift <- function(origin, current, parent) {
+  volatile <- c("revision", "history_head", "state_sha256")
+  scope <- setdiff(names(origin), c("parent", "parent_scope_hash", "scope_hash"))
+  if (!identical(origin[scope], current[scope]) ||
+      !identical(origin$parent[setdiff(names(origin$parent), volatile)],
+                 current$parent[setdiff(names(current$parent), volatile)]))
+    return(FALSE)
+  history <- parent$state$history
+  hashes <- vapply(history, `[[`, character(1), "hash")
+  bound <- match(origin$parent$history_head, hashes)
+  if (is.na(bound) || !identical(as.numeric(bound), as.numeric(origin$parent$revision))) return(FALSE)
+  later <- history[seq_along(history) > bound]
+  length(later) > 0L && all(vapply(later, function(e) e$action %in% c("lock_recovered", "result_accepted"), logical(1)))
 }
 .sc_run_subcluster_guard <- function(root, state) {
   origin <- state$config$subcluster_origin
@@ -178,17 +196,28 @@ sc_run_subcluster_list <- function(parent_project, workspace) {
   children <- list()
   for (directory in directories) {
     if (nzchar(Sys.readlink(directory)) || !file.exists(file.path(directory, "state.rds"))) next
-    state <- .sc_run_load(directory, verify_subcluster = FALSE)
+    # One unreadable or foreign directory in a shared workspace must not hide
+    # every other child; ownership is unknown, so it is skipped.
+    state <- tryCatch({
+      loaded <- .sc_run_load(directory, verify_subcluster = FALSE)
+      if (!is.null(loaded$config$subcluster_origin)) .sc_run_subcluster_origin_verify(loaded$config$subcluster_origin)
+      loaded
+    }, error = function(e) NULL)
     origin <- state$config$subcluster_origin
     if (is.null(origin)) next
-    .sc_run_subcluster_origin_verify(origin)
     if (!identical(origin$parent_project, parent$root) ||
         !identical(origin$parent$project_id, parent$state$project_id)) next
-    result <- sc_run_subcluster_inspect(directory)
-    children[[length(children) + 1L]] <- list(project_id = state$project_id, project_dir = directory,
-      status = state$status, stage = state$stage, revision = state$revision,
-      origin = result$origin, parent_current = result$parent_current,
-      applications = result$applications)
+    # A child of this parent that fails verification is listed as unavailable
+    # (never parent_current), so it stays visible but cannot be operated on.
+    result <- tryCatch(sc_run_subcluster_inspect(directory), error = function(e) e)
+    children[[length(children) + 1L]] <- if (inherits(result, "error"))
+      list(project_id = state$project_id, project_dir = directory, status = "unavailable",
+        stage = state$stage, revision = state$revision, origin = NULL, parent_current = FALSE,
+        applications = list(), error = conditionMessage(result)) else
+      list(project_id = state$project_id, project_dir = directory,
+        status = state$status, stage = state$stage, revision = state$revision,
+        origin = result$origin, parent_current = result$parent_current,
+        applications = result$applications)
   }
   identifiers <- vapply(children, `[[`, character(1), "project_id")
   if (anyDuplicated(identifiers)) stop("Child project IDs are duplicated; registry resolution rejected.", call. = FALSE)
@@ -262,7 +291,15 @@ sc_run_subcluster_list <- function(parent_project, workspace) {
   path <- file.path(root, "reintegration", "state.rds")
   empty <- list(schema = "scagentkit.subcluster.integration.v1", revision = 0L,
     history = list(), applications = list(), undos = list(), requests = list(), files = list())
-  if (!file.exists(path)) return(empty)
+  if (!file.exists(path)) {
+    # history.json is written only after the first committed journal, so its
+    # presence means the journal was deleted and the apply/undo history would
+    # silently restart. An orphan apply-*.rds from an interrupted first apply
+    # is expected and recovered by an identical retry.
+    if (file.exists(file.path(root, "reintegration", "history.json")))
+      stop("Integration journal reintegration/state.rds is missing while its history remains; restore it rather than starting a new history.", call. = FALSE)
+    return(empty)
+  }
   if (nzchar(Sys.readlink(path))) stop("Integration state cannot be a symlink.", call. = FALSE)
   envelope <- readRDS(path)
   if (!identical(envelope$hash, .sc_run_hash(envelope$state)) ||
@@ -441,6 +478,10 @@ sc_run_subcluster_inspect <- function(child_project, column = "sc_subtype", outs
   .sc_project_string(project_id, "project_id"); .sc_run_review_hash_string(input_hash, "input_hash")
   if (!identical(state$project_id, project_id) || !identical(state$input_hash, input_hash))
     stop("Foreign child project or input; cross-project apply/import is rejected.", call. = FALSE)
+  # Child mutations are always optimistic-concurrency bound: a NULL revision
+  # would let undo/unknown act on a view that is no longer current.
+  if (is.null(expected_revision))
+    stop("expected_revision is required; inspect the child and pass its current revision.", call. = FALSE)
   .sc_run_qc_revision_check(state, expected_revision)
 }
 
@@ -601,6 +642,8 @@ sc_run_subcluster_undo <- function(child_project, application_id, project_id, in
     answer$undo <- journal$undos[[previous$undo_id]]
     return(answer)
   }
+  if (is.null(integration_revision))
+    stop("integration_revision is required; inspect the child and pass its current integration revision.", call. = FALSE)
   .sc_run_qc_revision_check(journal, integration_revision)
   application <- journal$applications[[application_id]]
   if (is.null(application) || !isTRUE(application$active) ||

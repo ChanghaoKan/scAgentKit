@@ -725,3 +725,42 @@ test_that("receipt and orphan derived artifacts recover once from explicit injec
   expect_identical(subcluster_integration_files(parent$root), protected_parent)
   expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
 })
+
+test_that("audit-only parent events (lock recovery, acceptance) keep children valid", {
+  network <- subcluster_integration_network()
+  work <- tempfile("subcluster-unlock-"); dir.create(work)
+  on.exit(unlink(work, recursive = TRUE), add = TRUE)
+  parent <- subcluster_integration_parent(work)
+  workspace <- file.path(work, "children"); dir.create(workspace)
+  child <- file.path(workspace, "child")
+  subcluster_integration_create(parent, child)
+  expect_no_error(sc_run_inspect(child))
+  owner <- scAgentKit:::.sc_run_lock(parent$root)
+  owner$pid <- 2147483646L
+  saveRDS(owner, file.path(parent$root, ".run-lock", "owner.rds"))
+  sc_run_unlock(parent$root, owner$token, "Synthetic killed process; pid verified absent.")
+  expect_no_error(sc_run_inspect(child))
+  sc_run_accept(parent$root, "offline QA", "Synthetic acceptance after child creation.")
+  expect_no_error(sc_run_inspect(child))
+  listing <- sc_run_subcluster_list(parent$root, workspace)
+  expect_length(listing$children, 1L)
+  expect_true(isTRUE(listing$children[[1L]]$parent_current))
+  dir.create(file.path(workspace, "broken")); saveRDS(list(), file.path(workspace, "broken", "state.rds"))
+  expect_length(sc_run_subcluster_list(parent$root, workspace)$children, 1L)
+  dir.create(file.path(child, "reintegration"), showWarnings = FALSE)
+  writeLines("[]", file.path(child, "reintegration", "history.json"))
+  expect_error(scAgentKit:::.sc_run_subcluster_integration(child), "journal .* is missing")
+})
+
+test_that("child undo and unknown require explicit current revisions", {
+  network <- subcluster_integration_network()
+  work <- tempfile("subcluster-revision-"); dir.create(work)
+  on.exit(unlink(work, recursive = TRUE), add = TRUE)
+  parent <- subcluster_integration_parent(work)
+  child <- file.path(work, "child")
+  subcluster_integration_create(parent, child)
+  snapshot <- sc_run_inspect(child)
+  expect_error(sc_run_subcluster_unknown(child, project_id = snapshot$project_id,
+    input_hash = snapshot$review_node$input_hash %||% snapshot$input_hash, expected_revision = NULL,
+    reviewer = "offline QA", reason = "Synthetic.", request_id = "unknown-null"), "expected_revision is required")
+})
