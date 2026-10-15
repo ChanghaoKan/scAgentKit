@@ -76,6 +76,24 @@ annot_apply <- function(obj,
     }
   }
 
+  # ---- Surface unreviewed problems before writing -----------------------
+  if (source == "llm") {
+    ann <- obj@params$llm_annotations
+    flagged <- as.character(ann$cluster[ann$recommended_action %in% "flag_for_review" &
+      !as.character(ann$cluster) %in% names(manual_overrides)])
+    failed <- if ("annotation_status" %in% names(ann))
+      as.character(ann$cluster[!ann$annotation_status %in% "ok"]) else character(0)
+    if (length(flagged) || length(failed)) {
+      warning(sprintf("annot_apply: writing labels the model flagged for review (clusters: %s)%s. Review them or supply manual_overrides.",
+        paste(flagged, collapse = ", "),
+        if (length(failed)) sprintf("; clusters %s had failed annotation and are written as 'Unannotated'", paste(failed, collapse = ", ")) else ""),
+        call. = FALSE)
+    }
+  }
+  if (column_name %in% colnames(obj@data@meta.data)) {
+    warning(sprintf("annot_apply: overwriting existing metadata column '%s'.", column_name), call. = FALSE)
+  }
+
   # ---- Apply mapping to metadata --------------------------------------
   input_cell_ids <- colnames(obj@data)
   cluster_vec <- as.character(obj@data@meta.data$seurat_clusters)

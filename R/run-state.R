@@ -21,10 +21,16 @@
 }
 .sc_run_lock <- function(root) {
   path <- file.path(root, ".run-lock")
-  if (!dir.create(path, showWarnings = FALSE)) stop("Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped.", call. = FALSE)
   owner <- list(token = .sc_run_hash(list(Sys.getpid(), Sys.time(), tempfile())), pid = Sys.getpid(),
                 host = unname(Sys.info()["nodename"]), created_at = .sc_run_time())
-  saveRDS(owner, file.path(path, "owner.rds"))
+  # Publish the lock directory with its owner file already inside (rename of
+  # a directory onto a missing path is atomic), so a crash can never leave a
+  # lock without owner.rds that sc_run_unlock cannot read.
+  staging <- tempfile(".run-lock-", tmpdir = root)
+  dir.create(staging); on.exit(unlink(staging, recursive = TRUE), add = TRUE)
+  saveRDS(owner, file.path(staging, "owner.rds"))
+  if (dir.exists(path) || !file.rename(staging, path))
+    stop("Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped.", call. = FALSE)
   owner
 }
 .sc_run_release <- function(root, owner) {

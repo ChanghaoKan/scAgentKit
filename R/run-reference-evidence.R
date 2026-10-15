@@ -192,7 +192,11 @@
         provenance$declared_source_sha256 <- options$provenance$source_sha256
       provenance$source_sha256 <- digest::digest(file = path, algo = "sha256")
       observed_md5 <- unname(tools::md5sum(path))
-      provenance$source_file_status <- if (!is.null(provenance$source_md5) &&
+      declared <- provenance$declared_source_sha256
+      # A declared hash that disagrees with the file actually read is surfaced
+      # as its own status instead of being silently replaced.
+      provenance$source_file_status <- if (!is.null(declared) && !identical(declared, provenance$source_sha256))
+        "declared_sha256_mismatch" else if (!is.null(provenance$source_md5) &&
         !identical(observed_md5, provenance$source_md5)) "recorded_md5_mismatch" else "readable"
       provenance$observed_source_md5 <- observed_md5
     } else if (!is.null(path)) provenance$source_file_status <- "unavailable"

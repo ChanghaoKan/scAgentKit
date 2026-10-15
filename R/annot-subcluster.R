@@ -178,6 +178,10 @@ annot_subcluster <- function(obj,
   if (!"subcluster_id" %in% colnames(obj@data@meta.data)) {
     obj@data@meta.data$subcluster_id <- rep(NA_character_, n_meta)
   }
+  # Cells never subclustered mirror the current broad label, so a corrected
+  # cell_type is not hidden behind a stale fine label from an earlier run.
+  never <- is.na(obj@data@meta.data$subcluster_id)
+  obj@data@meta.data$cell_type_fine[never] <- as.character(obj@data@meta.data$cell_type)[never]
 
   results <- list()
 
@@ -257,7 +261,11 @@ annot_subcluster <- function(obj,
     return(obj)
   }
 
-  obj@params$subcluster_results <- results
+  # Merge per lineage so an incremental run keeps earlier lineages' provenance.
+  previous <- obj@params$subcluster_results
+  if (!is.list(previous)) previous <- list()
+  previous[names(results)] <- results
+  obj@params$subcluster_results <- previous
 
   # Decision log
   summary_str <- paste(
