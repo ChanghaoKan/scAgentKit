@@ -91,8 +91,12 @@ annot_query_cellmarker <- function(species,
 
   if (force_refresh || !file.exists(cache_file)) {
     message(sprintf("[annot_query_cellmarker] downloading %s table ...", species))
+    # Download to a temporary file and rename, so an interrupted transfer
+    # never leaves a truncated table that a later call would trust.
+    partial <- tempfile("CellMarker2-", tmpdir = cache_dir, fileext = ".xlsx")
+    on.exit(unlink(partial), add = TRUE)
     tryCatch(
-      utils::download.file(url, destfile = cache_file, mode = "wb", quiet = TRUE),
+      utils::download.file(url, destfile = partial, mode = "wb", quiet = TRUE),
       error = function(e) {
         stop("Failed to download CellMarker table from ", url,
              "\nIf this URL is unreachable from your network, download the",
@@ -100,6 +104,7 @@ annot_query_cellmarker <- function(species,
              "\n(Original error: ", conditionMessage(e), ")")
       }
     )
+    if (!file.rename(partial, cache_file)) stop("Cannot save the downloaded CellMarker table to ", cache_file)
     writeLines(url, cache_url_file)
     recorded_url <- url
   }
@@ -143,16 +148,19 @@ annot_query_cellmarker <- function(species,
                  !grepl("Normal", ref$cancer, ignore.case = TRUE), , drop = FALSE]
   }
 
-  # Apply tissue filter (substring match, case-insensitive)
+  # Apply tissue filter (literal substring match, case-insensitive): "blood"
+  # deliberately includes peripheral/cord/venous blood. Matching is literal so
+  # characters such as "(" or "+" in a tissue name are not regex syntax.
   if (!is.null(tissue)) {
-    ref <- ref[grepl(tissue, ref$tissue, ignore.case = TRUE), , drop = FALSE]
+    ref <- ref[grepl(tolower(tissue), tolower(ref$tissue), fixed = TRUE), , drop = FALSE]
   }
 
   # Some CellMarker entries list multiple markers comma- or slash-separated
   # in a single cell. Explode those.
   ref <- .explode_markers(ref)
 
-  ref <- unique(ref[, c("cell_type", "marker", "tissue", "species", "source")])
+  # Keep the cancer/normal context so callers can still separate them.
+  ref <- unique(ref[, c("cell_type", "marker", "tissue", "cancer", "species", "source")])
   rownames(ref) <- NULL
 
   attr(ref, "species")       <- species
@@ -194,8 +202,9 @@ annot_query_cellmarker <- function(species,
 
 #' Clear the scAgentKit reference cache
 #'
-#' Removes cached CellMarker XLSX files. Use if you suspect the cached
-#' table is corrupt or outdated.
+#' Removes every file in the scAgentKit reference cache: cached CellMarker
+#' XLSX tables with their source-URL records and the cached Cell Ontology
+#' (`cl.obo`). Use if you suspect a cached table is corrupt or outdated.
 #'
 #' @param cache_dir Directory to clear. Defaults to scAgentKit's user
 #'   cache.

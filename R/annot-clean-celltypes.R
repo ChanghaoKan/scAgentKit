@@ -76,13 +76,11 @@ annot_clean_celltypes <- function(obj,
 
   # ====================== 1. Merge singular/plural naming ======================
   if (isTRUE(merge_plural)) {
-    ct <- gsub("s$", "", ct)
-    ct <- gsub(" cells$", " cell", ct)
-    ct <- gsub("Macrophages", "Macrophage", ct)
-    ct <- gsub("T cells", "T cell", ct)
-    ct <- gsub("B cells", "B cell", ct)
-    ct <- gsub("Neutrophils", "Neutrophil", ct)
-    ct <- gsub("Fibroblasts", "Fibroblast", ct)
+    # Singularise only a plural final word ("T cells", "Macrophages"). A bare
+    # trailing "s" also ends singular names such as "Langerhans", "Mucous" or
+    # "Plasmablast progenitors (Rs)", which must be left intact.
+    plural <- "(cell|phage|phil|blast|cyte|some|plast)s$"
+    ct <- sub(paste0("(?i)", plural), "\\1", ct, perl = TRUE)
     message("[annot_clean_celltypes] Merged singular/plural names.")
   }
 
@@ -153,7 +151,8 @@ annot_clean_celltypes <- function(obj,
   quality <- ifelse(ct %in% small_types, "candidate", "normal")
   if (action == "flag") {
     quality[ct %in% small_types] <- "flagged"
-    ct[ct %in% small_types] <- paste0(ct[ct %in% small_types], " (Low quality)")
+    flagged <- ct %in% small_types & !endsWith(ct, " (Low quality)")
+    ct[flagged] <- paste0(ct[flagged], " (Low quality)")
     message(sprintf("[annot_clean_celltypes] Flagged %d low-quality types.", length(small_types)))
   } else if (action == "remove") {
     keep <- !(ct %in% small_types)

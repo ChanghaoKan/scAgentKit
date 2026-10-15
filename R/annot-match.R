@@ -65,7 +65,12 @@ annot_load_reference <- function(path, tissue_filter = NULL, species = NULL) {
 #' each cell type in the reference. The score is reference-marker coverage:
 #' `|cluster_markers intersect celltype_markers| / |celltype_markers|`.
 #' This rewards cell types whose characteristic markers appear prominently
-#' in the cluster's top-N list.
+#' in the cluster's top-N list. Coverage favours small marker sets: a type
+#' with a single matching marker scores 1.0. Candidates are therefore ordered
+#' by score, then by the absolute number of matched markers, and
+#' `celltype_size` is reported so a 1/1 match is visibly weaker evidence than
+#' 10/20. Equal best scores are reported as ties for review, never resolved
+#' silently.
 #'
 #' @param obj An AgentSeurat object after [sc_markers_summary()].
 #' @param reference A reference data frame from [annot_load_reference()].

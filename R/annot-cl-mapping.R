@@ -9,7 +9,8 @@
 #' Match logic (in order):
 #' \enumerate{
 #'   \item Lower-case, whitespace-collapsed exact match against CL term names.
-#'   \item Same against the CL synonyms list.
+#'   \item Same against EXACT synonyms only. BROAD, NARROW and RELATED
+#'     synonyms are not equivalences and are never used.
 #'   \item Stop. No fuzzy matching, no embedding similarity. Reviewers
 #'     of methods papers consistently flag fuzzy CL mapping as a source
 #'     of silent label drift; better to report NA than to introduce it.
@@ -19,9 +20,11 @@
 #' a synonym, recording the canonical CL label) to `obj@@params$llm_annotations`
 #' and to `obj@@data@@meta.data$cl_id` (mapped per-cell from `cell_type`).
 #'
-#' The Cell Ontology is loaded lazily from the `ontologyIndex` package's
-#' bundled `go.obo`-style file, or from a user-supplied OBO path. The
-#' first call may take a few seconds; subsequent calls reuse the cache.
+#' Only non-obsolete `CL:` terms are candidates. The ontology is read from
+#' `obo_path` or, by default, downloaded once over HTTPS from OBO Foundry
+#' into the user cache. That default is the unversioned latest release, so
+#' pass a pinned `obo_path` for reproducible mappings; its SHA-256 is
+#' recorded in the step parameters. Each path is cached for the session.
 #'
 #' @param obj An AgentSeurat object after [annot_llm_annotate()] (or
 #'   after [annot_apply()] if you want the cell-level `cl_id` column).
@@ -73,6 +76,7 @@ annot_map_to_cl <- function(obj,
   }
 
   cl <- .get_cl_ontology(obo_path)
+  cl_source <- attr(cl, "scAgentKit_source")
 
   labels <- as.character(ann[[column]])
   res    <- vapply(labels, function(lab) {
@@ -97,8 +101,8 @@ annot_map_to_cl <- function(obj,
   if (isTRUE(map_cells)) {
     md <- obj@data@meta.data
     if ("cell_type" %in% colnames(md)) {
-      lookup <- setNames(ann$cl_id, ann$primary_annotation)
-      obj@data@meta.data$cl_id <- lookup[as.character(md$cell_type)]
+      lookup <- setNames(ann$cl_id, as.character(ann[[column]]))
+      obj@data@meta.data$cl_id <- unname(lookup[as.character(md$cell_type)])
     } else {
       message("[annot_map_to_cl] obj@data@meta.data$cell_type not present; ",
               "skipping per-cell CL mapping. Run annot_apply() first to enable.")
@@ -114,7 +118,9 @@ annot_map_to_cl <- function(obj,
       map_cells      = map_cells,
       n_total        = n_total,
       n_matched      = n_matched,
-      match_rate     = n_matched / max(n_total, 1)
+      match_rate     = n_matched / max(n_total, 1),
+      obo_path       = cl_source$path,
+      obo_sha256     = cl_source$sha256
     ),
     rationale      = rationale,
     script_snippet = sprintf(
@@ -122,7 +128,7 @@ annot_map_to_cl <- function(obj,
 # Exact name/synonym match against CL; %d / %d (%.0f%%) matched.
 obj <- annot_map_to_cl(obj%s)',
       n_matched, n_total, 100 * n_matched / max(n_total, 1),
-      if (is.null(obo_path)) "" else sprintf(", obo_path = \"%s\"", obo_path)
+      if (is.null(obo_path)) "" else sprintf(", obo_path = %s", deparse(obo_path))
     )
   )
 }
@@ -169,7 +175,6 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
 
 # Lazy loader for the CL ontology. Caches per session.
 .get_cl_ontology <- function(obo_path = NULL) {
-  if (!is.null(.cl_env$cl)) return(.cl_env$cl)
   if (is.null(obo_path)) {
     cache_dir <- tools::R_user_dir("scAgentKit", which = "cache")
     if (!dir.exists(cache_dir)) {
@@ -177,17 +182,43 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
     }
     obo_path <- file.path(cache_dir, "cl.obo")
     if (!file.exists(obo_path)) {
-      url <- "http://purl.obolibrary.org/obo/cl.obo"
+      url <- "https://purl.obolibrary.org/obo/cl.obo"
       message("[scAgentKit] downloading Cell Ontology from ", url,
               " to ", obo_path, " (first time only)...")
-      utils::download.file(url, obo_path, mode = "wb", quiet = TRUE)
+      partial <- tempfile("cl-", tmpdir = cache_dir, fileext = ".obo")
+      on.exit(unlink(partial), add = TRUE)
+      utils::download.file(url, partial, mode = "wb", quiet = TRUE)
+      if (!file.rename(partial, obo_path)) stop("Cannot save the downloaded Cell Ontology.")
     }
   }
+  obo_path <- normalizePath(obo_path, mustWork = TRUE)
+  sha <- digest::digest(file = obo_path, algo = "sha256")
+  key <- paste(obo_path, sha)
+  # Key the session cache by path and content: a different OBO must not
+  # silently return the ontology loaded first.
+  if (identical(.cl_env$key, key)) return(.cl_env$cl)
   cl <- ontologyIndex::get_ontology(obo_path,
                                      propagate_relationships = "is_a",
                                      extract_tags = "everything")
-  .cl_env$cl <- cl
+  attr(cl, "scAgentKit_source") <- list(path = obo_path, sha256 = sha)
+  .cl_env$cl <- cl; .cl_env$key <- key
   cl
+}
+
+# Candidate terms: non-obsolete CL identifiers only.
+.cl_candidates <- function(cl) {
+  ids <- names(cl$name)
+  keep <- startsWith(ids, "CL:")
+  if (!is.null(cl$obsolete)) keep <- keep & !(cl$obsolete[ids] %in% TRUE)
+  ids[keep]
+}
+
+# Parse an OBO synonym value ('"text" SCOPE [TYPE] [xrefs]') into its text
+# and scope; NULL when malformed.
+.cl_synonym <- function(value) {
+  m <- regmatches(value, regexec('^"((?:[^"\\\\]|\\\\.)*)"\\s+([A-Z]+)\\b', value, perl = TRUE))[[1]]
+  if (length(m) != 3L) return(NULL)
+  list(text = gsub("\\\\(.)", "\\1", m[2], perl = TRUE), scope = m[3])
 }
 
 .cl_normalise <- function(s) {
@@ -202,29 +233,23 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
     return(list(cl_id = NA_character_, cl_name = NA_character_))
   }
   q <- .cl_normalise(label)
+  ids <- .cl_candidates(cl)
   # 1. Exact name match
-  norm_names <- vapply(cl$name, .cl_normalise, character(1))
+  norm_names <- vapply(unname(cl$name[ids]), .cl_normalise, character(1))
   hit <- which(norm_names == q)
   if (length(hit) > 0) {
-    id <- names(cl$name)[hit[1]]
+    id <- ids[hit[1]]
     return(list(cl_id = id, cl_name = cl$name[[id]]))
   }
-  # 2. Synonym match -- cl$synonym is a list of character vectors
+  # 2. EXACT synonym match only
   syn <- cl$synonym
   if (!is.null(syn)) {
-    for (i in seq_along(syn)) {
-      s_list <- syn[[i]]
-      if (length(s_list) == 0) next
-      # OBO synonym format: '"PRIMARY NAME" EXACT [...]'. Strip quotes/tags.
-      s_clean <- vapply(s_list, function(s) {
-        s <- sub('^"', '', s)
-        s <- sub('"\\s+[A-Z]+\\s*\\[.*$', '', s)
-        s <- sub('"$', '', s)
-        .cl_normalise(s)
-      }, character(1))
-      if (any(s_clean == q)) {
-        id <- names(syn)[i]
-        return(list(cl_id = id, cl_name = cl$name[[id]]))
+    for (id in ids) {
+      for (value in syn[[id]]) {
+        parsed <- .cl_synonym(value)
+        if (!is.null(parsed) && identical(parsed$scope, "EXACT") &&
+            identical(.cl_normalise(parsed$text), q))
+          return(list(cl_id = id, cl_name = cl$name[[id]]))
       }
     }
   }

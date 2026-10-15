@@ -96,7 +96,8 @@ test_that("invalid resolution replies fail visibly without snapping or indexing 
     res_values = c(0.2, 0.4), max_retries = 1
   ), "no resolution recommended")
   expect_true(is.na(failed$chosen_resolution))
-  expect_equal(failed$attempts, 2)
+  # A provider error may already be billed, so it is not resent.
+  expect_equal(failed$attempts, 1)
   expect_match(failed$error, "Mock provider unavailable")
 })
 
@@ -219,7 +220,8 @@ test_that("PC public workflow records a model fallback as an unsuccessful decisi
   expect_identical(out@params$pcs_visual_recommendation$status, "fallback")
   expect_identical(tail(out@decisions, 1)[[1]]$params$decision_status, "fallback")
   expect_identical(tail(out@decisions, 1)[[1]]$success, FALSE)
-  expect_identical(out@params$ndim, 1L)
+  expect_null(out@params$ndim)
+  expect_identical(out@params$pcs_visual_recommendation$chosen, 1L)
   expect_equal(out@data@meta.data, obj@data@meta.data)
   ok <- sc_select_pcs_visual(
     obj, decision_provider(list('{"chosen_ndim":2,"confidence":"medium","reasoning":"The second panel is clearer."}')),

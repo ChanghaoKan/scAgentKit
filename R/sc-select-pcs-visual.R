@@ -277,7 +277,10 @@ sc_select_pcs_visual <- function(obj,
     prompts             = list(system = system_prompt, user = user_prompt)
   )
 
-  obj@params$ndim                       <- chosen
+  # A fallback is not a decision: keep it visible in the recommendation but
+  # do not set ndim, so downstream steps require an explicit choice instead
+  # of silently using the median candidate.
+  if (identical(parsed$status, "ok")) obj@params$ndim <- chosen
   obj@params$pcs_visual_recommendation  <- recommendation
 
   obj <- .record_figure(
