@@ -69,8 +69,9 @@ sc_select_batch_var <- function(obj,
   n_cells <- nrow(meta)
 
   # Patterns
-  batchy <- c("batch", "seq", "lib", "run", "lane", "donor",
-              "sample", "chip", "plate", "channel", "10x", "well")
+  batchy <- c("batch", "batches", "seq", "sequencing", "lib", "library", "run",
+              "lane", "donor", "sample", "samples", "chip", "plate", "channel",
+              "10x", "well", "capture", "gem", "pool")
   bio    <- c("treatment", "condition", "group", "disease", "genotype",
               "phenotype", "tumor", "normal", "case", "control",
               "stage", "grade", "response", "subtype",
@@ -94,13 +95,16 @@ sc_select_batch_var <- function(obj,
     n_lev <- length(levs)
     if (n_lev < 2 || n_lev > max_levels) next
 
-    sizes <- as.integer(table(vals))
+    sizes <- as.integer(table(as.character(vals)))  # observed levels only
     median_size <- stats::median(sizes)
     smallest_size <- min(sizes)
 
+    # Match whole name tokens (split on non-alphanumerics and camelCase) so
+    # "seq" does not hit "sequence", "run" "trunk" or "case" "showcase".
+    tokens <- tolower(unlist(strsplit(gsub("([a-z])([A-Z])", "\\1_\\2", col), "[^A-Za-z0-9]+")))
     name_lc <- tolower(col)
-    name_batch <- any(vapply(batchy, function(p) grepl(p, name_lc), logical(1)))
-    name_bio   <- any(vapply(bio,    function(p) grepl(p, name_lc), logical(1)))
+    name_batch <- any(tokens %in% batchy) || name_lc %in% c("orig.ident", "orig_ident")
+    name_bio   <- any(tokens %in% bio) || any(c("cell_type", "cell.type") %in% name_lc)
 
     # Score components (kept transparent so the LLM can see them)
     s_name      <- if (name_batch) 2 else 0

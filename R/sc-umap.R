@@ -37,18 +37,19 @@ sc_umap <- function(obj,
     reduction      = reduction,
     dims           = seq_len(ndim),
     reduction.name = reduction_name,
+    seed.use       = seed,
     verbose        = FALSE
   )
   obj@data <- seu
 
   script <- sprintf(
 '# ---- UMAP (reduction = %s, dims = 1:%d) ----
-set.seed(%d)
 seurat_obj <- RunUMAP(seurat_obj,
                       reduction      = "%s",
                       dims           = 1:%d,
-                      reduction.name = "%s")',
-    reduction, ndim, seed, reduction, ndim, reduction_name
+                      reduction.name = "%s",
+                      seed.use       = %d)',
+    reduction, ndim, reduction, ndim, reduction_name, seed
   )
 
   if (is.null(rationale)) {

@@ -448,7 +448,8 @@ sc_review_validate <- function(object, journal, project, columns = c(type = "rev
         result$workflowStatus[rows] <- event$status; result$decisionId[rows] <- event$id
         if (event$status == "accepted") {
           result$label[rows] <- event$label
-          result$reviewState[rows] <- if (identical(event$label, "unknown")) "abstained" else "labeled"
+          # The coordinator writes "Unknown"; compare case-insensitively.
+          result$reviewState[rows] <- if (identical(tolower(event$label), "unknown")) "abstained" else "labeled"
         } else result$reviewState[rows] <- "deferred"
       }
       mappings[[dimension]] <- result; states <- c("labeled", "abstained", "deferred", "unreviewed")

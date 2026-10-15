@@ -98,9 +98,9 @@ vocabulary. Results are merged back into a new metadata column
 Resolution control:
 \itemize{
   \item `subcluster_resolution = "adaptive"` (default): scale
-    resolution by lineage size on a log10 cell-count curve, clamped
-    to [0.2, 0.6]. Small subsets (1k cells) get ~0.30; large subsets
-    (20k cells) get ~0.47. Avoids over-fragmenting small lineages.
+    resolution by lineage size, `0.05 + 0.10 * log10(n)` clamped
+    to [0.20, 0.55]. Small subsets (1k cells) get 0.35; large subsets
+    (20k cells) get 0.48. Avoids over-fragmenting small lineages.
   \item `subcluster_resolution = 0.5`: use a fixed numeric
     resolution for every lineage. Cheap and predictable.
   \item `subcluster_resolution = "auto"`: for each lineage, run

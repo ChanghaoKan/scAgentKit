@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # These are deterministic software controls. Planted low-quality cells and
 # doublet predictions are not biological truth or a recommended QC policy.
 # All provider and detector mocks are local; root acceptance separately runs

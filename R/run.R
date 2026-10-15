@@ -262,18 +262,12 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   if (kind == "strategy" && !is.null(config$cycle_diagnostics)) {
     schema <- sub("clustering, umap.", "clustering, umap, and optional cycle.", schema, fixed = TRUE)
-    schema <- sub("Harmony, cycle, doublet and subcluster actions are unsupported.",
-      "Harmony, doublet, subcluster and cycling-cell deletion remain unsupported.", schema, fixed = TRUE)
     schema <- paste(schema,
       "This explicitly enabled strategy also supports cycle={method:'none'|'full'|'difference',reason:'...'}; omission defaults to none.",
       "Use saved fixed-full-input score evidence and projected applicability. No inferred research goal is authorization to regress. Default to none when evidence is insufficient or preservation is uncertain; a whole exact human approval is required for full/difference.",
       "full regresses quantitative S/G2M scores; difference regresses S.Score-G2M.Score to reduce phase contrast while retaining cycling/noncycling signal. Neither deletes cells. Processed reuse supports only none.")
   }
   if (kind == "strategy" && !is.null(config$doublet_diagnostics)) {
-    schema <- sub("Harmony, cycle, doublet and subcluster actions are unsupported.",
-      "Harmony, cycle, subcluster and cycling-cell deletion remain unsupported.", schema, fixed = TRUE)
-    schema <- sub("Harmony, doublet, subcluster and cycling-cell deletion remain unsupported.",
-      "Harmony, subcluster and cycling-cell deletion remain unsupported.", schema, fixed = TRUE)
     schema <- sub("No R code, arbitrary regressors, automatic biological batch choice or deletion of cycling/doublet cells.",
       "No R code, arbitrary regressors, automatic biological batch choice or cycling-cell deletion.", schema, fixed = TRUE)
     schema <- paste(schema,
@@ -824,6 +818,8 @@ sc_run_undo <- function(project_dir, decision_id, reviewer, reason) {
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_load(root)
+  if (!identical(state$config_hash, .sc_run_hash(state$config)) || !identical(state$implementation_hash, .sc_run_implementation()))
+    stop("Configuration or implementation changed. Existing approvals are stale; start a new project.", call. = FALSE)
   .sc_run_undo_locked(root, state, decision_id, reviewer, reason)
 }
 .sc_run_undo_locked <- function(root, state, decision_id, reviewer, reason, review_binding = NULL) {

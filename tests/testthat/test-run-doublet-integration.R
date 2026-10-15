@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # Synthetic coordinator controls only: the detector below returns planted
 # predictions, not scDblFinder results or scientific doublet ground truth.
 # Root acceptance separately executes the installed algorithm on public data.

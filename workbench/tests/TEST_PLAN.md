@@ -8,14 +8,18 @@ or upload source data. Screenshots and exported sessions stay outside Git.
 ## Commands
 
 The application has no JavaScript dependency requirement. Browser QA alone needs
-an existing Node runtime, Playwright, and a Chrome installation. On the development
-Mac those are already bundled with the app:
+an existing Node runtime, Playwright, and a Chrome installation:
 
 ```sh
-/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node \
-  workbench/tests/browser_smoke.mjs \
+node workbench/tests/browser_smoke.mjs \
+  --playwright /path/to/node_modules/playwright \
   --results-root /path/to/frozen/phase1/results
 ```
+
+Without `--playwright` the browser scripts fall back to the original
+development Mac's bundled Playwright path, which does not exist elsewhere.
+The Python unit tests and `test_*.mjs`/`*_dom.cjs` DOM tests need no browser
+and run in CI (`.github/workflows/workbench-tests.yaml`).
 
 Elsewhere use `node` and pass `--playwright /path/to/playwright` and
 `--chrome /path/to/chrome` (or the corresponding `PLAYWRIGHT_MODULE_PATH` and

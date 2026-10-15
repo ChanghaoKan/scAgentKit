@@ -11,8 +11,10 @@ authority for cell selection. Annotation still has its separate later review.
 
 The previous strategy baseline is documented in
 [ANALYSIS_STRATEGY_SUPPORT.md](ANALYSIS_STRATEGY_SUPPORT.md). This increment adds
-only the cycle operations described here. Automatic Harmony, doublet removal
-and subclustering remain unsupported by this coordinator. A legacy exported
+only the cycle operations described here. At the time of this increment,
+Harmony, doublet removal and subclustering were unsupported; they were added
+later under their own review contracts (HARMONY_PC_REVIEW.md, DOUBLET_REVIEW.md,
+SUBCLUSTER_REVIEW.md). A legacy exported
 helper's existence does not establish coordinator support.
 
 ## Main entry and declared gene sets
@@ -330,5 +332,5 @@ proposals: zero real provider API calls, zero key-file reads and US$0 incrementa
 provider cost. Linux, HPC, user-server deployment and biological accuracy were
 not validated. The synthetic fixture is a software control; successful cycle
 execution cannot validate tissue-specific phase calls, coverage thresholds or
-the scientific suitability of regression. Automatic Harmony, doublet removal
-and subclustering remain outside this coordinator increment.
+the scientific suitability of regression. Harmony, doublet removal and
+subclustering were outside this increment and are covered by their own reviews.

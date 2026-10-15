@@ -57,6 +57,14 @@ sc_harmony <- function(obj,
     stop(sprintf("Metadata column(s) not found: %s",
                  paste(missing_cols, collapse = ", ")))
   }
+  # Correcting a factor with one observed level is meaningless; skip
+  # sc_harmony() instead when there is no batch.
+  single <- group_by_vars[vapply(group_by_vars, function(v)
+    length(unique(stats::na.omit(obj@data@meta.data[[v]]))) < 2L, logical(1))]
+  if (length(single)) {
+    stop(sprintf("group_by_vars has fewer than two observed levels: %s. Skip sc_harmony() when there is no batch to correct.",
+                 paste(single, collapse = ", ")), call. = FALSE)
+  }
 
   set.seed(seed)
   seu <- obj@data

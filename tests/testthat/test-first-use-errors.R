@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # First-use mistakes exercise the public coordinator transaction, rather than
 # reimplementing its input validator. All payloads and metadata are synthetic.
 first_use_counts <- function() {

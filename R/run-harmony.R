@@ -268,8 +268,18 @@
 
 .sc_run_harmony_diagnostics <- function(before, after, roles, selected_roles) {
   all_cells <- rownames(before)
-  cells <- sort(enc2utf8(all_cells), method = "radix")
-  cells <- cells[seq_len(min(length(cells), 512L))]
+  # Literal IDs usually carry a sample prefix, so the first IDs in sort order
+  # come from one batch and understate mixing. Take a deterministic sample
+  # stratified round-robin across the selected technical factor's levels,
+  # ordering cells within a level by a hash of their ID (no RNG state).
+  strata <- roles[[selected_roles[[1L]]]]
+  if (!.sc_run_harmony_complete_values(strata, length(all_cells))) strata <- rep("all", length(all_cells))
+  key <- vapply(enc2utf8(all_cells), function(id) digest::digest(id, algo = "xxhash64", serialize = FALSE), character(1))
+  by_level <- lapply(split(seq_along(all_cells), as.character(strata)), function(i) i[order(key[i], method = "radix")])
+  by_level <- by_level[order(names(by_level), method = "radix")]
+  depth <- max(lengths(by_level))
+  ordered <- unlist(lapply(seq_len(depth), function(d) unlist(lapply(by_level, function(i) if (d <= length(i)) i[d]), use.names = FALSE)), use.names = FALSE)
+  cells <- all_cells[ordered[seq_len(min(length(ordered), 512L))]]
   k <- min(20L, length(cells) - 1L)
   prior <- .sc_run_harmony_neighbors(before, cells, k)
   next_neighbors <- .sc_run_harmony_neighbors(after, cells, k)
@@ -291,7 +301,7 @@
   }
   shift <- sqrt(rowSums((before[cells, , drop = FALSE] - after[cells, , drop = FALSE])^2))
   list(schema = "scagentkit.harmony.embedding-diagnostics.v1", metric = "Euclidean neighbors in selected raw PCA/Harmony coordinates; no additional scaling",
-    subset = list(method = "First up to 512 literal cell IDs in UTF-8 radix order", cells = length(cells),
+    subset = list(method = "Up to 512 cells sampled round-robin across the first selected technical factor's levels, ordered within each level by xxhash64 of the literal cell ID", cells = length(cells),
       full_cells = length(all_cells), k = k, cell_hash = .sc_run_hash(cells),
       limitation = "A bounded deterministic subset can be unrepresentative; these diagnostics do not establish whole-dataset preservation."),
     technical_mixing = lapply(selected_roles, diagnostic, same = FALSE),

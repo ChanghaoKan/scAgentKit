@@ -13,8 +13,10 @@
 .sc_run_root <- function(project_dir, create = FALSE) {
   .sc_project_string(project_dir, "project_dir")
   if (create) dir.create(path.expand(project_dir), recursive = TRUE, showWarnings = FALSE)
-  root <- normalizePath(path.expand(project_dir), mustWork = TRUE)
-  if (nzchar(Sys.readlink(root))) stop("Project directory must not be a symlink.", call. = FALSE)
+  # Check the literal path before normalizePath resolves the link away.
+  literal <- sub("/+$", "", path.expand(project_dir))
+  if (nzchar(Sys.readlink(literal))) stop("Project directory must not be a symlink.", call. = FALSE)
+  root <- normalizePath(literal, mustWork = TRUE)
   root
 }
 .sc_run_lock <- function(root) {
@@ -46,7 +48,10 @@
   .sc_run_atomic(envelope, file.path(root, "state.rds"))
   # JSON is a convenience projection. state.rds remains the only commit authority.
   .sc_run_atomic(.sc_run_public(state), file.path(root, "status.json"), json = TRUE)
+  # proposal.json mirrors only a currently pending proposal; a stale copy
+  # left after approval/rejection would read as the current one.
   if (!is.null(state$pending)) .sc_run_atomic(state$pending$proposal, file.path(root, "proposal.json"), json = TRUE)
+  else unlink(file.path(root, "proposal.json"))
   .sc_run_atomic(list(schema = "scagentkit.run-history.v1", events = state$history), file.path(root, "decision_history.json"), json = TRUE)
   invisible(state)
 }
