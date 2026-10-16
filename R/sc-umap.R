@@ -27,6 +27,10 @@ sc_umap <- function(obj,
   }
   if (is.null(ndim)) ndim <- obj@params$ndim
   if (is.null(ndim)) {
+    if (!is.null(obj@params$pcs_visual_recommendation$status) &&
+        !identical(obj@params$pcs_visual_recommendation$status, "ok")) {
+      stop("The latest visual PC selection failed; review it and select PCs again, or pass ndim explicitly. Historical ndim is audit-only.")
+    }
     stop("`ndim` not supplied; run sc_select_pcs() or pass ndim directly.")
   }
 

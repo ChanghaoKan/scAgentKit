@@ -121,6 +121,11 @@ python3 -B workbench/server.py --run-project /durable/path/to/project \
   --local-continue --port 8774
 ```
 
+To reopen saved results from R without repeating executable/library paths, use
+`sc_run_open(project_dir, checkout = "/path/to/scAgentKit")` once, then
+`sc_run_open(project_dir)`. The local read-only viewer reuses a matching service
+or restarts a stopped one; it performs no analysis or model request.
+
 Open `http://127.0.0.1:8774/workbench`. Without `--local-continue`, compute in R.
 Model dispatch is a separate operator opt-in. Server access uses an authorized
 SSH tunnel; no public listening, firewall changes or automatic scheduler

@@ -304,7 +304,7 @@ function wbRenderEmbedding() {
   wb$("wb-embedding-title").textContent = name; wb$("wb-embedding-summary").textContent = points.length ? points.length.toLocaleString() + " plotted cells" + (wbState.view.evidence_kind === "saved_analysis_checkpoint" ? " · annotation not finalized" : "") : "No embedding coordinates were supplied for this snapshot.";
   const toggle = wb$("wb-show-all"); toggle.disabled = !points.length;
   const displayedClusters = clusters.map(cluster => {const annotations = wbArray(cluster.sourceAnnotations); return annotations.length ? {...cluster, sourceLabels: annotations.map(row => (row.value ?? "(missing)") + " (" + row.count + ")").join("; ")} : cluster;});
-  ScEvidenceDisplay.embedding(wb$("wb-umap"), {points, clusters: displayedClusters, name, title: wbState.projectId, selectedCluster: wbState.clusterId, onSelect: wbSelectCluster, showAll: toggle.checked});
+  ScEvidenceDisplay.embedding(wb$("wb-umap"), {points, clusters: displayedClusters, name, title: wbState.projectId, selectedCluster: wbState.clusterId, onSelect: wbSelectCluster, showAll: toggle.checked, savedLabels: wbState.view.evidence_kind === "final_output_bundle" && typeof evidence?.parameters?.annotationColumn === "string" && evidence?.sourceAnnotation?.column === evidence.parameters.annotationColumn ? evidence.sourceAnnotation.values : undefined, labelColumn: evidence?.sourceAnnotation?.column});
   wb$("wb-umap-legend").replaceChildren(); // The pure display helper supplies the actual coloured legend.
 }
 function wbRenderMarkers() {
@@ -338,7 +338,7 @@ function wbRenderAnalysis() {
   target.append(wbNode("p", fullBoundary));
   if (value.parameters) target.append(wbCard("Recorded analysis parameters", wbFacts(value.parameters)));
   if (value.computed_diagnostics) target.append(wbCard("Saved computed diagnostics", wbRecord("Actual saved PCA / batch diagnostics", value.computed_diagnostics)));
-  if (wbState.view.evidence == null) wbEmpty(target, "No verified saved analysis or final output evidence is available yet. A current review proposal is not an embedding or marker result.");
+  if (wbState.view.evidence == null) wbEmpty(target, wbState.view.evidence_error || "No verified saved analysis or final output evidence is available yet. A current review proposal is not an embedding or marker result.");
   wbProjection(target, "Analysis", value.projection); wbRenderEmbedding(); wbRenderMarkers();
 }
 function wbGeneLine(prefix, genes) {const line = wbNode("p", prefix); line.append(ScGeneCards.list(genes, wbState.view.run.context?.species)); return line;}

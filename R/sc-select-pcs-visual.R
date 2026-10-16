@@ -48,9 +48,12 @@
 #'   `confidence`, `reasoning`, `candidates_compared` (data frame of
 #'   ndim and variance for each panel),
 #'   `panel_path`, `status`, `error`, `attempts`, `response_audit`, and
-#'   `prompts`. Chosen ndim is also written to `obj@@params$ndim`.
-#'   Invalid responses fall back to the median candidate with low
-#'   confidence and `status = "fallback"`; the raw replies remain in the audit.
+#'   `prompts`. Only a successful choice sets `obj@@params$ndim`.
+#'   Invalid responses retain a median candidate for audit with low
+#'   confidence and `status = "fallback"`, and clear the automatic `ndim`.
+#'   The historical choice remains in `previous_ndim`; select again or pass
+#'   an explicit `ndim` downstream. If the full panel cannot be composed,
+#'   the function stops before calling the model.
 #' @export
 sc_select_pcs_visual <- function(obj,
                                  chat_fn,
@@ -277,10 +280,11 @@ sc_select_pcs_visual <- function(obj,
     prompts             = list(system = system_prompt, user = user_prompt)
   )
 
-  # A fallback is not a decision: keep it visible in the recommendation but
-  # do not set ndim, so downstream steps require an explicit choice instead
-  # of silently using the median candidate.
-  if (identical(parsed$status, "ok")) obj@params$ndim <- chosen
+  # Preserve the historical value for audit, but a latest failed selection
+  # must invalidate the automatic downstream default, including on a rerun.
+  recommendation$previous_ndim <- obj@params$ndim %||%
+    obj@params$pcs_visual_recommendation$previous_ndim
+  obj@params$ndim <- if (identical(parsed$status, "ok")) chosen else NULL
   obj@params$pcs_visual_recommendation  <- recommendation
 
   obj <- .record_figure(
@@ -332,16 +336,15 @@ sc_select_pcs_visual <- function(obj,
 # Strategy:
 # 1. Try `magick::image_read` + `image_montage` (highest quality).
 # 2. If that fails for ANY reason, fall back to grDevices::png + base
-#    graphics rasterImage (always works as long as the png package is
-#    available, which it is in base R).
-# 3. If even that fails (vanishingly unlikely), fall back to copying
-#    the first panel as the "combined" image so the LLM at least sees
-#    one panel.
+#    graphics rasterImage (requires the optional png package).
+# 3. If both fail, stop before requesting a comparison with incomplete evidence.
 .compose_panel_grid_safe <- function(paths, out_path,
                                      panel_width, panel_height, dpi) {
   n <- length(paths)
   if (n == 1) {
-    file.copy(paths[[1]], out_path, overwrite = TRUE)
+    if (!file.copy(paths[[1]], out_path, overwrite = TRUE)) {
+      stop("Could not copy the comparison panel.")
+    }
     return(invisible(out_path))
   }
 
@@ -389,12 +392,11 @@ sc_select_pcs_visual <- function(obj,
     TRUE
   }, error = function(e) {
     message("[sc_select_pcs_visual] base-R compositing also failed (",
-            conditionMessage(e), "); using first panel as fallback.")
+            conditionMessage(e), "); comparison aborted.")
     FALSE
   })
   if (ok) return(invisible(out_path))
 
-  # Attempt 3: copy first panel
-  file.copy(paths[[1]], out_path, overwrite = TRUE)
-  invisible(out_path)
+  unlink(out_path)
+  stop("Could not compose all PC panels; no visual comparison was requested.", call. = FALSE)
 }

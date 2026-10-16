@@ -21,16 +21,25 @@
 }
 .sc_run_lock <- function(root) {
   path <- file.path(root, ".run-lock")
+  locked <- "Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped."
+  writable <- "Project (including a parent project for child operations) must be writable to acquire its lock. Ask the project owner to restore writable access at the recorded project path, or restore the complete project at that same path. Otherwise start a new project from preserved input and reapprove; do not edit saved path bindings or bypass an existing lock."
+  if (dir.exists(path)) stop(locked, call. = FALSE)
   owner <- list(token = .sc_run_hash(list(Sys.getpid(), Sys.time(), tempfile())), pid = Sys.getpid(),
                 host = unname(Sys.info()["nodename"]), created_at = .sc_run_time())
   # Publish the lock directory with its owner file already inside (rename of
   # a directory onto a missing path is atomic), so a crash can never leave a
   # lock without owner.rds that sc_run_unlock cannot read.
   staging <- tempfile(".run-lock-", tmpdir = root)
-  dir.create(staging); on.exit(unlink(staging, recursive = TRUE), add = TRUE)
-  saveRDS(owner, file.path(staging, "owner.rds"))
-  if (dir.exists(path) || !file.rename(staging, path))
-    stop("Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped.", call. = FALSE)
+  if (!isTRUE(suppressWarnings(dir.create(staging))))
+    stop(paste("Cannot create lock staging directory.", writable), call. = FALSE)
+  on.exit(unlink(staging, recursive = TRUE), add = TRUE)
+  tryCatch(saveRDS(owner, file.path(staging, "owner.rds")), error = function(e)
+    stop(paste("Cannot write lock owner record.", writable), call. = FALSE))
+  if (dir.exists(path)) stop(locked, call. = FALSE)
+  if (!isTRUE(suppressWarnings(file.rename(staging, path)))) {
+    if (dir.exists(path)) stop(locked, call. = FALSE)
+    stop(paste("Cannot publish project lock; check directory permissions and storage.", writable), call. = FALSE)
+  }
   owner
 }
 .sc_run_release <- function(root, owner) {
@@ -326,6 +335,27 @@ sc_run_reject <- function(project_dir, proposal_hash, reviewer, reason, preview_
   .sc_run_public(state)
 }
 
+.sc_run_process_status <- function(pid, signal_probe = tools::pskill,
+                                   absence_probe = .sc_run_process_absent) {
+  if (length(pid) != 1L || !is.numeric(pid) || is.na(pid) || pid < 1 || pid != floor(pid))
+    return("unknown")
+  alive <- tryCatch(suppressWarnings(signal_probe(pid, signal = 0L)), error = function(e) NA)
+  if (isTRUE(alive)) return("alive")
+  # pskill exposes only a boolean: FALSE may mean EPERM, not ESRCH. Require
+  # the OS's explicit "No such process" before permitting local recovery.
+  absent <- tryCatch(absence_probe(pid), error = function(e) FALSE)
+  if (isTRUE(absent)) "absent" else "unknown"
+}
+.sc_run_process_absent <- function(pid, probe = system2) {
+  if (.Platform$OS.type != "unix") return(FALSE)
+  kill <- Sys.which("kill")
+  if (!nzchar(kill)) return(FALSE)
+  result <- suppressWarnings(probe(kill, c("-0", format(pid, scientific = FALSE, trim = TRUE)),
+    stdout = TRUE, stderr = TRUE, env = "LC_ALL=C"))
+  !is.null(attr(result, "status")) && attr(result, "status") != 0L &&
+    any(grepl("No such process", result, fixed = TRUE))
+}
+
 #' Recover a lock after confirming the owning process has stopped
 #' @param project_dir Run directory.
 #' @param token Exact owner token from .run-lock/owner.rds.
@@ -338,8 +368,10 @@ sc_run_unlock <- function(project_dir, token, reason) {
   owner <- readRDS(path)
   if (!identical(token, owner$token)) stop("Lock token mismatch.", call. = FALSE)
   if (identical(owner$host, unname(Sys.info()["nodename"]))) {
-    alive <- tryCatch(tools::pskill(owner$pid, signal = 0L), error = function(e) FALSE)
-    if (isTRUE(alive)) stop("Owning process is still alive; lock retained.", call. = FALSE)
+    status <- .sc_run_process_status(owner$pid)
+    if (identical(status, "alive")) stop("Owning process is still alive; lock retained.", call. = FALSE)
+    if (!identical(status, "absent"))
+      stop("Owning process status is unknown (permission or probe failure); lock retained. Verify process termination with the owning user or administrator.", call. = FALSE)
   }
   provider_lock <- file.path(root, "provider", ".dispatch-lock")
   nested <- if (dir.exists(provider_lock)) jsonlite::fromJSON(file.path(provider_lock, "owner.json"), simplifyVector = FALSE) else NULL

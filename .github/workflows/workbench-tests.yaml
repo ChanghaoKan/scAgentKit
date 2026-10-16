@@ -28,7 +28,7 @@ jobs:
           use-public-rspm: true
       - name: Install R packages used by bridge-level tests
         shell: Rscript {0}
-        run: install.packages("jsonlite")
+        run: install.packages(c("jsonlite", "digest"))
       - name: Python unit tests
         run: python -B -m unittest discover -s workbench/tests -p 'test_*.py' -v
       - name: Node DOM tests

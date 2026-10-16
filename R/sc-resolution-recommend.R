@@ -243,7 +243,7 @@ sc_resolution_recommend <- function(obj,
       "stable hierarchy emerges is a good candidate.\n\n",
       "STRICT CONSTRAINTS:\n",
       "  1. `chosen_resolution` MUST be one of the panel resolutions you ",
-      "actually saw: ", panels_str, ". Pick the best of those three.\n",
+      "actually saw: ", panels_str, ". Pick the best of those panels.\n",
       "  2. If you think a resolution OUTSIDE this panel set is better ",
       "(based on the numeric table), put it in `alternatives` -- never in ",
       "`chosen_resolution`. The chosen value must be defensible from ",
@@ -292,6 +292,7 @@ sc_resolution_recommend <- function(obj,
     evidence       = stats_df,
     mode           = if (isTRUE(vision)) "vision" else "numeric_only",
     image_sent     = img_to_send,
+    panels_used    = if (isTRUE(vision)) panels_used else numeric(),
     status         = parsed$status,
     error          = parsed$error,
     attempts       = parsed$attempts,
@@ -614,8 +615,8 @@ sc_resolution_recommend <- function(obj,
 }
 
 
-# Compose clustree + UMAP panels into one image. Three-tier fallback as
-# in sc_select_pcs_visual: magick -> base R + png -> first panel only.
+# Compose all requested panels, or fail so the caller can accurately use
+# numeric-only evidence. Never label a single-panel copy as a full comparison.
 .compose_resolution_grid <- function(clustree_path, umap_paths, out_path,
                                      panel_width, panel_height, dpi) {
 
@@ -714,11 +715,11 @@ sc_resolution_recommend <- function(obj,
     TRUE
   }, error = function(e) {
     message("[sc_resolution_recommend] base-R compositing failed (",
-            conditionMessage(e), "); using first UMAP panel only.")
+            conditionMessage(e), "); using numeric-only evidence.")
     FALSE
   })
   if (ok) return(invisible(out_path))
 
-  file.copy(umap_paths[[1]], out_path, overwrite = TRUE)
-  invisible(out_path)
+  unlink(out_path)
+  stop("Could not compose all resolution panels.", call. = FALSE)
 }

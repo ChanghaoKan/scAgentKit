@@ -90,7 +90,10 @@ answer <- tryCatch({
   summary <- function(name) {
     record <- state$files[[paste0("output:output/", name)]]
     if (is.null(record)) return(NULL)
-    jsonlite::fromJSON(file.path(root, record$path), simplifyVector = FALSE)
+    path <- file.path(root, record$path)
+    if (!file.exists(path) || nzchar(Sys.readlink(path)) ||
+        !identical(get(".sc_project_sha_file")(path), record$sha256)) return(NULL)
+    tryCatch(jsonlite::fromJSON(path, simplifyVector = FALSE), error = function(e) NULL)
   }
   qc <- if (!is.null(state$files$qc_evidence)) get(".sc_run_get")(root, state, "qc_evidence")$summary else NULL
   artifacts <- lapply(state$files[startsWith(names(state$files), "output:")], function(record)
@@ -98,7 +101,17 @@ answer <- tryCatch({
   bundle_records <- state$files[startsWith(names(state$files), "output:bundle/")]
   bundle_scope_hash <- NULL
   stage_bundle <- NULL
-  if (!is.null(state$output$bundle)) {
+  bundle_error <- NULL
+  # Damaged convenience exports must not hide verified coordinator history.
+  # Never display unverified bundle bytes or rewrite authoritative checkpoints.
+  bundle_valid <- all(vapply(bundle_records, function(record) {
+    path <- file.path(root, record$path)
+    file.exists(path) && !nzchar(Sys.readlink(path)) &&
+      identical(get(".sc_project_sha_file")(path), record$sha256)
+  }, logical(1)))
+  if (!is.null(state$output$bundle) && (!length(bundle_records) || !bundle_valid))
+    bundle_error <- "Saved convenience bundle changed or is missing; inspect authoritative results in R."
+  if (!is.null(state$output$bundle) && is.null(bundle_error)) {
     if (!identical(state$output$bundle, file.path(root, "bundle"))) stop("Foreign saved bundle path.")
     exported <- jsonlite::fromJSON(file.path(root, "bundle", "project.json"), simplifyVector = FALSE)
     exported_ids <- unname(vapply(exported$cells, `[[`, character(1), "cellId"))
@@ -199,7 +212,7 @@ answer <- tryCatch({
     annotation_summary = plain(summary("annotation_evidence_summary.json")),
     analysis = list(parameters = plain(state$config$analysis), markers = plain(state$config$markers)),
     artifacts = unname(artifacts), bundle_records = unname(bundle_records), bundle_scope_hash = bundle_scope_hash,
-    stage_bundle = stage_bundle,
+    stage_bundle = stage_bundle, bundle_error = bundle_error,
     integration_history = integration, integration_state_sha256 = integration_sha)
   if (!identical(before, get(".sc_project_sha_file")(state_path)))
     stop("State changed during read-only inspection; refresh the registered scope.")

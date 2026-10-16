@@ -458,7 +458,7 @@
   risks <- .sc_run_strategy_array(proposal$risks, "strategy$risks")
   inferences <- .sc_run_strategy_array(proposal$inferences, "strategy$inferences")
   batch <- .sc_run_strategy_fields(proposal$batch, c("method", "reason"),
-    optional = c("group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust"), name = "strategy$batch")
+    optional = c("group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "nested_biology"), name = "strategy$batch")
   method <- .sc_run_strategy_text(batch$method, "strategy$batch$method", 80L)
   if (!method %in% c("none", "manual", "harmony"))
     stop("Batch method '", method, "' is unsupported in the coordinated strategy. Use none, manual, or explicit supported Harmony parameters.", call. = FALSE)

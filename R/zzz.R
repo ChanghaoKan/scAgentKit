@@ -1,5 +1,5 @@
-# scAgentKit has no special package-load side effects beyond what the
-# alias layer in R/imports.R sets up at namespace-build time. The
+# The alias layer in R/imports.R binds live dependency token state in .onLoad.
+# The
 # single-cell ggplot2 NSE variable declarations live here to silence
 # R CMD check NOTEs.
 utils::globalVariables(c(

@@ -82,6 +82,21 @@ coverage settings are software preconditions for this operation; five genes or
 20% coverage is not a validated scientific adequacy threshold. Use your study,
 feature identifiers, tissue and research goal to assess the supplied reference.
 
+`nbin` divides the expressed-feature mean-expression pool into equal-frequency
+bins; `ctrl` requests controls per scored gene from its bin. The defaults
+(12 bins, 5 controls) are explicit diagnostic settings, not optimized biological
+recommendations or hidden aliases of Seurat defaults. Increasing either can
+make a small pool inapplicable. An insufficient pool produces `insufficient`
+with Unknown phases and missing scores, and never silently adjusts either
+parameter. Inspect gene coverage and `summary$control` before deciding whether
+to declare another setting in a new fixed reference.
+
+The audit regression test checks 24 expressed synthetic features (insufficient
+at unchanged defaults) and 2,400 synthetic features × 48 cells (available at
+unchanged defaults). These establish capacity handling, not scientific accuracy
+on real tissue. Existing engine tests compare declared 4-bin/2-control scores
+with a direct Seurat call and test large unsupported bin/control requests.
+
 ## Fixed full-input evidence
 
 Diagnostics run on a nonfiltering copy of the full input before approved QC.

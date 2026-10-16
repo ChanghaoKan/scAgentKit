@@ -385,6 +385,23 @@ doublet 的受审运行时组合是 scDblFinder `1.26.7` + xgboost `>=3.1`，以
 
 ## 8. 同一项目的可选网页与服务器运行
 
+### 8.0 重新打开已保存的结果
+
+在已安装本版包的本机 R 中，第一次指定公开 checkout 的位置：
+
+```r
+library(scAgentKit)
+sc_run_open("/durable/path/to/project", checkout = "/path/to/scAgentKit")
+```
+
+以后关闭网页或 R 再重开，只需 `sc_run_open("/durable/path/to/project")`。
+它自动使用当前 Rscript、当前 `.libPaths()` 和已有 Python 3，记住 checkout 位置，
+只读打开结果首页；不会重新分析、恢复计算或发送模型请求。服务仍在时复用同一项目服务，
+服务退出则重新启动；端口上的项目身份不符时不会误用。`browse=FALSE` 只打印/返回地址。
+不需要新凭据；仅绑定 `127.0.0.1`，服务日志位于项目 `.workbench-launcher/server.log`。
+需要现有 macOS/Linux Python 3 与同机公开源代码 checkout；不自动下载软件。
+远程计算机的浏览器与 SSH 隧道仍按下文处理，本入口不修改服务器认证。
+
 ### 8.1 只绑定 loopback
 
 在分析机器准备好同一 R library、固定 Rscript 和 Python 3。网页代码来自源码 checkout；安装 R 包不会自动给你这个目录。按第 2 节版本说明，在公开 `main` 合入本开发版后取得源码并记录实际 ref：
@@ -612,6 +629,20 @@ run <- sc_run_resume(project_dir)  # 不重算完成阶段；查看返回的实�
 已有 `complete` 或 `awaiting_review` 的 resume 不重新计算／请求。failed 状态不会默认重试；先查看 `failure`。确认修复后本地 stage 可用 `sc_run_continue(..., retry=TRUE)`，协调器可显式 `sc_run_resume(..., retry=TRUE)`。后者不能消除 unknown dispatch 或自动重复收费；请求不明必须先核对 ledger。不要假设按同一个按钮等于一次安全 retry。
 
 项目有原子写盘、锁、输入／证据／提案 hash 与 revision 校验。一个项目不要同时运行两个计算进程。审批绑定旧版本会拒绝，程序不自动将它升级为针对新证据的同意。断网／网页刷新先读 saved state，再明确下一步。
+
+### 11.1 版本变化与恢复边界
+
+恢复计算需使用创建项目时相同的实现和依赖库。保留原 checkout 的固定提交及独立 R 库，
+在那个环境中 inspect/复核/resume；不要覆盖正在使用的库。新版本会让已有审批失效，
+不会自动迁移或绕过实现 hash。若改用新版，从原始输入建立新项目并重新复核方案、
+外传权限及注释审批，保留旧项目供对照；旧版本 undo 恢复的是历史批准快照，不代表升级。
+只读结果页可显示通过权威文件校验的历史完成态，但不会授予当前版本的执行权限。
+
+CSV、PNG、便捷摘要及 bundle 损坏或丢失不会改变完成态的权威 Seurat/checkpoints。
+网页不显示未通过收据校验的图形/摘要；bundle 损坏时仍可打开状态与历史，并提示在 R 中检查权威结果。
+不能靠编辑导出、history JSON 或 provider 账本恢复审批/费用权限。费用账本是同一可信操作者的本地记录，
+不抵御有权限重写本机全部文件的恶意使用者。父对象 apply/undo 需要可写 parent 锁来防止竞态；
+不可写时由项目拥有者在原记录路径恢复可写访问，或在该路径恢复完整项目；否则从保留输入新建项目并重新审批。项目含绝对输出/父子路径绑定，不能靠任意搬移目录或手改权威状态解决，不能跳过锁。
 
 ## 12. 常见停点与反馈
 

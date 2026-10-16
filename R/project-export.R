@@ -54,11 +54,14 @@ sc_project_export <- function(object, path, project_id, assay = "RNA",
   if (any(vapply(qc_fields, function(field) sum(names(metadata) == field) != 1L, logical(1))))
     .sc_project_fail("Allowlisted metadata column names are ambiguous; make selected field names unique explicitly.")
   for (field in qc_fields) .sc_project_metadata(metadata[[field]], field)
+  # Resolve literal IDs once; integer reads below preserve canonical cell order.
+  metadata_rows <- match(cells, rownames(metadata))
+  qc_columns <- lapply(metadata[, qc_fields, drop = FALSE], function(value) value[metadata_rows])
   points <- .sc_project_embedding(seu, cells, reduction)
   cell_records <- lapply(seq_along(cells), function(i) {
     id <- cells[i]
     list(cellId = id, clusterId = membership[[i]],
-         qc = stats::setNames(lapply(qc_fields, function(field) .sc_project_scalar(metadata[id, field])), qc_fields))
+         qc = stats::setNames(lapply(qc_fields, function(field) .sc_project_scalar(qc_columns[[field]][i])), qc_fields))
   })
   markers <- .sc_project_records(marker_table, c("clusterId", "gene", "avgLog2FC", "pct1", "pct2", "pAdj", "source"), "marker_table", cluster_ids)
   candidates <- .sc_project_records(candidate_table, c("clusterId", "label", "score", "overlap", "referenceSize", "markers", "source"), "candidate_table", cluster_ids)
@@ -77,9 +80,9 @@ sc_project_export <- function(object, path, project_id, assay = "RNA",
     if (sum(names(metadata) == source_annotation) != 1L) .sc_project_fail("Requested source annotation column is absent or ambiguous.")
     .sc_project_metadata(metadata[[source_annotation]], source_annotation)
     project$sourceAnnotation <- list(column = source_annotation, role = "source_context",
-                                    values = lapply(cells, function(id) {
-                                      value <- .sc_project_scalar(metadata[id, source_annotation])
-                                      list(cellId = id, value = if (is.null(value)) NULL else as.character(value))
+                                    values = lapply(seq_along(cells), function(i) {
+                                      value <- .sc_project_scalar(metadata[[source_annotation]][metadata_rows[i]])
+                                      list(cellId = cells[i], value = if (is.null(value)) NULL else as.character(value))
                                     }))
   }
   if (is.null(directed_clusters)) directed_clusters <- character()
@@ -113,8 +116,9 @@ sc_project_export <- function(object, path, project_id, assay = "RNA",
     }
   }
   .sc_project_write_json(file.path(stage, "project.json"), project)
-  bundle_digest <- .sc_project_sha_file(file.path(stage, "project.json"))
-  files <- c(list(.sc_project_file_record(stage, "project.json")), files)
+  project_record <- .sc_project_file_record(stage, "project.json")
+  bundle_digest <- project_record$sha256
+  files <- c(list(project_record), files)
   manifest <- list(schema = "scagentkit.project-bundle.v1", projectId = project_id,
                    sourceFingerprint = identity$fingerprint, bundleDigest = bundle_digest, files = files)
   .sc_project_write_json(file.path(stage, "manifest.json"), manifest)
@@ -227,7 +231,8 @@ sc_project_export <- function(object, path, project_id, assay = "RNA",
   .sc_project_ids(rownames(values), "Embedding cell IDs")
   if (ncol(values) < 2L || !setequal(rownames(values), cells) || any(!is.finite(values[, 1:2, drop = FALSE])))
     .sc_project_fail("Embedding must have finite two-dimensional coordinates covering every object cell exactly.")
-  list(name = reduction, points = lapply(cells, function(id) list(cellId = id, x = unname(values[id, 1L]), y = unname(values[id, 2L]))))
+  values <- values[match(cells, rownames(values)), 1:2, drop = FALSE]
+  list(name = reduction, points = lapply(seq_along(cells), function(i) list(cellId = cells[i], x = unname(values[i, 1L]), y = unname(values[i, 2L]))))
 }
 .sc_project_write_json <- function(path, value) {
   bytes <- paste0(.sc_project_json(value, pretty = TRUE), "\n")
@@ -333,13 +338,23 @@ sc_project_export <- function(object, path, project_id, assay = "RNA",
   low <- .sc_project_depth(metadata, ids, config)
   observed_status <- function(n, missing) if (n >= 2L) "observed_threshold_met" else if (missing > 0L) "below_observed_threshold_missing_anchors" else "below_observed_threshold"
   point_ids <- if (is.null(embedding)) character() else vapply(embedding$points, `[[`, character(1), "cellId")
+  point_rows <- match(ids, point_ids)
+  gene_rows <- match(genes, identity$features)
+  cell_columns <- match(ids, identity$cells)
+  measured_rows <- which(!is.na(gene_rows))
+  # Materialize only the small directed panel, never the full expression assay.
+  panel_counts <- as.matrix(identity$counts[gene_rows[measured_rows], cell_columns, drop = FALSE])
+  panel_data <- if (is.null(identity$data)) NULL else as.matrix(identity$data[gene_rows[measured_rows], cell_columns, drop = FALSE])
+  panel_rows <- match(seq_along(genes), measured_rows)
+  qc_rows <- match(ids, rownames(metadata))
+  qc_columns <- lapply(metadata, function(value) value[qc_rows])
   cells <- lapply(seq_along(ids), function(i) {
     id <- ids[i]
-    point <- if (is.null(embedding)) NULL else embedding$points[[match(id, point_ids)]]
+    point <- if (is.null(embedding)) NULL else embedding$points[[point_rows[i]]]
     list(cell_id = id, cluster_id = cluster_id,
-         counts = stats::setNames(lapply(genes, function(gene) if (gene %in% identity$features) as.numeric(identity$counts[gene, id]) else NULL), genes),
-         normalized = stats::setNames(lapply(genes, function(gene) if (!is.null(identity$data) && gene %in% identity$features) as.numeric(identity$data[gene, id]) else NULL), genes),
-         qc = stats::setNames(lapply(qc_fields, function(field) if (field %in% names(metadata)) .sc_project_scalar(metadata[id, field]) else NULL), qc_fields),
+         counts = stats::setNames(lapply(panel_rows, function(row) if (!is.na(row)) as.numeric(panel_counts[row, i]) else NULL), genes),
+         normalized = stats::setNames(lapply(panel_rows, function(row) if (!is.null(panel_data) && !is.na(row)) as.numeric(panel_data[row, i]) else NULL), genes),
+         qc = stats::setNames(lapply(qc_fields, function(field) if (field %in% names(metadata)) .sc_project_scalar(qc_columns[[field]][i]) else NULL), qc_fields),
          umap = if (is.null(point)) NULL else list(x = point$x, y = point$y),
          t_anchor_detected_n = co$t$observed_n[i], nk_anchor_detected_n = co$nk$observed_n[i], t_missing_anchor_n = co$t$missing_n, nk_missing_anchor_n = co$nk$missing_n,
          t_gate = co$t_gate[i], nk_gate = co$nk_gate[i], t_identity_gate_possible = .sc_project_scalar(co$t_possible[i]), nk_identity_gate_possible = .sc_project_scalar(co$nk_possible[i]),

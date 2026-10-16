@@ -55,9 +55,12 @@ Updated AgentSeurat. Recommendation lives at
   `confidence`, `reasoning`, `candidates_compared` (data frame of
   ndim and variance for each panel),
   `panel_path`, `status`, `error`, `attempts`, `response_audit`, and
-  `prompts`. Chosen ndim is also written to `obj@params$ndim`.
-  Invalid responses fall back to the median candidate with low
-  confidence and `status = "fallback"`; the raw replies remain in the audit.
+  `prompts`. Only a successful choice sets `obj@params$ndim`.
+  Invalid responses retain a median candidate for audit with low
+  confidence and `status = "fallback"`, and clear the automatic `ndim`.
+  The historical choice remains in `previous_ndim`; select again or pass
+  an explicit `ndim` downstream. If the full panel cannot be composed,
+  the function stops before calling the model.
 }
 \description{
 Generates UMAP panels at several candidate dimensionalities, asks a

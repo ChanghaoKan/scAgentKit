@@ -8,7 +8,8 @@
     .sc_project_fail("Unsupported batch method; choose none, manual, or the constrained Harmony operation.")
   required <- if (method == "harmony")
     c("method", "group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "reason") else c("method", "reason")
-  choice <- .sc_run_strategy_fields(choice, required, name = "Batch choice")
+  choice <- .sc_run_strategy_fields(choice, required,
+    optional = if (method == "harmony") "nested_biology" else character(), name = "Batch choice")
   reason <- .sc_run_strategy_text(choice$reason, "strategy$batch$reason")
   if (method != "harmony") return(list(method = method, reason = reason))
   columns <- choice$group_by_vars
@@ -44,8 +45,15 @@
     maximum <- min(100L, retained - 1L)
   }
   nclust <- .sc_run_strategy_number(choice$nclust, "Harmony nclust", 2, maximum, integer = TRUE)
-  list(method = "harmony", group_by_vars = unname(columns), theta = theta, lambda = lambda,
+  result <- list(method = "harmony", group_by_vars = unname(columns), theta = theta, lambda = lambda,
     sigma = sigma, max_iter = max_iter, nclust = nclust, reason = reason)
+  if (!is.null(choice$nested_biology)) {
+    policy <- .sc_run_strategy_text(choice$nested_biology, "Harmony nested_biology", 80L)
+    if (!policy %in% c("block", "reviewed_embedding_only"))
+      .sc_project_fail("Harmony nested_biology must be block or reviewed_embedding_only.")
+    result$nested_biology <- policy
+  }
+  result
 }
 
 .sc_run_harmony_complete_values <- function(values, n) {
@@ -79,7 +87,11 @@
     left_nested_in_right = left_nested, right_nested_in_left = right_nested,
     alias = left_nested && right_nested, complete_confounding = audit$complete_confounding,
     full_rank = audit$full_rank, rank = audit$design_rank, columns = audit$design_columns,
-    status = audit$status, table = pairs$rows)
+    status = audit$status, table = pairs$rows,
+    relation = if (left_nested && right_nested) "aliased" else
+      if (left_nested) "nested" else if (right_nested) "reverse_nested" else "crossed",
+    replicates_per_biology = if (left_nested) as.list(table(pairs$right)) else list(),
+    replicated_nested = left_nested && !right_nested && all(table(pairs$right) >= 2L))
 }
 
 .sc_run_harmony_choice <- function(choice, evidence, projected_roles, processed = FALSE) {
@@ -156,10 +168,20 @@
     if (valid && length(levels) >= 2L) biological[[role]] <- as.character(values)
   }
   if (!length(biological)) block("biological_roles_missing", "At least one explicitly declared group/condition/treatment role with complete metadata and two retained levels is required to audit biological confounding.")
+  allowed_nested_biology <- character()
   for (role in names(selected)) for (bio in names(biological)) {
     relation <- .sc_run_harmony_relation(selected[[role]], biological[[bio]], role, bio)
+    permitted <- role %in% c("sample", "donor") && isTRUE(relation$replicated_nested) &&
+      identical(canonical$nested_biology, "reviewed_embedding_only")
+    relation$nested_embedding_reviewed <- permitted
     audit$per_factor_biology[[length(audit$per_factor_biology) + 1L]] <- relation
-    if (isTRUE(relation$complete_confounding) || identical(relation$full_rank, FALSE))
+    if (permitted) {
+      allowed_nested_biology <- union(allowed_nested_biology, bio)
+      warnings <- c(warnings, paste0("Explicit embedding-only correction of replicated ", role,
+        " nested in ", bio, ": condition effects are not separately estimable from fixed donor/sample indicators. ",
+        "Do not use the integrated embedding for condition-effect inference; inspect before/after diagnostics and retain unintegrated assays."))
+    }
+    if (!permitted && (isTRUE(relation$complete_confounding) || identical(relation$full_rank, FALSE)))
       block("factor_biology_confounded", paste0("Selected ", role, " and biological ", bio,
         " are completely confounded or rank deficient in the retained additive design; technical and biological effects are not independently estimable."))
     if (role %in% c("sample", "donor") && (isTRUE(relation$left_nested_in_right) || isTRUE(relation$right_nested_in_left)))
@@ -175,7 +197,17 @@
   }
   if (length(selected) == length(selected_roles) && length(biological)) {
     audit$joint_rank <- .sc_run_harmony_rank(c(selected, biological))
-    if (!isTRUE(audit$joint_rank$full_rank))
+    if (length(allowed_nested_biology)) {
+      # The full fixed-effect matrix remains rank deficient and is reported as
+      # such. The explicit exception permits only the replicated nesting, never
+      # unrelated aliasing among biological roles or technical factors.
+      audit$biological_rank <- .sc_run_harmony_rank(biological)
+      residual_biology <- biological[setdiff(names(biological), allowed_nested_biology)]
+      audit$reviewed_embedding_rank <- .sc_run_harmony_rank(c(selected, residual_biology))
+      audit$nested_biology_policy <- "reviewed_embedding_only"
+      if (!isTRUE(audit$biological_rank$full_rank) || !isTRUE(audit$reviewed_embedding_rank$full_rank))
+        block("joint_design_rank_deficient", "The design remains rank deficient beyond the explicitly reviewed replicated donor/sample nesting; no correction is executed.")
+    } else if (!isTRUE(audit$joint_rank$full_rank))
       block("joint_design_rank_deficient", "The joint additive design of all selected technical factors and declared biological roles is rank deficient; no automatic correction is executed.")
   }
   warnings <- unique(c(warnings,
