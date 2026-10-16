@@ -37,7 +37,7 @@ It does not automatically remove a sample to create a preferable table.
 | Missing biological design information or only one observed biological level | Block Harmony; do not invent a treatment/control relationship |
 | Full confounding, nested aliases or a rank-deficient selected design | Block Harmony by default; aliases and unreplicated nesting remain blocked even with the exception below |
 | At least two independent donors/samples per biological level, each occurring in exactly one level | Default block; explicit `nested_biology = "reviewed_embedding_only"` permits a reviewed embedding operation with rank diagnostics and limitations |
-| Processed entry with a supplied foundation | `none` or `manual` reuse only; this increment does not correct its existing basis |
+| Processed entry with a supplied foundation | `none` or `manual` reuse only; the processed entry does not correct its existing basis |
 
 Several donor/sample IDs can each occur only within one treatment. Having more
 than one sample per treatment does not make sample and treatment independently
@@ -292,51 +292,9 @@ open a public listener or submit scheduler jobs.
 
 ## Support and execution status
 
-| Supported | Not established by this increment |
+| Supported | Not established by the runtime contract |
 | --- | --- |
 | Explicit bounded Harmony on a guarded raw-entry design; retained `none` and manual boundary | Automatic covariate/method selection, biological preservation or optimal integration |
 | Saved actual `.80`/`.85` top-50 PC candidates and the declared window denominator | Full-transcriptome variance or universal optimal PC counts |
 | Headless and optional workbench review of one saved strategy; cached-basis revision | Replicated disease/treatment inference or batch-adjusted RNA marker modeling |
 | Exact cell/metadata/expression/PCA preservation and fresh corrected embeddings | Cross-platform bitwise identity or Linux/HPC/user-server execution acceptance |
-
-The following is historical Harmony-increment acceptance, not a fresh check of
-the release candidate. See the [release checklist](RELEASE_CANDIDATE_CHECKLIST.md)
-for current-source results. Mocked adapter tests and separately executed real
-algorithm receipts are distinct evidence.
-
-Acceptance was completed on the user's Mac with the audited private CRAN
-Harmony **2.0.5** installation. These results do not establish compatibility
-with every 2.0.x release:
-
-- `R CMD check --no-manual --ignore-vignettes` finished with `Status: OK`;
-  testthat recorded **6,737 passes**, with zero failures, warnings or skips.
-  All **231 Python tests** passed. The focused mock suite passed **769
-  assertions in 29 tests**.
-- Actual Chrome review passed **3/3 approval cases** and **3/3 read-only
-  completed-project cases**, with no external requests. The UI displays saved
-  diagnostics and output paths. It currently has no route for displaying PNG
-  artifacts; the acceptance checks verified the PNG files and their SHA hashes
-  on disk.
-- The synthetic **480-cell, 700-gene** run computed 55 PCs and used the first
-  50 as the candidate window: `.80` selected **34 PCs**, and `.85` selected
-  **38**. Real Harmony 2.0.5 executed once. Approved QC, the raw PCA basis,
-  RNA counts/data, exact cell IDs and the old annotation were preserved; the
-  new annotation column contained explicit `Unknown`/`low` decisions. The
-  project completed at revision **68**.
-- The public **2,700-cell PBMC** run computed 50 PCs, with candidates **33**
-  for `.80` and **37** for `.85`. Its single batch level blocked Harmony;
-  explicitly choosing `none` allowed completion at revision **38**. This is
-  an applicability guard check, not evidence for multi-sample correction.
-- In the synthetic comparison, the descriptive technical mixing statistic
-  changed from **0.0159375 to 0.0504167**, while biological-group same-label
-  neighbor fraction changed from **0.999479 to 0.999688**. The modest change
-  describes this constructed control; it does not prove biological accuracy
-  or a generally optimal correction.
-- Each project was finalized and verified in a fresh R process, including an
-  idempotent repeat. Model API requests and cost were **zero**. The installed
-  **240-cell example** above was parsed and checked against its installed
-  source hash; its complete scientific execution was not part of this
-  acceptance run.
-
-Linux, HPC and the user's server were not tested. Acceptance read no credentials,
-used no new private user dataset and performed no push, PR creation or merge.

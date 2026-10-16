@@ -7,7 +7,7 @@ default candidate is `keep_all`. The coordinator does not pick a rule to meet a
 retention target or use annotation/planted labels as quality truth.
 
 R inspection, approval and Continue use the same saved state as the optional
-loopback workbench. A browser is not required. This increment does not add
+loopback workbench. A browser is not required. This workflow does not add
 Harmony, automatic donor assignment, ambient-RNA correction, or a claim that
 one candidate is universally appropriate.
 
@@ -68,7 +68,7 @@ Its declaration authorizes that limited operation before the later joint review.
 Changing it requires a new project. Scoring still has its own applicability
 checks; a lower prefilter bound does not make a low-count capture scoreable.
 
-The prior doublet increment scored the whole original input before the approved
+Doublet diagnostics score the whole original input before the approved
 legacy range QC. With MAD disabled this legacy behavior remains. Enabling a
 prefilter changes the fixed scoring cohort and can change predictions, so the
 original-input, prefilter-eligible/pre-score and post-quality-QC scopes are
@@ -265,7 +265,7 @@ example. Headless execution is the primary path.
 
 ## Support and verification record
 
-| Supported in this increment | Outside its scope |
+| Supported | Outside its scope |
 | --- | --- |
 | Explicit QC-group/sample pooling, sparse raw-count statistics, six saved presets, one whole review, exact cell selection and resumable execution | Inferring donor/sample/capture relationships or selecting a biological best rule |
 | Optional minimal prefilter, fixed capture score reference and original-cohort rate provenance | Automatic empty-droplet calling, arbitrary prefilters or quality-driven rate refitting |
@@ -277,53 +277,3 @@ explicit [processed-object entry](ANALYSIS_STRATEGY_SUPPORT.md) can reuse a
 supplied foundation, but does not apply this new MAD/prefilter path to it.
 Leaving `qc_mad = NULL` or `FALSE` preserves the earlier typed range-QC path.
 Bare `qc_mad = TRUE` is insufficient because the QC grouping must be declared.
-
-The following is the historical MAD-increment acceptance, not a fresh check of
-the release candidate. See the [release checklist](RELEASE_CANDIDATE_CHECKLIST.md)
-for the current source and validation status.
-
-Mac acceptance used the private installed package with implementation SHA-256
-`aa9a98e9a9e985a886d659f26424f3ded4ac1b1c5efd931e73c486615b9415af`.
-The final full `R CMD check --no-manual --ignore-vignettes` returned Status OK:
-5,954 assertions passed, with no test failures, warnings or skips. Five missing
-optional Suggests and repository-index access warnings remain in the check log.
-Python regression passed 231/231 with 62 original fixture files unchanged.
-Production-source DOM tests passed MAD 45/45, doublet 39/39, cycle 17/17 and
-strategy 34/34; these DOM tests are separate from real browser execution.
-
-The actual synthetic run had 480 cells, two independently declared QC pools
-crossed with two captures, and four predeclared zero/199-count controls.
-Real capture scoring used the 476 prefilter-eligible cells before MAD quality
-selection. Approved keep_all → conservative_and3 → keep_all retained
-476 → 464 → 476 cells. Seven separate R processes covered this main loop, fresh output verification
-and independent reversal check; restoration reproduced the exact original
-selected IDs and PCA.
-An independent genuine cell/feature/capture encounter-order reversal reproduced
-actual scores/classes/thresholds/seeds, preserved caller RNG and source objects,
-and gave the same exact MAD thresholds and candidate cell sets.
-
-The public PBMC3k run used all 2,700 original called cells, one explicitly
-sourced QC pool and a separately declared loading unit. The predeclared
-high_mt3 software comparison retained 2,607 cells and produced nine clusters,
-with a separately approved new Unknown/low annotation column. Original-cohort
-expected rate remained .0216; no doublet deletion was requested. Real Chrome
-passed 3/3 concentrated review/approval/Continue checks, including a stale
-approval HTTP 409 with unchanged scientific bytes. A new readonly Chrome/server
-session passed 3/3 completion checks with every project byte unchanged. Input,
-prefilter, MAD, cycle and capture-score checkpoints were reused; QC/foundation
-ran twice for the two approved quality choices, while annotation/finalize ran
-once. Source raw counts and old typed annotations were preserved by exact ID.
-
-Earlier failed test attempts are retained in the local handoff: one Seurat
-reordering fixture and two browser-harness expectations were corrected without
-changing the final production implementation or hiding prior evidence.
-External provider requests, key-file reads and new costs were all zero.
-Mock model selection verifies the bounded aggregate interface; these actual
-runs do not claim an AI biological decision or validated cell identities.
-No mouse dataset or Linux/HPC/server was tested. The PBMC single-pool result
-cannot establish sample-aware optimality across biological samples.
-
-Saved projects bind their implementation and foundation versions. Resume with
-the matching frozen namespace; this increment does not silently migrate older
-project fingerprints. Explicit processed-object entry can reuse an existing
-foundation in a new project.

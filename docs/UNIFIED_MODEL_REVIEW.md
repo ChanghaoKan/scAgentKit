@@ -14,25 +14,6 @@ it does not execute analysis or accept cell identities. Approve the complete
 scientific proposal after inspecting its local evidence and impact, then use
 local Continue. You do not need a separate approval click for every cluster.
 
-The validation counts in this guide belong to the prior unified-model increment,
-not a fresh release-candidate check. The later single-service acceptance is
-documented separately in [single-service review](SINGLE_SERVICE_REVIEW.md); use
-the [release checklist](RELEASE_CANDIDATE_CHECKLIST.md) for current-source results.
-
-Mac validation has completed the restartable headless loop and the synthetic
-parent/child browser workflow through a new derived Seurat output. The scientific
-R source passed `R CMD check` with `Status: OK` and 7,224 passing assertions; the
-Python suite passed all 285 tests after the suggestion-response bridge fix.
-No new real provider request or paid API use occurred. The offline mode is an
-explicit simulation, not a live DeepSeek/Grok result. The installed
-[unified-model-review.R](../inst/examples/unified-model-review.R) example
-provides the headless sequence with synthetic inputs and a zero budget. Its
-bundled helper was also run end to end on a new 120-cell synthetic project:
-both request/adoption and separate scientific approval stages completed, with
-PCA, UMAP, `Unknown` labels and two zero-cost simulated ledger entries.
-See the validation scope and remaining gaps below before extending these
-results to another environment or dataset.
-
 ## What remains in the starting R call
 
 The analysis machine still needs an installed compatible package/library and a
@@ -48,14 +29,14 @@ Use `strategy=TRUE` for the existing whole QC/analysis strategy review. An alrea
 processed Seurat may enter at `start_stage="processed"` with the selected layer,
 cluster column and an explicit `processed_reason`; that entry records which
 foundation is reused. Raw counts and processed input have different authority.
-See [First run](FIRST_RUN.md), [strategy support](ANALYSIS_STRATEGY_SUPPORT.md) and
+See [First run](RESEARCHER_PROTOCOL_ZH.md), [strategy support](ANALYSIS_STRATEGY_SUPPORT.md) and
 [scoped child review](SUBCLUSTER_REVIEW.md) for their supported computations.
 
 Choose the provider/model, generation settings, budget, aggregate-transfer policy
 and any required diagnostic inputs **at initialization**. The saved provider
 configuration is immutable. Model keys stay in the analysis machine's environment
 or user secret mechanism, and a custom callback stays in R memory. See the
-[environment-based provider example](FIRST_RUN.md#connect-a-built-in-provider-through-the-r-environment).
+[environment-based provider example](RESEARCHER_PROTOCOL_ZH.md).
 The built-in factories read `DEEPSEEK_API_KEY` or `XAI_API_KEY` at dispatch; no key
 belongs in context, RDS, logs, browser fields or URLs.
 
@@ -201,8 +182,8 @@ after that parent completes. The same process handles its registered child
 reviews and the parent's derived-output receipts; a parent-to-child switch no
 longer requires stopping and relaunching the service. The completed source
 parent becomes read-only in this workspace service. See
-[single-service review](SINGLE_SERVICE_REVIEW.md) for project selection,
-per-tab binding, startup and this lifecycle's separate validation status.
+[single-service review](../workbench/README.md) for project selection,
+per-tab binding, startup and remote-use limits.
 
 Child creation defaults to `inherit_model=FALSE`: the child has no inherited
 model authority and remains usable with manual typed proposals. In R, explicitly
@@ -237,47 +218,10 @@ cell-ID application and undo rules remain in force; a parent's cluster number
 is not a child cell ID, and adopting a child suggestion does not rewrite the
 completed parent.
 
-## Evidence and remaining gaps
+## Scope
 
-The model sees the saved aggregate evidence and declared context, proposes typed
-parameters or annotation rows, and exposes rationale and uncertainty for review.
-This does not establish biological correctness, calibrated confidence or a
-universal QC/PC/resolution choice. Missing top markers are not absent expression;
-database coverage scores are not probabilities. Explicit label relationships
-and local reference provenance retain their existing limits.
-
-Free-text study context can be supplied from R at initialization. This increment
-does not implement a separate conversational notes editor, a gene-by-gene
-explanation chat, new model-driven biological verification, automatic ontology
-repair or arbitrary project loading. The single-service guide distinguishes
-existing study background, scientific rationale and saved gene evidence from
-those unsupported editors/chats. Browser and headless validation are software
-checks of the paths below; the prior branch's Linux/HPC checks do not validate
-these new model workers. The historical browser checks below used separate
-service launches and must not be cited as validation of the later single-service
-lifecycle.
-
-| Executed validation | Scope and result |
-| --- | --- |
-| Mac scientific package check | Frozen scientific R source passed `R CMD check`: `Status: OK`, 7,224 passing assertions and no test failures, warnings or skips. Optional unavailable packages were not exercised. The later bridge fix changes suggestion IPC serialization, not scientific R code. |
-| Mac Python regression | After the bridge fix, all 285 tests passed; the existing read-only fixture files were unchanged. A separate pure IPC check covers bounded suggestion responses and rejects mismatched project/input/revision descriptors. |
-| Restartable headless synthetic project | Fresh R processes completed strategy and annotation preview/approval/request/adoption, separate scientific approval, local Continue and final output. Repeated requests used cached simulated responses. Verification preserved source identity, exact retained cell IDs, old metadata and annotations, and single execution of completed stages. No browser was needed. |
-| Native Chrome synthetic parent and child | Both completed through the shared component, with four exact payload approvals, four whole scientific approvals, child creation and application to a derived output. The source parent remained unchanged during child work. The first harness reached the successful apply response, then read the wrong receipt field; a fresh read-only native Chrome follow-up verified the saved active application and derived output. The failed harness receipt is retained alongside that follow-up. |
-| Public PBMC3k native Chrome | Completed the 2,700-cell parent, 1,139-cell child and derived output across three native Chrome sessions: 18 observed button clicks, four exact payload approvals, four whole scientific approvals and eight saved successful jobs. All original parent files remained unchanged during child work. The first session stopped after a short evidence-read timeout before any child request; the bounded-read correction allowed child review to resume. A later acceptance-session limit closed Chrome while an approved local Continue completed durably; a fresh session verified that saved completion and applied the child without another model request or repeated computation. Earlier failed receipts, including the oversized adoption IPC response, remain preserved. Parent object verification passed 22 checks; fresh R verification of the derived object passed all 14 checks, covering exact parent counts/metadata/old annotations and object slots, scoped new columns, child PCA/UMAP and two zero-cost simulated ledger entries. |
-
-All model responses in these executed workflows are explicitly simulated.
-Strategy simulation replays an already supplied manual typed plan; annotation
-simulation proposes `Unknown`. Local normalization, PCA, neighbors, clustering,
-UMAP, markers and reference evidence really execute, but these runs do not test
-a live model's scientific choices or establish biological annotation accuracy.
-Paid API requests and incremental API cost are both zero.
-
-Linux/HPC validation for the model-worker increment is pending. Its recorded
-probe had no visible VS Code window to target and exposed no direct Linux
-executor. No new SSH connection, remote command or environment change was
-attempted. A later single-service probe found an existing Linux window;
-that observation is not a live-executor check. See the
-[single-service acceptance status](SINGLE_SERVICE_REVIEW.md#acceptance-evidence)
-for the current scope. Windows and live-provider browser dispatch also remain
-untested. These are remaining validation boundaries, not assertions that the
-user or server is offline.
+The request worker supports the immutable configured provider, exact aggregate
+consent, cached typed candidates and explicit adoption. It does not provide
+general literature chat, automatic ontology resolution or biological validation.
+Custom in-memory callbacks remain available through R. See the
+[workbench guide](../workbench/README.md) for service and remote-use limits.

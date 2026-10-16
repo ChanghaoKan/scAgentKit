@@ -11,43 +11,13 @@ identity.
 The optional helper [cm2-evidence-review.R](../inst/examples/cm2-evidence-review.R)
 uses the same R interfaces. Its CLI uses synthetic data only, no provider and a
 zero budget. Installing this checkout and selecting its R library is required.
-The validation below belongs to the historical CellMarker-evidence increment,
-not a fresh release-candidate check. See the
-[release checklist](RELEASE_CANDIDATE_CHECKLIST.md) for current-source results.
-
-Mac validation completed: `R CMD check --no-manual --ignore-vignettes` reported
-`Status: OK`, with 2569 passing checks and no failures, warnings or skipped tests;
-seven unavailable optional Suggests were reported as INFO. The full suite includes
-107 focused core and 28 integration assertions. The unchanged Python production
-hash retains the earlier 220 passing tests with zero skips; 33 offline UI checks
-also passed.
-
-Actual Chrome and R validation passed five cases on the existing public PBMC
-processed object: 2638 cells and nine clusters. Its base analysis was reused
-without rerunning it, and markers were computed once. Nine historical DeepSeek
-independent response JSON files were imported readonly; no new model request was
-made. The current whole proposal retained `Unknown` in fresh output columns:
-this validates software behavior, not cell identities. Changing database top-N
-from five to three invalidated the old approval, which was actually rejected.
-Whole-plan decisions, hallucinated-gene rejection, CSRF protection, local Continue,
-fresh-R/server-restart byte-identical no-ops and 45 unchanged source-file hashes
-were verified. New API calls and cost were zero. The report is
-`evidence/cm2-evidence-browser/public-pbmc-browser/joint-evidence-browser-report.json`
-(`passed=true`); final Seurat SHA256 is
-`88456cd527a6744d9e2fddbd5141482925dd9bf286f2485e90ec78606af0cfd2`.
-
-The first check failure is retained: a legacy test expected the database-mode
-field to say `independent`. The test was corrected to distinguish
-`local_marker_reference` from AI prompt mode and gained two assertions. No new
-Linux/HPC or Windows validation is claimed for this increment.
-
 ## Existing processed study: one starting call
 
 Set nonsecret paths to your already processed Seurat RDS, a durable **new** project
 directory and an approved local marker-reference CSV. The paths below are read
 only when you run the example. They do not download a database or contact a
 provider. For raw counts, use the same reference arguments with
-`start_stage="qc"` and the [first-run QC flow](FIRST_RUN.md).
+`start_stage="qc"` and the [first-run QC flow](RESEARCHER_PROTOCOL_ZH.md).
 
 ```r
 library(scAgentKit)
@@ -157,7 +127,7 @@ model an independent biological validation. `ai_mode="guided"` includes local
 database candidates in the model input, so agreement depends on that database.
 A manual proposal remains manual in either mode. Continue never requests a
 model; a new provider request requires explicit R resume and the existing exact
-aggregate-transfer approval and budget gates. See [FIRST_RUN.md](FIRST_RUN.md)
+aggregate-transfer approval and budget gates. See [researcher guide](RESEARCHER_PROTOCOL_ZH.md)
 for environment-based provider configuration. No paid call is needed here.
 
 ## Optional historical model evidence
@@ -199,7 +169,7 @@ The located public PBMC history is a **2638-cell, 9-cluster** run from 2026-10-0
 Its DeepSeek/Grok guided and independent files include 33 `http_success`, one
 request failure and two invalid-schema responses. It cannot be applied by cluster
 number to the later **2527-cell, 6-cluster** project. These are historical responses,
-not new calls in this increment; neither HTTP success nor a model label establishes
+saved comparisons rather than new calls; neither HTTP success nor a model label establishes
 validated cell identity.
 
 ## Replace a reference before annotation writeback
@@ -291,7 +261,7 @@ public download access is not treated as a database redistribution license. The
 reference stays local and is not bundled into this repository or published as a
 database dump. This local coverage matcher is not the CellMarker ACT algorithm,
 and ACT, automatic ontology mapping, automatic symbol correction and biological
-accuracy validation are outside this increment.
+accuracy validation are outside this workflow.
 
 ## Synthetic CLI: separate R processes, no API
 

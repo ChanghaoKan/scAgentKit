@@ -111,15 +111,12 @@ cell-cycle scores or a high doublet score alone do not authorize removal.
 
 The strict adapter accepts exactly two declared combinations: scDblFinder
 **1.26.7** with a valid xgboost version **>=3.1**, or scDblFinder **1.22.0** with
-exactly xgboost **1.7.11.1**. The latter is the additional audited existing Linux
-pair; another legacy version/backend is rejected. The earlier modern Mac
-dependency combination included SingleCellExperiment 1.34.0, BiocParallel 1.46.0
-and xgboost 3.2.1.1; that historical combination is not a requirement to upgrade
-the older Linux stack. Unexpected version or function shape fails closed.
+exactly xgboost **1.7.11.1**. The latter is the additional accepted pair; another legacy version/backend is rejected.
+Unexpected version or function shape fails closed.
 Runtime versions, function fingerprints and classifier audits are recorded in
 evidence. Use a selected private R library without modifying another active
-library. See [Linux runtime support](LINUX_RUNTIME_SUPPORT.md) for official
-sources, completed Linux v3 full regression and bounded real workflows.
+library. See [runtime support](LINUX_RUNTIME_SUPPORT.md) for version and deployment
+requirements.
 
 The strict function fingerprint hashes a named representation containing every
 formal and the complete body, each rendered by `deparse(..., width.cutoff = 500L)`
@@ -339,85 +336,8 @@ written into the project, browser, exported objects or logs.
 A configured workbench binds to loopback and can be reached by an explicit SSH
 tunnel. It does not open a public listener, change authentication/firewall rules,
 automatically submit scheduler jobs or require a browser to keep R running.
-See [SERVER_FIRST.md](SERVER_FIRST.md) for the existing launch/recovery workflow.
-This doublet increment did not add Harmony or subclustering. The current
+See [researcher guide](RESEARCHER_PROTOCOL_ZH.md) for the existing launch/recovery workflow.
+The current
 separately reviewed contracts are in [Harmony/PC review](HARMONY_PC_REVIEW.md)
 and [subcluster review](SUBCLUSTER_REVIEW.md); batch or child analysis is never
 inferred from enabling doublet diagnostics.
-
-## Current bounded Linux runtime acceptance
-
-The accepted scDblFinder 1.22.0/xgboost 1.7.11.1 pair completed real classifier
-execution in three new projects and fresh R verification: public PBMC
-**2700 → 2511** cells, and two independent synthetic projects each
-**440 → 438** cells (two literal captures, each 220 → 219). Each capture
-completed three successful training operations and three predictions. Exact
-cell/count/metadata joins, old annotation columns and durable fresh-resume
-files were preserved; approved filtering did not refit the saved diagnostics.
-The first helper failure compared unsorted source features with intentionally
-canonical diagnostic ordering; it remains recorded alongside the corrected
-helper run. No production change was needed for that helper correction.
-
-Linux v2 full check completed with **7379 PASS, 0 FAIL, 0 WARN, 2 SKIP** and
-**Status: 2 NOTEs**. The two genuine checks requiring the modern 1.26.7
-runtime were skipped on this legacy-pair Linux runtime. V3 changes only
-packaging exclusion; its actual final Linux check is **Status OK**, exit 0,
-**7379 PASS / 0 FAIL / 0 WARN / 2 SKIP** in 1325.37 seconds. The same
-modern-runtime checks are skipped, while the genuine legacy test ran. All
-52 test files and the standard runner match the checked source. These outcomes
-establish bounded execution/integrity, not doublet truth or calibrated
-probabilities. This increment used no live model request and cost US$0.
-See [runtime receipts and limits](LINUX_RUNTIME_SUPPORT.md).
-
-## Prior doublet-increment acceptance
-
-These are historical receipts for the named runtime, not new checks against the
-prior `bd8f799` release candidate. See the
-[release checklist](RELEASE_CANDIDATE_CHECKLIST.md) for those named receipts and
-[current Linux runtime support](LINUX_RUNTIME_SUPPORT.md) for the additional
-strict pair, completed bounded Linux acceptance and final Linux v3 full check.
-
-The preceding doublet increment's Mac execution acceptance passed for the frozen runtime fingerprint
-`307ca5a303b6546f0b0f2476ae2b60856b4b2205f31afd2460bd555ca1cebf4e`.
-
-- R package check reported `Status: OK` in 235.15 seconds: 5141 passing
-  assertions, zero failures, test warnings or skips. Python passed 231 tests
-  with zero skips; DOM suites passed 39, 17 and 34 checks. Five missing optional
-  Suggests (`harmony`, `clustree`, `magick`, `ontologyIndex`, `SeuratData`) were
-  recorded as information. Repository-index network-warning text was retained;
-  no installation fallback, manual or vignette validation is claimed.
-- The final 440-cell, two-capture synthetic project completed at revision 83
-  with two clusters. Each capture had three genuine fits and three predictions;
-  21 plus 20 predicted doublets gave 41 total. Reviewed keep → remove → keep
-  produced 440 → 399 → 440 cells. Raw counts, legacy factor values/levels and
-  prior annotations were preserved, and the PCA basis was restored. Actual
-  missing-dependency repair resumed in a fresh R process with QC reuse;
-  feature/cell reordering preserved scores/classes bitwise and caller RNG was
-  restored. Planted controls remain software checks, not biological truth.
-- The unchanged public human PBMC source had 32738 features and 2700 cells.
-  One explicitly declared standard-10x full called-cell capture used nominal
-  expected rate `.0216` and uncertainty `.02`. There were 90 input predictions:
-  84 survived the explicitly supplied historical DeepSeek QC proposal's 2511
-  cells and six overlapped QC exclusions. Actual Chrome whole-JSON approval
-  removed those 84; stale review returned HTTP 409 without mutation. The fixed
-  local R job succeeded at annotation configuration, revision 51. Manual
-  Unknown/low annotations completed 2427 cells and seven clusters at revision
-  60. Finalization passed 22 checks and fresh readonly R verification 21.
-  QC/evidence stages executed once, selection/affected downstream stages twice,
-  and annotation application/finalization once.
-- Actual Chrome strategy-review and readonly-finish suites each passed 3/3,
-  with zero page errors, external requests or provider calls. Readonly finish
-  preserved project bytes and 45 protected prior files. Earlier public-v1
-  receipts retain two passes and one terminal harness failure despite R-job
-  success, plus the repeated-QC numeric-storage hash bug. Final acceptance
-  used a fresh public-v2 project; old hashes were not migrated.
-
-Task-workspace receipts are retained under `evidence/doublet-final`,
-`evidence/doublet-synthetic-final`, and `evidence/doublet-public-pbmc`
-(`v2-*` receipts, `browser-v2`, `browser-finish-v2`). This increment made zero
-model API calls or key-file reads and incurred US$0 provider cost. Mouse
-scientific acceptance remains **0/1**. Linux, HPC and user-server environments
-were not tested. These results establish bounded software execution and review
-behavior, not automatic biological accuracy. That acceptance did not include
-MAD, Harmony or subcluster execution. Current MAD scope and its separate
-verification record are documented in [MAD_REVIEW.md](MAD_REVIEW.md).

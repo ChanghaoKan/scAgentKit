@@ -4,7 +4,7 @@
 
 建议先用第 3 节的公开小数据、零费用示例练习完整流程，再接入自己的数据。已有处理好的 Seurat 对象可从第 5 节进入，明确复用已有基础计算。需要网页时，按第 8 节启动一个只绑定本机的服务。
 
-本文面向包版本 `0.5.0.9000` 的开发版本；科学／UI 候选起点为 `f3c43d8`，本次另加入研究者文档及公开小数据示例。发布后的安装入口是公开仓库的 `main`，不是一个稳定 release tag；复现时记录你实际安装的完整 commit SHA。程序成功运行、模型与数据库意见一致，都不等于阈值最优或细胞身份已经得到生物学验证。
+当前包版本为 `0.5.0.9000`，安装入口为公开仓库的 `main` 开发分支。复现时记录实际安装的完整 commit SHA。程序运行完成、模型与数据库意见一致，都不等于阈值最优或细胞身份已经得到生物学验证。
 
 ## 1. 先理解四个动作
 
@@ -21,14 +21,14 @@
 
 ## 2. 安装与版本确认
 
-### 2.1 安装这份候选，而不是旧 tag
+### 2.1 安装当前开发版本
 
-公开仓库地址是 [ChanghaoKan/scAgentKit](https://github.com/ChanghaoKan/scAgentKit)。本协议随新的 `main` 开发版交付；旧版本或旧 tag 不一定包含本文的协调器、网页和子群功能。安装后核对 `0.5.0.9000` 和下列 exports，而不是仅凭安装成功判断功能齐全。
+公开仓库地址是 [ChanghaoKan/scAgentKit](https://github.com/ChanghaoKan/scAgentKit)。本协议描述当前 `main` 开发版的协调器、网页和子群功能。安装后核对 `0.5.0.9000` 和下列 exports，而不是仅凭安装成功判断功能齐全。
 
-在将运行分析的 R 环境中使用独立 library。公开 `main` 合入本次开发版后，下面是基础安装入口，会联系 CRAN／GitHub；只安装基础 Depends/Imports，不启用可选算法：
+在将运行分析的 R 环境中使用独立 library。下面是基础安装入口，会联系 CRAN／GitHub；只安装基础 Depends/Imports，不启用可选算法：
 
 ```r
-private_lib <- path.expand("~/R/scagentkit-preview-library")
+private_lib <- path.expand("~/R/scagentkit-library")
 dir.create(private_lib, recursive = TRUE, showWarnings = FALSE)
 .libPaths(c(private_lib, .libPaths()))
 if (!requireNamespace("remotes", quietly = TRUE))
@@ -39,7 +39,7 @@ remotes::install_github("ChanghaoKan/scAgentKit@main", lib = private_lib,
 library(scAgentKit, lib.loc = private_lib)
 ```
 
-`main` 会变化，稳定复现应将 `main` 替换成自己已经核实的完整 commit SHA。此命令不是依赖锁文件，也不保证 CRAN 未来版本与所有可选方法兼容；本轮没有重新执行网络安装。已经在私有 library 准备好依赖的环境完成了本地 `R CMD INSTALL` 和 installed helper source 验证，但这与全新联网依赖安装不同。
+`main` 会变化，稳定复现应将 `main` 替换成自己已经核实的完整 commit SHA。此命令不是依赖锁文件，也不保证 CRAN 未来版本与所有可选方法兼容。
 
 HPC 已有维护者提供的受支持依赖环境时，可选本地 checkout 安装：
 
@@ -53,7 +53,7 @@ R_LIBS_USER="$sc_r_library" R CMD INSTALL --library="$sc_r_library" .
 
 该命令不下载或修复依赖。实际版本和可选运行时 guards 仍须核对，R 自带 methods 无需另装。
 
-不要为安装候选而更新其他正在运行项目的全局 library。恢复旧项目时，继续使用该项目绑定的实现和依赖环境；升级包后旧审批可能因实现指纹变化被拒绝，不能直接修改状态文件绕过检查。
+不要为安装新版本而更新其他正在运行项目的全局 library。恢复旧项目时，继续使用该项目绑定的实现和依赖环境；升级包后旧审批可能因实现指纹变化被拒绝，不能直接修改状态文件绕过检查。
 
 ### 2.2 最低声明与已测环境是两件事
 
@@ -61,20 +61,7 @@ R_LIBS_USER="$sc_r_library" R CMD INSTALL --library="$sc_r_library" .
 
 基础流程不要求安装所有 Suggests。网页另需 Python 3 和此 checkout 的 `workbench` 源码；安装 R 包本身不代表网页服务已经安装到系统。Harmony、doublet、cell-cycle 等功能有各自的参数、适用性和依赖约束，见第 7 节。
 
-本轮在 Mac 实际加载并记录的版本如下；这是一个观察到的工作环境，不是这些依赖全部版本组合的验证矩阵：
-
-| 项目 | 本轮 Mac 实测 |
-| --- | --- |
-| R | 4.6.1 |
-| scAgentKit／agentomicsCore | 0.5.0.9000／0.1.1 |
-| Seurat／SeuratObject | 5.6.0／5.4.0 |
-| Matrix／jsonlite／digest | 1.7.5／2.0.0／0.6.39 |
-| irlba／uwot | 2.4.1／0.2.5 |
-| Python（本机 `python3 --version`） | 3.9.6 |
-
-实际加载的全部 `sc_run`／`.sc_run_` 函数 formals 和 body 与 `f3c43d8` 源码核对一致。该检查和以下小数据验证没有安装依赖、读取密钥或请求真实模型。
-
-历史上另有一个获授权 Linux 环境完成过指定源码的完整检查及受限真实算法验证，详情见 [Linux 运行范围](LINUX_RUNTIME_SUPPORT.md)。该记录绑定其源码与运行时，不代表本候选已在任意 Linux、用户的 HPC、共享文件系统或 scheduler 上验证。本文的服务器和 scheduler 命令是模板，不自动登录或提交任务。
+可选算法接受的运行时组合见 [运行环境支持](LINUX_RUNTIME_SUPPORT.md)。包的最低声明不是所有依赖组合的测试矩阵；实际部署仍应核对指定提交的 CI 结果及自己的环境。服务器和 scheduler 命令是模板，需要你已有的受支持运行环境。
 
 在将运行分析的 R 进程中先确认：
 
@@ -130,7 +117,7 @@ table(final$protocol_annotation, useNA = "ifany")
 
 这里 context 为 `species="human"`、`tissue="PBMC"`、`columns=list(sample="orig.ident")`，研究目标明确为离线流程练习。`orig.ident="SeuratProject"` 仅是教程对象的项目标签；donor/capture 未知，不将其推断为真实 donor 或完整 capture。mock 读取真实 aggregate evidence，但只回放显式控制：`nCount >= 1`、LogNormalize/10000、100 HVGs、10 computed PCs、固定 5 PCs、resolution 0.4、诊断分辨率 0.2/0.6、UMAP 10 neighbors、seed 20261006、batch none。该控制没有搜索或优化阈值，注释全部 Unknown/low。
 
-本轮 Mac 真实验证完成了 strategy review → exact approve → annotation review → fresh approve → complete：80 cells／230 genes 的源对象、literal cell 顺序、raw counts 和旧注释保持不变；新列为 `protocol_annotation`。两次本地 callback 对应两个 ledger entries，费用／hold 为 US$0；完成后重复 resume 没有重算或再次 callback。这验证软件闭环，不验证 QC 最优、注释正确、真实 provider 或 HPC 行为。
+示例完成后新列为 `protocol_annotation`；它演示保存、审批和恢复，不提供真实细胞身份或研究参数结论。
 
 可以在任意 review 停点结束 R。另一个 R 进程重新 `library()`、source 同一示例、定义 `mock <- make_researcher_pbmc_mock()`，再 inspect 和决定；已有项目不要再次调用 start。需要新回调时 `researcher_pbmc_resume(project_dir, chat_fn=mock)` 将同一 mock 重新附到内存。更换项目目录则创建一个独立练习，不能拿另一个项目的 snapshot 审批。
 
@@ -377,7 +364,7 @@ budget 是**每个项目**的费用上限机制。每次请求先预留 `reserva
 | Doublet | 明确 droplet/raw-count/capture 适用性的 scDblFinder 评分和联合 QC 审批 | 每个 capture、率／阈值适用依据、审计成功；分数非已校准双细胞概率 |
 | Harmony | 明确参数、技术变量、可识别研究设计和整份审批下的 embedding 校正 | 不从 Ca/Ctrl 自动推 batch；全混杂／嵌套别名／秩亏设计阻止校正；不保证生物信号保留 |
 
-在这个候选中 `batch$method="manual"` 是明确人工边界，不是执行任意用户算法。默认 `none` 保留未校正基础分析。Harmony 保留 RNA counts/data 和未整合 PCA，影响后续 embedding/邻居；通过设计检查也不说明校正必要或有益。
+在当前实现中 `batch$method="manual"` 是明确人工边界，不是执行任意用户算法。默认 `none` 保留未校正基础分析。Harmony 保留 RNA counts/data 和未整合 PCA，影响后续 embedding/邻居；通过设计检查也不说明校正必要或有益。
 
 doublet 的受审运行时组合是 scDblFinder `1.26.7` + xgboost `>=3.1`，以及 scDblFinder `1.22.0` + xgboost `1.7.11.1`；还要符合规范函数身份与每 capture 审计。Harmony 的已审执行版本为 `2.0.5`。包已安装、方法在 allowlist 内、提案 ready、真实算法已 executed 是不同状态；未知版本或修改过的 namespace 不能靠跳过 guard 获得支持。
 
@@ -404,7 +391,7 @@ sc_run_open("/durable/path/to/project", checkout = "/path/to/scAgentKit")
 
 ### 8.1 只绑定 loopback
 
-在分析机器准备好同一 R library、固定 Rscript 和 Python 3。网页代码来自源码 checkout；安装 R 包不会自动给你这个目录。按第 2 节版本说明，在公开 `main` 合入本开发版后取得源码并记录实际 ref：
+在分析机器准备好同一 R library、固定 Rscript 和 Python 3。网页代码来自源码 checkout；安装 R 包不会自动给你这个目录。按第 2 节版本说明取得源码并记录实际 ref：
 
 ```sh
 git clone https://github.com/ChanghaoKan/scAgentKit.git
@@ -429,7 +416,7 @@ python3 -B workbench/server.py \
 
 子群工作区另加 `--subcluster-workspace /absolute/path/to/existing-separate-workspace`；目录须先存在，不能嵌套或与父项目重叠。浏览器只使用已配置父项目和注册 child，不能选任意路径、上传 source code、提供密钥、改变 firewall 或提交 scheduler。
 
-当前网页支持完整科学提案复核、允许字段编辑、exact 模型预览／请求／采纳、已批准本地继续、子群创建及受限背景修正、exact-ID 新对象 apply/undo 和保存结果。它不是任意 R 工作流的可视化编辑器；非 UI 接入的边界仍在 R 中处理。当前紧凑样式为候选界面，布局不改变审批或计算合同。
+当前网页支持完整科学提案复核、允许字段编辑、exact 模型预览／请求／采纳、已批准本地继续、子群创建及受限背景修正、exact-ID 新对象 apply/undo 和保存结果。它不是任意 R 工作流的可视化编辑器；非 UI 接入的边界仍在 R 中处理。网页布局不改变审批或计算合同。
 
 ### 8.2 SSH 仅做隧道，不搬数据
 
@@ -504,7 +491,7 @@ score 是 unique marker hits／unique reference genes 的覆盖分数，不是�
 
 `ai_mode="independent"` 表示模型输入不含数据库候选；`guided` 则包含这些候选。联合 review 并列展示数据库、当前 AI／人工建议、可选历史响应和已声明的命名／层级关系；同意或冲突是审阅信号，不能相乘变成可信概率，也不能把 independent 输入模式误称为所有证据彼此统计独立。
 
-`annot_query_cellmarker(species="human"或"mouse", ...)` 是另一个**显式网络动作**，首次尝试下载并缓存完整 XLSX，需 readxl；它的 tissue 下载筛选为 substring，与运行时 reference exact scope 匹配不同。普通 `sc_run(reference=...)` 不替你自动下载 CellMarker 数据。本指南不执行下载，也不随包提供历史本地 human-blood 验证 CSV；本轮没有验证当前下载站点可用。
+`annot_query_cellmarker(species="human"或"mouse", ...)` 是另一个**显式网络动作**，首次尝试下载并缓存完整 XLSX，需 readxl；它的 tissue 下载筛选为 substring，与运行时 reference exact scope 匹配不同。普通 `sc_run(reference=...)` 不替你自动下载 CellMarker 数据。本指南不随包提供数据库导出文件；下载可用性和使用许可需在实际使用时核对。
 
 需要记录来源 URL、下载日期、文件 hash、species/tissue、版本、使用的 symbol 字段及变换。CellMarker 2.0 论文的许可不能自动当作数据库再发布授权；现有开发审计未确认数据库单独许可，分享参考前需自行核实。更多 provenance 字段和完整范例见 [CM2 证据复核](CM2_EVIDENCE_REVIEW.md)。
 

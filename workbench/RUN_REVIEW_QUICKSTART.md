@@ -3,12 +3,10 @@
 Use `/workbench` for the complete navigable saved-project view on this same
 service: overview, QC, strategy, analysis, annotation, children, outputs and
 history. Its saved UMAP/markers and historical records are read-only. The
-[saved-project guide](../docs/UNIFIED_PROJECT_WORKBENCH.md) covers startup and
+[saved-project guide](README.md) covers startup and
 limits; `/review` below remains the explicit current-decision interface.
 
-The optional workbench connects to an existing `sc_run()` project directory. R remains the authority for proposals, decisions, fingerprints, locks, execution and undo. The browser submits typed decisions and offers **Continue** for the next supported local computation. It cannot submit R code, supply credentials or read the expression matrix. Starting a project remains an explicit R operation. This guide describes the local Continue path; separately enabled [unified model review](../docs/UNIFIED_MODEL_REVIEW.md) adds exact aggregate preview, request consent and an explicit configured-provider request action. Continue itself never dispatches a model. For one parent and its registered children, see [single-service review](../docs/SINGLE_SERVICE_REVIEW.md).
-
-The main Continue workflow was exercised on the user's Mac with real Chrome and the fixed R worker using synthetic and public PBMC inputs. The PBMC run retained 2,527 of 2,700 cells and finalized all labels as manual `Unknown`; the synthetic run had one cluster and no supplied markers and was also finalized as `Unknown`. Validation covered actual approvals and local computation, an explicit R annotation-configuration step, browser/HTTP disconnect and restart recovery, duplicate-job reuse, and a separate explicit local-failure retry. These are software-workflow checks, not validated cell identities. No external API request was made and API cost was US$0. Earlier Linux headless results cover a different path; this new Continue has not been validated on Linux, HPC or Windows.
+The optional workbench connects to an existing `sc_run()` project directory. R remains the authority for proposals, decisions, fingerprints, locks, execution and undo. The browser submits typed decisions and offers **Continue** for the next supported local computation. It cannot submit R code, supply credentials or read the expression matrix. Starting a project remains an explicit R operation. This guide describes the local Continue path; separately enabled [unified model review](../docs/UNIFIED_MODEL_REVIEW.md) adds exact aggregate preview, request consent and an explicit configured-provider request action. Continue itself never dispatches a model. For one parent and its registered children, see [single-service review](README.md).
 
 ## Start a review session
 
@@ -98,14 +96,14 @@ Local task receipts, configuration and owner/status records are stored under the
 
 Closing or refreshing the browser, losing the tunnel, or restarting the HTTP service does not by itself cancel the detached local worker or remove saved checkpoints. Reconnect the service to the same project and inspect its saved job/run status before acting again. An unknown response is not permission to start another worker. Do not remove a lock to bypass an active computation.
 
-Terminating R or losing the compute node is a different boundary: a completed checkpoint is reusable, but an interrupted uncommitted stage may need an explicit local-compute retry and owner-verified lock recovery. Continue does not automatically retry a failed stage or replay a provider request. The filesystem and shared-node limitations in [SERVER_FIRST.md](../docs/SERVER_FIRST.md) still apply.
+Terminating R or losing the compute node is a different boundary: a completed checkpoint is reusable, but an interrupted uncommitted stage may need an explicit local-compute retry and owner-verified lock recovery. Continue does not automatically retry a failed stage or replay a provider request. The filesystem and shared-node limitations in [the researcher guide](../docs/RESEARCHER_PROTOCOL_ZH.md) still apply.
 
 The HTTP service launches local computation on its own machine; it is not a scheduler client. Start it on an appropriate machine or allocated compute node. It does not submit a job, allocate resources or establish that it is safe to compute on a login node.
 
 ## Undo an executed annotation decision
 
 The following annotation undo applies to a standalone review service. In the
-[single-service parent/child mode](../docs/SINGLE_SERVICE_REVIEW.md), the completed
+[single-service parent/child mode](README.md), the completed
 source parent is read-only, including parent annotation undo. A child's versioned
 derived application has its separate explicit apply/undo interface.
 

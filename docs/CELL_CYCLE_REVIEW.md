@@ -9,13 +9,8 @@ same approval. The default is `none`. Diagnostic scoring
 does not authorize regression or remove cells; approved QC ranges remain the
 authority for cell selection. Annotation still has its separate later review.
 
-The previous strategy baseline is documented in
-[ANALYSIS_STRATEGY_SUPPORT.md](ANALYSIS_STRATEGY_SUPPORT.md). This increment adds
-only the cycle operations described here. At the time of this increment,
-Harmony, doublet removal and subclustering were unsupported; they were added
-later under their own review contracts (HARMONY_PC_REVIEW.md, DOUBLET_REVIEW.md,
-SUBCLUSTER_REVIEW.md). A legacy exported
-helper's existence does not establish coordinator support.
+See [analysis strategy](ANALYSIS_STRATEGY_SUPPORT.md) for the surrounding plan,
+and the [documentation index](README.md) for the other optional methods.
 
 ## Main entry and declared gene sets
 
@@ -274,78 +269,3 @@ only `cycle$method = "none"`, with the existing null execution settings and a
 nonempty `processed_reason`. Fresh score columns do not imply that PCA or
 clustering were recomputed. Regression of a processed foundation requires a
 new raw strategy project.
-
-## Validation record and limits
-
-These are historical cell-cycle receipts for the versions named below, not new
-release-candidate checks. See the [release checklist](RELEASE_CANDIDATE_CHECKLIST.md)
-for current-source validation.
-
-Validation ran on the user's Mac with R 4.6.1, Seurat 5.5.1 and SeuratObject
-5.4.0. The focused suite passed 94 tests and 1924 assertions with zero failures,
-warnings or skips. The final `R CMD check --no-manual --ignore-vignettes` exited
-0 with `Status: OK` in 169.102 seconds, and passed 4103 assertions with zero
-failures, warnings or skips. Its receipt is
-`evidence/cycle-delivery-check/check-result.json`. The earlier 4092-assertion
-check's code NOTE about `capture.output` was resolved by qualification as
-`utils::capture.output`.
-The Python suite passed all 231 tests and preserved all 62 protected files.
-Current DOM checks passed 17 cycle checks and 34 strategy checks.
-
-The bundled CLI completed none, standard full and advanced difference reviews,
-computation and manual Unknown annotation across 24 fresh R processes, with no
-provider call. Its receipt is
-`evidence/cycle-synthetic-cli/cli-result.json` in the task workspace.
-
-The public PBMC workflow used the real sparse 32738-feature, 2700-cell input.
-Its original RDS bytes remained unchanged, with SHA256
-`aae453d43fe6a31c8ffe758f8ab59ce6c6074edca85fe1037d661e56fd633610`.
-Twenty-one feature IDs were explicitly mapped on a copy, with collision checks,
-before input. All 2700 cells had available fixed pre-QC scores. Scoring
-explicitly used `nbin = 12` and `ctrl = 5`; these declared settings do
-not claim Seurat's default control count or biologically adequate coverage.
-The final run completed at revision 73 with 2540 retained cells in seven clusters and reviewed
-Unknown labels at low confidence. The literal retained sparse counts, feature
-order, cell IDs and score attachments were verified in a fresh R process with
-21 passing read-only checks. The receipt is
-`evidence/cycle-public-pbmc/verify-receipt.json` in the task workspace.
-
-The three cycle choices genuinely executed scaling/PCA, neighbors/UMAP,
-clustering and markers three times. The full-input diagnostic reference,
-approved QC and normalization/HVG checkpoint each ran once and were reused.
-This verifies local execution and dependency reuse; it does not establish which
-cycle choice serves a biological study.
-
-Two actual Chrome scenarios passed. In a third, the actual difference R worker
-completed successfully, but the browser's terminal DOM wait failed; that failed
-attempt remains retained. A separate read-only Chrome finish then passed all
-three checks of the complete public project at revision 73, preserving every
-project byte and creating no new decisions or scientific computation. Its
-receipt is
-`evidence/cycle-public-pbmc/browser-finish/cycle-finish-browser-report.json`.
-This finish verifies the completed display; it does not erase the earlier
-browser failure or turn that attempt into a complete pass.
-
-The final checked runtime fingerprint is
-`b5c0c313a62ddaa0688302a3f4dec8068e869f83d4f9196036fc164c646fb16b`.
-The public scientific and bundled CLI runs used
-`6e1d2bfa220521083b247917aa3528f1ff934437263211fec10ab25f9382f003`.
-The later changes were the review-node dispatcher correction and the legacy
-`utils::capture.output` qualifier; the scientific functions were unchanged.
-The final runtime also passed two actual read-only Chrome configuration checks
-on a separate 180-cell fixture at revision 27, `awaiting_configuration` /
-`annotation_propose`. The saved none plan and fixed cohort rendered with a null
-review node, disabled decisions/Continue, and unchanged project bytes after
-refresh. No new job, provider call or scientific computation occurred, and there
-were no page errors, external requests or dialogs. Its receipt is
-`evidence/cycle-configuration-regression/browser/cycle-config-browser-report.json`.
-These versioned receipts distinguish the scientific execution checks from the
-later dispatcher regression check.
-
-All of this validation used local computations and supplied/manual or mock
-proposals: zero real provider API calls, zero key-file reads and US$0 incremental
-provider cost. Linux, HPC, user-server deployment and biological accuracy were
-not validated. The synthetic fixture is a software control; successful cycle
-execution cannot validate tissue-specific phase calls, coverage thresholds or
-the scientific suitability of regression. Harmony, doublet removal and
-subclustering were outside this increment and are covered by their own reviews.

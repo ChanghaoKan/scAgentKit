@@ -20,4 +20,5 @@ GeneCards primarily presents human entries and can include mouse ortholog/model 
 
 Only an active click navigates outward, disclosing that selected human symbol or MGI accession and normal browser/network information to the site. Rendering/refreshing makes no external fetch, preconnect, list upload or expression transfer. All links use fixed HTTPS origins, encoded path segments, `target="_blank"`, `rel="noopener noreferrer"` and `referrerpolicy="no-referrer"`. Original marker/citation symbols and decisions are unchanged.
 
-Native Chrome acceptance checks actual popup destinations, safe attributes, refresh and citation preservation with every external request intercepted locally. URL construction and click destination do not prove remote content access, entry existence or biological correctness. This increment adds no gene-explanation model, scraping or scientific mouse validation.
+Link construction does not establish remote entry availability or biological
+correctness. The workbench does not scrape gene pages or generate gene explanations.

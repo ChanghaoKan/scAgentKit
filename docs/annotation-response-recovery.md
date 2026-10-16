@@ -1,6 +1,6 @@
 # Complete annotation responses and recovery
 
-The coordinator now requests at most five marker citations, an 80-character
+The coordinator requests at most five marker citations, an 80-character
 label and a 240-character rationale for each cluster. The default provider output
 cap is 4096 tokens; an explicit caller cap still takes precedence. The schema
 continues to require every literal cluster exactly once, validates all cited
@@ -26,7 +26,7 @@ new <- sc_run(
   analysis_checkpoint, new_project,
   start_stage = "processed", processed_reason = provenance_text,
   context = old$context, provider = provider_with_4096_output_tokens,
-  budget = 0.05, review = list(allow_external = TRUE),
+  budget = authorized_budget, review = list(allow_external = TRUE),
   annotation_column = "deepseek_review"
 )
 ```
@@ -39,7 +39,9 @@ separate annotation hash before local finalization. Keep the old failed project,
 response and costs as part of the audit; its QC approval is provenance, not an
 approval of the new transfer. Do not use `retry = TRUE` on the old project.
 
-For a bounded public PBMC recovery, use a separate one-call driver: assert an
-empty new ledger before sending, refuse automatic retries, reserve at most the
-authorized $0.05, and verify the old project remains byte-identical. A valid
-mechanical writeback is a provisional result requiring scientific review.
+
+`analysis_checkpoint`, `provenance_text`, `provider_with_4096_output_tokens` and
+`authorized_budget` are analyst-supplied values, not runnable defaults. Use only
+a verified checkpoint and a separately authorized provider budget. Inspect the
+new request before granting consent. Keep the original failed project and its
+usage record. See [model review](UNIFIED_MODEL_REVIEW.md) for uncertain dispatch.
