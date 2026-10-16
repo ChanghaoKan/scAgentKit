@@ -65,7 +65,13 @@ annot_load_reference <- function(path, tissue_filter = NULL, species = NULL) {
 #' each cell type in the reference. The score is reference-marker coverage:
 #' `|cluster_markers intersect celltype_markers| / |celltype_markers|`.
 #' This rewards cell types whose characteristic markers appear prominently
-#' in the cluster's top-N list.
+#' in the cluster's top-N list. Coverage favours small marker sets: a type
+#' with a single matching marker scores 1.0. Candidates are therefore ordered
+#' by score, then by the absolute number of matched markers, and
+#' `celltype_size` and `overlap_count` must be read alongside coverage.
+#' A 1/1 match ranks above 10/20 under this descriptive score; it is weak
+#' single-marker evidence, not a more certain identity. Ordering and tie
+#' breaking do not assign a label. Every candidate requires analyst review.
 #'
 #' @param obj An AgentSeurat object after [sc_markers_summary()].
 #' @param reference A reference data frame from [annot_load_reference()].
@@ -197,6 +203,11 @@ annot_match_reference <- function(obj,
   obj@params$reference_data <- reference
   obj@params$reference_provenance <- provenance
   obj@params$reference_match_input_cells <- input_cells
+  obj@params$reference_match_interpretation <- list(
+    score = "Reference coverage = overlap_count / celltype_size; not a probability or confidence.",
+    ordering = "Coverage first, then absolute hits; a 1/1 candidate can precede 10/20.",
+    single_marker = "One matching marker is weak evidence even at 100% reference coverage.",
+    annotation = "Ranked candidates are hypotheses for review; the first candidate is not an assigned identity.")
   obj
 }
 

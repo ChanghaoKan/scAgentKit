@@ -98,6 +98,11 @@
     status$failed <- status$failed & base
     status
   })
+  # Under AND, a cell outside any rule's literal group can never fail every
+  # rule. Reject scopes that share no cell instead of silently removing none.
+  if (identical(proposal$remove_if, "all") && length(statuses) > 1L &&
+      !any(base & Reduce(`&`, lapply(statuses, `[[`, "selected"))))
+    .sc_project_fail("QC remove_if 'all' combines rules whose groups share no cell, so no cell could ever be removed; use 'any' or align the rule groups.")
   failures <- do.call(cbind, lapply(statuses, `[[`, "failed"))
   # Outside a rule's literal group its failure is false, not a guessed match.
   removed <- if (identical(proposal$remove_if, "any")) rowSums(failures) > 0L else

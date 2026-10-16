@@ -2,7 +2,9 @@
 // Read-only presentation of supplied coordinates and marker statistics.
 // Selection is a local callback; this helper has no persistence or transport.
 (() => {
-  const palette = ["#759bd1", "#e4a675", "#73b3aa", "#9881c8", "#ce899d", "#9bad6e", "#3d67d7", "#bc9b5e", "#799da6"];
+  const palette = ["#759bd1", "#e4a675", "#73b3aa", "#9881c8", "#ce899d", "#9bad6e", "#3d67d7", "#bc9b5e", "#799da6", "#d95f02", "#1b9e77", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#1f78b4", "#b2df8a", "#fb9a99", "#cab2d6"];
+  // Keep existing cluster colors, then avoid recycling them for larger analyses.
+  const categoryColor = index => palette[index] || `hsl(${((index - palette.length) * 137.508 + 23) % 360} 65% ${index % 2 ? 38 : 53}%)`;
   const ns = "http://www.w3.org/2000/svg";
   function node(tag, attrs = {}, text) {
     const result = document.createElement(tag);
@@ -20,7 +22,7 @@
   const suppliedText = value => value === undefined ? "—" : value !== null && typeof value === "object" ? JSON.stringify(value) : String(value);
   const numericText = value => value === undefined || value === null || value === "" ? "—" : suppliedText(value);
 
-  function embedding(target, {points, clusters, name = "Embedding", title, selectedCluster, onSelect, showAll = true} = {}) {
+  function embedding(target, {points, clusters, name = "Embedding", title, selectedCluster, onSelect, showAll = true, savedLabels, labelColumn, colorBy = target.getAttribute("data-color-by") || "cluster"} = {}) {
     target.replaceChildren();
     const embeddingName = name === undefined || name === null || name === "" ? "Embedding" : String(name);
     target.append(node("h3", {class: "embedding-title", "data-testid": "embedding-title"}, embeddingName));
@@ -39,10 +41,14 @@
     }
     if (!Number.isFinite(x1 - x0) || !Number.isFinite(y1 - y0)) return unavailable("Embedding unavailable. The supplied coordinate range cannot be displayed; no coordinates have been generated or substituted.");
     target.append(node("p", {class: "microcopy", "data-testid": "embedding-detail"}, "Actual exported coordinates · each point is one cell"));
-    // The existing workbench's SVG geometry, without any projection or sampling.
+    // One shared coordinate-unit scale preserves distances, angles and aspect ratio.
+    // Unused plot space is centered, including constant or singleton coordinates.
     const width = 640, height = 350, pad = 38;
-    const scaleX = x => pad + 9 + (x - x0) / (x1 - x0 || 1) * (width - pad * 2 - 18);
-    const scaleY = y => height - pad - 8 - (y - y0) / (y1 - y0 || 1) * (height - pad * 2 - 10);
+    const plotWidth = width - pad * 2 - 18, plotHeight = height - pad * 2 - 10;
+    const units = Math.min(x1 > x0 ? plotWidth / (x1 - x0) : Infinity, y1 > y0 ? plotHeight / (y1 - y0) : Infinity);
+    const scale = Number.isFinite(units) ? units : 1;
+    const scaleX = x => width / 2 + ((x - x0) - (x1 - x0) / 2) * scale;
+    const scaleY = y => 172 - ((y - y0) - (y1 - y0) / 2) * scale;
     const hasSelection = selectedCluster !== undefined && selectedCluster !== null;
     const selected = point => hasSelection && String(point.clusterId) === String(selectedCluster);
     const svg = svgNode("svg", {viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": `Real ${embeddingName}: ${points.length} cells${hasSelection ? `, cluster ${selectedCluster} selected` : ""}`});
@@ -50,17 +56,36 @@
     svg.append(svgNode("line", {x1: pad, y1: height - pad, x2: width - pad, y2: height - pad, class: "umap-axis"}), svgNode("line", {x1: pad, y1: pad, x2: pad, y2: height - pad, class: "umap-axis"}));
     svg.append(svgNode("text", {x: width / 2, y: height - 8, "text-anchor": "middle", class: "umap-axis-text"}, `${embeddingName} 1`), svgNode("text", {x: 12, y: height / 2, transform: `rotate(-90 12 ${height / 2})`, "text-anchor": "middle", class: "umap-axis-text"}, `${embeddingName} 2`));
     const suppliedClusters = Array.isArray(clusters) ? clusters.filter(cluster => cluster && validId(cluster.id)) : [];
-    const colors = new Map(suppliedClusters.map((cluster, index) => [String(cluster.id), palette[index % palette.length]]));
+    const colors = new Map(suppliedClusters.map((cluster, index) => [String(cluster.id), categoryColor(index)]));
+    const labels = new Map(Array.isArray(savedLabels) ? savedLabels.filter(row => row && validId(row.cellId) && typeof row.value === "string").map(row => [String(row.cellId), row.value]) : []);
+    const labelNames = [...new Set(points.map(point => labels.get(String(point.cellId))).filter(value => value !== undefined))].sort();
+    const labelColors = new Map(labelNames.map((label, index) => [label, categoryColor(index)]));
+    const byLabel = colorBy === "label" && labelNames.length > 0;
+    if (labelNames.length) {
+      const control = node("label", {class: "embedding-color-control"}, "Color by ");
+      const select = node("select", {"aria-label": "Embedding color by", "data-testid": "embedding-color-by"});
+      for (const [value, text] of [["cluster", "Cluster"], ["label", `Saved labels (${labelColumn || "supplied column"})`]]) select.append(node("option", {value}, text));
+      select.value = byLabel ? "label" : "cluster";
+      select.addEventListener("change", () => {
+        target.setAttribute("data-color-by", select.value);
+        embedding(target, {points, clusters, name, title, selectedCluster, onSelect, showAll, savedLabels, labelColumn, colorBy: select.value});
+      });
+      control.append(select); target.append(control);
+    }
     for (const point of [...points].sort((a, b) => Number(selected(a)) - Number(selected(b)))) {
       const isSelected = selected(point);
-      const circle = svgNode("circle", {cx: scaleX(point.x), cy: scaleY(point.y), r: isSelected ? 2.05 : 1.6, fill: isSelected || showAll ? colors.get(String(point.clusterId)) || "#dce2ed" : "#dce2ed", opacity: isSelected ? .9 : .72, class: "umap-point", "data-cluster": point.clusterId, "data-cell-id": point.cellId});
-      circle.append(svgNode("title", {}, `${point.cellId} · cluster ${point.clusterId}`));
+      const circle = svgNode("circle", {cx: scaleX(point.x), cy: scaleY(point.y), r: isSelected ? 2.05 : 1.6, fill: isSelected || showAll ? (byLabel ? labelColors.get(labels.get(String(point.cellId))) : colors.get(String(point.clusterId))) || "#dce2ed" : "#dce2ed", opacity: isSelected ? .95 : hasSelection ? .4 : .72, stroke: isSelected ? "#172b4d" : "none", "stroke-width": isSelected ? .65 : 0, "data-selected": isSelected, class: "umap-point", "data-cluster": point.clusterId, "data-cell-id": point.cellId});
+      circle.append(svgNode("title", {}, `${point.cellId} · cluster ${point.clusterId}${byLabel ? ` · saved label ${labels.get(String(point.cellId)) ?? "(missing)"}` : ""}`));
       if (typeof onSelect === "function") circle.addEventListener("click", () => onSelect(point.clusterId));
       svg.append(circle);
     }
     const chart = node("div", {class: "umap-chart", "data-testid": "embedding-chart"}); chart.append(svg); target.append(chart);
     const legend = node("div", {class: "umap-legend", "data-testid": "embedding-legend"});
-    for (const cluster of suppliedClusters) {
+    if (byLabel) for (const label of labelNames) {
+      const item = node("span"), dot = node("i"); dot.style.background = labelColors.get(label);
+      item.append(dot, node("span", {}, label)); legend.append(item);
+    }
+    for (const cluster of byLabel ? [] : suppliedClusters) {
       const item = node("span", {"data-cluster": cluster.id});
       const dot = node("i"); dot.style.background = colors.get(String(cluster.id));
       item.append(dot, node("span", {}, `C${cluster.id}${cluster.cellCount !== undefined && cluster.cellCount !== null ? ` · ${suppliedText(cluster.cellCount)} cells` : ""}`));

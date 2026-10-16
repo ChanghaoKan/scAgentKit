@@ -349,3 +349,11 @@ test_that("rule QC and independent saved doublet removal deduplicate overlapping
   expect_identical(selected_object[[]][, names(seu[[]]), drop = FALSE], seu[[]][validated$selected_cells, , drop = FALSE])
   expect_identical(record$evidence_hash, saved); expect_equal(calls, 2L)
 })
+
+test_that("AND over rules whose literal groups share no cell is rejected", {
+  f <- qc_rules_small()
+  a <- list(op = "range", metric = "nCount", min = 100L, group = list(sample = "sample a"))
+  b <- list(op = "range", metric = "nCount", min = 100L, group = list(sample = "sample b"))
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(a, b), "all"), f$qc), "share no cell")
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(a, b), "any"), f$qc), "every cell")
+})

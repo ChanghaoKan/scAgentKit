@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # Synthetic data only. Provider factories and HTTP are monitored independently
 # of the coordinator implementation fingerprint, including in a fresh R process.
 continue_fixture <- function() {

@@ -11,8 +11,10 @@ authority for cell selection. Annotation still has its separate later review.
 
 The previous strategy baseline is documented in
 [ANALYSIS_STRATEGY_SUPPORT.md](ANALYSIS_STRATEGY_SUPPORT.md). This increment adds
-only the cycle operations described here. Automatic Harmony, doublet removal
-and subclustering remain unsupported by this coordinator. A legacy exported
+only the cycle operations described here. At the time of this increment,
+Harmony, doublet removal and subclustering were unsupported; they were added
+later under their own review contracts (HARMONY_PC_REVIEW.md, DOUBLET_REVIEW.md,
+SUBCLUSTER_REVIEW.md). A legacy exported
 helper's existence does not establish coordinator support.
 
 ## Main entry and declared gene sets
@@ -79,6 +81,21 @@ Requested options are recorded and validated without silent clipping. The
 coverage settings are software preconditions for this operation; five genes or
 20% coverage is not a validated scientific adequacy threshold. Use your study,
 feature identifiers, tissue and research goal to assess the supplied reference.
+
+`nbin` divides the expressed-feature mean-expression pool into equal-frequency
+bins; `ctrl` requests controls per scored gene from its bin. The defaults
+(12 bins, 5 controls) are explicit diagnostic settings, not optimized biological
+recommendations or hidden aliases of Seurat defaults. Increasing either can
+make a small pool inapplicable. An insufficient pool produces `insufficient`
+with Unknown phases and missing scores, and never silently adjusts either
+parameter. Inspect gene coverage and `summary$control` before deciding whether
+to declare another setting in a new fixed reference.
+
+The audit regression test checks 24 expressed synthetic features (insufficient
+at unchanged defaults) and 2,400 synthetic features × 48 cells (available at
+unchanged defaults). These establish capacity handling, not scientific accuracy
+on real tissue. Existing engine tests compare declared 4-bin/2-control scores
+with a direct Seurat call and test large unsupported bin/control requests.
 
 ## Fixed full-input evidence
 
@@ -330,5 +347,5 @@ proposals: zero real provider API calls, zero key-file reads and US$0 incrementa
 provider cost. Linux, HPC, user-server deployment and biological accuracy were
 not validated. The synthetic fixture is a software control; successful cycle
 execution cannot validate tissue-specific phase calls, coverage thresholds or
-the scientific suitability of regression. Automatic Harmony, doublet removal
-and subclustering remain outside this coordinator increment.
+the scientific suitability of regression. Harmony, doublet removal and
+subclustering were outside this increment and are covered by their own reviews.

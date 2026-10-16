@@ -17,12 +17,12 @@
   rec <- obj@params$resolution_recommendation
   if (is.null(rec)) return("")
   alts <- if (length(rec$alternatives) > 0) {
-    paste(rec$alternatives, collapse = ", ")
+    agentomicsCore::esc_html(paste(rec$alternatives, collapse = ", "))
   } else "&mdash;"
-  clustree_notes <- if (!is.null(rec$clustree_notes) &&
-                        !is.na(rec$clustree_notes)) {
+  notes <- rec$clustree_notes
+  clustree_notes <- if (length(notes) && !all(is.na(notes))) {
     sprintf('<p><strong>Clustree notes:</strong> <em>%s</em></p>',
-            agentomicsCore::esc_html(rec$clustree_notes))
+            agentomicsCore::esc_html(paste(notes[!is.na(notes)], collapse = " ")))
   } else ""
   paste0(
     '<section><h2>Resolution recommendation</h2>',
@@ -208,7 +208,7 @@
     pc <- cmp$per_class
     rows <- vapply(seq_len(nrow(pc)), function(i) {
       sprintf(
-        '<tr><td>%s</td><td>%d</td><td>%d</td><td>%d</td><td>%.1f%%</td><td>%.1f%%</td></tr>',
+        '<tr><td>%s</td><td>%.0f</td><td>%.0f</td><td>%.0f</td><td>%.1f%%</td><td>%.1f%%</td></tr>',
         .esc(pc$cell_type[i]), pc$n_author[i], pc$n_llm[i],
         pc$correct[i], pc$sensitivity[i], pc$precision[i]
       )

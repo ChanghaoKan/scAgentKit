@@ -35,7 +35,9 @@
   keys <- Sys.getenv(env_names)
   for (key in keys[nzchar(keys)]) x <- gsub(key, "[REDACTED]", x, fixed = TRUE)
   x <- gsub("(?i)Bearer[[:space:]]+[A-Za-z0-9._~+/-]{8,}", "Bearer [REDACTED]", x, perl = TRUE)
-  gsub("(?i)(sk-|xai-)[A-Za-z0-9_-]{12,}", "[REDACTED]", x, perl = TRUE)
+  # Anchor the key prefix at a token boundary so ordinary prose such as
+  # "high-risk-stratification" is not mistaken for an "sk-" credential.
+  gsub("(?i)(?<![A-Za-z0-9_-])(sk-|xai-)[A-Za-z0-9_-]{12,}", "[REDACTED]", x, perl = TRUE)
 }
 
 .sc_run_provider_contains_secret <- function(x, env_names = NULL) {
@@ -455,7 +457,7 @@
       prior$cached <- TRUE
       return(prior)
     }
-    retryable <- c("invalid_response", "empty_response", "truncated_response")
+    retryable <- c("invalid_response", "empty_response", "truncated_response", "reconciled_no_response")
     if (!isTRUE(prior$provider$external)) retryable <- c(retryable, "provider_error", "secret_detected")
     if (!prior$status %in% retryable ||
         !identical(prior$cost_state, "known")) return(result("retry_refused", "Retry requires a completed invalid response with known accounting; unknown dispatches need manual reconciliation."))
@@ -541,4 +543,60 @@
   ledger$entries[[index]] <- entry
   .sc_run_provider_write(ledger, path)
   entry
+}
+
+#' Reconcile a held provider ledger entry
+#'
+#' An external dispatch whose delivery or cost is unknown (an interrupted
+#' request, a provider without pricing, or usage beyond its reservation)
+#' pauses every new external request to that provider. After checking the
+#' provider's own billing console, record the actual charge here. The entry
+#' becomes known-cost; nothing is resent. An entry that never produced a
+#' response becomes `reconciled_no_response` and can then be retried only by
+#' an explicit `retry = TRUE` resume.
+#'
+#' @param project_dir Run directory.
+#' @param request_hash Exact 64-character request hash of the held entry.
+#' @param cost_usd Actual charge in USD confirmed by the analyst (0 if none).
+#' @param reviewer,reason Analyst identity and how the charge was verified.
+#' @return Invisibly, the reconciled ledger entry.
+#' @export
+sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, reviewer, reason) {
+  .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
+  if (!is.character(request_hash) || length(request_hash) != 1L || !grepl("^[a-f0-9]{64}$", request_hash))
+    stop("`request_hash` must be one exact 64-character lowercase hex hash.", call. = FALSE)
+  cost_usd <- .sc_run_provider_number(cost_usd, "cost_usd")
+  root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
+  state <- if (file.exists(file.path(root, "state.rds"))) .sc_run_load(root) else NULL
+  lock <- file.path(root, "provider", ".dispatch-lock")
+  if (!dir.create(lock, showWarnings = FALSE))
+    stop("Another provider dispatch holds the project lock; reconcile after it finishes.", call. = FALSE)
+  token <- .sc_run_provider_hash(list(Sys.getpid(), as.character(Sys.time()), tempfile()))
+  on.exit(.sc_run_provider_release(lock, token), add = TRUE)
+  .sc_run_provider_write(list(token = token, pid = Sys.getpid(), host = unname(Sys.info()["nodename"]),
+    created_at = format(Sys.time(), tz = "UTC", usetz = TRUE)), file.path(lock, "owner.json"))
+  path <- file.path(root, "provider", "ledger.json")
+  ledger <- .sc_run_provider_read(path)
+  hits <- which(vapply(ledger$entries, function(x) identical(x$request_hash, request_hash), logical(1)))
+  if (!length(hits)) stop("No provider ledger entry has this request hash.", call. = FALSE)
+  index <- tail(hits, 1L); entry <- ledger$entries[[index]]
+  if (!isTRUE(entry$provider$external) ||
+      (identical(entry$cost_state, "known") && !isTRUE(entry$accounting_issue)))
+    stop("This ledger entry is not held; only external entries with unknown cost or an accounting issue are reconciled.", call. = FALSE)
+  previous <- list(status = entry$status, cost_state = entry$cost_state,
+    charged_or_held_usd = entry$charged_or_held_usd, accounting_issue = isTRUE(entry$accounting_issue))
+  if (entry$status %in% c("dispatched", "delivery_uncertain")) entry$status <- "reconciled_no_response"
+  else if (identical(entry$status, "budget_stop")) entry$status <- if (is.null(entry$raw)) "reconciled_no_response" else "reconciled_response"
+  entry$cost_state <- "known"; entry$cost_usd <- cost_usd; entry$charged_or_held_usd <- cost_usd
+  entry$accounting_issue <- FALSE
+  entry$reconciliation <- list(reviewer = reviewer, reason = reason, previous = previous,
+    reconciled_at = format(Sys.time(), tz = "UTC", usetz = TRUE))
+  ledger$entries[[index]] <- entry
+  .sc_run_provider_write(ledger, path)
+  if (!is.null(state)) {
+    state <- .sc_run_event(state, "provider_reconciled", list(request_hash = request_hash,
+      provider = entry$provider$name, cost_usd = cost_usd, previous = previous, reviewer = reviewer, reason = reason))
+    .sc_run_save(root, state)
+  }
+  invisible(entry)
 }

@@ -224,8 +224,9 @@ save_checkpoint(obj, "pbmc3k_final.qs2")
 
 ## Where to go next
 
-- For tissue-specific work, look at `inst/examples/full_pipeline_example.R`
-  (mouse colon CRC + immunotherapy) and the HCC examples.
+- `inst/examples/full_pipeline_example.R` runs this legacy pipeline end to
+  end on PBMC3k. For new analyses prefer the reviewed `sc_run()` workflow in
+  `docs/SERVER_FIRST.md` and `docs/RESEARCHER_PROTOCOL_ZH.md`.
 - The `benchmark/` directory contains experimental scaffolding for planned
   evaluations. It does not currently establish comparative performance.
 - See `?annot_llm_annotate` for the full set of ensembling and

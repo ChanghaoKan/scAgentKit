@@ -311,3 +311,18 @@ test_that("input cardinality and missing cluster IDs fail before any provider ca
   obj@params$markers_filtered$cluster <- "9"
   expect_error(annot_llm_annotate(obj, provider, "PBMC", verbose = FALSE), "must be present in seurat_clusters")
 })
+
+test_that("a provider error is never resent automatically, while malformed output is retried", {
+  calls <- 0L
+  failing <- function(system_prompt, user_prompt) { calls <<- calls + 1L; stop("mock connection reset") }
+  out <- scAgentKit:::.call_with_retry(failing, "sys", "user", 2L,
+                                      validator = scAgentKit:::.validate_annotation_response)
+  expect_identical(out$annotation_status, "failed")
+  expect_identical(calls, 1L)
+  expect_match(out$annotation_error, "mock connection reset", fixed = TRUE)
+  calls <- 0L
+  malformed <- function(system_prompt, user_prompt) { calls <<- calls + 1L; "not json" }
+  scAgentKit:::.call_with_retry(malformed, "sys", "user", 2L,
+                               validator = scAgentKit:::.validate_annotation_response)
+  expect_identical(calls, 3L)
+})

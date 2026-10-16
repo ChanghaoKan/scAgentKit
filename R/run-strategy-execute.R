@@ -16,7 +16,7 @@
   if (!is.list(plan)) .sc_project_fail("Strategy runtime requires a validated typed plan.")
   permitted <- list(analysis = c("normalization_method", "scale_factor", "nfeatures", "npcs", "seed"),
                     pcs = c("method", "ndim", "threshold"),
-                    batch = c("method", "reason", "group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust"),
+                    batch = c("method", "reason", "group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "nested_biology"),
                     clustering = c("resolution", "diagnostic_resolutions"),
                     umap = c("run", "n_neighbors"))
   for (field in names(permitted)) {

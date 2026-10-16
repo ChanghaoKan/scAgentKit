@@ -14,6 +14,11 @@
   }
   if (length(genes) == 0) return(NA_character_)
 
+  # Ensembl IDs are upper-case for every species, so decide them by prefix
+  # before the case heuristic below misreads ENSMUSG as human.
+  if (mean(grepl("^ENSMUSG[0-9]", genes)) > 0.5) return("mouse")
+  if (mean(grepl("^ENSG[0-9]", genes)) > 0.5) return("human")
+
   # MT genes: human "MT-XXX" (uppercase), mouse "mt-Xxx" (lowercase prefix)
   has_human_mt <- any(grepl("^MT-", genes))
   has_mouse_mt <- any(grepl("^mt-", genes))

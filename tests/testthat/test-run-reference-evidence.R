@@ -272,3 +272,16 @@ test_that("historical imports are visible and comparison requires verified scope
   single$row <- NULL
   expect_identical(reference_joint_run(joint, historical = single)$historical$status, "cluster_not_supplied")
 })
+
+test_that("a declared reference SHA-256 that differs from the read file is surfaced", {
+  fixture <- reference_evidence_fixture()
+  path <- tempfile(fileext = ".csv"); on.exit(unlink(path), add = TRUE)
+  utils::write.csv(fixture$reference, path, row.names = FALSE)
+  loaded <- annot_load_reference(path)
+  actual <- digest::digest(file = path, algo = "sha256")
+  ok <- reference_evidence_run(fixture, loaded, options = list(provenance = list(source_sha256 = actual)))
+  expect_identical(ok$provenance$source_file_status, "readable")
+  wrong <- reference_evidence_run(fixture, loaded, options = list(provenance = list(source_sha256 = strrep("a", 64))))
+  expect_identical(wrong$provenance$source_file_status, "declared_sha256_mismatch")
+  expect_identical(wrong$provenance$source_sha256, actual)
+})

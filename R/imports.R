@@ -157,20 +157,19 @@ export_script <- function(obj,
 .token_records_summarise <- function(...) agentomicsCore::token_records_summarise(...)
 .esc                     <- function(x) agentomicsCore::esc_html(x)
 
-# Environment alias: the token state lives in agentomicsCore's namespace.
-# Because environments are reference objects, binding .token_state to the
-# SAME environment here means that when agentomicsCore's chat_fn wrappers
-# mutate it (token_state$records[[...]] <- rec), scAgentKit code reading or
-# writing .token_state$records sees the identical environment. This works
-# because agentomicsCore (an Imports dependency) is guaranteed loaded
-# before this file is sourced.
-.token_state <- agentomicsCore::token_state
+# Resolve the environment after loading, not during lazy-load database
+# construction: R CMD INSTALL serializes an ordinary top-level environment
+# alias into a separate copy. Legacy readers and parallel-worker backfills
+# must share the dependency's live state in each new R process.
+.token_state <- NULL
+.onLoad <- function(libname, pkgname) {
+  assign(".token_state", agentomicsCore::token_state, envir = asNamespace(pkgname))
+}
 
-# The %||% infix is re-exported via the @importFrom roxygen tag above;
-# any duplicate `%||%` definitions still living in the older source
-# files of scAgentKit (annot-llm.R, sc-resolution-recommend.R, etc.)
-# remain compatible because they are identical.
-
+# Single package-wide NULL-coalescing helper. Missing means NULL, a
+# zero-length value, or a scalar NA; every legacy caller relies on one of
+# these fallbacks. Do not redefine it elsewhere: without a Collate field the
+# alphabetically last definition silently wins for the whole namespace.
 `%||%` <- function(a, b) {
-  if (is.null(a) || length(a) == 0) b else a
+  if (is.null(a) || length(a) == 0L || (length(a) == 1L && is.atomic(a) && is.na(a))) b else a
 }

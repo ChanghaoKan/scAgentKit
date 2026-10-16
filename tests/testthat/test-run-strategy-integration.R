@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # Coordinator acceptance fixtures are synthetic software controls. Planted
 # expression programs and crossed metadata do not establish biological types,
 # scientific QC thresholds, or an effect of batch integration.

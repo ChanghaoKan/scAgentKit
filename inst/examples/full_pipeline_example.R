@@ -53,14 +53,15 @@ obj <- sc_select_pcs(obj, threshold = 0.80, plot_elbow = TRUE)
 obj <- save_checkpoint(obj, "checkpoints/02_pca.qs")
 
 # ---- 4. Integration (Harmony) ----
-# NOTE: group_by_vars is intentionally required. Pick the real batch var
-# for your design. If Ca vs Ctrl is a *biological* variable rather than a
-# technical batch, do NOT use it here; use the sample or prep-batch ID.
-obj <- sc_harmony(obj, group_by_vars = "sample", max_iter = 10)
+# PBMC3k is a single capture, so there is no batch to correct and this step
+# is skipped. With several technical batches, name the real batch column:
+#   obj <- sc_harmony(obj, group_by_vars = "capture_id", max_iter = 10)
+# If Ca vs Ctrl is a *biological* variable rather than a technical batch,
+# do NOT use it here; use the sample or prep-batch ID.
 
 # ---- 5. Dimension reduction + neighbors ----
-obj <- sc_umap(obj)                 # auto-picks harmony reduction
-obj <- sc_find_neighbors(obj)       # also auto-picks harmony + ndim
+obj <- sc_umap(obj)                 # uses harmony if present, else pca
+obj <- sc_find_neighbors(obj)       # same reduction choice + ndim
 obj <- save_checkpoint(obj, "checkpoints/03_harmony.qs")
 
 # ---- 6. Clustering: sweep, inspect, commit ----

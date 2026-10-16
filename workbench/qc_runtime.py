@@ -16,10 +16,10 @@ from pathlib import Path
 
 try:
     from .evidence import canonical, strict_json
-    from .store import StoreError
+    from .store import StoreError, scrub_secrets
 except ImportError:
     from evidence import canonical, strict_json
-    from store import StoreError
+    from store import StoreError, scrub_secrets
 
 ROOT = Path(__file__).resolve().parent
 HASH = re.compile(r"[a-f0-9]{64}\Z")
@@ -93,11 +93,7 @@ class QCRuntime:
             request.write_text(canonical(payload or {}) + "\n", encoding="utf-8")
             request.chmod(0o600)
             argv = [self.rscript, "--vanilla", str(self.bridge), operation, str(self.project), str(request), str(output)]
-            env = dict(os.environ)
-            for key in ("DEEPSEEK_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROK_API_KEY",
-                        "GOOGLE_API_KEY", "GEMINI_API_KEY", "AZURE_OPENAI_API_KEY", "COHERE_API_KEY",
-                        "MISTRAL_API_KEY", "OPENROUTER_API_KEY", "HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN"):
-                env.pop(key, None)
+            env = scrub_secrets(dict(os.environ))
             if self.library:
                 env["R_LIBS_USER"] = self.library
             try:

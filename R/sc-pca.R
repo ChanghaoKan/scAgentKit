@@ -82,6 +82,12 @@ sc_select_pcs <- function(obj,
   xx <- xx / max(xx)
   ndim <- which(xx >= threshold)[1]
   if (is.na(ndim)) ndim <- length(pca@stdev)
+  # One PC cannot support a neighbour graph or UMAP; match the coordinator's
+  # computed-variance guard and fail rather than return ndim = 1.
+  if (ndim < 2L) {
+    stop(sprintf("Variance threshold %.2f is reached by %d PC; at least 2 are required. ",
+                 threshold, ndim), "Raise the threshold or choose ndim explicitly.", call. = FALSE)
+  }
 
   plot_path <- NA_character_
   if (plot_elbow) {

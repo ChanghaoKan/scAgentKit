@@ -24,8 +24,9 @@ promoted to a technical variable.
 
 The projected cell set must contain at least two covariate levels and at least
 one explicitly declared biological `group`, `condition` or `treatment` with two
-levels. Its relationship to the proposed correction factor must be crossed and
-identifiable under the supported design checks. The review records observed
+levels. By default its relationship to the proposed correction factor must be
+crossed and identifiable under the supported design checks. An explicit narrow
+embedding-only exception for replicated donor/sample nesting is described below. The review records observed
 contingency tables and applicability after the proposed QC/doublet selection.
 It does not automatically remove a sample to create a preferable table.
 
@@ -34,7 +35,8 @@ It does not automatically remove a sample to create a preferable table.
 | Explicit supported variable and technical provenance; selected covariate/biological factors have a supported identifiable crossed design | The specific Harmony proposal may be reviewed and executed |
 | Variable missing, ambiguous, undeclared or single-level | Block Harmony and retain a configuration boundary |
 | Missing biological design information or only one observed biological level | Block Harmony; do not invent a treatment/control relationship |
-| Full confounding, nested aliases or a rank-deficient selected design | Block Harmony; retaining or deferring is available, automatic correction is not |
+| Full confounding, nested aliases or a rank-deficient selected design | Block Harmony by default; aliases and unreplicated nesting remain blocked even with the exception below |
+| At least two independent donors/samples per biological level, each occurring in exactly one level | Default block; explicit `nested_biology = "reviewed_embedding_only"` permits a reviewed embedding operation with rank diagnostics and limitations |
 | Processed entry with a supplied foundation | `none` or `manual` reuse only; this increment does not correct its existing basis |
 
 Several donor/sample IDs can each occur only within one treatment. Having more
@@ -62,8 +64,9 @@ claiming that all treatment biology was preserved.
 proposal$batch <- list(method = "none", reason = "Your reason to retain the PCA basis")
 ```
 
-A Harmony choice requires exactly these fields; unsupported or misspelled
-arguments are rejected rather than ignored:
+A Harmony choice requires the following fields; `nested_biology` is the only
+additional optional design-policy field. Unsupported or misspelled arguments
+are rejected rather than ignored:
 
 ```r
 proposal$batch <- list(
@@ -90,6 +93,39 @@ integration result.
 | `sigma` | One finite number in `(0, 1]` |
 | `max_iter` | Integer from 1 through 50 |
 | `nclust` | Integer from 2 through `min(100, retained_cells - 1)` |
+
+For a design with multiple independent donors per condition, first inspect the
+saved factor contingency tables and technical provenance. If you deliberately
+accept the risk of attenuating condition-associated variation, explicitly use:
+
+```r
+# context$columns$donor = "donor_id" and technical_batch = TRUE must
+# already describe verified metadata and technical provenance.
+proposal$batch$group_by_vars <- "donor_id"
+proposal$batch$nested_biology <- "reviewed_embedding_only"
+proposal$batch$reason <- paste(
+  "Reviewed multiple independent donors per condition and accepted",
+  "embedding-only correction; compare PCA/Harmony diagnostics and",
+  "use unintegrated assays with the study design for condition inference.")
+```
+
+Omission or `nested_biology = "block"` retains the conservative default.
+The exception applies only to declared donor/sample roles nested in biology,
+with at least two distinct selected IDs in **every** observed biological level.
+It never allows a single donor per condition, one-to-one aliases, direct
+condition correction, redundant selected factors, or additional biological
+aliasing. Declaring technical provenance alone does not prove those IDs are
+independent biological replicates; that remains an analyst responsibility.
+The audit retains the original rank-deficient joint matrix result, plus the
+biological-role rank and the rank after removing only the explicitly allowed
+nested biological indicators. This describes an embedding operation, not an
+identifiable fixed-effect model or a condition-effect estimate.
+
+Inspect the saved before/after technical neighbor mixing, biological same-label
+fractions and embedding shift. These remain separate descriptive diagnostics;
+there is no automatic acceptance threshold. Preserve PCA and unintegrated
+assays for comparison and condition-effect analyses. A crossed technical batch
+continues to use the original full-rank path without this exception.
 
 Execution uses one Harmony core, early stopping enabled and no convergence
 plot. These are recorded software settings, not optimized recommendations.

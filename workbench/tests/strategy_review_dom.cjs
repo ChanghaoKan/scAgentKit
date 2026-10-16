@@ -55,6 +55,16 @@ function setup(value = answer()) {const h = ui(); h.state.view = h.call("verify"
 function validReady(value) {value.run.status = "ready"; value.run.stage = "strategy_apply"; value.run.review_node = null; return value;}
 function continuation(run, job = null, canRetry = false) {return {schema: "scagentkit.run-continue.workbench.v1", enabled: true, job, availability: {project_id: run.project_id, input_hash: run.input_hash, expected_revision: run.revision, can_continue: !canRetry && run.status === "ready", can_retry: canRetry, requires_explicit_retry: canRetry, reason: canRetry ? "explicit_retry_required" : "ready"}};}
 async function check(name, fn) {try {await fn(); results.push({name, passed: true});} catch (error) {results.push({name, passed: false, error: error.message});}}
+function harmonyAnswer(policy) {
+  const value = answer(), details = value.run.strategy_review.details;
+  details.capabilities.batch = ["none", "manual", "harmony"];
+  details.background.facts.columns = {donor: "donor_id", condition: "condition"};
+  details.background.facts.design = {technical_batch: true};
+  details.canonical_proposal.batch = {method: "harmony", group_by_vars: ["donor_id"],
+    theta: 2, lambda: 1, sigma: .1, max_iter: 3, nclust: 4, reason: "Reviewed synthetic design"};
+  if (policy !== undefined) details.canonical_proposal.batch.nested_biology = policy;
+  return value;
+}
 async function main() {
   await check("verified central strategy snapshot renders without calculation", () => {const h = setup(); assert.equal(h.el("run-strategy").hidden, false); assert.equal(h.el("run-qc").hidden, true); assert.equal(h.el("run-annotation").hidden, true); assert.equal(h.requests.length, 0); assert.match(h.el("run-progress").textContent, /Analysis strategy review/);});
   await check("user facts missing background and model inferences remain separate", () => {const h = setup(); const cards = h.el("strategy-background").children; assert.equal(cards.length, 3); assert.match(cards[0].textContent, /User-provided facts.*condition.*Ca.*Ctrl/s); assert.doesNotMatch(cards[0].textContent, /unverified design/); assert.match(cards[1].textContent, /Missing background.*batch assignment/s); assert.match(cards[2].textContent, /Model \/ proposal inferences.*unverified design/s);});
@@ -85,6 +95,57 @@ async function main() {
   await check("every new local stage supports only explicit saved failure retry", () => {const h = ui(); for (const stage of ["strategy_evidence", "strategy_apply", "strategy_basis", "strategy_neighbors", "strategy_cluster"]) {assert.equal(h.call("supportedSavedLocalRetry", {status: "failed", stage}, null), true); assert.equal(h.call("supportedSavedLocalRetry", {status: "running", stage}, null), true); assert.equal(h.call("supportedSavedLocalRetry", {status: "awaiting_review", stage}, null), false);} assert.equal(h.call("supportedSavedLocalRetry", {status: "failed", stage: "strategy_propose"}, null), false);});
   await check("strategy retry stages retain provider-free task wording", () => {const value = validReady(answer()); value.run.status = "failed"; value.run.stage = "strategy_neighbors"; value.continuation = continuation(value.run, null, true); const h = setup(value); assert.equal(h.el("run-continue-retry").disabled, false); assert.match(h.el("run-continuation-note").textContent, /makes no model request/);});
   await check("legacy QC review still uses the QC iframe and schema", () => {const value = answer(); delete value.run.strategy_review; value.run.stage = "qc_propose"; value.run.review_node.kind = "qc"; delete value.run.review_node.evidence_hash; value.run.qc_preview = {schema: "scagentkit.qc.review.v1", hash: reviewHash, input_hash: inputHash}; const h = setup(value); assert.equal(h.el("run-qc").hidden, false); assert.equal(h.el("run-strategy").hidden, true); assert.equal(h.el("run-qc-frame").getAttribute("src"), "/review-qc");});
+  await check("Harmony legacy omission displays block and remains an identical clean proposal", () => {
+    const value = harmonyAnswer(), original = copy(value.run.strategy_review.details.canonical_proposal), h = setup(value);
+    assert.equal(h.state.batchControls.nested_biology.value, "block");
+    assert.equal(h.call("typedStrategyError", original), null);
+    assert.equal(h.call("strategyDirty"), false);
+    h.call("chooseBatchDraft");
+    assert.deepEqual(JSON.parse(h.state.strategyDraftText), original);
+    assert.equal(h.call("strategyDirty"), false);
+    assert.equal(Object.hasOwn(JSON.parse(h.state.strategyDraftText).batch, "nested_biology"), false);
+    const scalar = harmonyAnswer(); scalar.run.strategy_review.details.canonical_proposal.batch.group_by_vars = "donor_id";
+    const single = setup(scalar); single.call("chooseBatchDraft");
+    assert.deepEqual(JSON.parse(single.state.strategyDraftText), scalar.run.strategy_review.details.canonical_proposal);
+    assert.equal(single.call("strategyDirty"), false);
+  });
+  await check("Harmony explicit block survives another field edit", () => {
+    const h = setup(harmonyAnswer("block"));
+    h.state.batchControls.reason.value = "Changed reason only"; h.call("chooseBatchDraft");
+    assert.equal(JSON.parse(h.state.strategyDraftText).batch.nested_biology, "block");
+    assert.equal(h.call("typedStrategyError", JSON.parse(h.state.strategyDraftText)), null);
+  });
+  await check("Harmony reviewed nested policy renders survives edits and discloses inference limit", () => {
+    const h = setup(harmonyAnswer("reviewed_embedding_only"));
+    assert.equal(h.state.batchControls.nested_biology.value, "reviewed_embedding_only");
+    assert.equal(h.call("strategyDirty"), false);
+    assert.match(h.el("strategy-operations").textContent, /at least two independent donor\/sample.*condition-effect inference/s);
+    h.state.batchControls.reason.value = "Reviewed the risks and before/after diagnostics"; h.call("chooseBatchDraft");
+    assert.equal(JSON.parse(h.state.strategyDraftText).batch.nested_biology, "reviewed_embedding_only");
+    assert.equal(h.call("typedStrategyError", JSON.parse(h.state.strategyDraftText)), null);
+  });
+  await check("Harmony policy select explicitly enables review and can return to block", () => {
+    const h = setup(harmonyAnswer());
+    h.state.batchControls.nested_biology.value = "reviewed_embedding_only";
+    h.state.batchControls.nested_biology.listeners.change[0]();
+    assert.equal(JSON.parse(h.state.strategyDraftText).batch.nested_biology, "reviewed_embedding_only");
+    assert.equal(h.call("strategyDirty"), true); assert.equal(h.requests.length, 0);
+    h.state.batchControls.nested_biology.value = "block"; h.call("chooseBatchDraft");
+    assert.equal(JSON.parse(h.state.strategyDraftText).batch.nested_biology, "block");
+    assert.equal(h.call("typedStrategyError", JSON.parse(h.state.strategyDraftText)), null);
+  });
+  await check("Harmony rejects invalid optional policy types and policies on other methods", () => {
+    const h = setup(harmonyAnswer());
+    for (const policy of [null, true, 1, "", "allow", ["block"], {policy: "block"}]) {
+      const draft = copy(harmonyAnswer().run.strategy_review.details.canonical_proposal);
+      draft.batch.nested_biology = policy;
+      assert.match(h.call("typedStrategyError", draft), /nested_biology/);
+    }
+    for (const method of ["none", "manual"]) {
+      const draft = proposal(); draft.batch = {method, reason: "Explicit choice", nested_biology: "block"};
+      assert.match(h.call("typedStrategyError", draft), /typed method fields/);
+    }
+  });
   const report = {schema: "scagentkit.strategy.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, networkRequests: 0, providerRequests: 0,
     sourceSha256: sha(sourcePath), htmlSha256: sha(htmlPath), driverSha256: sha(__filename), tests: results.length, passed: results.filter(result => result.passed).length, failed: results.filter(result => !result.passed).length, results};
   if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");

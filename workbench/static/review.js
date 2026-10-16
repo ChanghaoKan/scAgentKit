@@ -156,9 +156,11 @@ function typedStrategyError(value, details = state.view?.run.strategy_review?.de
   const batch = value.batch, strict = harmonyEnabled(details);
   if (!batch || typeof batch !== "object" || Array.isArray(batch) || !["none", "manual", "harmony"].includes(batch.method)) return "Choose a supported batch method: none, manual or harmony.";
   const fields = batch.method === "harmony" ? ["method", "group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "reason"] : ["method", "reason"];
-  if (Object.keys(batch).some(key => !fields.includes(key)) || batch.method === "harmony" && fields.some(key => !Object.hasOwn(batch, key))) return "The batch operation accepts exactly its typed method fields; arbitrary code and provider parameters are rejected.";
+  if (Object.keys(batch).some(key => !fields.includes(key) && !(batch.method === "harmony" && key === "nested_biology")) || batch.method === "harmony" && fields.some(key => !Object.hasOwn(batch, key))) return "The batch operation accepts exactly its typed method fields; arbitrary code and provider parameters are rejected.";
   if ((strict || batch.method === "harmony" || Object.hasOwn(batch, "reason")) && (typeof batch.reason !== "string" || !batch.reason.trim())) return "Every batch choice needs an explicit nonempty analyst reason.";
   if (batch.method === "harmony") {
+    if (Object.hasOwn(batch, "nested_biology") && !["block", "reviewed_embedding_only"].includes(batch.nested_biology))
+      return "Harmony nested_biology must be block or reviewed_embedding_only; omission keeps the conservative block default.";
     const groups = array(batch.group_by_vars), declared = declaredHarmonyColumns(details);
     if (groups.length < 1 || groups.length > 3 || groups.some(column => typeof column !== "string" || !column || !declared.includes(column)) || new Set(groups).size !== groups.length)
       return "Harmony needs 1–3 unique explicitly declared technical batch/sample/donor metadata columns. Condition, group and capture are not inferred as correction variables.";
@@ -746,9 +748,9 @@ function renderJointEvidence(item) {
   dbCard.append(element("h3", "Local database candidates"), element("p", "Saved reference status: " + (typeof database.status === "string" ? database.status : "unavailable"), {class: "annotation-reference-status"}));
   const candidates = array(database.candidates).filter(row => row && typeof row === "object" && !Array.isArray(row));
   const candidateTarget = element("div", null, {id: "annotation-joint-candidates", "data-testid": "annotation-joint-candidates"});
-  if (candidates.length) candidateTarget.append(table(["Candidate", "Coverage", "Unique hits / reference genes"], candidates.map(row => [typeof row.label === "string" ? row.label + (row.tiedBest === true ? " · tied best" : "") : "Unavailable label", evidenceNumber(row.score), evidenceNumber(row.overlap) + " / " + evidenceNumber(row.referenceSize)])));
+  if (candidates.length) candidateTarget.append(table(["Candidate", "Coverage", "Unique hits / reference genes"], candidates.map(row => [typeof row.label === "string" ? row.label + (row.tiedBest === true ? " · tied best" : "") + (row.overlap === 1 ? " · single-marker evidence (weak)" : "") : "Unavailable label", evidenceNumber(row.score), evidenceNumber(row.overlap) + " / " + evidenceNumber(row.referenceSize)])));
   else empty(candidateTarget, "No positive candidate is available. This does not establish a biological exclusion.");
-  dbCard.append(candidateTarget, element("p", "Coverage is descriptive reference-marker overlap, not a probability.", {class: "annotation-confidence-note"}));
+  dbCard.append(candidateTarget, element("p", "Coverage is descriptive reference-marker overlap, not a probability. A single matching marker is weak evidence, even at 100% coverage. Candidate order does not establish a cell identity.", {class: "annotation-confidence-note"}));
   const currentCard = element("section", null, {id: "annotation-joint-current", "data-testid": "annotation-joint-current", class: "joint-evidence-card"});
   const source = current.source || state.view?.run.annotation_review?.details?.source;
   currentCard.append(element("h3", "Current annotation proposal"), element("p", "Saved source: " + (typeof source?.kind === "string" ? source.kind : "unavailable"), {class: "annotation-reference-status"}), element("p", item.proposal.label, {class: "annotation-saved-label"}), element("p", item.proposal.confidence + " confidence · qualitative, uncalibrated", {class: "annotation-confidence-note"}), element("p", item.proposal.rationale, {class: "annotation-saved-rationale"}), geneParagraph("Cited genes: ", array(item.proposal.markers), {class: "annotation-confidence-note"}));
@@ -990,8 +992,14 @@ function chooseBatchDraft() {
     if (method === "harmony") {
       for (const key of ["group_by_vars", "theta", "lambda"]) {try {choice[key] = JSON.parse(controls[key].value);} catch (_) {choice[key] = null;}}
       for (const key of ["sigma", "max_iter", "nclust"]) choice[key] = controls[key].value.trim() ? Number(controls[key].value) : null;
+      // Preserve legacy omission: merely opening/editing another field must not
+      // insert an optional policy and invalidate the saved proposal binding.
+      if (controls.nested_biology.value !== "block" || Object.hasOwn(draft.batch, "nested_biology"))
+        choice.nested_biology = controls.nested_biology.value;
     }
-    draft.batch = choice; state.strategyDraftText = json(draft); $("strategy-json").value = state.strategyDraftText;
+    const ordered = {};
+    for (const key of [...Object.keys(draft.batch), ...Object.keys(choice)]) if (Object.hasOwn(choice, key)) ordered[key] = choice[key];
+    draft.batch = ordered; state.strategyDraftText = json(draft); $("strategy-json").value = state.strategyDraftText;
     controls.parameters.hidden = method !== "harmony"; updateStrategyDraftStatus(); buttons();
   } catch (_) {message("Correct the complete strategy JSON before changing batch fields.", true);}
 }
@@ -1014,10 +1022,17 @@ function renderBatch(details, proposal) {
   const reason = strategyControl("textarea", "harmony-reason", batch.reason || "", {"aria-label": "Required analyst reason for batch handling", rows: "2"});
   card.append(element("label", "Draft method", {for: "harmony-method"}), method, element("label", "Required analyst reason", {for: "harmony-reason"}), reason);
   const parameters = cycleNode("div", null, "harmony-parameters"), controls = {method, reason, parameters}; parameters.hidden = batch.method !== "harmony";
-  for (const [key, label] of [["group_by_vars", "Explicit correction metadata columns · JSON string array"], ["theta", "theta · numeric scalar or array; >= 0"], ["lambda", "lambda · numeric scalar or array; > 0"], ["sigma", "sigma · (0,1]"], ["max_iter", "max_iter · integer 1–50"], ["nclust", "nclust · integer 2–100"]]) {
-    const input = strategyControl("input", "harmony-" + key, batch[key] == null ? "" : ["group_by_vars", "theta", "lambda"].includes(key) ? json(key === "group_by_vars" ? array(batch[key]) : batch[key]) : String(batch[key]), {type: "text", "aria-label": label}); controls[key] = input;
+  for (const [key, label] of [["group_by_vars", "Explicit correction metadata columns · JSON string or string array"], ["theta", "theta · numeric scalar or array; >= 0"], ["lambda", "lambda · numeric scalar or array; > 0"], ["sigma", "sigma · (0,1]"], ["max_iter", "max_iter · integer 1–50"], ["nclust", "nclust · integer 2–100"]]) {
+    const input = strategyControl("input", "harmony-" + key, batch[key] == null ? "" : ["group_by_vars", "theta", "lambda"].includes(key) ? json(batch[key]) : String(batch[key]), {type: "text", "aria-label": label}); controls[key] = input;
     parameters.append(element("label", label, {for: "harmony-" + key}), input); input.addEventListener("input", chooseBatchDraft);
   }
+  const nested = strategyControl("select", "harmony-nested-biology", null, {"aria-label": "Nested donor/sample design policy"});
+  nested.append(element("option", "Block nested designs (default)", {value: "block"}),
+    element("option", "Reviewed replicated donor/sample nesting · embedding only", {value: "reviewed_embedding_only"}));
+  nested.value = batch.nested_biology || "block"; controls.nested_biology = nested;
+  parameters.append(element("label", "Nested donor/sample design policy", {for: "harmony-nested-biology"}), nested,
+    cycleNode("p", "Default block retains the conservative design boundary. The explicit embedding-only choice requires at least two independent donor/sample IDs per biological level and technical provenance; R still blocks aliases and unreplicated designs. Inspect before/after diagnostics. Integration does not establish preserved biology and must not be used for condition-effect inference.", "harmony-nested-note", {class: "microcopy"}));
+  nested.addEventListener("change", chooseBatchDraft);
   method.addEventListener("change", chooseBatchDraft); reason.addEventListener("input", chooseBatchDraft); state.batchControls = controls; card.append(parameters);
   card.append(cycleNode("p", "Declared technical_batch: " + (typeof facts.design?.technical_batch === "boolean" ? String(facts.design.technical_batch).toUpperCase() : "Unknown") + "; design notes/source: " + (facts.design?.notes || "Unknown") + ". Eligible explicit technical batch/sample/donor columns: " + (eligible.join(", ") || "None available") + ". Group, condition, treatment and physical capture are excluded; aliases and ambiguous role mappings are rejected.", "harmony-provenance", {class: "microcopy"}));
   card.append(cycleNode("p", "Correction can remove biological signal. Crossed design is an estimability check; it does not prove correction is necessary or beneficial. Complete confounding is blocked by R. The biological group is excluded as a correction covariate; that is not a claim that its effect is preserved. Do not select parameters by whether UMAP looks cleaner.", "harmony-risk", {class: "evidence-explainer"}));

@@ -118,6 +118,17 @@ annot_compare_with_reference <- function(obj,
       message(sprintf("[annot_compare] auto-detected reference column: '%s'",
                       reference_col))
     }
+    # A column that guided annotation already showed the model as a prior
+    # cannot also serve as independent ground truth: agreement would be
+    # inflated by construction.
+    prior_col <- .find_in_decisions(obj, "metadata_prior_column", from_step = "annot_llm_annotate")
+    if (is.character(prior_col) && length(prior_col) == 1L && !is.na(prior_col) &&
+        identical(prior_col, reference_col)) {
+      stop(sprintf(paste0("Reference column '%s' was used as the guided annotation prior, so ",
+        "agreement with it is circular. Compare against an independent column or ",
+        "rerun annot_llm_annotate() with reference_mode = \"independent\"."), reference_col),
+        call. = FALSE)
+    }
     if (!reference_col %in% colnames(meta)) {
       stop(sprintf("reference_col '%s' not found in metadata.", reference_col))
     }
@@ -158,6 +169,9 @@ annot_compare_with_reference <- function(obj,
           nzchar(llm_call) & nzchar(author_call)
   llm_call    <- llm_call[keep]
   author_call <- author_call[keep]
+  if (!length(llm_call)) {
+    stop("No cells have both an annotation and a reference label to compare.", call. = FALSE)
+  }
 
   # -- Decide whether to collapse --
   if (identical(collapse_llm, "auto")) {
@@ -272,9 +286,14 @@ annot_compare_with_reference <- function(obj,
     return(author_celltype[cell_names_obj])
   }
 
+  # Stripping a sample prefix leaves bare barcodes, which repeat across
+  # samples. Accept a stripped key only if it is unique on both sides;
+  # otherwise name-indexing would silently pair cells from different samples.
+  unique_keys <- function(obj_keys, ref_keys) !anyDuplicated(obj_keys) && !anyDuplicated(ref_keys)
+
   # Strategy 1: strip ONE leading prefix from obj cell names
   stripped <- sub("^[^_]+_", "", cell_names_obj)
-  if (mean(stripped %in% cell_names_ref) > 0.95) {
+  if (unique_keys(stripped, cell_names_ref) && mean(stripped %in% cell_names_ref) > 0.95) {
     out <- author_celltype[stripped]
     names(out) <- cell_names_obj
     message("[annot_compare] aligned by stripping one prefix from obj cell names.")
@@ -285,7 +304,7 @@ annot_compare_with_reference <- function(obj,
   stripped_ref <- sub("^[^_]+_", "", cell_names_ref)
   ref2 <- author_celltype
   names(ref2) <- stripped_ref
-  if (mean(cell_names_obj %in% stripped_ref) > 0.95) {
+  if (unique_keys(cell_names_obj, stripped_ref) && mean(cell_names_obj %in% stripped_ref) > 0.95) {
     out <- ref2[cell_names_obj]
     message("[annot_compare] aligned by stripping one prefix from ref cell names.")
     return(out)
@@ -296,7 +315,7 @@ annot_compare_with_reference <- function(obj,
   stripped_ref <- sub("^[^_]+_", "", cell_names_ref)
   ref3 <- author_celltype
   names(ref3) <- stripped_ref
-  if (mean(stripped_obj %in% stripped_ref) > 0.95) {
+  if (unique_keys(stripped_obj, stripped_ref) && mean(stripped_obj %in% stripped_ref) > 0.95) {
     out <- ref3[stripped_obj]
     names(out) <- cell_names_obj
     message("[annot_compare] aligned by stripping one prefix from both sides.")
@@ -304,6 +323,7 @@ annot_compare_with_reference <- function(obj,
   }
 
   stop("Could not align cell names between AgentSeurat and external author_celltype. ",
-       "Match rate too low. Inspect head(colnames(obj@data)) and ",
+       "Match rate too low, or stripped barcodes repeat across samples. ",
+       "Inspect head(colnames(obj@data)) and ",
        "head(names(author_celltype)) and align manually.")
 }

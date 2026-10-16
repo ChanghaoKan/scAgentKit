@@ -13,10 +13,10 @@ from pathlib import Path
 
 try:
     from .evidence import EvidenceLoader, canonical, digest, strict_json
-    from .store import StoreError, portable_content
+    from .store import StoreError, portable_content, scrub_secrets
 except ImportError:
     from evidence import EvidenceLoader, canonical, digest, strict_json
-    from store import StoreError, portable_content
+    from store import StoreError, portable_content, scrub_secrets
 
 ROOT = Path(__file__).resolve().parent
 
@@ -169,7 +169,7 @@ class DirectedRuntime:
                     "--labels", str(self.results / "pbmc3k_verified/scagentkit_fixed_labels.csv"),
                     "--umap", str(self.results / "pbmc3k_verified/scagentkit_fixed_umap.csv"),
                     "--output-dir", str(temporary), "--input-evidence-revision", evidence["revision"], "--cluster", "6"]
-            env = dict(os.environ)
+            env = scrub_secrets(dict(os.environ))
             if self.library:
                 env["R_LIBS_USER"] = self.library
             try:

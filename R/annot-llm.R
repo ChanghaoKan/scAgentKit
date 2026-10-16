@@ -53,8 +53,11 @@
 #' @param clusters Optional integer or character vector restricting which
 #'   clusters to annotate (for iterative review). Default NULL = all.
 #' @param max_retries Integer, JSON-parse and annotation-schema retries
-#'   on malformed output.
-#'   Default 2.
+#'   on malformed output. Default 2, so each cluster (times `n_samples`) can
+#'   cost up to three paid calls; there is no budget guard in this legacy
+#'   function. A provider error is never retried, because the request may
+#'   already have been delivered and billed. Use `sc_run()` for budgeted,
+#'   approval-gated requests.
 #' @param n_samples Integer, number of independent LLM calls per cluster.
 #'   Default 1 (no ensembling, backwards compatible). When > 1, the LLM
 #'   is queried `n_samples` times per cluster and majority vote is taken
@@ -710,14 +713,15 @@ annot_llm_annotate <- function(obj,
         "  Describe the cycling state and lineage candidate or uncertainty in reasoning.\n"
       ) else paste0(
         "  STEP 3 -- Choose ONE of these structured names ",
-        "(MANDATORY format -- do NOT use plain lineage names for cycling ",
-        "clusters, do NOT use 'Unknown'):\n",
+        "(do NOT use plain lineage names for cycling clusters):\n",
         "      A. 'Cycling cells (lineage candidate: <X>)'  ",
         "if rescue list shows clear lineage markers for <X>. Use confidence='medium' or 'high' depending on signal strength.\n",
         "      B. 'Cycling cells (lineage uncertain)'  ",
         if (reference_mode == "guided")
           "ONLY if neither rescue list nor reference candidates give a usable lineage signal. Use confidence='low'.\n"
-        else "ONLY if the supplied markers give no usable lineage signal. Use confidence='low'.\n"
+        else "ONLY if the supplied markers give no usable lineage signal. Use confidence='low'.\n",
+        "      C. 'Unknown' with confidence='low' if the evidence does not ",
+        "support a cycling population at all (rule 1 still applies).\n"
       ),
       "  In the reasoning field, name the specific rescue-list genes that ",
       "drove your lineage assignment (e.g. 'rescue list shows ALB/KRT18/",
@@ -803,20 +807,30 @@ annot_llm_annotate <- function(obj,
       max_retries != floor(max_retries) || max_retries >= .Machine$integer.max) {
     stop("`max_retries` must be a non-negative integer below .Machine$integer.max.")
   }
-  last_err <- NULL
   audit <- list()
+  last_err <- NULL
   for (i in seq_len(max_retries + 1)) {
+    call_err <- NULL
     raw <- tryCatch(
       if (is.null(image_path)) chat_fn(system_prompt, user_prompt)
       else chat_fn(system_prompt, user_prompt, image_path = image_path),
-      error = function(e) { last_err <<- e; NULL }
+      error = function(e) { call_err <<- e; NULL }
     )
     attempt <- list(attempt = i, system_prompt = system_prompt,
                     user_prompt = user_prompt, image_path = image_path, raw_response = raw,
                     status = "failed", error = NULL)
-    if (is.null(raw)) {
-      attempt$error <- if (is.null(last_err)) "Provider returned NULL." else conditionMessage(last_err)
+    if (!is.null(call_err)) {
+      # Delivery is unknown after a transport/provider error; resending could
+      # bill twice. Retries are reserved for responses that arrived malformed.
+      attempt$error <- conditionMessage(call_err)
       audit[[i]] <- attempt
+      last_err <- call_err
+      break
+    }
+    if (is.null(raw)) {
+      attempt$error <- "Provider returned NULL."
+      audit[[i]] <- attempt
+      last_err <- simpleError("Provider returned NULL.")
       next
     }
 
@@ -914,9 +928,6 @@ annot_llm_annotate <- function(obj,
   })
   do.call(rbind, rows)
 }
-
-# Null-coalescing operator (used above).
-`%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
 
 
 # ---- v0.1.24 helpers: marker validation, hybrid confidence, ensemble ----
@@ -1180,7 +1191,9 @@ annot_llm_annotate <- function(obj,
   # Also drop housekeeping-like ubiquitous genes that don't help with lineage
   # (these light up in every cluster).
   ubiq_pattern <- "^(MT-|MTRNR|RPS|RPL|MALAT1$|XIST$|NEAT1$|EEF1|ACTB$|GAPDH$|B2M$)"
-  is_ubiq <- grepl(ubiq_pattern, names(pct_expr))
+  # Case-insensitive so mouse symbols (mt-, Rps/Rpl, Malat1, Actb) are
+  # excluded as well, not only human upper-case ones.
+  is_ubiq <- grepl(ubiq_pattern, names(pct_expr), ignore.case = TRUE)
   keep <- keep & !is_ubiq
 
   scored <- data.frame(

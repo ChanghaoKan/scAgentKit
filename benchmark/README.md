@@ -17,6 +17,7 @@ Current implementation status:
 | Script | Status |
 |---|---|
 | `pbmc3k_repro.R` | executable offline Seurat5 workflow and saved-decision replay; requires local raw counts and installed dependencies |
+| `pbmc3k_reference_inputs.R` | offline generation of database candidates and guided/independent prompt inputs from saved blind results; no model call, no truth labels |
 | `bench_01_pc_selection.R` | partial prototype; corrected public APIs and reference-label isolation; provider calls and data installation require explicit opt-in |
 | `bench_02_resolution.R`–`bench_06_ablation.R` | explicit stubs that stop immediately |
 | `bench_99_collate.R` | explicit stub that stops immediately |

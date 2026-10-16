@@ -33,6 +33,10 @@
     if (!is.list(row) || !setequal(names(row), c("clusterId", "label", "confidence", "rationale", "markers")) || anyDuplicated(names(row)))
       stop("Historical rows require clusterId,label,confidence,rationale,markers.", call. = FALSE)
     if (!row$clusterId %in% ids) stop("Historical annotation refers to a foreign cluster ID.", call. = FALSE)
+    # Duplicates would pass import but make every later joint-evidence review
+    # fail; reject them where the analyst can still correct the input.
+    if (anyDuplicated(unlist(row$markers, use.names = FALSE)))
+      stop("Historical annotation markers must be unique within a cluster row.", call. = FALSE)
     parsed <- .validate_annotation_response(list(cluster = row$clusterId,
       primary_annotation = row$label, confidence = row$confidence,
       supporting_markers = row$markers, contradicting_markers = list(),

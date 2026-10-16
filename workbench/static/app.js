@@ -67,7 +67,8 @@ async function request(path, body) {
   const response = await fetch(path, body === undefined ? { cache: "no-store", headers: boundHeaders(path) } : {
     method: "POST", headers: boundHeaders(path, { "Content-Type": "application/json" }), body: JSON.stringify(body)
   });
-  const data = await response.json();
+  // A proxy or crash can return HTML; report the HTTP status instead of a JSON SyntaxError.
+  const data = await response.json().catch(() => { const error = new Error(`Request failed (${response.status}); the server did not return JSON.`); error.status = response.status; throw error; });
   if (!response.ok) { const error = new Error(data.error || data.message || `Request failed (${response.status}).`); error.status = response.status; throw error; }
   if (["/api/session", "/api/decision", "/api/undo"].includes(path)) verifySession(data);
   if (path === "/api/evidence" && genericEvidence(data) && state.selectedProject && data.revision !== state.selectedProject) throw new Error("The returned evidence belongs to a different project snapshot than this tab requested.");
@@ -471,6 +472,10 @@ function renderDirected() {
   plan.append(detail("Typed parameters, exact scope and stop rules",data.plan));target.append(plan);
   const proposal=data.proposal;
   if (!proposal) return;
+  if (typeof proposal.status!=="string" || typeof proposal.granularity!=="string" || !Array.isArray(proposal.candidates)) {
+    target.append(node("p",{class:"failure-box","data-testid":"directed-unavailable"},"The saved proposal is incomplete; it is not displayed. Inspect the directed evidence files."));
+    return;
+  }
   const result=node("section",{class:"directed-section directed-proposal","data-testid":"directed-proposal"});
   const head=node("div",{class:"directed-result-heading"});head.append(node("h3",{},"3 · Review a provisional judgment"),pill(proposal.status.replaceAll("_"," "),proposal.status==="unresolved"?"muted":"amber"));result.append(head);
   result.append(node("p",{class:"evidence-explainer"},`Granularity: ${proposal.granularity.replaceAll("_"," ")} · workflow: proposed · uncalibrated heuristic, not a probability or a truth label.`));

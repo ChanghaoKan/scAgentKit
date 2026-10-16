@@ -32,5 +32,11 @@ For each cluster's top marker list, computes an overlap score against
 each cell type in the reference. The score is reference-marker coverage:
 `|cluster_markers intersect celltype_markers| / |celltype_markers|`.
 This rewards cell types whose characteristic markers appear prominently
-in the cluster's top-N list.
+in the cluster's top-N list. Coverage favours small marker sets: a type
+with a single matching marker scores 1.0. Candidates are ordered by score,
+then absolute matched-marker count. Read \code{overlap_count} and
+\code{celltype_size} alongside coverage: a 1/1 match ranks above 10/20,
+but is weak single-marker evidence, not a more certain identity.
+Ordering and tie breaking do not assign a label; every candidate requires
+analyst review.
 }

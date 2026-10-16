@@ -4,25 +4,26 @@
 # dependencies are resolved when the image is built; use a lockfile or image
 # digest as well if exact environment reconstruction is required.
 #
-# Build:
-#   docker build -t scagentkit:0.4.0 .
+# Build (tag with the version in DESCRIPTION; the image installs this checkout):
+#   docker build --build-arg SCAGENTKIT_VERSION=0.5.0.9000 -t scagentkit:0.5.0.9000 .
 #
 # Run interactively (with your scratch dir mounted and API key passed in):
 #   docker run --rm -it \
 #     -v $(pwd):/workspace \
 #     -w /workspace \
 #     -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-#     scagentkit:0.4.0 R
+#     scagentkit:0.5.0.9000 R
 #
 # Run a script:
-#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.4.0 \
+#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.5.0.9000 \
 #     Rscript analysis.R
 
 FROM rocker/r-ver:4.4.2
 
 LABEL maintainer="Changhao Kan <kch_ynu@163.com>"
 LABEL org.opencontainers.image.source="https://github.com/ChanghaoKan/scAgentKit"
-LABEL org.opencontainers.image.version="0.4.0"
+ARG SCAGENTKIT_VERSION=0.5.0.9000
+LABEL org.opencontainers.image.version="${SCAGENTKIT_VERSION}"
 
 # System libs needed for Seurat, hdf5, png/jpeg I/O, httr2, magick
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -48,7 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN R -e "install.packages(c('remotes', 'BiocManager'))"
 
 # Bioconductor deps that scAgentKit Suggests
-RUN R -e "BiocManager::install(c('scDblFinder', 'SingleCellExperiment'), ask = FALSE, update = FALSE)"
+RUN R -e "BiocManager::install(c('scDblFinder', 'SingleCellExperiment', 'SummarizedExperiment', 'S4Vectors', 'BiocParallel'), ask = FALSE, update = FALSE)"
 
 # Core scAgentKit Imports + key Suggests
 RUN R -e "install.packages(c( \
@@ -70,6 +71,14 @@ RUN R -e "remotes::install_github('ChanghaoKan/agentomicsCore@${AGENTOMICS_CORE_
 COPY . /tmp/scAgentKit
 RUN R -e "remotes::install_local('/tmp/scAgentKit', upgrade = 'never', dependencies = FALSE)" \
     && rm -rf /tmp/scAgentKit
+
+# install.packages() only warns when a package fails, so the steps above can
+# succeed with missing packages. Fail the build explicitly instead.
+RUN Rscript -e "pkgs <- c('scAgentKit', 'agentomicsCore', 'Seurat', 'SeuratObject', 'Matrix', \
+        'jsonlite', 'digest', 'dplyr', 'ggplot2', 'harmony', 'scDblFinder', 'SingleCellExperiment', \
+        'SummarizedExperiment', 'httr2', 'testthat'); \
+      missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]; \
+      if (length(missing)) stop('Missing packages: ', paste(missing, collapse = ', '))"
 
 WORKDIR /workspace
 

@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # These are synthetic coordinator controls. Planted cell-cycle expression,
 # metadata, QC cutoffs, and Unknown annotations make no biological claims.
 

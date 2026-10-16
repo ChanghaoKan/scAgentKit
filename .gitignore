@@ -10,3 +10,5 @@ check/
 workbench/.local/
 workbench/**/__pycache__/
 workbench/test-output/
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds

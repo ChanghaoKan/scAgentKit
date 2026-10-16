@@ -103,7 +103,7 @@
                             validator = function(x) .validate_pcs_decision(x, candidates))
   audit <- .decision_audit(parsed)
   if (!identical(audit$status, "ok")) {
-    warning("PC decision failed validation; falling back to the median candidate.", call. = FALSE)
+    warning("PC decision failed validation; the median candidate is reported only as a fallback and is not applied as ndim.", call. = FALSE)
     audit$status <- "fallback"
     return(c(list(chosen_ndim = candidates[ceiling(length(candidates) / 2)],
                   confidence = "low",

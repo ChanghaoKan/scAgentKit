@@ -247,8 +247,9 @@ missing overlap. Distinct column names alone do not establish independent
 technical and biological effects. Candidate-name scoring is a heuristic, not a
 technical-batch classifier or a confounding test. A no-correction choice records
 its reason; a manual batch choice records that integration remains unresolved
-and does not create a Harmony reduction. A proposal naming Harmony is rejected
-rather than reported as completed. Doublet removal requires explicitly enabled,
+and does not create a Harmony reduction. A Harmony proposal runs only after the
+design guards in [HARMONY_PC_REVIEW.md](HARMONY_PC_REVIEW.md) pass; otherwise it
+stops at a manual boundary rather than being reported as completed. Doublet removal requires explicitly enabled,
 available saved diagnostics, a supported raw strategy and exact joint approval
 of `remove_predicted`; otherwise it is rejected. A score or high RNA content
 alone never authorizes deletion. Cycle regression is

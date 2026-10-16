@@ -1,3 +1,4 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
 # Fresh, public synthetic software controls. Every parent annotation and child
 # strategy is approved through the actual coordinator; no saved project, cell
 # identity, approval or provider response is fabricated for these checks.

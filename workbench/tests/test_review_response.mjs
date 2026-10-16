@@ -229,4 +229,17 @@ await test("HTML, JS and R-looking text stays literal; no automatic provider or 
   assert.equal(c.nodes.get("annotation-rationale").value, literal); assert.equal(c.context.executed, undefined);
   assert.equal(requests, 0); checks++;
 });
+await test("reference candidates retain hits, reference size and weak-single-marker warning", async () => {
+  const initial = view(), item = initial.run.annotation_review.details.annotations[0];
+  item.joint_evidence = {schema: "scagentkit.joint-annotation-evidence.v1", clusterId: item.clusterId,
+    database: {status: "ok", candidates: [{label: "Singleton", score: 1, overlap: 1, referenceSize: 1}, {label: "Broad", score: .5, overlap: 10, referenceSize: 20}]}};
+  const c = client(undefined, initial);
+  const walk = n => [n, ...(n.children || []).flatMap(walk)];
+  const all = walk(c.nodes.get("annotation-joint-evidence")), text = all.map(n => n.textContent || "").join(" ");
+  assert.match(text, /Singleton · single-marker evidence \(weak\)/);
+  assert.match(text, /1 \/ 1/); assert.match(text, /10 \/ 20/);
+  assert.match(text, /Candidate order does not establish a cell identity/);
+  const heads = all.filter(n => n.tag === "th").map(n => n.textContent);
+  assert(heads.includes("Coverage")); assert(heads.includes("Unique hits / reference genes")); checks += 5;
+});
 console.log(`${cases} client cases / ${checks} focused checks passed; no GUI, R or external API calls`);

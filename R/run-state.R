@@ -13,16 +13,33 @@
 .sc_run_root <- function(project_dir, create = FALSE) {
   .sc_project_string(project_dir, "project_dir")
   if (create) dir.create(path.expand(project_dir), recursive = TRUE, showWarnings = FALSE)
-  root <- normalizePath(path.expand(project_dir), mustWork = TRUE)
-  if (nzchar(Sys.readlink(root))) stop("Project directory must not be a symlink.", call. = FALSE)
+  # Check the literal path before normalizePath resolves the link away.
+  literal <- sub("/+$", "", path.expand(project_dir))
+  if (nzchar(Sys.readlink(literal))) stop("Project directory must not be a symlink.", call. = FALSE)
+  root <- normalizePath(literal, mustWork = TRUE)
   root
 }
 .sc_run_lock <- function(root) {
   path <- file.path(root, ".run-lock")
-  if (!dir.create(path, showWarnings = FALSE)) stop("Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped.", call. = FALSE)
+  locked <- "Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped."
+  writable <- "Project (including a parent project for child operations) must be writable to acquire its lock. Ask the project owner to restore writable access at the recorded project path, or restore the complete project at that same path. Otherwise start a new project from preserved input and reapprove; do not edit saved path bindings or bypass an existing lock."
+  if (dir.exists(path)) stop(locked, call. = FALSE)
   owner <- list(token = .sc_run_hash(list(Sys.getpid(), Sys.time(), tempfile())), pid = Sys.getpid(),
                 host = unname(Sys.info()["nodename"]), created_at = .sc_run_time())
-  saveRDS(owner, file.path(path, "owner.rds"))
+  # Publish the lock directory with its owner file already inside (rename of
+  # a directory onto a missing path is atomic), so a crash can never leave a
+  # lock without owner.rds that sc_run_unlock cannot read.
+  staging <- tempfile(".run-lock-", tmpdir = root)
+  if (!isTRUE(suppressWarnings(dir.create(staging))))
+    stop(paste("Cannot create lock staging directory.", writable), call. = FALSE)
+  on.exit(unlink(staging, recursive = TRUE), add = TRUE)
+  tryCatch(saveRDS(owner, file.path(staging, "owner.rds")), error = function(e)
+    stop(paste("Cannot write lock owner record.", writable), call. = FALSE))
+  if (dir.exists(path)) stop(locked, call. = FALSE)
+  if (!isTRUE(suppressWarnings(file.rename(staging, path)))) {
+    if (dir.exists(path)) stop(locked, call. = FALSE)
+    stop(paste("Cannot publish project lock; check directory permissions and storage.", writable), call. = FALSE)
+  }
   owner
 }
 .sc_run_release <- function(root, owner) {
@@ -46,7 +63,10 @@
   .sc_run_atomic(envelope, file.path(root, "state.rds"))
   # JSON is a convenience projection. state.rds remains the only commit authority.
   .sc_run_atomic(.sc_run_public(state), file.path(root, "status.json"), json = TRUE)
+  # proposal.json mirrors only a currently pending proposal; a stale copy
+  # left after approval/rejection would read as the current one.
   if (!is.null(state$pending)) .sc_run_atomic(state$pending$proposal, file.path(root, "proposal.json"), json = TRUE)
+  else unlink(file.path(root, "proposal.json"))
   .sc_run_atomic(list(schema = "scagentkit.run-history.v1", events = state$history), file.path(root, "decision_history.json"), json = TRUE)
   invisible(state)
 }
@@ -63,14 +83,23 @@
     previous <- hash
   }
   if (verify) {
-    for (record in state$files) {
+    # Convenience exports (CSV/PNG/JSON/report, bundle/, resume.R) may be
+    # opened and re-saved by analysts; editing one must not make the project
+    # unloadable. The final Seurat output stays bound because child projects
+    # and reintegration depend on its exact bytes.
+    convenience <- startsWith(names(state$files), "output:") &
+      names(state$files) != "output:output/seurat.rds"
+    for (record in state$files[!convenience]) {
       path <- file.path(root, record$path)
       if (!file.exists(path) || nzchar(Sys.readlink(path)) || !identical(.sc_project_sha_file(path), record$sha256))
         stop(paste0("Saved input/evidence/checkpoint changed: ", record$path, ". Stale approval rejected."), call. = FALSE)
     }
-    if (!is.null(state$source$path) && (!file.exists(state$source$path) ||
-        !identical(.sc_project_sha_file(state$source$path), state$source$rds_sha256)))
-      stop("Original input RDS changed; stale approval/resume rejected. Start a new project for the new input.", call. = FALSE)
+    # The project owns a checkpointed input copy, so a deleted or moved source
+    # RDS is allowed. A different file now at the recorded path still fails,
+    # because it signals that the analyst may believe a new input is in use.
+    if (!is.null(state$source$path) && file.exists(state$source$path) &&
+        !identical(.sc_project_sha_file(state$source$path), state$source$rds_sha256))
+      stop("Original input RDS changed at its recorded path; stale approval/resume rejected. Start a new project for the new input.", call. = FALSE)
     if (!is.null(state$pending) && !isTRUE(.sc_run_check_binding(state, state$pending)))
       stop("Pending proposal/input/evidence hashes changed; stale approval rejected.", call. = FALSE)
     if (isTRUE(verify_subcluster)) .sc_run_subcluster_guard(root, state)
@@ -306,6 +335,27 @@ sc_run_reject <- function(project_dir, proposal_hash, reviewer, reason, preview_
   .sc_run_public(state)
 }
 
+.sc_run_process_status <- function(pid, signal_probe = tools::pskill,
+                                   absence_probe = .sc_run_process_absent) {
+  if (length(pid) != 1L || !is.numeric(pid) || is.na(pid) || pid < 1 || pid != floor(pid))
+    return("unknown")
+  alive <- tryCatch(suppressWarnings(signal_probe(pid, signal = 0L)), error = function(e) NA)
+  if (isTRUE(alive)) return("alive")
+  # pskill exposes only a boolean: FALSE may mean EPERM, not ESRCH. Require
+  # the OS's explicit "No such process" before permitting local recovery.
+  absent <- tryCatch(absence_probe(pid), error = function(e) FALSE)
+  if (isTRUE(absent)) "absent" else "unknown"
+}
+.sc_run_process_absent <- function(pid, probe = system2) {
+  if (.Platform$OS.type != "unix") return(FALSE)
+  kill <- Sys.which("kill")
+  if (!nzchar(kill)) return(FALSE)
+  result <- suppressWarnings(probe(kill, c("-0", format(pid, scientific = FALSE, trim = TRUE)),
+    stdout = TRUE, stderr = TRUE, env = "LC_ALL=C"))
+  !is.null(attr(result, "status")) && attr(result, "status") != 0L &&
+    any(grepl("No such process", result, fixed = TRUE))
+}
+
 #' Recover a lock after confirming the owning process has stopped
 #' @param project_dir Run directory.
 #' @param token Exact owner token from .run-lock/owner.rds.
@@ -318,8 +368,10 @@ sc_run_unlock <- function(project_dir, token, reason) {
   owner <- readRDS(path)
   if (!identical(token, owner$token)) stop("Lock token mismatch.", call. = FALSE)
   if (identical(owner$host, unname(Sys.info()["nodename"]))) {
-    alive <- tryCatch(tools::pskill(owner$pid, signal = 0L), error = function(e) FALSE)
-    if (isTRUE(alive)) stop("Owning process is still alive; lock retained.", call. = FALSE)
+    status <- .sc_run_process_status(owner$pid)
+    if (identical(status, "alive")) stop("Owning process is still alive; lock retained.", call. = FALSE)
+    if (!identical(status, "absent"))
+      stop("Owning process status is unknown (permission or probe failure); lock retained. Verify process termination with the owning user or administrator.", call. = FALSE)
   }
   provider_lock <- file.path(root, "provider", ".dispatch-lock")
   nested <- if (dir.exists(provider_lock)) jsonlite::fromJSON(file.path(provider_lock, "owner.json"), simplifyVector = FALSE) else NULL

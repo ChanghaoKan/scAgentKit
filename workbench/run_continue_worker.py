@@ -68,9 +68,7 @@ def main():
         if request.exists() or response.exists():
             raise RuntimeError("Worker request/response already exists")
         module._atomic(request, config["payload"])
-        env = dict(os.environ)
-        for name in module.KEYS:
-            env.pop(name, None)
+        env = module.scrub_secrets(dict(os.environ))
         env.update({name: str(config["threads"]) for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS")})
         if config["library"]:
             env["R_LIBS_USER"] = config["library"]

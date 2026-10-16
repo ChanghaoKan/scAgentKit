@@ -5,7 +5,11 @@
 #' is critical: merged-object doublet detection inflates false positives
 #' because inter-sample cell-type mixing is misread as heterotypic doublets.
 #'
-#' Requires `data_type == "seurat_list"`. Call [qc_split()] first.
+#' Requires `data_type == "seurat_list"`. Call [qc_split()] first, and split
+#' by the physical capture/library (one 10x lane or well), not by donor,
+#' condition or a demultiplexed sample: doublets form within a capture, so
+#' splitting a multiplexed capture under-detects cross-sample doublets.
+#' The reported per-sample doublet rate is measured before any removal.
 #'
 #' @param obj An AgentSeurat object with `data_type == "seurat_list"`.
 #' @param remove Logical. If TRUE (default), cells classified as doublets
@@ -34,6 +38,7 @@ qc_doublet <- function(obj,
   }
 
   n_before <- .count_cells(obj)
+  rate_summary <- stats::setNames(numeric(length(obj@data)), names(obj@data))
 
   detect_one <- function(seu) {
     # Seurat v5 safety: qc_doublet typically runs on per-sample objects
@@ -55,19 +60,18 @@ qc_doublet <- function(obj,
 
     seu$doublet_class <- sce$scDblFinder.class
     seu$doublet_score <- sce$scDblFinder.score
-    if (remove) {
-      seu <- subset(seu, subset = doublet_class == "singlet")
-    }
     seu
   }
 
-  obj@data <- lapply(obj@data, detect_one)
+  # Measure each sample's doublet rate before removal; computing it on the
+  # filtered object would always report 0% when remove = TRUE.
+  for (i in seq_along(obj@data)) {
+    seu <- detect_one(obj@data[[i]])
+    rate_summary[i] <- mean(seu$doublet_class == "doublet")
+    if (remove) seu <- subset(seu, subset = doublet_class == "singlet")
+    obj@data[[i]] <- seu
+  }
   n_after  <- .count_cells(obj)
-
-  # Doublet rates per sample (from metadata)
-  rate_summary <- vapply(obj@data, function(seu) {
-    mean(seu$doublet_class == "doublet")
-  }, numeric(1))
   rate_str <- paste(
     sprintf("%s=%.2f%%", names(rate_summary), 100 * rate_summary),
     collapse = ", "

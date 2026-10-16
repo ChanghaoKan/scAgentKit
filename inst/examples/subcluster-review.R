@@ -81,8 +81,17 @@ subcluster_example_continue <- function(child_project, snapshot, retry = FALSE) 
     input_hash = run$input_hash, expected_revision = run$revision, retry = retry)
 }
 
+# A fixed ID would make a second apply/undo/unknown fail as "same ID,
+# different payload". Bind the default to the inspected view instead: retrying
+# the same view is idempotent, and a later operation gets a fresh ID.
+subcluster_example_request_id <- function(operation, snapshot, extra = NULL) {
+  run <- snapshot$run
+  paste(c("example", operation, run$project_id, run$revision, snapshot$integration_revision, extra),
+        collapse = "-")
+}
+
 subcluster_example_unknown <- function(child_project, snapshot, reviewer, reason,
-                                        request_id = "example-unknown-001") {
+                                        request_id = subcluster_example_request_id("unknown", snapshot)) {
   run <- snapshot$run
   sc_run_subcluster_unknown(child_project, project_id = run$project_id,
     input_hash = run$input_hash, expected_revision = run$revision,
@@ -90,7 +99,7 @@ subcluster_example_unknown <- function(child_project, snapshot, reviewer, reason
 }
 
 subcluster_example_apply <- function(child_project, snapshot, reviewer, reason,
-                                      request_id = "example-apply-001") {
+                                      request_id = subcluster_example_request_id("apply", snapshot)) {
   # Display-only counts/output summaries are deliberately not DO.call arguments.
   fields <- c("project_id", "input_hash", "expected_revision", "parent_scope_hash",
     "expected_parent_revision", "annotation_hash", "apply_hash", "column",
@@ -103,7 +112,8 @@ subcluster_example_apply <- function(child_project, snapshot, reviewer, reason,
 }
 
 subcluster_example_undo <- function(child_project, snapshot, application_id,
-                                     reviewer, reason, request_id = "example-undo-001") {
+                                     reviewer, reason,
+                                     request_id = subcluster_example_request_id("undo", snapshot, application_id)) {
   run <- snapshot$run
   sc_run_subcluster_undo(child_project, application_id = application_id,
     project_id = run$project_id, input_hash = run$input_hash,

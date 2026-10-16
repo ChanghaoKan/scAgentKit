@@ -15,6 +15,7 @@ const source = fs.readFileSync(sourcePath, "utf8");
 const geneSource = fs.readFileSync(path.join(root, "static/gene-links.js"), "utf8");
 const mapSource = fs.readFileSync(path.join(root, "static/ortholog-map.js"), "utf8");
 const results = [];
+const timings = [];
 let networkRequests = 0, windowAccesses = 0, htmlParses = 0;
 class Element {
   constructor(tag, namespace = null) {this.tagName = tag.toUpperCase(); this.namespaceURI = namespace; this.children = []; this.attributes = {}; this.text = ""; this.listeners = {}; this.style = {};}
@@ -65,13 +66,13 @@ check("standalone API exposes only two frozen display functions", () => {
   assert.throws(() => vm.runInContext('"use strict"; ScEvidenceDisplay.markers = null;', context), /read only|readonly|Cannot assign/i);
   assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon|window|innerHTML|outerHTML|insertAdjacentHTML)\b/);
 });
-check("SVG matches existing 640 by 350 geometry and supplied coordinate bounds", () => {
+check("SVG preserves supplied geometry with one unit scale in 640 by 350 viewport", () => {
   const {api, target} = setup(); api.embedding(target, {points: points(), clusters: clusters(), name: "UMAP", title: "Saved project", selectedCluster: "01"});
   const svg = tags(target, "svg")[0], circles = tags(target, "circle");
   assert.equal(svg.namespaceURI, "http://www.w3.org/2000/svg"); assert.equal(svg.getAttribute("viewBox"), "0 0 640 350");
   const byId = new Map(circles.map(circle => [circle.getAttribute("data-cell-id"), circle]));
-  assert.deepEqual([byId.get("cell:A").getAttribute("cx"), byId.get("cell:A").getAttribute("cy")], ["47", "304"]);
-  assert.deepEqual([byId.get("cell:B").getAttribute("cx"), byId.get("cell:B").getAttribute("cy")], ["593", "40"]);
+  assert.deepEqual([byId.get("cell:A").getAttribute("cx"), byId.get("cell:A").getAttribute("cy")], ["254", "304"]);
+  assert.deepEqual([byId.get("cell:B").getAttribute("cx"), byId.get("cell:B").getAttribute("cy")], ["386", "40"]);
   assert.deepEqual([byId.get("cell:C").getAttribute("cx"), byId.get("cell:C").getAttribute("cy")], ["320", "172"]);
   assert.deepEqual(tags(target, "line").map(line => ["x1", "y1", "x2", "y2"].map(key => line.getAttribute(key))), [["38", "312", "602", "312"], ["38", "38", "38", "312"]]);
   assert.equal(circles.at(-1).getAttribute("data-cluster"), "01"); assert.equal(tags(svg, "title")[0].textContent, "Saved project");
@@ -88,8 +89,8 @@ check("showAll false greys other clusters without removing points or changing bo
   const circles = tags(target, "circle"); assert.equal(circles.length, 3);
   assert.deepEqual(circles.map(circle => circle.getAttribute("fill")), ["#dce2ed", "#dce2ed", "#759bd1"]);
   assert.deepEqual(circles.map(circle => circle.getAttribute("r")), ["1.6", "1.6", "2.05"]);
-  assert.deepEqual(circles.map(circle => circle.getAttribute("opacity")), ["0.72", "0.72", "0.9"]);
-  assert.equal(circles[0].getAttribute("cx"), "593"); assert.equal(testid(target, "embedding-legend").children.length, 3);
+  assert.deepEqual(circles.map(circle => circle.getAttribute("opacity")), ["0.4", "0.4", "0.95"]);
+  assert.equal(circles[0].getAttribute("cx"), "386"); assert.equal(testid(target, "embedding-legend").children.length, 3);
 });
 check("literal cell and cluster IDs survive with only a local selection callback", () => {
   const {api, target} = setup(), ids = ["0", "01", "1", "NA", " T alpha ", "簇-α", '<svg onload="never()">', 0];
@@ -123,12 +124,44 @@ check("invalid coordinates are never coerced, filtered, or substituted", () => {
   api.embedding(target, {points: [{cellId: "a", clusterId: "0", x: -1e308, y: 0}, {cellId: "b", clusterId: "0", x: 1e308, y: 0}]});
   assert.equal(tags(target, "circle").length, 0); assert.match(testid(target, "embedding-unavailable").textContent, /coordinate range cannot be displayed/);
 });
-check("singleton and equal coordinate bounds use the existing deterministic scale", () => {
+check("singleton and equal coordinate bounds are centered", () => {
   const {api, target} = setup();
   for (const supplied of [[{cellId: "a", clusterId: "0", x: 9, y: -4}], [{cellId: "a", clusterId: "0", x: 9, y: -4}, {cellId: "b", clusterId: "0", x: 9, y: -4}]]) {
     api.embedding(target, {points: supplied, clusters: [{id: "0"}]});
-    assert(tags(target, "circle").every(circle => circle.getAttribute("cx") === "47" && circle.getAttribute("cy") === "304"));
+    assert(tags(target, "circle").every(circle => circle.getAttribute("cx") === "320" && circle.getAttribute("cy") === "172"));
   }
+});
+check("unit circle and orthogonal unit segments retain equal pixel lengths", () => {
+  const {api, target} = setup();
+  const input = [[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1]].map(([x, y], i) => ({cellId: String(i), clusterId: "0", x, y}));
+  api.embedding(target, {points: input, clusters: [{id: "0"}]});
+  const coordinates = tags(target, "circle").map(circle => [Number(circle.getAttribute("cx")), Number(circle.getAttribute("cy"))]);
+  for (const [x, y] of coordinates.slice(1)) assert.equal(Math.hypot(x - coordinates[0][0], y - coordinates[0][1]), 132);
+  assert.deepEqual(coordinates[0], [320, 172]);
+  assert.equal(coordinates[1][0] - coordinates[3][0], coordinates[4][1] - coordinates[2][1]);
+});
+check("large cluster palettes do not repeat the ninth color and selection has an outline", () => {
+  const {api, target} = setup();
+  const groups = Array.from({length: 60}, (_, i) => ({id: String(i)}));
+  api.embedding(target, {clusters: groups, points: groups.map((g, i) => ({cellId: String(i), clusterId: g.id, x: i, y: i % 2})), selectedCluster: "9"});
+  const circles = tags(target, "circle");
+  assert.equal(new Set(circles.map(c => c.getAttribute("fill"))).size, 60);
+  const selected = circles.find(c => c.getAttribute("data-cluster") === "9");
+  assert.equal(selected.getAttribute("stroke"), "#172b4d"); assert.equal(selected.getAttribute("data-selected"), "true");
+  assert(circles.filter(c => c !== selected).every(c => c.getAttribute("opacity") === "0.4"));
+});
+check("saved per-cell labels color mixed clusters exactly and keep selection scope", () => {
+  const {api, target} = setup(), supplied = freeze(points());
+  const labels = freeze([{cellId: "cell:A", value: "T"}, {cellId: "cell:B", value: "T"}, {cellId: "cell:C", value: "B"}]);
+  api.embedding(target, {points: supplied, clusters: clusters(), savedLabels: labels, labelColumn: "sc_annotation", selectedCluster: "01"});
+  const control = testid(target, "embedding-color-by"); assert(control); control.value = "label"; control.emit("change");
+  const circles = tags(target, "circle"), byId = new Map(circles.map(c => [c.getAttribute("data-cell-id"), c]));
+  assert.equal(byId.get("cell:A").getAttribute("fill"), byId.get("cell:B").getAttribute("fill"));
+  assert.notEqual(byId.get("cell:A").getAttribute("fill"), byId.get("cell:C").getAttribute("fill"));
+  assert.equal(byId.get("cell:A").getAttribute("data-selected"), "true");
+  assert.equal(testid(target, "embedding-legend").textContent, "BT");
+  api.embedding(target, {points: supplied, clusters: clusters()});
+  assert.equal(testid(target, "embedding-color-by"), undefined); assert.equal(testid(target, "embedding-legend").children.length, 3);
 });
 check("large supplied embeddings render every actual point without spread limits", () => {
   const {api, target} = setup(), supplied = Array.from({length: 140000}, (_, index) => ({cellId: `c${index}`, clusterId: "large", x: index, y: index % 31}));
@@ -226,8 +259,14 @@ check("render and refresh with links do not make requests or attach marker selec
   assert.deepEqual(calls, ["1", "1", "1"]); assert.equal(networkRequests, 0); assert.equal(windowAccesses, 0); assert.equal(htmlParses, 0);
 });
 
+for (const count of [1000, 5000, 10000]) {
+  const {api, target} = setup(), supplied = Array.from({length: count}, (_, i) => ({cellId: `c${i}`, clusterId: String(i % 20), x: Math.sin(i), y: Math.cos(i)}));
+  const start = performance.now(); api.embedding(target, {points: supplied, clusters: Array.from({length: 20}, (_, i) => ({id: String(i)}))});
+  timings.push({cells: count, inertDOMMilliseconds: performance.now() - start, heapUsedBytes: process.memoryUsage().heapUsed});
+}
+
 const sha = filename => crypto.createHash("sha256").update(fs.readFileSync(filename)).digest("hex");
-const report = {schema: "scagentkit.evidence-display.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, networkRequests, providerRequests: 0, RProcesses: 0, paidAPICalls: 0, windowAccesses, htmlParses, sourceSha256: sha(sourcePath), mappingSha256: sha(path.join(root, "static/ortholog-map.js")), driverSha256: sha(filename), tests: results.length, passed: results.filter(row => row.passed).length, failed: results.filter(row => !row.passed).length, results};
+const report = {schema: "scagentkit.evidence-display.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, timings, networkRequests, providerRequests: 0, RProcesses: 0, paidAPICalls: 0, windowAccesses, htmlParses, sourceSha256: sha(sourcePath), mappingSha256: sha(path.join(root, "static/ortholog-map.js")), driverSha256: sha(filename), tests: results.length, passed: results.filter(row => row.passed).length, failed: results.filter(row => !row.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");
 if (report.failed) process.exitCode = 1;

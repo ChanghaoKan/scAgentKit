@@ -187,7 +187,9 @@ for (ds in datasets) {
   for (prov in providers) {
     message(sprintf("  scAgentKit + %s", prov))
     chat <- build_chat_fn(prov)
-    sk <- run_scagentkit(seu, chat_fn = chat, tissue = ds)
+    # Pass the biological tissue, not the dataset identifier, to the model.
+    tissue <- c(pbmc3k = "Peripheral blood mononuclear cells")[[ds]]
+    sk <- run_scagentkit(seu, chat_fn = chat, tissue = tissue)
     sc <- cluster_and_score(get_seurat(sk$obj), sk$ndim, opt$resolution, truth)
     results[[length(results) + 1]] <- data.frame(
       dataset = ds, method = "scagentkit", provider = prov,

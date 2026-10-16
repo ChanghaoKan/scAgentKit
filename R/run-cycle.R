@@ -118,6 +118,11 @@ sc_cycle_gene_set <- function(species, s_genes = NULL, g2m_genes = NULL,
   .sc_run_cycle_gene_verify(options$gene_set)
   if (!identical(options$gene_set$species, species))
     .sc_project_fail("Cell-cycle gene-set species does not match explicit context$species.")
+  # These are diagnostic software defaults, not universal biological settings.
+  # nbin partitions expressed-feature averages; ctrl is sampled per gene/bin.
+  # Small pools may be insufficient. Never silently shrink bins/controls, or
+  # inflate them to Seurat defaults: either changes the fixed scoring reference.
+  # Analysts may explicitly declare nbin/ctrl before generating new evidence.
   defaults <- list(column_prefix = "sc_cycle", seed = 17L, scale_factor = 10000,
                    nbin = 12L, ctrl = 5L, min_genes = 5L, min_fraction = .2)
   for (name in names(defaults)) if (is.null(options[[name]])) options[[name]] <- defaults[[name]]

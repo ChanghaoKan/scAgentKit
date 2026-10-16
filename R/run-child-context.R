@@ -30,7 +30,12 @@
 }
 .sc_run_child_parent_snapshot <- function(parent, origin) {
   .sc_run_subcluster_origin_verify(origin)
-  if (!identical(parent$binding, origin$parent))
+  # Audit-only parent events (lock recovery, acceptance) move revision,
+  # history head and state bytes; .sc_run_subcluster_check_parent has
+  # already verified that only such events occurred.
+  volatile <- c("revision", "history_head", "state_sha256")
+  if (!identical(parent$binding[setdiff(names(parent$binding), volatile)],
+                 origin$parent[setdiff(names(origin$parent), volatile)]))
     stop("Parent context differs from its frozen selection.", call. = FALSE)
   metadata <- parent$seu[[]]
   column <- parent$state$config$annotation_column

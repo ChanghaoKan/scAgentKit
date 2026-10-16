@@ -226,12 +226,19 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   if (state$stage == "strategy_apply" && !isTRUE(.sc_run_get(root, state, "strategy_validated")$executable))
     return(.sc_run_public(.sc_run_strategy_manual_boundary(root, state)))
   if (state$status %in% c("failed", "running") && !isTRUE(retry)) return(.sc_run_public(state))
+  child <- !is.null(state$config$subcluster_origin)
+  if (child && !is.null(chat_fn))
+    stop("Scoped child projects resume locally without a provider; request model suggestions with sc_run_suggest() and adopt them for review.", call. = FALSE)
   if (is.null(provider)) provider <- state$config$provider
   if (!identical(.sc_run_provider_spec(provider, chat_fn)$metadata, state$config$provider)) stop("Provider/model/settings changed; start a new project or restore the approved provider configuration.", call. = FALSE)
   if (state$status %in% c("failed", "running")) {
     state <- .sc_run_event(state, "retry_requested", list(stage = state$stage))
     state$status <- "ready"; state$failure <- NULL; .sc_run_save(root, state)
   }
+  # A child may store an inherited model for its suggestion channel, but its
+  # coordinator stages are provider-free: resume them locally instead of
+  # failing on the saved provider name.
+  if (child) return(.sc_run_drive(root, state, provider = NULL, chat_fn = NULL, retry = retry, local_only = TRUE))
   .sc_run_drive(root, state, provider, chat_fn, retry)
 }
 .sc_run_request <- function(kind, evidence, config) {
@@ -243,7 +250,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         "For raw entry qc may use scagentkit.qc.mad.v1 with exactly schema, rationale, risks (array), preset_id and panel_hash copied from the supplied deterministic MAD panel, or scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (1 to 32 operations). A rules combination may include at most one mad_preset operation with the exact saved preset_id and panel_hash, plus measured range operations. Choose only available saved MAD predicates; do not invent multipliers, grouping or scores. Prefilter exclusions remain excluded independently of the chosen rule combination.",
       "Range operations contain op='range', metric='nCount'|'nFeature'|'percent_mt', optional inclusive min/max and optional group containing only literal sample and/or capture present in evidence. Count/feature bounds are nonnegative integers; percent bounds are between 0 and 100. For qc.rules.v1 remove_if='any' removes cells failing any rule; remove_if='all' removes cells failing every rule. A rule scoped to a different group does not fail that cell. Unsupported or unavailable measurements and a final empty retained set are rejected. No code, genes, invented groups or unsupported operations.",
       "analysis has normalization_method='LogNormalize', scale_factor, nfeatures, npcs, seed. pcs has method='fixed',ndim OR method='computed_variance',threshold (any value strictly between 0 and 1, measured against all actually computed PCs) OR method='computed_top50',threshold (.80 or .85 only, measured against first min(50,actually computed PCs)). A threshold of .80 is an editable reference, not an established optimum. Saved candidates are unavailable before approved PCA. Computed-PC variance is not total expression variance.",
-      "batch defaults to method='none',reason; manual is a blocked analyst boundary. Explicit harmony requires exactly method,group_by_vars,theta,lambda,sigma,max_iter,nclust,reason. It requires declared technical provenance, crossed identifiable biological roles and explicit batch/sample/donor column names. Never infer a correction covariate from condition, treatment or capture; fully confounded designs cannot establish preservation of treatment signals. Harmony changes embedding only. Subcluster actions remain unsupported.",
+      "batch defaults to method='none',reason; manual is a blocked analyst boundary. Explicit harmony requires method,group_by_vars,theta,lambda,sigma,max_iter,nclust,reason, with optional nested_biology='reviewed_embedding_only' only for explicitly reviewed replicated donor/sample nesting. It requires declared technical provenance, audited biological roles and explicit batch/sample/donor column names. Never infer a correction covariate from condition, treatment or capture; fully confounded designs cannot establish preservation of treatment signals. Harmony changes embedding only. Subcluster actions remain unsupported.",
       "clustering has resolution in (0,2] and optional diagnostic_resolutions (at most five). umap has run (boolean) and n_neighbors.",
       "At least 21 projected cells are required; npcs is strictly below requested HVGs/cells, fixed ndim<=npcs, UMAP neighbors<cells. Do not silently clip impossible choices.",
       "For processed entry qc, analysis, pcs, clustering and umap must all be null, explicitly reusing the provided processed analysis.",
@@ -255,18 +262,12 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   if (kind == "strategy" && !is.null(config$cycle_diagnostics)) {
     schema <- sub("clustering, umap.", "clustering, umap, and optional cycle.", schema, fixed = TRUE)
-    schema <- sub("Harmony, cycle, doublet and subcluster actions are unsupported.",
-      "Harmony, doublet, subcluster and cycling-cell deletion remain unsupported.", schema, fixed = TRUE)
     schema <- paste(schema,
       "This explicitly enabled strategy also supports cycle={method:'none'|'full'|'difference',reason:'...'}; omission defaults to none.",
       "Use saved fixed-full-input score evidence and projected applicability. No inferred research goal is authorization to regress. Default to none when evidence is insufficient or preservation is uncertain; a whole exact human approval is required for full/difference.",
       "full regresses quantitative S/G2M scores; difference regresses S.Score-G2M.Score to reduce phase contrast while retaining cycling/noncycling signal. Neither deletes cells. Processed reuse supports only none.")
   }
   if (kind == "strategy" && !is.null(config$doublet_diagnostics)) {
-    schema <- sub("Harmony, cycle, doublet and subcluster actions are unsupported.",
-      "Harmony, cycle, subcluster and cycling-cell deletion remain unsupported.", schema, fixed = TRUE)
-    schema <- sub("Harmony, doublet, subcluster and cycling-cell deletion remain unsupported.",
-      "Harmony, subcluster and cycling-cell deletion remain unsupported.", schema, fixed = TRUE)
     schema <- sub("No R code, arbitrary regressors, automatic biological batch choice or deletion of cycling/doublet cells.",
       "No R code, arbitrary regressors, automatic biological batch choice or cycling-cell deletion.", schema, fixed = TRUE)
     schema <- paste(schema,
@@ -556,6 +557,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       published <- .sc_run_load(root)
       if (stage %in% published$completed && published$stage != stage) return(.sc_run_public(published))
       state <- if (stage == "strategy_evidence") published else before
+      # Roll back the stage's in-memory effects but never the persisted
+      # history: the running event (and any mid-stage saves) are already
+      # committed, so the failure must append after them, not reuse their
+      # sequence and revision numbers.
+      state$history <- published$history; state$revision <- published$revision
       state$status <- "failed"; state$nodes[[stage]] <- "FAILED"
       state$failure <- list(stage = stage, message = result$error, retry = "Explicit retry only; external uncertain dispatches retain their reservations.")
       state <- .sc_run_event(state, "failed", state$failure); .sc_run_save(root, state)
@@ -812,6 +818,8 @@ sc_run_undo <- function(project_dir, decision_id, reviewer, reason) {
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_load(root)
+  if (!identical(state$config_hash, .sc_run_hash(state$config)) || !identical(state$implementation_hash, .sc_run_implementation()))
+    stop("Configuration or implementation changed. Existing approvals are stale; start a new project.", call. = FALSE)
   .sc_run_undo_locked(root, state, decision_id, reviewer, reason)
 }
 .sc_run_undo_locked <- function(root, state, decision_id, reviewer, reason, review_binding = NULL) {
@@ -835,6 +843,7 @@ sc_run_undo <- function(project_dir, decision_id, reviewer, reason) {
   state$files$annotated <- NULL; state$files$annotation_validated <- NULL; state$files$manual_annotation <- NULL
   state$stage <- "annotation_propose"; state$status <- "awaiting_configuration"; state$pending <- NULL; state$approved <- NULL; state$output <- NULL
   state$completed <- setdiff(state$completed, c("annotation_apply", "finalize"))
+  state$nodes[c("annotation_propose", "annotation_apply", "finalize")] <- "PLANNED"
   .sc_run_save(root, state)
   .sc_run_crash("undo:checkpoint")
   state <- .sc_run_cleanup(root, state)

@@ -113,19 +113,6 @@ def _current(base):
     return _saved(base, pointer["job_id"])
 
 
-def _owners_dead(base, job):
-    if job.get("start_failed") is True:
-        return True
-    directory = _job_dir(base, job["job_id"])
-    owner = _read(directory / "owner.json", optional=True)
-    launch = _read(directory / "launch.json", optional=True)
-    worker_pid = (owner or launch or {}).get("worker_pid")
-    if _alive(worker_pid) is not False:
-        return False
-    r_pid = (owner or {}).get("r_pid")
-    return r_pid is None or _alive(r_pid) is False
-
-
 def _public_job(job):
     if job is None:
         return None
@@ -234,7 +221,10 @@ class RunSuggestionRuntime(QCRuntime):
             return suggestion
 
     def _reconcile(self, job, lock_held):
-        if job is not None and job["status"] in ACTIVE and lock_held and _owners_dead(self.base, job):
+        # The worker and its R child inherit the flock descriptor for their whole
+        # lifetime, so acquiring it proves no owner is running. Do not let a
+        # missing launch record or a reused PID keep the job active forever.
+        if job is not None and job["status"] in ACTIVE and lock_held:
             job = dict(job, status="interrupted", updated_at=_time(), dispatch_state="unknown_hold_possible", error={
                 "code": "worker_interrupted", "message": "The suggestion worker stopped. Usage may be unknown; inspect and reconcile the saved provider ledger in R. No request was resent."})
             _atomic(_job_dir(self.base, job["job_id"]) / "job.json", job)
@@ -366,9 +356,12 @@ class RunSuggestionRuntime(QCRuntime):
                 "config_hash": _sha(directory / "config.json"), "simulated": self.simulate, "status": "queued",
                 "created_at": _time(), "updated_at": _time(), "error": None, "dispatch_state": "not_started", "result_status": None}
             _atomic(directory / "job.json", job)
-            _atomic(self.base / "current.json", {"job_id": job_id})
+            # Claim the idempotence aliases before publishing current.json, as the
+            # Continue runtime does: a conflict here must not leave a queued job
+            # with no worker that would block every later decision.
             _once(scope_path, {"job_id": job_id, "scope_hash": _payload_hash(scope)})
             _once(request_path, {"job_id": job_id, "payload_hash": _payload_hash(payload)})
+            _atomic(self.base / "current.json", {"job_id": job_id})
             try:
                 process = subprocess.Popen([sys.executable, str(self.runtime), "--worker", str(directory / "config.json"),
                     job["config_hash"], str(fd)], env=worker_env, stdin=subprocess.DEVNULL,

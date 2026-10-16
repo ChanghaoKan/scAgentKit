@@ -447,8 +447,15 @@ class Handler(BaseHTTPRequestHandler):
             self._error(error, error.status)
         except (EvidenceError, ProjectError) as error:
             self._error(error, getattr(error, "status", 422))
-        except (ValueError, KeyError, TypeError, OSError, RecursionError) as error:
+        except (ValueError, KeyError, TypeError, RecursionError) as error:
             self._error("Invalid local input: %s" % error)
+        except OSError:
+            # Filesystem errors can carry local paths; do not echo them.
+            self._error("Local file operation failed; inspect the server log and saved run.", 500)
+        except (AttributeError, IndexError, RuntimeError):
+            # A malformed bridge response must still produce an HTTP reply
+            # instead of dropping the connection.
+            self._error("Unexpected local response; inspect the saved run in R.", 500)
 
     def do_POST(self):
         try:
@@ -583,8 +590,15 @@ class Handler(BaseHTTPRequestHandler):
             self._error(error, error.status)
         except (EvidenceError, ProjectError) as error:
             self._error(error, getattr(error, "status", 422))
-        except (ValueError, KeyError, TypeError, UnicodeError, OSError, RecursionError) as error:
+        except (ValueError, KeyError, TypeError, UnicodeError, RecursionError) as error:
             self._error("Invalid local input: %s" % error)
+        except OSError:
+            # Filesystem errors can carry local paths; do not echo them.
+            self._error("Local file operation failed; inspect the server log and saved run.", 500)
+        except (AttributeError, IndexError, RuntimeError):
+            # A malformed bridge response must still produce an HTTP reply
+            # instead of dropping the connection.
+            self._error("Unexpected local response; inspect the saved run in R.", 500)
 
     def do_OPTIONS(self):
         self._error("Cross-origin access is not enabled", 403)

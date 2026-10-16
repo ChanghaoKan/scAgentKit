@@ -263,7 +263,8 @@ class RunWorkbenchRuntime(QCRuntime):
             integration = self._integration(run, saved)
             if saved.get("integration_state_sha256") != integration_before:
                 raise StoreError("Integration changed during saved inspection; refresh", 409)
-            evidence = self._bundle(run, saved)
+            evidence_error = saved.get("bundle_error")
+            evidence = None if evidence_error else self._bundle(run, saved)
             stage_evidence, stage_binding = self._stage_bundle(run, saved)
             evidence_kind = "final_output_bundle" if evidence is not None else "saved_analysis_checkpoint" if stage_evidence is not None else "unavailable"
             if stage_evidence is not None:
@@ -300,6 +301,7 @@ class RunWorkbenchRuntime(QCRuntime):
                                "summary": saved.get("annotation_summary")},
                 "evidence": evidence,
                 "evidence_kind": evidence_kind,
+                "evidence_error": evidence_error,
                 "evidence_complete": evidence is not None,
                 "detail_projection": saved.get("detail_projection"),
                 "binding": {"project_id": run["project_id"], "state_sha256": before, "input_hash": run["input_hash"], "revision": run["revision"],

@@ -17,9 +17,9 @@
 #' Resolution control:
 #' \itemize{
 #'   \item `subcluster_resolution = "adaptive"` (default): scale
-#'     resolution by lineage size on a log10 cell-count curve, clamped
-#'     to [0.2, 0.6]. Small subsets (1k cells) get ~0.30; large subsets
-#'     (20k cells) get ~0.47. Avoids over-fragmenting small lineages.
+#'     resolution by lineage size, `0.05 + 0.10 * log10(n)` clamped
+#'     to [0.20, 0.55]. Small subsets (1k cells) get 0.35; large subsets
+#'     (20k cells) get 0.48. Avoids over-fragmenting small lineages.
 #'   \item `subcluster_resolution = 0.5`: use a fixed numeric
 #'     resolution for every lineage. Cheap and predictable.
 #'   \item `subcluster_resolution = "auto"`: for each lineage, run
@@ -178,6 +178,10 @@ annot_subcluster <- function(obj,
   if (!"subcluster_id" %in% colnames(obj@data@meta.data)) {
     obj@data@meta.data$subcluster_id <- rep(NA_character_, n_meta)
   }
+  # Cells never subclustered mirror the current broad label, so a corrected
+  # cell_type is not hidden behind a stale fine label from an earlier run.
+  never <- is.na(obj@data@meta.data$subcluster_id)
+  obj@data@meta.data$cell_type_fine[never] <- as.character(obj@data@meta.data$cell_type)[never]
 
   results <- list()
 
@@ -257,7 +261,11 @@ annot_subcluster <- function(obj,
     return(obj)
   }
 
-  obj@params$subcluster_results <- results
+  # Merge per lineage so an incremental run keeps earlier lineages' provenance.
+  previous <- obj@params$subcluster_results
+  if (!is.list(previous)) previous <- list()
+  previous[names(results)] <- results
+  obj@params$subcluster_results <- previous
 
   # Decision log
   summary_str <- paste(
@@ -311,18 +319,16 @@ annot_subcluster <- function(obj,
   # subsets need higher resolution to surface meaningful sub-structure;
   # smaller subsets over-fragment at high resolution.
   #
-  # v0.1.22: curve tightened by 0.05 vs v0.1.21 -- empirically v0.1.21
-  # over-fragmented T/NK at 22k cells (23 clusters with many
-  # sub-200-cell stress-state cluster fragments).
+  # Values produced by the formula below:
   #
-  #   n=200    -> 0.20
-  #   n=500    -> 0.22
-  #   n=1000   -> 0.25
-  #   n=2000   -> 0.28
-  #   n=5000   -> 0.32
-  #   n=10000  -> 0.35
-  #   n=20000  -> 0.38
-  #   n=50000  -> 0.42
+  #   n=200    -> 0.28
+  #   n=500    -> 0.32
+  #   n=1000   -> 0.35
+  #   n=2000   -> 0.38
+  #   n=5000   -> 0.42
+  #   n=10000  -> 0.45
+  #   n=20000  -> 0.48
+  #   n=50000  -> 0.52
   #
   # Clamped to [0.20, 0.55].
   adaptive_for <- function(n) {
@@ -650,15 +656,16 @@ annot_subcluster <- function(obj,
                                broad))
   sub <- Seurat::FindNeighbors(sub, dims = seq_len(n_pcs), verbose = FALSE)
   res_grid <- c(0.2, 0.4, 0.6, 0.8, 1.0, 1.2)
-  for (r in res_grid) {
-    sub <- Seurat::FindClusters(sub, resolution = r, verbose = FALSE)
+  # Store each sweep in a private column: subset() keeps the parent's
+  # <assay>_snn_res.* columns, which must not be mistaken for subset results,
+  # and the default prefix depends on the assay name.
+  res_cols <- sprintf("sc_subcluster_sweep_%s", format(res_grid, nsmall = 1))
+  for (i in seq_along(res_grid)) {
+    sub <- Seurat::FindClusters(sub, resolution = res_grid[i], verbose = FALSE)
+    sub@meta.data[[res_cols[i]]] <- as.character(Seurat::Idents(sub))
   }
   meta <- sub@meta.data
-  res_cols   <- grep("^RNA_snn_res\\.", colnames(meta), value = TRUE)
-  res_values <- as.numeric(sub("RNA_snn_res\\.", "", res_cols))
-  ord        <- order(res_values)
-  res_cols   <- res_cols[ord]
-  res_values <- res_values[ord]
+  res_values <- res_grid
 
   # Build minimal stats table
   n_cells <- nrow(meta)
@@ -679,7 +686,7 @@ annot_subcluster <- function(obj,
     ari_vs_prev  = NA_real_,
     stringsAsFactors = FALSE
   )
-  for (i in 2:length(res_cols)) {
+  for (i in seq_along(res_cols)[-1]) {
     stats_df$ari_vs_prev[i] <- .adjusted_rand_index(
       meta[[res_cols[i - 1]]], meta[[res_cols[i]]]
     )
@@ -912,9 +919,15 @@ annot_subcluster <- function(obj,
 
   parsed <- .call_with_retry(chat_fn, system_prompt, user_prompt,
                              max_retries = max_retries)
+  # Accept only one non-empty label and a known confidence level; anything
+  # else falls back to the explicit unannotated label at low confidence.
+  scalar <- function(x) is.character(x) && length(x) == 1L && !is.na(x) && nzchar(trimws(x))
+  label <- if (scalar(parsed$label)) trimws(parsed$label) else sprintf("%s (unannotated)", broad)
+  confidence <- if (scalar(parsed$confidence) && tolower(parsed$confidence) %in% c("low", "medium", "high"))
+    tolower(parsed$confidence) else "low"
   list(
-    label      = as.character(parsed$label %||% sprintf("%s (unannotated)", broad)),
-    confidence = as.character(parsed$confidence %||% "low"),
+    label      = label,
+    confidence = confidence,
     reasoning  = as.character(parsed$reasoning %||% "no reasoning"),
     followup   = if (isTRUE(suggest_followups))
       as.character(parsed$followup %||% "")
@@ -995,77 +1008,6 @@ annot_subcluster <- function(obj,
   }
 }
 
-
-# Typical proportion ranges for sub-types within a broad lineage.
-# Used in the LLM prompt as a sanity check -- see the "PROPORTION SANITY
-# CHECK" block. These are tumour-context defaults (HCC and similar
-# solid tumours); biology varies by tissue and disease, so the prompt
-# describes them as guides, not laws. A grossly-off proportion is a
-# signal for the LLM to re-examine markers, not to silently rewrite
-# the label.
-.lineage_proportion_guide <- function(broad) {
-  b <- tolower(broad)
-  if (grepl("t[._/ ]?nk|^t$|tcell|^nk$", b)) {
-    paste("  - CD8 effector / cytotoxic: 20-50% of T/NK",
-          "  - CD8 memory / central memory: 5-25%",
-          "  - CD8 exhausted (HAVCR2/LAG3/TOX+): 5-30% in tumour",
-          "  - CD4 naive: 5-20%",
-          "  - CD4 helper / Tfh: 2-15%",
-          "  - Treg: 5-20%",
-          "  - NK cytotoxic: 10-25%",
-          "  - NK regulatory / tissue-resident: 1-10%",
-          "  - NKT / MAIT: 1-10%",
-          "  - gamma-delta T: usually 1-5% (rarely >10%)",
-          "  - proliferating T: 2-10%",
-          sep = "\n")
-  } else if (grepl("^b$|bcell|plasma", b)) {
-    paste("  - naive B: 30-60% of B subset",
-          "  - memory B: 20-40%",
-          "  - germinal-center B: variable, often 0-10%",
-          "  - plasmablast: 1-15%",
-          "  - plasma cell: 5-30% (higher in tumour-adjacent or inflamed tissue)",
-          "  - regulatory B: usually <5%",
-          sep = "\n")
-  } else if (grepl("myeloid|macrophage|monocyte|dc|kupffer", b)) {
-    paste("  - TAM (M2-like, SPP1+, CD163+): 30-60% in tumour",
-          "  - classical monocyte: 10-30%",
-          "  - non-classical monocyte: 2-15%",
-          "  - cDC1: 0.5-3%",
-          "  - cDC2: 2-10%",
-          "  - pDC: 0.5-3%",
-          "  - Kupffer cell: 5-30% in liver tissue (variable in HCC)",
-          "  - neutrophil: 1-15%",
-          "  - proliferating myeloid: 1-8%",
-          sep = "\n")
-  } else if (grepl("hepatocyte|hep_", b)) {
-    paste("  - dysplastic / tumour hepatocyte: 30-90% in HCC tumour",
-          "  - periportal hepatocyte: 5-30% (decreases in tumour)",
-          "  - pericentral hepatocyte: 5-30% (decreases in tumour)",
-          "  - mid-zonal: 5-20%",
-          "  - proliferating hepatocyte: 2-15%",
-          "  - stress / interferon-responsive: 1-15%",
-          sep = "\n")
-  } else if (grepl("endo|endothel|lsec|^ec$", b)) {
-    paste("  - LSEC: 50-80% in liver tissue",
-          "  - portal vein EC: 5-20%",
-          "  - central vein EC: 5-15%",
-          "  - capillary EC: 5-20%",
-          "  - tip / angiogenic EC: 1-15% (higher in tumour)",
-          "  - lymphatic EC: 0.5-5%",
-          sep = "\n")
-  } else if (grepl("fibro|stellate|caf|stroma", b)) {
-    paste("  - quiescent stellate: 20-50% in non-tumour liver",
-          "  - activated stellate / myofibroblast: 30-70% in HCC",
-          "  - portal fibroblast: 5-25%",
-          "  - iCAF: 10-30% in tumour",
-          "  - myCAF: 10-40% in tumour",
-          "  - apCAF: 1-10%",
-          sep = "\n")
-  } else {
-    sprintf("  (no built-in proportion guide for '%s'; use markers as primary evidence)",
-            broad)
-  }
-}
 
 
 # -------------------------------------------------------------------------

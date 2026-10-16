@@ -197,3 +197,45 @@ test_that("terminal and undo crash points leave usable committed state", {
   }
   options(scAgentKit.run_crash=NULL)
 })
+
+test_that("completed runs survive deleted source and edited or deleted convenience exports", {
+  path <- tempfile(); inputfile <- tempfile(fileext = ".rds"); saveRDS(run_fixture(), inputfile)
+  counter <- new.env(); counter$calls <- 0L
+  sc_run(inputfile, path, context = run_context(), provider = list(name = "mock"),
+    chat_fn = run_mock(counter), analysis = list(nfeatures = 60, npcs = 5, run_umap = FALSE))
+  run_approve(path)
+  annotation <- suppressWarnings(sc_run_resume(path, chat_fn = run_mock(counter)))
+  expect_identical(annotation$pending$kind, "annotation")
+  run_approve(path)
+  complete <- suppressWarnings(sc_run_resume(path))
+  expect_identical(complete$status, "complete")
+  state <- .sc_run_load(path)
+  csv <- grep("^output:.*[.]csv$", names(state$files), value = TRUE)
+  expect_gt(length(csv), 0L)
+  exports <- vapply(state$files[csv], function(record) file.path(path, record$path), character(1))
+  expect_true(all(file.exists(exports)))
+  protected <- state$files[!startsWith(names(state$files), "output:") |
+    names(state$files) == "output:output/seurat.rds"]
+  hashes <- function() vapply(protected, function(record) .sc_project_sha_file(file.path(path, record$path)), character(1))
+  before <- hashes()
+  unlink(inputfile)
+  expect_identical(sc_run_inspect(path)$status, "complete")
+  for (file in exports) {
+    cat("edited\n", file = file, append = TRUE)
+    expect_identical(sc_run_inspect(path)$status, "complete")
+    expect_identical(sc_run_resume(path)$status, "complete")
+    unlink(file)
+    expect_false(file.exists(file))
+    expect_identical(sc_run_inspect(path)$status, "complete")
+    expect_identical(sc_run_resume(path)$status, "complete")
+  }
+  expect_identical(hashes(), before)
+  expect_identical(counter$calls, 2L)
+  for (record in protected[c("analysis", "output:output/seurat.rds")]) {
+    file <- file.path(path, record$path); original <- readBin(file, "raw", n = file.info(file)$size)
+    writeBin(c(original, as.raw(0)), file)
+    expect_error(sc_run_inspect(path), "checkpoint changed")
+    expect_error(sc_run_resume(path), "checkpoint changed")
+    writeBin(original, file)
+  }
+})

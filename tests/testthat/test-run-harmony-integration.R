@@ -1,3 +1,5 @@
+testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindings(.package = "httr2")
+testthat::skip_if_not_installed("harmony")  # mocked below via local_mocked_bindings(.package = "harmony")
 # Harmony is mocked only at its public upstream generic in these coordinator
 # tests. Real sparse QC/PCA/neighbors/markers and durable reviews still execute
 # when root runs this file. Planted expression and shifted embeddings establish

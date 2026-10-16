@@ -1,6 +1,10 @@
 #' Fixed-threshold QC filter
 #'
-#' Applies a conservative floor-filter on the standard QC metrics. Intended
+#' Applies a fixed floor-filter on the standard QC metrics. The defaults
+#' (1000 UMIs, 500 genes, strict inequalities) are generic starting values,
+#' not conservative for low-RNA populations such as neutrophils or
+#' platelets; choose them for the tissue at hand. Cells whose
+#' `percent.mt` is NA are removed and their number is reported. Intended
 #' to be run *before* MAD-based filtering. Works on either a single Seurat
 #' object or a Seurat list (per-sample).
 #'
@@ -36,6 +40,15 @@ qc_threshold <- function(obj,
   }
 
   n_before <- .count_cells(obj)
+  datasets <- if (obj@data_type == "seurat_list") obj@data else list(obj@data)
+  n_na_mt <- sum(vapply(datasets, function(seu) {
+    mt <- seu@meta.data[["percent.mt"]]
+    if (is.null(mt)) 0L else sum(is.na(mt))
+  }, integer(1)))
+  if (n_na_mt > 0) {
+    warning(sprintf("qc_threshold: %d cell(s) with NA percent.mt will be removed.", n_na_mt),
+            call. = FALSE)
+  }
   obj <- .apply_to_data(obj, apply_filter)
   n_after  <- .count_cells(obj)
 

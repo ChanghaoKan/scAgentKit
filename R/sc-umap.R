@@ -27,6 +27,10 @@ sc_umap <- function(obj,
   }
   if (is.null(ndim)) ndim <- obj@params$ndim
   if (is.null(ndim)) {
+    if (!is.null(obj@params$pcs_visual_recommendation$status) &&
+        !identical(obj@params$pcs_visual_recommendation$status, "ok")) {
+      stop("The latest visual PC selection failed; review it and select PCs again, or pass ndim explicitly. Historical ndim is audit-only.")
+    }
     stop("`ndim` not supplied; run sc_select_pcs() or pass ndim directly.")
   }
 
@@ -37,18 +41,19 @@ sc_umap <- function(obj,
     reduction      = reduction,
     dims           = seq_len(ndim),
     reduction.name = reduction_name,
+    seed.use       = seed,
     verbose        = FALSE
   )
   obj@data <- seu
 
   script <- sprintf(
 '# ---- UMAP (reduction = %s, dims = 1:%d) ----
-set.seed(%d)
 seurat_obj <- RunUMAP(seurat_obj,
                       reduction      = "%s",
                       dims           = 1:%d,
-                      reduction.name = "%s")',
-    reduction, ndim, seed, reduction, ndim, reduction_name
+                      reduction.name = "%s",
+                      seed.use       = %d)',
+    reduction, ndim, reduction, ndim, reduction_name, seed
   )
 
   if (is.null(rationale)) {

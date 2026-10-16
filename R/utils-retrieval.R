@@ -3,7 +3,7 @@
 # needs ndim from sc_select_pcs).
 
 .get_step_params <- function(obj, step_name) {
-  hits <- Filter(function(d) d$step == step_name, obj@decisions)
+  hits <- Filter(function(d) identical(d$step, step_name), obj@decisions)
   if (length(hits) == 0) return(NULL)
   hits[[length(hits)]]$params
 }
