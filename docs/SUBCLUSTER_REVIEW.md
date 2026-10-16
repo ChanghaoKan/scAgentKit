@@ -46,7 +46,7 @@ view <- subcluster_example_inspect(child)
 
 The child directory must be new and separate from the parent; its containing
 workspace must exist. Nested parent-to-child-to-grandchild analysis is not
-supported in this increment.
+supported by this path.
 
 Child input contains only the selected raw-count layer and source metadata.
 Species and declared study context are inherited with parent provenance.
@@ -196,7 +196,7 @@ workspace registry can be inspected in R with
 The selection/writeback page is `/subclusters?child_id=<registered-project-ID>&project_id=<same-ID>`;
 central child strategy/annotation review and Continue use
 `/review?child_id=<the-same-ID>&project_id=<same-ID>`. Registered navigation
-links supply those bindings. See [single-service review](SINGLE_SERVICE_REVIEW.md)
+links supply those bindings. See [single-service review](../workbench/README.md)
 for returning to the parent and inspecting saved derived receipts without
 restarting the service. Web creation offers explicit QC
 `retain_selected`/`review`, batch `none`/`review`, and reference
@@ -240,51 +240,11 @@ credentials, automatically choose biological identities, merge children or
 submit cluster jobs. Local review contains exact IDs needed for review, while
 provider transfer remains a separate authorized aggregate-only operation.
 
-## Legacy boundary and validation scope
-
-The acceptance counts below are historical scoped-subcluster receipts, not a
-fresh release-candidate check or the later single-service acceptance. See the
-[release checklist](RELEASE_CANDIDATE_CHECKLIST.md) and
-[single-service review](SINGLE_SERVICE_REVIEW.md) for those distinct records.
+## Legacy API boundary
 
 The new path does **not** call `annot_subcluster`. That older function has
 positional parent writes after subset calculations, and its automatic
 resolution helper can fall back to 0.5 on malformed output. Those behaviors
 are not accepted by this exact-ID, typed reviewed path. The legacy function
-remains a separate API; this increment does not claim to repair every legacy
+remains a separate API; the reviewed path does not cover every legacy
 sub-annotation mode.
-
-Mac acceptance on 2026-10-05 passed 13 focused mechanism tests with 399
-assertions and no failures, errors, warnings or skips. Full `R CMD check
---no-manual --ignore-vignettes` finished with `Status: OK`; its test suite
-reported 7,136 passes and zero failures, warnings or skips. Optional Suggests
-dependency INFO remains in the check log, and the command deliberately skipped
-vignettes. The full Python suite passed 255 tests without failures, errors or
-skips; all 62 protected fixture SHA256 values remained unchanged.
-
-Native Chrome 154.0.8037.93 passed all eight acceptance checks through the
-actual R bridge. From a 480-cell synthetic parent, selecting literal cluster
-`"0"` created an 80-cell child, followed by whole-strategy approval, fresh
-analysis, manual `Unknown` annotation review, derived-parent apply and restored
-undo output. Cancellation, duplicate creation/apply, and HTTP server restart
-preserved saved authority and parent bytes. The owned server, browser and
-temporary profile were closed after testing; no hidden R annotation assistance
-was used.
-
-Six independent R processes completed create, strategy, annotation, apply,
-undo and verify for a 35-cell selection from the 2,700-cell public PBMC parent.
-The child produced one cluster with reviewed `Unknown`/`low` labels. Checks
-confirmed sparse raw-count preservation, fresh child PCA, literal-ID writeback
-with outside-scope NA, unchanged parent files, immutable application/restoration
-outputs and idempotent completed Continue/apply/undo after restart. A separate
-six-process headless cycle also passed for an 80-cell selection from the
-480-cell synthetic parent, retaining all 80 cells in one unresolved child
-cluster. A real concurrency test released two R creators from one barrier:
-one saved the child at review and the other was rejected by the lock; a third process reused
-the same request without changing state bytes.
-
-Injected creation/apply/undo errors exercised explicit recovery of saved
-receipts and orphaned artifacts; these are not SIGKILL recovery results. All
-acceptance used zero provider calls, no key-file reads and US$0 API cost. These
-are software workflow checks on Mac, not Linux/HPC validation, biological
-annotation accuracy or evidence for a universal subcluster resolution.

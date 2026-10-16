@@ -87,7 +87,7 @@ sc_run_resume(project_dir)
 For a plain matrix without metadata, omit `context$columns`; the coordinator
 then discloses that separate sample/capture assessment is unavailable. For a
 Seurat object, declared columns must already exist. Provider setup and the
-processed-object entry point are described in [SERVER_FIRST.md](SERVER_FIRST.md).
+processed-object entry point are described in [researcher guide](RESEARCHER_PROTOCOL_ZH.md).
 If neither a provider nor a manual rule is supplied, the run diagnoses the data
 and pauses for configuration rather than inventing an AI decision.
 
@@ -169,7 +169,7 @@ Approve/reject cannot carry silent parameter changes. A rejection stops the run;
 it does not trigger analysis or a replacement model request. A later explicit
 `sc_run_propose(..., reviewer=..., reason=...)` can supply a fresh typed plan.
 
-Gene panels in this increment disclose exact feature availability only.
+Gene panels disclose exact feature availability only.
 Missing genes are unavailable measurements, not zeros, and a missing feature
 list yields unknown availability. **Expression and co-detection are not
 assessed here**, and neither gene availability nor positive expression is a QC
@@ -204,29 +204,6 @@ browser does not execute R text. The command above enables review only; add
 page also handles live annotation approval. Separately enabled model suggestions
 have their own exact preview, consent and request action; Continue never makes
 a provider request. See [unified startup](../workbench/RUN_REVIEW_QUICKSTART.md)
-and [single-service review](SINGLE_SERVICE_REVIEW.md). The separate completed
+and [single-service review](../workbench/README.md). The separate completed
 annotation evidence-bundle mode does not approve a pending coordinator node.
 Browser test results are reported separately from this usage contract.
-
-## Scope of this increment and remaining validation
-
-This section describes the historical QC increment. Current optional modules
-and final-source checks are listed in the
-[release checklist](RELEASE_CANDIDATE_CHECKLIST.md); historical example checks
-are not a fresh release-candidate run.
-
-This increment addresses the first decision in the larger diagnosis → analysis
-→ annotation workflow: inspect QC consequences, edit with a reason, approve
-the exact plan, and resume without requiring a website. It keeps the existing
-analysis and annotation machinery. It does not claim that one set of thresholds
-or a marker panel is correct for arbitrary species, tissues or technologies.
-
-Before treating a later release as a general analysis coordinator, retain the
-offline mechanism tests and validate additional datasets with different depth,
-feature conventions, sample/capture structures and processed starting points.
-Extend study-specific evidence and annotation review separately, preserving
-unknowns, independent evidence and fresh approvals. Scheduler and broader HPC
-behavior need actual testing in each intended environment; a loopback browser
-test or a small VM run alone does not establish that compatibility. No API call,
-publication or change to an existing completed project is required by this
-example or contract.

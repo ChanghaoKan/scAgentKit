@@ -191,7 +191,7 @@ request a model or continue computation. Completed child context is read-only.
 ## Optional model assistance
 
 For a fresh model-enabled project, follow the existing
-[provider configuration](FIRST_RUN.md#connect-a-built-in-provider-through-the-r-environment)
+[provider configuration](RESEARCHER_PROTOCOL_ZH.md)
 and [exact suggestion preview workflow](UNIFIED_MODEL_REVIEW.md). Built-in
 DeepSeek/Grok factories use `DEEPSEEK_API_KEY`/`XAI_API_KEY` from the analysis
 machine's environment or user secret mechanism at dispatch. Supply a verified

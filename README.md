@@ -1,147 +1,109 @@
 # scAgentKit
 
-Start with `sc_run(input, project_dir, context = ...)` on the machine holding
-your data. Inspect the saved evidence and typed proposals, approve a specific
-version, then resume. Checkpoints, decision history, tables, figures and a new
-Seurat object stay on that machine. A browser is optional; routine analysis
-needs no manual RDS transfer or ZIP export/import.
+scAgentKit is an R package for single-cell RNA-seq analysis with Seurat: quality
+control, dimensionality reduction, clustering, annotation and subcluster analysis.
+It produces a new Seurat object, marker tables, figures and a record of the
+parameters and decisions used along the way.
 
-**[中文研究者操作协议：安装、公开 PBMC 练习、自己的数据、AI、网页与服务器](docs/RESEARCHER_PROTOCOL_ZH.md)**
+Analyses live in project directories, so you can save progress, inspect results
+and continue in a later R session. You check analysis settings and annotations
+before applying them. Model suggestions and a local web interface are optional.
+The current development version is **0.5.0.9000**.
 
-This is the experimental `0.5.0.9000` development version. Successful execution,
-AI suggestions and marker-reference agreement do not establish optimal QC or
-biological identity. No provider, no external-transfer permission and zero
-budget are the defaults.
+[中文完整操作指南](docs/RESEARCHER_PROTOCOL_ZH.md) ·
+[Documentation](docs/README.md) · [Changes](NEWS.md)
 
-## Install the development version
+## Installation
 
-Use a separate R library. R >= 4.2, Seurat >= 5, SeuratObject, Matrix and
-agentomicsCore >= 0.1.1 are among the dependencies in [DESCRIPTION](DESCRIPTION).
-The basic route needs Imports/Depends, not every optional algorithm in Suggests.
+Requires R >= 4.2 and Seurat >= 5. Install `remotes` first if needed, then:
 
 ```r
-private_lib <- path.expand("~/R/scagentkit-preview-library")
-dir.create(private_lib, recursive = TRUE, showWarnings = FALSE)
-.libPaths(c(private_lib, .libPaths()))
-if (!requireNamespace("remotes", quietly = TRUE))
-  install.packages("remotes", lib = private_lib, repos = "https://cloud.r-project.org")
-remotes::install_github("ChanghaoKan/scAgentKit@main", lib = private_lib,
-  dependencies = c("Depends", "Imports"), upgrade = "never", build = FALSE)
-library(scAgentKit, lib.loc = private_lib)
-packageVersion("scAgentKit")
-packageDescription("scAgentKit")$RemoteSha  # record the installed source
+remotes::install_github("ChanghaoKan/scAgentKit")
+library(scAgentKit)
 ```
 
-`main` can change: pin a verified full commit SHA for repeatable installation.
-Keep the same implementation/library when resuming a project. The protocol
-separates declared minimums, measured Mac versions and historical Linux checks;
-your HPC environment is not assumed tested. Python is needed only for the
-optional checkout-based web service.
+See the [installation guide](docs/RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认)
+for dependencies, separate R libraries and reproducible environments.
 
-## First complete run: public PBMC, offline mock
+## Start an analysis
 
-The installed tutorial uses genuine sparse counts in the public
-[SeuratObject `pbmc_small` fixture](https://satijalab.github.io/seurat-object/reference/pbmc_small.html)
-(230 genes, 80 cells; a PBMC3k subset). Its permissive QC, five PCs, resolution
-and `Unknown` labels are software controls, **not study recommendations**.
-It makes no API request and assumes no donor/capture information.
+With your Seurat object in `seu`, create a project on the machine holding the data:
+
+```r
+run <- sc_run(seu, project_dir = "my-study",
+  context = list(species = "human", tissue = "Peripheral blood"),
+  strategy = TRUE)
+view <- sc_run_inspect("my-study")
+```
+
+This saves initial diagnostics. Add your study's analysis plan or configure a
+model to suggest one, inspect the plan, and continue. With neither supplied,
+the project pauses at `awaiting_configuration`.
+
+You can also supply a named genes × cells raw-count matrix or a local RDS path.
+For your study, set the species, tissue and sample/capture metadata as appropriate.
+An existing processed Seurat object can reuse its analysis through
+`start_stage = "processed"` with a reuse reason. The
+[researcher guide](docs/RESEARCHER_PROTOCOL_ZH.md) covers these inputs, parameter
+choices, model setup and annotation; [strategy](docs/ANALYSIS_STRATEGY_SUPPORT.md)
+and [annotation](docs/ANNOTATION_REVIEW.md) guides include R examples.
+
+## Try a complete run without an API
+
+This small example runs the full workflow on SeuratObject's public `pbmc_small`
+counts (230 genes, 80 cells). An offline mock supplies the settings and labels,
+so no API key is needed. It deliberately uses `Unknown`: this is a workflow
+demonstration, not biological annotation. In a real project, annotations come
+from your marker/reference evidence and manual or model-assisted proposals.
 
 ```r
 source(system.file("examples", "researcher-pbmc.R", package = "scAgentKit"))
-project_dir <- file.path(getwd(), "public-pbmc-first-project")  # new durable directory
+project_dir <- file.path(getwd(), "pbmc-tutorial")  # choose a new directory
 mock <- make_researcher_pbmc_mock()
 run <- researcher_pbmc_start(project_dir, mock)
 
 view <- researcher_pbmc_inspect(project_dir)
-view$strategy_review$details  # read QC/analysis and expected retention
-researcher_pbmc_decide(project_dir, view, reviewer = "tutorial-reviewer",
-  reason = "Reviewed the public fixture and software-control plan.")
+view$strategy_review$details
+researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
+  reason = "Checked the tutorial settings and retained cells.")
 run <- researcher_pbmc_resume(project_dir, mock)
 
 view <- researcher_pbmc_inspect(project_dir)
-view$annotation_review$details  # inspect markers and unresolved mock labels
-researcher_pbmc_decide(project_dir, view, reviewer = "tutorial-reviewer",
-  reason = "Retain Unknown/low; this tutorial makes no identity claim.")
+view$annotation_review$details
+researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
+  reason = "Keep the tutorial's unresolved labels as Unknown.")
 done <- researcher_pbmc_resume(project_dir, mock)
 stopifnot(identical(done$status, "complete"))
 final_object <- readRDS(done$output$seurat)
 done$output
 ```
 
-Approval saves a decision; the separate resume executes approved work. R may
-exit at either review point. Another process can inspect/resume the same
-directory; attach an in-memory callback again for new requests. Reinspect after
-any revision. Do not automatically approve proposals for private data.
+The helpers use the same `sc_run()` project workflow as the study example above:
+inspect, record your decision, then resume to the next step.
 
-## Your matrix, Seurat object or local RDS
+## Results and reopening
 
-Provide genuine named genes × cells raw counts, a Seurat object or its local
-RDS path. Explicitly select ambiguous layers; normalized/scale layers are not
-counts. Declare only metadata roles that actually exist and have been checked:
+`done$output` lists the Seurat object, tables, figures and project records.
+Use `sc_run_inspect(project_dir)` to inspect saved status and history, and
+`sc_run_resume(project_dir)` to continue later. A completed project reopens
+without repeating its analysis.
+
+To browse saved results, use a source checkout with Python >= 3.9:
 
 ```r
-context <- list(species = "human", tissue = "Peripheral blood",
-  columns = list(sample = "sample_id", capture = "capture_id",
-                 donor = "donor_id", condition = "condition"),
-  research_goal = "State the question being studied.",
-  notes = "Describe processing, enrichment and limitations; mark unknowns.")
-run <- sc_run(seu, "/durable/path/to/new-project", context = context,
-  strategy = TRUE, provider = NULL, budget = 0,
-  review = list(allow_external = FALSE), annotation_column = "sc_reviewed_identity")
-view <- sc_run_inspect("/durable/path/to/new-project")
+sc_run_open(project_dir, checkout = "/path/to/scAgentKit")
+# Later sessions remember the checkout:
+sc_run_open(project_dir)
 ```
 
-Replace `seu`, the directory and columns with your actual inputs. A bare matrix
-has no study metadata: omit `columns`, or create Seurat and attach verified
-metadata by literal cell ID first. Ca/Ctrl is not inferred as batch; capture is
-not donor. Without a manual proposal/provider this saves diagnostics and stops
-at `awaiting_configuration`.
+The [workbench guide](workbench/README.md) covers browser-based decisions,
+local computation, parent/child projects and remote access.
 
-The [protocol](docs/RESEARCHER_PROTOCOL_ZH.md) shows manual proposals, exact
-approval/resume, QC/PC/resolution edits and a processed-Seurat entry that reuses
-basic analysis. Batch correction defaults to `none`; optional methods have
-explicit applicability and runtime guards.
+## Notes for research use
 
-## Optional AI and web review
-
-DeepSeek/Grok providers read `DEEPSEEK_API_KEY`/`XAI_API_KEY` in the analysis
-process; an explicit `chat_fn` is also supported. Keep credentials outside
-scripts, objects, bundles, logs and browser fields. Approve the exact aggregate
-payload before transmission, then review the scientific proposal separately.
-Raw counts and barcodes are excluded from provider payloads; group names and
-context can still reveal sensitive information. Budget reservations, usage
-holds and cached requests persist. There is no automatic paid retry.
-See [AI configuration and consent](docs/RESEARCHER_PROTOCOL_ZH.md#6-配置-ai发送同意与费用).
-
-From a verified source checkout, select the same Rscript/library as analysis:
-
-```sh
-python3 -B workbench/server.py --run-project /durable/path/to/project \
-  --rscript /absolute/path/to/Rscript --r-library /absolute/path/to/r-library \
-  --local-continue --port 8774
-```
-
-To reopen saved results from R without repeating executable/library paths, use
-`sc_run_open(project_dir, checkout = "/path/to/scAgentKit")` once, then
-`sc_run_open(project_dir)`. The local read-only viewer reuses a matching service
-or restarts a stopped one; it performs no analysis or model request.
-
-Open `http://127.0.0.1:8774/workbench`. Without `--local-continue`, compute in R.
-Model dispatch is a separate operator opt-in. Server access uses an authorized
-SSH tunnel; no public listening, firewall changes or automatic scheduler
-submission. [Web/server instructions](docs/RESEARCHER_PROTOCOL_ZH.md#8-同一项目的可选网页与服务器运行)
-include supported flags and a scheduler template.
-
-[Annotation/CM2 review](docs/RESEARCHER_PROTOCOL_ZH.md#9-注释复核cellmarker-20-与证据来源)
-keeps DB, AI/manual and source evidence visible. CellMarker files are not
-bundled; use a verified, permitted local reference and record provenance.
-[Child projects](docs/RESEARCHER_PROTOCOL_ZH.md#10-选定子群修正背景保存新的父对象)
-support reviewed context corrections and exact-ID labels in a **new** parent
-RDS with versioned apply/undo.
-
-The toolkit does not determine the best QC/PC/resolution or cell identity;
-it does not offer arbitrary R execution, general literature chat, ambient-RNA
-correction or automatic merging of overlapping children.
-[Troubleshooting and feedback](docs/RESEARCHER_PROTOCOL_ZH.md#12-常见停点与反馈)
-cover saved-state recovery and safe reproductions. Advanced guides and installed
-examples remain under `docs/` and `inst/examples/`.
+Analysis choices and cell identities need study-specific judgment. External
+models receive aggregate evidence only after you approve its disclosure; that
+evidence may still contain sensitive study information. The web service binds
+to loopback, and shared-host access needs appropriate isolation. See
+[model and data handling](docs/UNIFIED_MODEL_REVIEW.md) and the
+[complete guide](docs/RESEARCHER_PROTOCOL_ZH.md) for details.

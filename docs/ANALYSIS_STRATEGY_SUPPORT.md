@@ -1,57 +1,24 @@
-# Analysis strategy: supported scope and evidence
+# Analysis strategy
 
-This document distinguishes an exported package function, an operation connected
-to the resumable coordinator, and an operation actually validated in this
-increment. The capability audit starts from commit `2ffa17ed`. The historical
-strategy receipts below use mock responses and local computations only: no new
-paid model requests, key-file reads, private data transfer, dependency installation,
-or Linux/HPC environment claims. The cell-cycle increment is described in
-[CELL_CYCLE_REVIEW.md](CELL_CYCLE_REVIEW.md), including its versioned Mac validation. The prior strategy receipts below apply to the
-previous implementation, not all later optional modules. The current doublet
-contract and its historical execution acceptance are described in
-[DOUBLET_REVIEW.md](DOUBLET_REVIEW.md). Current MAD, guarded Harmony and scoped
-child contracts are in [MAD_REVIEW.md](MAD_REVIEW.md),
-[HARMONY_PC_REVIEW.md](HARMONY_PC_REVIEW.md) and
-[SUBCLUSTER_REVIEW.md](SUBCLUSTER_REVIEW.md). Use the
-[release checklist](RELEASE_CANDIDATE_CHECKLIST.md) for final-source validation;
-older counts below are not a new test run against the release candidate.
+Enable `strategy = TRUE` to review one typed QC and analysis plan before local
+execution. The plan covers raw-count QC, normalization, features, PCs, optional
+correction, clustering and UMAP. Annotation is reviewed separately. A processed
+entry reuses its declared foundation instead of rerunning these steps.
 
-## Baseline capability audit
+| Choice | Current coordinator contract |
+| --- | --- |
+| Input | Genuine named raw counts, explicit count layers and verified metadata roles |
+| QC | Exact range rules or explicit sample-aware [MAD candidates](MAD_REVIEW.md) |
+| Preparation | LogNormalize, VST features and recorded effective dimensions |
+| PCs | Fixed leading PCs or guarded computed-PC variance policy |
+| Clustering | Approved Louvain resolution, with optional numeric diagnostics |
+| Batch | Default none, explicit manual stop, or guarded [Harmony](HARMONY_PC_REVIEW.md) |
+| Cell cycle | Optional full-input diagnostics; approved keep/full/difference choices within the [contract](CELL_CYCLE_REVIEW.md) |
+| Doublets | Explicit capture/rate prerequisites, default keep; jointly approved removal under the [adapter contract](DOUBLET_REVIEW.md) |
+| Subclusters | Separately reviewed raw-count [child projects](SUBCLUSTER_REVIEW.md) |
 
-At the audit baseline, `sc_run()` supports exact raw-count QC evidence, typed QC
-range proposals and their impact review, standard preparation, markers, and
-annotation review. Analysis settings are supplied directly rather than proposed
-and reviewed as a sample-background strategy. A processed Seurat start explicitly
-reuses its existing foundation; it does not rerun QC, normalization, PCA, or
-clustering. The baseline has no connected batch correction, cell-cycle operation,
-doublet operation, or subclustering node.
-
-| Capability | Existing exported/local engine | Historical baseline connection | Supported strategy or later explicit contract |
-| --- | --- | --- | --- |
-| Input and layers | `sc_project_prepare()` and shared exact-layer helpers validate genuine integer counts and literal IDs | Connected; split-layer ambiguity fails closed | Reuse exact raw counts and public SeuratObject layer access |
-| QC evidence | Raw `nCount`, `nFeature`, mitochondrial percentage; aggregate distributions within explicitly declared sample/capture groups | Connected; absence of matching mitochondrial genes is unavailable, not zero | Reuse actual evidence and exact impact validation |
-| QC selection | Typed inclusive ranges for those three metrics and literal sample/capture selectors | Connected; retained cell set requires approval | Approved ranges define QC scope; explicitly enabled doublet selection additionally requires joint whole-strategy approval |
-| Legacy fixed/MAD QC | `qc_threshold()` defaults to count >1000, features >500, mt <50%; `qc_mad()` defaults to 3 MAD and log-count/features | Not connected to the typed range executor | No automatic legacy invocation. Explicit `qc_mad` has a separate reviewed candidate-panel contract; no universal-threshold claim |
-| Normalization | `sc_normalize()`; exact-count `sc_project_prepare()` accepts LogNormalize and RC | Connected preparation defaults to LogNormalize, scale factor 10000 | LogNormalize in the supported strategy path; RC is legacy preparation functionality unless separately demonstrated |
-| HVG and scaling | `sc_find_hvg()` and preparation use VST; HVG-only scaling available | Connected preparation defaults to 2000 requested features | VST/HVG-only scaling; requested and effective sizes recorded |
-| PCA | `sc_pca()` and preparation | Connected preparation requests 30 PCs and validates requested dimensions against the result | Explicit bounded PCA request and approved leading PC count |
-| Variance PC choice | `sc_select_pcs()` defaults to cumulative threshold 0.80 | Exported only | Guarded computed-PC variance selection; denominator disclosed below |
-| Visual PC choice | `sc_select_pcs_visual()` compares UMAPs and can fall back after invalid AI replies | Exported only | Unsupported; no visual-model decision or fallback is executed |
-| Clustering | `sc_cluster()` requires a resolution; preparation defaults to 0.5 | Connected through analysis settings | Approved scalar Louvain resolution; optional numeric diagnostics |
-| Resolution diagnostics | `sc_cluster_sweep()` plus `sc_resolution_recommend()` aggregate cluster counts, small clusters and adjacent ARI | Exported only; legacy sweep requires clustree | Numeric diagnostics may reuse local clustering/ARI helpers; no automatic vision recommender |
-| Batch candidates | `sc_select_batch_var()` scores metadata names, cardinality and cell counts | Exported only | Evidence only; explicit role declarations control applicability |
-| Batch correction | `sc_harmony()` requires PCA, explicit columns and the optional harmony package | Not connected; baseline skips integration | `none`, explicit `manual` stop, or the later guarded and whole-strategy-approved Harmony contract; no automatic batch/method selection |
-| Cell-cycle scoring | `sc_cellcycle_score()` uses explicit literal, versioned lists; `sc_cycle_gene_set()` declares human defaults or supplied human/mouse programs | Exported only at baseline | Opt-in `cycle_diagnostics`: nonfiltering full-input LogNormalize/CellCycleScoring reference, preserved after approved QC; insufficient evidence stays Unknown/NA |
-| Cell-cycle regression | `sc_cellcycle_regress()` delegates explicit score regression to scaling; default none | Exported only at baseline | Raw strategy ordinary choices none or standard full S/G2M regression; advanced optional difference uses S minus G2M. One whole-strategy approval, no cycling-cell deletion; processed reuse permits none only |
-| Doublets | Legacy `qc_doublet()` consumes a supplied Seurat list and defaults to removal; its list units are not validated as captures | Legacy wrapper exported only at baseline | Explicit `doublet_diagnostics` uses the separate strict scDblFinder adapter with declared loading units and sourced rates; default `keep`, available predictions permit exact jointly approved `remove_predicted` in raw strategy only |
-| Subclustering | Legacy `annot_subcluster()` subsets broad types; its behavior is separate | Exported only at baseline | Later `sc_run_subcluster()` creates a separately reviewed raw-count child and exact-ID derived output; it does not call the legacy positional-write path |
-
-The strategy scope above is wired in the implementation. Its bounded validation
-record below identifies which paths actually ran for the previous strategy
-increment. Optional modules have their own versioned acceptance records linked
-above. Support is not a claim of biological correctness.
-An optional dependency being listed in `Suggests`, or a legacy function existing,
-does not make its method supported by the coordinator.
+Exported legacy functions are documented in R help. Their presence does not make
+an automatic or fallback behavior part of the reviewed coordinator workflow.
 
 ## R entry and complete typed proposal
 
@@ -134,9 +101,8 @@ silently clipped. Runtime validates the actual HVG/PCA/layer result again.
 The existing provider adapter receives aggregate actual QC/background evidence
 and returns this typed JSON document. A manual proposal can be supplied without
 a provider. Missing/invalid model responses remain recoverable failures or
-configuration boundaries. This increment tests `name = "mock", external = FALSE`
-only; it does not call a real provider or read keys. Enabling a future remote
-provider still requires the existing explicit aggregate-payload transfer review.
+configuration boundaries. Offline examples use `name = "mock", external = FALSE`.
+An external provider requires explicit aggregate-payload transfer review.
 
 For processed reuse, `qc`, `analysis`, `pcs`, `clustering`, and `umap` are explicit
 NULL. Supply `start_stage = "processed"`, the existing `cluster_column`, and a
@@ -341,8 +307,7 @@ this boundary.
 At a saved `awaiting_review` state R can exit. Headless inspect/approve/reject and
 resume are the required path; a loopback browser is optional. The coordinator's
 external-transfer approval is independent of scientific strategy approval and
-does not make an unsupported method executable. This increment exercises mocks
-only, so there is no new external request behind an approval.
+does not make an unsupported method executable.
 
 ## Layer and memory constraints
 
@@ -362,15 +327,14 @@ cell's total expression and applies a log transformation; this is a supported
 method, not a claim that its assumptions suit every experiment.
 [Seurat NormalizeData reference](https://satijalab.org/seurat/reference/normalizedata).
 
-## Known legacy gaps and deferred methods
+## Legacy APIs and scientific limits
 
 Cell-cycle scores describe expression programs. Regressing scores changes
 scaled expression and requires downstream PCA/graph/clustering recomputation;
 it does not delete cells. The current default is `none`; standard `full`
 regression uses `S.Score` and `G2M.Score`. Advanced optional difference regression
 uses `S.Score - G2M.Score`, retaining cycling versus noncycling contrast while
-reducing S/G2M phase variation. Earlier default and difference-description
-errors were corrected in this increment. Scores and coverage alone cannot
+reducing S/G2M phase variation. Scores and coverage alone cannot
 decide whether removing proliferation signal serves the research goal.
 [Seurat cell-cycle scoring and regression](https://satijalab.org/seurat/articles/cell_cycle_vignette).
 
@@ -386,7 +350,7 @@ The optional coordinator adapter uses the fixed full-input pre-QC reference,
 defaults to `keep`, and derives only the approved exact predicted-ID subset that
 also survives QC. Small or inadequately covered captures remain `Unknown`/`NA`
 with `keep` only; the minimum scoring prerequisites never silently filter cells.
-Operational or strict scDblFinder 1.26.7 audit failures remain recoverable failed
+Operational or strict scDblFinder adapter audit failures remain recoverable failed
 stages. Manual rates require provenance; standard-10x automatic estimation
 additionally requires the exact applicable technology and explicit
 `full_called_cohort = TRUE`. These guards and versioned real-method execution
@@ -395,194 +359,23 @@ does not infer list units, donors or samples as captures and does not call the
 legacy wrapper.
 
 The later sample-aware MAD extension is described in [MAD_REVIEW.md](MAD_REVIEW.md).
-This historical range-QC increment did not enable it. MAD-derived suggestions
+MAD-derived suggestions
 preserve declared metadata roles, materialize an inspectable typed proposal and
 exact cell impact, and require approval before changing the cell set.
 
 Harmony requires a computed PCA and declared correction variables. Existing
 `sc_harmony()` fails if the optional dependency is absent, but it does not perform
-the strategy's required biological-design validation. The later guarded
+the strategy's required biological-design validation. Guarded
 coordinator execution is described in [HARMONY_PC_REVIEW.md](HARMONY_PC_REVIEW.md).
-This historical range-QC increment did not execute Harmony; no real
-batch-removal efficacy is established by these software checks.
+Software checks do not establish real batch-removal efficacy.
 [Harmony RunHarmony reference](https://portals.broadinstitute.org/harmony/reference/RunHarmony.html).
 
-The historical range-QC increment did not include the coordinator-specific
-exact-cell-ID subcluster contract. The later applicability checks, approvals and
+The coordinator-specific exact-cell-ID subcluster applicability checks, approvals and
 bounded request accounting are described in [SUBCLUSTER_REVIEW.md](SUBCLUSTER_REVIEW.md).
 The legacy path
 accepts positional subset alignment, continues after per-target failures and
 can replace an invalid auto-resolution reply with 0.5; it is not invoked by this
-strategy increment. Paper-grade validation of biological labels, batch effects,
+reviewed path. Paper-grade validation of biological labels, batch effects,
 cycle decisions, doublet handling and research conclusions remains separate
 work. Synthetic multi-batch fixtures can test guards and execution mechanics;
 they cannot demonstrate real batch correction efficacy.
-
-## Code audit anchors
-
-Paths and line positions below describe the baseline `2ffa17ed`, before strategy
-implementation shifts their positions.
-
-| Area | Baseline code |
-| --- | --- |
-| Context role contract and input diagnostics | `R/run-qc.R:4–103` |
-| Sparse raw QC evidence and scope | `R/run-qc.R:142–198` |
-| Typed range validation and exact subset | `R/run-qc.R:202–331` |
-| Entry and processed reuse | `R/run.R:29–78` |
-| Durable stage execution | `R/run.R:205–267` |
-| Analysis settings adapter | `R/run-annotation.R:23–40` |
-| Exact public layer API and sparse validation | `R/project-identity.R:58–95` |
-| Standard preparation and effective parameters | `R/project-prepare.R:18–107` |
-| PC computation and variance rule | `R/sc-pca.R:14–52`, `71–133` |
-| Visual PC fallback | `R/decision-schema.R:99–110` |
-| Resolution sweep and numeric evidence | `R/sc-cluster.R:70–143`; `R/sc-resolution-recommend.R:96–155`, `346–358` |
-| Batch heuristic and Harmony | `R/sc-select-batch-var.R:68–129`; `R/sc-harmony.R:27–69` |
-| Cycle scoring/regression | `R/sc-cellcycle.R:32–79`; `R/sc-cellcycle-regress.R:29–52` |
-| Doublet dependency/layer/removal behavior | `R/qc-doublet.R:20–59` |
-| Legacy subcluster alignment/fallback | `R/annot-subcluster.R:379–412`, `720–728` |
-| Current approval binding and review kinds | `R/run-state.R:161–197`; `R/run-review.R:54–96` |
-| Optional dependency declarations | `DESCRIPTION:34–49` |
-
-## Current cell-cycle validation record
-
-The focused Mac suite passed 94 tests and 1924 assertions with zero failures,
-warnings or skips. The final `R CMD check --no-manual --ignore-vignettes` exited
-0 with `Status: OK` in 169.102 seconds and passed 4103 assertions with zero
-failures, warnings or skips. The earlier 4092-assertion check's code NOTE was
-resolved by qualifying `utils::capture.output`. The final receipt is
-`evidence/cycle-delivery-check/check-result.json`.
-The full Python suite passed 231 tests and preserved 62 protected files. The
-current DOM checks passed 17 cycle checks and 34 strategy checks.
-
-The bundled synthetic CLI completed across 24 fresh R processes, including
-none/full/advanced difference revisions and reviewed Unknown writeback, without
-a provider call. The public sparse PBMC input had 32738 features and 2700 cells;
-its original raw RDS SHA256 remained
-`aae453d43fe6a31c8ffe758f8ab59ce6c6074edca85fe1037d661e56fd633610`.
-Twenty-one feature IDs were explicitly mapped on a copy. All 2700 cells had
-available fixed pre-QC scores with declared `nbin = 12` and `ctrl = 5`; these are
-software scoring settings, not validated biological adequacy criteria or a
-claim of using Seurat's default control count. The final output completed at
-revision 73 with
-2540 cells, seven clusters and Unknown/low annotations. A fresh R process passed
-21 read-only checks of literal retained sparse counts, IDs, fixed scores and
-actual execution. Diagnostics, approved QC and normalization/HVG ran once;
-scaling/PCA, neighbors/UMAP, clustering and markers ran three times for the
-three genuinely executed choices. Workspace receipts are
-`evidence/cycle-synthetic-cli/cli-result.json` and
-`evidence/cycle-public-pbmc/verify-receipt.json`.
-
-Two actual Chrome scenarios passed. A third actual difference R worker
-completed, but the terminal browser DOM wait failed; that attempt is retained.
-A separate read-only Chrome finish passed three checks of the complete public
-project at revision 73, preserving every project byte without new decisions or
-scientific computation. Its receipt is
-`evidence/cycle-public-pbmc/browser-finish/cycle-finish-browser-report.json`;
-it does not change the earlier failed attempt into a pass.
-
-The final checked runtime fingerprint is
-`b5c0c313a62ddaa0688302a3f4dec8068e869f83d4f9196036fc164c646fb16b`.
-Public scientific and CLI acceptance used
-`6e1d2bfa220521083b247917aa3528f1ff934437263211fec10ab25f9382f003`;
-the later review-node dispatcher correction and legacy output qualifier did
-not change the scientific functions. On the final runtime, a separate 180-cell
-fixture at revision 27 passed two actual read-only Chrome checks of
-`awaiting_configuration` / `annotation_propose`: a null review node, saved none
-plan, fixed cohort, disabled decisions/Continue and byte-preserving refresh,
-with no new job, provider request or scientific computation. The receipt is
-`evidence/cycle-configuration-regression/browser/cycle-config-browser-report.json`.
-
-Validation is Mac only, with zero real provider API calls, zero key-file reads
-and US$0 incremental provider cost. Linux/HPC deployment and biological phase
-calls, coverage thresholds or research conclusions were not validated. See
-[CELL_CYCLE_REVIEW.md](CELL_CYCLE_REVIEW.md) for the current scope and limits.
-
-## Prior strategy validation record
-
-The following receipts describe the previous strategy implementation. They do
-not verify the new cell-cycle implementation; current receipts are separate
-above.
-
-The frozen implementation was installed and checked on the user's Mac with
-R 4.6.1, Seurat 5.5.1 and SeuratObject 5.4.0. `R CMD check --no-manual
---ignore-vignettes` exited 0 with `Status: OK`; testthat reported 3070 passing
-expectations, zero failures, zero warnings and zero skips. The checked
-implementation fingerprint is
-`57784527054ba87087862232169ef7ee89dc7d06635a972dcad6becd27d0680f`.
-The retained check-process log, `analysis-strategy-final/check.log`, has SHA256
-`102f745e58e004156a07e00b883b150f73c38f22103f8c6315a208e22c0969f2`.
-The R production files, tests and example are frozen; this validation paragraph
-is a documentation update after that check.
-
-The complete Python suite passed 231 tests with zero failures, errors or skips.
-Its first sandbox attempt encountered 48 errors when loopback socket operations
-were blocked; that failed attempt is retained. The authorized rerun with working
-loopback access passed. This is an environment-specific failure record followed
-by actual verification, rather than a claim that the initial run passed. The
-strategy DOM checks passed 34 checks and the legacy DOM checks passed 33. DOM
-checks alone do not establish actual Chrome-to-R execution.
-
-The public PBMC offline workflow now reaches a complete new Seurat object:
-2540 retained cells in eight clusters from the supplied sparse 32738-feature,
-2700-cell raw counts. The original raw RDS SHA256 remains
-`aae453d43fe6a31c8ffe758f8ab59ce6c6074edca85fe1037d661e56fd633610`.
-Its first input attempt correctly failed because 21 feature IDs contained `_` or
-`|`, which Seurat would otherwise rename implicitly. That attempt's failure log
-is retained. The root worker explicitly replaced those characters with `-` on
-a copy, checked for collisions, and saved `public-feature-id-preparation.csv`.
-The original raw bytes and 45 previously frozen inputs remained unchanged.
-Feature ID/order preservation refers to that explicitly prepared copy; retained
-cell IDs/order and exact sparse raw counts were verified against it.
-
-Actual isolated Chrome and the actual R bridge passed two browser scenarios:
-the concentrated strategy display, and a full-JSON resolution change from 0.4
-to 0.5 with stale approval rejected as HTTP 409. A fixed R Continue job then
-succeeded and saved the provider-free `annotation_propose` /
-`awaiting_configuration` boundary. The third browser scenario's harness checked
-the combined `run-status` text before the asynchronous DOM refresh reached that
-element, although the actual API/job state had already saved the boundary. Its
-failed report is retained. The driver now waits for that combined status/stage
-text; the first run is still recorded as two passes and one failed assertion,
-not retrospectively counted as a complete passing run.
-
-A fresh R process supplied a manual Unknown annotation, approved the exact
-annotation snapshot and used local Continue to complete the public project.
-QC application, basis preparation, neighbors, clustering, markers, annotation
-evidence, annotation application and finalization each executed once. The
-journal contains one strategy approval, zero redundant QC approvals and one
-separate annotation approval. The completed object retains sparse counts and
-literal retained IDs, and adds Unknown/low labels without claiming correct
-biological identity. The public prepare and finalize receipts are retained in
-`strategy-public-pbmc/prepare-receipt.json` and
-`strategy-public-pbmc/finalize-receipt.json`.
-
-A subsequent fresh R readonly verification exited 0 with the project still at
-`complete`, revision 35, and all supported stage counts unchanged at one. Its
-17 checks inspected the saved result without another scientific execution.
-A separate actual isolated Chrome readonly finish run exited 0 in 17.277 seconds
-and passed all three scenarios: completed status/stage with central strategy and
-output paths for 2540 cells/eight clusters; the saved fixed R job's original
-annotation boundary and exact approval/stage counts; and a refresh preserving
-all project bytes, input checkpoint, mock ledger and first failed browser
-receipt. It made no new decision, Continue request, computation or provider call;
-page errors and external requests were zero, and its owned server/profile were
-cleaned up. This is a complete passing readonly finish check, separate from the
-earlier browser assertion failure. Its report is
-`strategy-public-pbmc/browser-finish/strategy-finish-browser-report.json`; the
-root execution log SHA256 is
-`5c5e86810f8f4e9bab386b764c3f0780fff239d3ccdc4bf1b8eadec2b69e4ebc`.
-
-The bundled CLI example also completed its synthetic mock/manual-Unknown flow
-across 12 fresh R processes in 21.934 seconds. The example source was unchanged
-from the checked implementation. Across public and CLI acceptance there were
-two aggregate mock calls, one per project. Neither was a real provider request.
-Synthetic multi-batch checks cannot demonstrate real batch correction efficacy.
-All completed validation used mocks/local computation: zero real provider API
-calls, zero key-file reads and US$0 incremental provider cost. This increment
-does not validate Linux, HPC, a scheduler or a user server. These prior receipts
-did not execute cell-cycle or doublet handling. Opt-in cycle support is described
-above with its bounded validation. Optional doublet support is described in
-[DOUBLET_REVIEW.md](DOUBLET_REVIEW.md), including its separate completed Mac
-acceptance; these historical receipts do not validate it. Subcluster execution
-remains unsupported. Paper-grade biological validation remains outside these
-receipts.
