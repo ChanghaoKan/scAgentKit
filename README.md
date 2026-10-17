@@ -29,6 +29,11 @@ Use a pinned checkout and library to resume existing projects. See the
 
 ## First analysis
 
+Run these examples one block at a time. Stop at each displayed review, read the
+evidence, and decide whether to revise, reject or approve. Replace the example
+reviewer and reasons with your actual decision. Do not run all approval blocks
+as an automatic script.
+
 Load a named genes × cells raw count matrix or a Seurat object containing genuine
 counts. For the public [PBMC3k tutorial data](https://satijalab.org/seurat/articles/pbmc3k_tutorial),
 load the already-downloaded 10x directory:
@@ -127,29 +132,128 @@ reading results do not resume a run. Interrupted/failed work uses the existing
 
 ## Optional model proposals
 
-Configure a provider, verified model/prices, budget and disclosure policy when
-starting the project, as in the preserved [complete model walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md).
-Pass that same configuration to `sc_analyze(..., provider=provider, budget=budget,
-review=list(allow_external=TRUE))` to request a strategy instead of an initial
-manual draft. Keys remain in the analysis process environment.
+This independent route creates a new project and does not use the manual
+project above. Run each block separately and read its output before moving on.
+There are two exact-payload disclosure decisions and two scientific decisions;
+none should be approved automatically. Default policy still blocks external
+transfer. Enable it only for a new project whose disclosure you have reviewed.
+
+<details>
+<summary>Configure independent input, study facts, provider and budget</summary>
+
+Configure `DEEPSEEK_API_KEY` in the analysis R process using your usual secret
+mechanism (`XAI_API_KEY` for Grok). Set the six non-secret environment values
+below using your verified model ID, current USD-per-million-token rates and
+chosen spending limits. The helper reads the key's presence but returns only
+its environment variable name. This block makes no model request.
 
 ```r
-x <- sc_analyze(seu, "pbmc-model-study", context = x$view$context,
-  provider = provider, chat_fn = chat_fn, budget = budget,
-  review = list(allow_external = TRUE))
-transfer <- sc_review(x)  # inspect the exact saved aggregate payload first
-consent <- sc_review(transfer, "approve", reviewer = "your-name",
-  reason = "Explain consent for this exact payload and provider.")
-strategy <- sc_review(consent, "request", chat_fn = chat_fn)
-# Inspect strategy, then explicitly approve science and continue locally.
+library(scAgentKit)
+source(system.file("examples", "first-run.R", package = "scAgentKit"))
+
+model_counts <- Seurat::Read10X("/path/to/filtered_gene_bc_matrices/hg19")
+model_input <- Seurat::CreateSeuratObject(model_counts)
+model_context <- list(
+  species = "human", tissue = "Peripheral blood",
+  research_goal = "Describe the major immune populations in this public library.",
+  notes = "Donor and capture metadata are unavailable."
+)
+read_usd <- function(name) {
+  value <- suppressWarnings(as.numeric(Sys.getenv(name)))
+  stopifnot(length(value) == 1L, is.finite(value), value >= 0)
+  value
+}
+model_provider <- first_run_provider("deepseek", # or "grok" with XAI_API_KEY
+  model = Sys.getenv("SC_MODEL_ID"),
+  pricing = list(
+    input_per_million = read_usd("SC_INPUT_USD_PER_MILLION"),
+    output_per_million = read_usd("SC_OUTPUT_USD_PER_MILLION"),
+    cached_input_per_million = read_usd("SC_CACHED_INPUT_USD_PER_MILLION")
+  ),
+  reservation_usd = read_usd("SC_REQUEST_RESERVATION_USD")
+)
+model_budget <- read_usd("SC_PROJECT_BUDGET_USD")
+stopifnot(model_provider$reservation_usd > 0, model_budget > 0)
+model_chat_fn <- NULL # use the configured built-in provider
+model_project <- file.path(getwd(), "pbmc-model-study") # must be new
+model_reviewer <- "your-name"
 ```
 
-Transfer consent and scientific approval remain separate. After local analysis,
-`sc_review(next_step, "request", chat_fn=chat_fn)` prepares the next payload;
-review and approve that exact payload before a separate request dispatches it.
-Reattach in-memory callbacks after restarting R. Requests never automatically
-retry failed or unknown paid attempts. Default policy still blocks external
-transfer; a wrapper cannot enable it on an existing manual project.
+An explicit offline callback can instead be supplied through `model_chat_fn`
+with its matching provider configuration. Validation of this interface used
+offline callbacks, not a live DeepSeek/Grok request. Model responses can be
+invalid or require parameter edits; review the returned state before proceeding.
+
+</details>
+
+Start with no manual plan to ask the configured provider for a strategy. This
+first block saves and displays the exact outgoing QC/context aggregate payload;
+it stops before sending it:
+
+```r
+model_run <- sc_analyze(model_input, model_project, context = model_context,
+  provider = model_provider, chat_fn = model_chat_fn, budget = model_budget,
+  review = list(allow_external = TRUE))
+model_transfer <- sc_review(model_run)
+```
+
+Read that payload, provider, model and budget. If you consent to this exact
+disclosure, record the first transfer approval and explicitly request the
+response. Stop to read the returned complete strategy and projected QC impact:
+
+```r
+model_consent <- sc_review(model_transfer, "approve", reviewer = model_reviewer,
+  reason = "Explain consent for this exact QC/context payload and provider.")
+model_strategy <- sc_review(model_consent, "request", chat_fn = model_chat_fn)
+```
+
+Revise or reject an unsuitable plan. Once you have reviewed the entire current
+strategy, this separate scientific approval runs only local computation and
+stops at annotation configuration:
+
+```r
+model_next <- sc_review(model_strategy, "approve", reviewer = model_reviewer,
+  reason = "Explain why this complete strategy and QC scope suit the study.",
+  continue = TRUE)
+```
+
+Prepare the second outgoing payload from the actual saved markers and study
+context. This block displays that new preview without transmitting it:
+
+```r
+model_transfer <- sc_review(model_next, "request", chat_fn = model_chat_fn)
+```
+
+Read the second payload. If you consent, record its own transfer approval, then
+explicitly request the annotation response. Stop to inspect every proposed
+label, confidence, rationale and supplied marker citation:
+
+```r
+model_consent <- sc_review(model_transfer, "approve", reviewer = model_reviewer,
+  reason = "Explain consent for this exact marker/context payload and provider.")
+model_annotation <- sc_review(model_consent, "request", chat_fn = model_chat_fn)
+```
+
+If needed, edit `model_annotation$annotations` and submit it with
+`sc_review(model_annotation, "revise", annotations=labels, reviewer=..., reason=...)`;
+use the newly returned snapshot for the next decision. A model suggestion does
+not itself approve a label. After reviewing the complete current annotation,
+the second scientific approval finishes the local work, and the getter returns
+the verified final Seurat object:
+
+```r
+model_done <- sc_review(model_annotation, "approve", reviewer = model_reviewer,
+  reason = "Explain the review of every provisional annotation and citation.",
+  continue = TRUE)
+model_result <- sc_result(model_done)
+model_done$view$output
+```
+
+Transfer consent and scientific approval remain separate. Reattach in-memory
+callbacks after restarting R. Requests never automatically retry failed or
+unknown paid attempts. An existing manual project's immutable configuration
+cannot be changed by this wrapper. See the [complete model walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md)
+for provider setup, failure handling and advanced edits.
 
 ## What became shorter
 
@@ -173,3 +277,13 @@ browser/server review and scientific limits, see the
 [documentation index](docs/README.md) and [workbench guide](workbench/README.md).
 The advanced APIs remain available. No shared-server authentication changes or
 external services are required for this local workflow.
+
+Counting workflow calls only (excluding installation, data loading, standalone print/plot calls,
+label/file editing, provider setup and optional revisions), the runnable manual
+before/after example goes from 11 calls to 6. The previous complete README's
+manual route used 14 calls plus two label-conversion helper calls; the new route
+uses 6. The external model route goes from 17 to 10 calls. Both routes retain
+two scientific approvals; the external route also retains two transfer
+approvals. Scientific judgments and the four per-cluster annotation fields have
+not been removed. The new blank confidence field must also be filled; the old
+worksheet helper defaulted it to low.
