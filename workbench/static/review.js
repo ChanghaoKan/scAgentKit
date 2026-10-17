@@ -807,8 +807,15 @@ function updateDraftStatus() {
 function renderAnnotation() {
   const record = state.view.run.annotation_review, details = record.details, rows = annotationRows();
   state.drafts = new Map(rows.map(item => [String(item.clusterId), normalizeRow(item.proposal)]));
-  if (!rows.some(item => item.clusterId === state.selectedCluster)) state.selectedCluster = rows[0].clusterId;
+  if (!rows.some(item => item.clusterId === state.selectedCluster)) {
+    // A local workbench link selects a row of this verified proposal only. It
+    // never supplies a label, approval, scope or server-side action.
+    const fragment = new URLSearchParams((window.location.hash || "").slice(1));
+    const linked = fragment.size === 1 && fragment.getAll("cluster").length === 1 ? fragment.get("cluster") : null;
+    state.selectedCluster = rows.some(item => item.clusterId === linked) ? linked : rows[0].clusterId;
+  }
   $("annotation-counts").textContent = `${details.cell_count} exact cells · ${details.cluster_count} clusters · output ${details.output_columns?.label || record.target_column}`;
+  $("annotation-plan-overview").replaceChildren(table(["Literal cluster", "Cells", "Proposed label", "Qualitative confidence", "Cited markers", "Saved rationale"], rows.map(item => [item.clusterId, item.cell_count, item.proposal.label, item.proposal.confidence, array(item.proposal.markers).join(", "), item.proposal.rationale])));
   const clusterList = $("annotation-clusters"); clusterList.replaceChildren();
   for (const item of rows) {
     const button = element("button", `Cluster ${item.clusterId}`, {type: "button", "data-cluster-id": item.clusterId, "data-testid": "annotation-cluster-" + item.clusterId});

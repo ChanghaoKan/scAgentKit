@@ -285,6 +285,43 @@ await check("saved-label colors require complete output and exact configured ann
     assert.equal(Boolean(control), expected);
   }
 });
+function withLabels(value = view()) {
+  value.evidence.parameters = {...value.evidence.parameters, annotationColumn: "sc_annotation"};
+  value.evidence.sourceAnnotation = {column: "sc_annotation", role: "source_context", values: [{cellId: "cell:A", value: "T"}, {cellId: "cell:B", value: "T"}, {cellId: "cell:C", value: null}]};
+  return value;
+}
+await check("result proportions use every exact saved cell and preserve null, empty and literal labels", async () => {
+  const h = harness(), value = withLabels(); h.wire("parent", value); await h.call("wbLoad");
+  const distribution = h.call("wbLabelDistribution"); assert.equal(distribution.total, 3); assert.deepEqual(JSON.parse(JSON.stringify(distribution.rows.map(({label, count}) => ({label, count})))), [{label: "T", count: 2}, {label: null, count: 1}]); assert(Math.abs(distribution.rows.reduce((sum, row) => sum + row.percent, 0) - 100) < 1e-12);
+  assert.match(h.el("wb-composition").textContent, /T266\.7%.*\(missing value\)133\.3%/); assert.match(h.el("wb-composition-note").textContent, /denominator: all 3 cells.*not biological validation/);
+  for (const label of ["", "Unknown", "01", "1e3", "<script>alert(1)</script>"]) {value.evidence.sourceAnnotation.values[2].value = label; h.wire("parent", value); await h.call("wbLoad"); assert.equal(h.call("wbLabelDistribution").rows[1].label, label); assert(h.el("wb-composition").textContent.includes(label || "(empty label)"));}
+});
+await check("incomplete, foreign, duplicate or wrong-column labels never produce proportions", async () => {
+  for (const change of [v => v.evidence.sourceAnnotation.values.pop(), v => v.evidence.sourceAnnotation.values[2].cellId = "foreign", v => v.evidence.sourceAnnotation.values[2].cellId = "cell:A", v => v.evidence.sourceAnnotation.values[2].value = 0, v => v.evidence.sourceAnnotation.column = "old_labels"]) {
+    const h = harness(), value = withLabels(); change(value); h.wire("parent", value); await h.call("wbLoad"); assert.equal(h.state.failed, false); assert.equal(h.call("wbLabelDistribution").available, false); assert.equal(h.el("wb-composition").children.length, 0);
+  }
+});
+await check("pending proposals never become final proportions or silently gain approval", async () => {
+  const h = harness(), value = savedStage(), before = clone(value); h.wire("parent", value); await h.call("wbLoad");
+  assert.equal(h.call("wbLabelDistribution").available, false); assert.match(h.el("wb-composition-note").textContent, /No finalized label column.*unapproved/); assert.match(h.el("wb-questions").textContent, /Unresolved label.*Low qualitative confidence/);
+  assert.deepEqual(value, before); assert(h.requests.every(request => request.options.method === "GET")); assert.equal(h.state.view.run.status, "awaiting_review");
+  const pendingWithOldLabels = withLabels(); pendingWithOldLabels.run.status = "awaiting_review"; h.wire("parent", pendingWithOldLabels); await h.call("wbLoad"); assert.equal(h.call("wbLabelDistribution").available, false);
+});
+await check("question list prioritizes explicit conflict, keeps all literal clusters and selects by local display only", async () => {
+  const h = harness(), value = view(), rows = value.annotation.review.details.annotations;
+  rows[0].proposal.label = "T-like"; rows[0].proposal.confidence = "medium";
+  rows[1].proposal.label = "B-like"; rows[1].proposal.confidence = "medium"; rows[1].joint_evidence = {comparison: {status: "lineage_disagreement"}};
+  h.wire("parent", value); await h.call("wbLoad"); const before = JSON.stringify(h.state.view), requests = h.requests.length;
+  const flagged = h.el("wb-questions").children.filter(node => node.getAttribute("data-cluster-id")); assert.equal(flagged.length, 1); assert.equal(flagged[0].getAttribute("data-cluster-id"), "1"); assert.match(flagged[0].textContent, /Saved candidate disagreement/);
+  assert.equal(flagged[0].children.at(-1).getAttribute("href"), "/review?project_id=parent#cluster=1");
+  flagged[0].children[0].listeners.click[0](); assert.equal(h.state.clusterId, "1"); assert.equal(h.state.section, "analysis"); assert.equal(h.requests.length, requests); assert.equal(JSON.stringify(h.state.view), before);
+  const all = h.el("wb-questions").children.at(-1); assert.match(all.textContent, /All clusters.*Cluster 01.*Cluster 1/s); assert.equal(all.children.length, 3);
+});
+await check("absent flags do not imply a valid identity, and a stale refresh clears result summaries", async () => {
+  const h = harness(), value = withLabels(); for (const row of value.annotation.review.details.annotations) {row.proposal.label = "Recorded label"; row.proposal.confidence = "high";}
+  h.wire("parent", value); await h.call("wbLoad"); assert.match(h.el("wb-questions").textContent, /does not establish cell identity or approve/); assert(h.el("wb-composition").children.length);
+  const changed = clone(value); changed.binding.revision++; h.wire("parent", changed); await h.call("wbLoad"); for (const id of ["wb-composition", "wb-composition-note", "wb-questions", "wb-questions-note"]) assert.equal(h.el(id).textContent, "");
+});
 const files = ["workbench.html", "workbench.js", "workbench.css", "ortholog-map.js", "gene-links.js", "evidence-display.js"], report = {schema: "scagentkit.unified-workbench.dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualR: false, actualNetwork: false, paidAPICalls: 0, sourceHashes: Object.fromEntries(files.map(file => [file, sha(fs.readFileSync(path.join(root, "static", file)))])), driverSHA256: sha(fs.readFileSync(fileURLToPath(import.meta.url))), checks: results.length, passed: results.filter(result => result.passed).length, failed: results.filter(result => !result.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 console.log(JSON.stringify(report, null, 2)); if (report.failed) process.exitCode = 1;

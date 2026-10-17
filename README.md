@@ -11,20 +11,35 @@ identity. No provider, external-transfer permission or spending is enabled by de
 
 ## Installation
 
+The four-function interface is included in `main`. Start with the tested commit
+below in a private R library; no existing checkout is required for the R workflow.
 Requires R >= 4.2, Seurat >= 5 and the Imports in [DESCRIPTION](DESCRIPTION).
-The four-function interface is currently a **local development change**; install
-this checkout into a private library before using it:
+This downloads the package and required dependencies from GitHub/CRAN, including
+`agentomicsCore` from its declared `v0.1.1` source. Optional algorithms are not enabled.
 
 ```r
 private_lib <- file.path(path.expand("~/R"), "scagentkit-preview")
 dir.create(private_lib, recursive = TRUE, showWarnings = FALSE)
 .libPaths(c(private_lib, .libPaths()))
-# From the verified source checkout, with its dependencies already installed:
-install.packages(".", repos = NULL, type = "source", lib = private_lib)
-library(scAgentKit)
+if (!requireNamespace("remotes", quietly = TRUE))
+  install.packages("remotes", lib = private_lib, repos = "https://cloud.r-project.org")
+remotes::install_github(
+  "ChanghaoKan/scAgentKit@727b1afc30b532683e7bf25f85a75d4c04399780",
+  lib = private_lib, dependencies = c("Depends", "Imports"),
+  upgrade = "never", build = FALSE)
+library(scAgentKit, lib.loc = private_lib)
+stopifnot(all(c("sc_analyze", "sc_open", "sc_review", "sc_result") %in%
+              getNamespaceExports("scAgentKit")))
+packageVersion("scAgentKit")
+packageDescription("scAgentKit")$RemoteSha
 ```
 
-Use a pinned checkout and library to resume existing projects. See the
+The pinned commit passed both R and workbench CI. It is a development version,
+not a dependency lockfile; CRAN requirements may need platform build tools or a
+supported managed environment. Keep the same package/library when resuming an
+existing project. For an optional browser viewer, Python >= 3.9 and a matching
+source checkout are also required; follow the [workbench setup](workbench/README.md).
+See the
 [installation and dependency guide](docs/RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认).
 
 ## First analysis
