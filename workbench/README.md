@@ -3,7 +3,7 @@
 The workbench opens an existing `sc_run()` project on the machine holding its
 data. `/workbench` shows saved QC, strategy, analysis, annotation, outputs and
 history. **Review current step** opens `/review` for decisions and optional local
-computation. Start a project with the [R tutorial](../README.md#try-a-complete-run-without-an-api)
+computation. Start a project with the [R tutorial](../README.md#1-load-counts-and-describe-the-study)
 first; the browser is optional.
 
 ## Open saved results

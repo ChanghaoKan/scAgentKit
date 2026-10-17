@@ -1,6 +1,6 @@
 # Documentation
 
-For a first project, follow the [README offline PBMC example](../README.md#try-a-complete-run-without-an-api).
+For a first project, follow the [README analysis walkthrough](../README.md#1-load-counts-and-describe-the-study).
 Then use the [完整中文操作指南](RESEARCHER_PROTOCOL_ZH.md) for installation,
 your own data, approvals, results, recovery and server use. Both use the current
 `sc_run()` project workflow. The [workbench guide](../workbench/README.md)
