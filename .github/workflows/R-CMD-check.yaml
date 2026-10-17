@@ -23,15 +23,20 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # Match the independently accepted modern classifier, rather than
-          # silently moving to an unaudited Bioconductor patch release.
-          # Build DelayedArray against this job's S4Arrays to avoid a stale
-          # serialized re-export from a cached repository binary.
-          extra-packages: |
-            any::rcmdcheck
-            github::bioc/scDblFinder@a712645413b638a956e80d87c82da92d6bc92394
-            github::bioc/DelayedArray@63285a4ab9f3b74c894e5f709e9cde408fca78c0?reinstall&nocache
+          extra-packages: any::rcmdcheck
           needs: check
+      - name: Install audited sources with required dependencies only
+        shell: Rscript {0}
+        run: |
+          # Keep the action's full check dependency set above. These two
+          # overrides need their Imports, not their own optional vignette/data
+          # packages. Match the accepted classifier and rebuild the array alias
+          # against this job's S4Arrays rather than a cached repository binary.
+          library(pak, lib.loc = Sys.getenv("R_LIB_FOR_PAK"))
+          pak::pkg_install(c(
+            "github::bioc/scDblFinder@a712645413b638a956e80d87c82da92d6bc92394",
+            "github::bioc/DelayedArray@63285a4ab9f3b74c894e5f709e9cde408fca78c0?reinstall&nocache"
+          ), dependencies = NA, upgrade = FALSE, ask = FALSE)
       - name: Verify audited dependency and clean namespace imports
         shell: Rscript {0}
         run: |
