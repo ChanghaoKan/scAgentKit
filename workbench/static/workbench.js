@@ -342,6 +342,71 @@ function wbRenderAnalysis() {
   wbProjection(target, "Analysis", value.projection); wbRenderEmbedding(); wbRenderMarkers();
 }
 function wbGeneLine(prefix, genes) {const line = wbNode("p", prefix); line.append(ScGeneCards.list(genes, wbState.view.run.context?.species)); return line;}
+// Summaries are derived from this verified response only; they create no draft,
+// decision or second project state. Null and literal "Unknown" remain distinct.
+function wbLabelDistribution() {
+  const value = wbState.view, evidence = value.evidence, source = evidence?.sourceAnnotation;
+  if (value.run.status !== "complete" || value.evidence_kind !== "final_output_bundle" || typeof evidence?.parameters?.annotationColumn !== "string" || source?.column !== evidence.parameters.annotationColumn)
+    return {available: false, note: "No finalized label column is available in this snapshot; unapproved proposals are never counted as cell types, and no labels are inferred here."};
+  const cells = new Set(wbArray(evidence.clusters).flatMap(cluster => cluster.cellIds)), seen = new Set(), counts = new Map();
+  if (!Array.isArray(source.values) || source.values.length !== cells.size || !cells.size)
+    return {available: false, note: "Label proportions unavailable: the saved label column does not cover this exact cell scope."};
+  for (const row of source.values) {
+    if (!cells.has(row?.cellId) || seen.has(row.cellId) || row.value !== null && typeof row.value !== "string")
+      return {available: false, note: "Label proportions unavailable: the saved label cells or values are inconsistent."};
+    seen.add(row.cellId); counts.set(row.value, (counts.get(row.value) || 0) + 1);
+  }
+  return {available: true, column: source.column, total: cells.size, rows: [...counts].map(([label, count]) => ({label, count, percent: count / cells.size * 100})).sort((a, b) => b.count - a.count)};
+}
+function wbClusterQuestions(cluster) {
+  const row = wbArray(wbState.view.annotation?.review?.details?.annotations).find(item => item.clusterId === cluster.id), proposal = row?.proposal, reasons = [];
+  if (proposal) {
+    if (typeof proposal.label !== "string" || !proposal.label.trim() || ["unknown", "unannotated"].includes(proposal.label.trim().toLowerCase())) reasons.push("Unresolved label");
+    if (proposal.confidence === "low") reasons.push("Low qualitative confidence");
+    if (typeof proposal.label === "string" && proposal.label.trim() && !["unknown", "unannotated"].includes(proposal.label.trim().toLowerCase()) && !wbArray(proposal.markers).length) reasons.push("No supporting citation recorded");
+    const comparison = row.joint_evidence?.comparison;
+    if (["lineage_disagreement", "unresolved_label_difference"].includes(comparison?.status)) reasons.push("Saved candidate disagreement");
+    if (comparison?.status === "missing_information" && row.joint_evidence?.database?.status === "ok") reasons.push("Saved comparison lacks information");
+  }
+  if (!wbArray(cluster.markers).length) reasons.push("Marker evidence unavailable");
+  if (!proposal && !wbArray(cluster.sourceAnnotations).length) reasons.push("Label evidence unavailable");
+  return reasons;
+}
+function wbRenderResultSummary() {
+  const value = wbState.view, distribution = wbLabelDistribution(), composition = wb$("wb-composition"), questions = wb$("wb-questions"); composition.replaceChildren(); questions.replaceChildren();
+  wb$("wb-composition-note").textContent = distribution.available ? "Saved column " + distribution.column + " · denominator: all " + distribution.total.toLocaleString() + " cells in this exact output. These are recorded labels, not biological validation." : distribution.note;
+  if (distribution.available) composition.append(wbTable(["Recorded label", "Cells", "% of saved cells"], distribution.rows.map(row => [row.label === null ? "(missing value)" : row.label === "" ? "(empty label)" : row.label, row.count, row.percent.toFixed(1) + "%"])));
+  const clusters = wbArray(value.evidence?.clusters), flagged = clusters.map(cluster => ({cluster, reasons: wbClusterQuestions(cluster)})).filter(row => row.reasons.length);
+  // Categorical inspection order only; no confidence threshold or identity score.
+  const priority = ["No supporting citation recorded", "Saved candidate disagreement", "Unresolved label", "Low qualitative confidence", "Saved comparison lacks information", "Marker evidence unavailable", "Label evidence unavailable"];
+  const rank = row => Math.min(...row.reasons.map(reason => priority.indexOf(reason)));
+  flagged.sort((left, right) => rank(left) - rank(right));
+  wb$("wb-questions-title").textContent = value.run.status === "complete" ? "Remaining scientific questions" : "Questions to inspect";
+  wb$("wb-questions-note").textContent = !clusters.length ? "No saved cluster evidence is available yet. Inspect the current proposal in Review." : flagged.length + " / " + clusters.length + " clusters have recorded gaps or unresolved evidence. " + (value.run.status === "complete" ? "The saved plan is already executed; these flags do not reopen review or validate identities." : "These flags organize inspection; every proposed label still needs complete scientific review.");
+  if (!flagged.length && clusters.length) wbEmpty(questions, "No listed gap or disagreement was found in the supplied records. This does not establish cell identity or approve the plan.");
+  let more = null;
+  for (const [index, {cluster, reasons}] of flagged.entries()) {
+    const card = wbNode("div", null, {class: "wb-question", "data-cluster-id": cluster.id}), button = wbNode("button", "Inspect cluster " + cluster.id, {type: "button", class: "button quiet small"});
+    // This result panel is already visible in overview/analysis. Keep its
+    // layout stable while selecting so repeated clicks cannot hit another row.
+    button.addEventListener("click", () => wbSelectCluster(cluster.id));
+    card.append(button, wbNode("p", reasons.join(" · ")));
+    if (wbArray(value.annotation?.review?.details?.annotations).some(row => row.clusterId === cluster.id))
+      card.append(wbNode("a", value.project.frozen ? "Inspect saved proposal" : "Review this proposal", {class: "wb-inline-link", href: wbScopeURL("/review", value.project.project_id, wbState.child) + "#cluster=" + encodeURIComponent(cluster.id)}));
+    if (index < 3) questions.append(card);
+    else {
+      if (!more) {more = wbNode("details", null, {class: "wb-all-clusters", "data-testid": "wb-more-questions"}); more.append(wbNode("summary", (flagged.length - 3) + " more flagged clusters")); questions.append(more);}
+      more.append(card);
+    }
+  }
+  // Keep every literal cluster, including those without a flag, reachable here.
+  const all = wbNode("details", null, {class: "wb-all-clusters"}); all.append(wbNode("summary", "All clusters + saved proposals (" + clusters.length + ")"));
+  for (const cluster of clusters) {
+    const row = wbArray(value.annotation?.review?.details?.annotations).find(item => item.clusterId === cluster.id), button = wbNode("button", "Cluster " + cluster.id + " · " + cluster.cellCount + " cells" + (row?.proposal ? " · " + wbText(row.proposal.label) + " / " + wbText(row.proposal.confidence) + " (recorded proposal)" : ""), {type: "button", class: "wb-cluster-summary"});
+    button.addEventListener("click", () => wbSelectCluster(cluster.id)); all.append(button);
+  }
+  questions.append(all);
+}
 function wbRenderAnnotation() {
   const value = wbState.view.annotation || {}, target = wb$("wb-annotation-content"), review = value.review, rows = wbArray(review?.details?.annotations); target.replaceChildren();
   if (!rows.length) wbEmpty(target, "No saved per-cluster annotation review was supplied. Unavailable labels stay unavailable; a marker or cluster count is not an identity decision.");
@@ -409,7 +474,7 @@ function wbRender() {
   const childAction = wb$("wb-child-action"); childAction.hidden = wbState.scopes.workspace_enabled === false || !wbState.scopes.parent.ready;
   childAction.setAttribute("href", wbScopeURL("/subclusters", wbState.child ? selected.project_id : wbState.scopes.parent.project_id, wbState.child)); childAction.textContent = wbState.child && run.status === "complete" ? "Review writeback" : wbState.child ? "Child scope" : "Select cells";
   const clusters = wbArray(value.evidence?.clusters); if (!clusters.some(cluster => cluster.id === wbState.clusterId)) wbState.clusterId = clusters[0]?.id || null;
-  wbRenderOverview(); wbRenderQC(); wbRenderStrategy(); wbRenderAnalysis(); wbRenderAnnotation(); wbRenderChildren(); wbRenderOutputs(); wbRenderHistory(); wbSelectSection(wbState.section);
+  wbRenderOverview(); wbRenderQC(); wbRenderStrategy(); wbRenderAnalysis(); wbRenderResultSummary(); wbRenderAnnotation(); wbRenderChildren(); wbRenderOutputs(); wbRenderHistory(); wbSelectSection(wbState.section);
 }
 async function wbGET(path, headers = {}) {const response = await fetch(path, {method: "GET", cache: "no-store", headers}); const answer = await response.json(); if (!response.ok) throw new Error(answer?.error || "The saved evidence could not be inspected."); return answer;}
 async function wbLoad() {
@@ -424,11 +489,11 @@ async function wbLoad() {
     wb$("wb-title").textContent = "Saved project evidence unavailable"; wb$("wb-context").textContent = ""; wb$("wb-scope").textContent = "EXACT SNAPSHOT NOT VERIFIED";
     wb$("wb-status").textContent = "Saved evidence unavailable"; wb$("wb-next").textContent = "Refresh this exact registered scope after resolving the saved-state error.";
     wb$("wb-notice").textContent = error.message; wb$("wb-notice").hidden = false; wb$("wb-notice").className = "banner error";
-    for (const id of ["wb-metrics", "wb-flow", "wb-flow-details", "wb-risk-details", "wb-background", "wb-diagnostics", "wb-stages", "wb-binding", "wb-qc-content", "wb-strategy-content", "wb-analysis-content", "wb-umap", "wb-umap-legend", "wb-clusters", "wb-markers", "wb-selection", "wb-marker-preview", "wb-risk", "wb-parameter-summary", "wb-annotation-content", "wb-children-content", "wb-outputs-content", "wb-history-content"]) wb$(id).replaceChildren();
+    for (const id of ["wb-metrics", "wb-flow", "wb-flow-details", "wb-risk-details", "wb-background", "wb-diagnostics", "wb-stages", "wb-binding", "wb-qc-content", "wb-strategy-content", "wb-analysis-content", "wb-composition", "wb-questions", "wb-umap", "wb-umap-legend", "wb-clusters", "wb-markers", "wb-selection", "wb-marker-preview", "wb-risk", "wb-parameter-summary", "wb-annotation-content", "wb-children-content", "wb-outputs-content", "wb-history-content"]) wb$(id).replaceChildren();
     wb$("wb-risk-panel").hidden = true; wb$("wb-risk-summary").textContent = "Full saved cautions"; wb$("wb-status").setAttribute("data-run-status", "unverified");
     wb$("wb-current-title").textContent = "Saved evidence unavailable";
     wb$("wb-dataset-title").textContent = "Saved evidence unavailable";
-    for (const id of ["wb-qc-status", "wb-analysis-status", "wb-embedding-summary", "wb-marker-summary", "wb-history-summary"]) wb$(id).textContent = "";
+    for (const id of ["wb-qc-status", "wb-analysis-status", "wb-composition-note", "wb-questions-note", "wb-embedding-summary", "wb-marker-summary", "wb-history-summary"]) wb$(id).textContent = "";
   } finally {wbState.busy = false; wb$("wb-refresh").disabled = false;}
 }
 for (const link of wb$("wb-navigation").children) link.addEventListener("click", event => {event.preventDefault(); wbSelectSection(link.getAttribute("data-section"), true);});

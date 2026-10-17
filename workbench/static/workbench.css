@@ -20,6 +20,17 @@ body.wb-compact {
   background: #fcfdff;
   font-size: 14px;
 }
+body.wb-compact .wb-result-grid {display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin: 24px 0 8px;}
+body.wb-compact .wb-result-card {min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: #fff;}
+body.wb-compact .wb-result-card h3 {font-size: 16px; margin-bottom: 8px;}
+body.wb-compact .wb-result-card .wb-section-note {line-height: 1.6; margin-bottom: 16px;}
+body.wb-compact .wb-question {padding: 12px 0; border-top: 1px solid var(--line);}
+body.wb-compact .wb-question p {font-size: 12px; line-height: 1.5; margin: 6px 0 0; color: var(--muted);}
+body.wb-compact .wb-question button {font-size: 12px; min-height: 36px;}
+body.wb-compact .wb-all-clusters {margin-top: 12px; font-size: 12px;}
+body.wb-compact .wb-all-clusters summary {cursor: pointer; padding: 8px 0;}
+body.wb-compact .wb-cluster-summary {display: block; width: 100%; text-align: left; padding: 10px; margin-top: 4px; border: 1px solid var(--line); border-radius: 4px; background: #f3f6fb; color: var(--ink); font-size: 12px; white-space: normal; overflow-wrap: anywhere;}
+@media (max-width: 740px) {body.wb-compact .wb-result-grid {grid-template-columns: 1fr; gap: 16px;} body.wb-compact .wb-result-card {padding: 16px;}}
 body.wb-compact .app-header {padding: 0 32px; border-bottom-color: #e6ebf2;}
 body.wb-compact > .wb-shell {max-width: 1440px; padding: 24px 32px 0;}
 body.wb-compact .wb-project-head {align-items: center; margin-bottom: 16px;}

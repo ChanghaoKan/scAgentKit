@@ -8,6 +8,20 @@ first; the browser is optional.
 
 ## Open saved results
 
+Install the R package using the [pinned installation](../README.md#installation).
+The browser files are excluded from R package builds, so obtain the same source
+separately (Git and Python >= 3.9 are required):
+
+```sh
+git clone https://github.com/ChanghaoKan/scAgentKit.git
+cd scAgentKit
+git checkout --detach 727b1afc30b532683e7bf25f85a75d4c04399780
+```
+
+Keep this checkout path and the private R library together in your project notes.
+Use the matching source for an older project rather than upgrading its kernel
+or replacing its saved state to make it open.
+
 With scAgentKit loaded in the project's R environment:
 
 ```r
@@ -84,6 +98,17 @@ an integrity error. See [outputs and recovery](../docs/RESEARCHER_PROTOCOL_ZH.md
 
 The saved overview has a 16 MiB display limit and refuses oversized views instead
 of silently truncating them. Use local R inspection when a view cannot be supplied.
+
+The project view keeps the saved embedding and selected-cluster markers visible.
+Cell-label proportions use the finalized annotation column and every cell in the
+exact saved output as their denominator, including missing labels. Pending
+proposals are not counted as finalized cell types. A read-only question list
+surfaces recorded Unknown/low-confidence labels, missing citations/markers and
+explicit saved candidate disagreements; it retains access to all clusters and
+the complete review. Flags are inspection aids, not identity scores or approvals.
+The review editor already fills fields and marker checkboxes from the same saved
+proposal; change disputed rows, save, inspect the rebuilt complete plan and
+explicitly approve it. Navigation and summary generation do not write decisions.
 
 ## Remote access
 

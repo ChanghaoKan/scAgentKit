@@ -47,12 +47,12 @@ class InertNode {
   focus() {}
   reportValidity() {return true;}
 }
-function client(fetch = async () => {throw new Error("Unexpected request");}, initial = view()) {
+function client(fetch = async () => {throw new Error("Unexpected request");}, initial = view(), fragment = "") {
   const nodes = new Map(), document = {getElementById(id) {
     if (!nodes.has(id)) nodes.set(id, new InertNode());
     return nodes.get(id);
   }, createElement: tag => new InertNode(tag)};
-  const window = {confirm: () => true, location: {origin: "http://127.0.0.1:1"}, addEventListener() {}};
+  const window = {confirm: () => true, location: {origin: "http://127.0.0.1:1", hash: fragment}, addEventListener() {}};
   const context = vm.createContext({document, window, fetch, console, URLSearchParams});
   // Production render/event logic executes with DOM operations made inert.
   vm.runInContext(source.slice(0, -"load();\n".length) + "\nglobalThis.reviewClient = {state, verify, request, load, buttons, dirty, draftError, basePayload, decide, edit, render, admissibleGenes};", context);
@@ -241,5 +241,14 @@ await test("reference candidates retain hits, reference size and weak-single-mar
   assert.match(text, /Candidate order does not establish a cell identity/);
   const heads = all.filter(n => n.tag === "th").map(n => n.textContent);
   assert(heads.includes("Coverage")); assert(heads.includes("Unique hits / reference genes")); checks += 5;
+});
+await test("result question links select a literal saved proposal and prefill without approving or requesting", async () => {
+  const initial = view(), before = clone(initial); let requests = 0;
+  const c = client(async () => {requests++; throw new Error("Selection cannot send requests");}, initial, "#cluster=01");
+  assert.equal(c.api.state.selectedCluster, "01"); assert.equal(c.nodes.get("annotation-label").value, "B-like"); assert.equal(c.nodes.get("annotation-rationale").value, initial.run.annotation_review.details.annotations[1].proposal.rationale); assert.equal(c.api.dirty(), false); assert.equal(requests, 0); assert.deepEqual(initial, before);
+  const walk = n => [n, ...(n.children || []).flatMap(walk)], overview = walk(c.nodes.get("annotation-plan-overview")).map(n => n.textContent || "").join(" ");
+  assert.match(overview,/literal:A.*T-like.*CD3D.*01.*B-like.*CD79A/s);
+  for (const fragment of ["#cluster=foreign", "#cluster=01&cluster=literal%3AA", "#cluster=01&approve=true"]) {const invalid = client(undefined, view(), fragment); assert.equal(invalid.api.state.selectedCluster, "literal:A"); assert.equal(invalid.api.dirty(), false);}
+  checks += 13;
 });
 console.log(`${cases} client cases / ${checks} focused checks passed; no GUI, R or external API calls`);
