@@ -309,10 +309,10 @@ await check("pending proposals never become final proportions or silently gain a
 });
 await check("question list prioritizes explicit conflict, keeps all literal clusters and selects by local display only", async () => {
   const h = harness(), value = view(), rows = value.annotation.review.details.annotations;
-  rows[0].proposal.label = "T-like"; rows[0].proposal.confidence = "medium";
+  rows[0].proposal.label = "Unknown"; rows[0].proposal.confidence = "low";
   rows[1].proposal.label = "B-like"; rows[1].proposal.confidence = "medium"; rows[1].joint_evidence = {comparison: {status: "lineage_disagreement"}};
   h.wire("parent", value); await h.call("wbLoad"); const before = JSON.stringify(h.state.view), requests = h.requests.length;
-  const flagged = h.el("wb-questions").children.filter(node => node.getAttribute("data-cluster-id")); assert.equal(flagged.length, 1); assert.equal(flagged[0].getAttribute("data-cluster-id"), "1"); assert.match(flagged[0].textContent, /Saved candidate disagreement/);
+  const flagged = h.el("wb-questions").children.filter(node => node.getAttribute("data-cluster-id")); assert.equal(flagged.length, 2); assert.deepEqual(flagged.map(node => node.getAttribute("data-cluster-id")), ["1", "01"]); assert.match(flagged[0].textContent, /Saved candidate disagreement/);
   assert.equal(flagged[0].children.at(-1).getAttribute("href"), "/review?project_id=parent#cluster=1");
   flagged[0].children[0].listeners.click[0](); assert.equal(h.state.clusterId, "1"); assert.equal(h.state.section, "analysis"); assert.equal(h.requests.length, requests); assert.equal(JSON.stringify(h.state.view), before);
   const all = h.el("wb-questions").children.at(-1); assert.match(all.textContent, /All clusters.*Cluster 01.*Cluster 1/s); assert.equal(all.children.length, 3);
