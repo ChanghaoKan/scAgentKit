@@ -23,8 +23,27 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          # Match the independently accepted modern classifier, rather than
+          # silently moving to an unaudited Bioconductor patch release.
+          # Build DelayedArray against this job's S4Arrays to avoid a stale
+          # serialized re-export from a cached repository binary.
+          extra-packages: |
+            any::rcmdcheck
+            github::bioc/scDblFinder@a712645413b638a956e80d87c82da92d6bc92394
+            github::bioc/DelayedArray@63285a4ab9f3b74c894e5f709e9cde408fca78c0?reinstall&nocache
           needs: check
+      - name: Verify audited dependency and clean namespace imports
+        shell: Rscript {0}
+        run: |
+          stopifnot(identical(as.character(packageVersion("scDblFinder")), "1.26.7"))
+          # Fail here on import warnings; do not hide them in the test suite.
+          withCallingHandlers({
+            stopifnot(requireNamespace("SummarizedExperiment", quietly = TRUE))
+            stopifnot(requireNamespace("scDblFinder", quietly = TRUE))
+          }, warning = function(w) stop(conditionMessage(w), call. = FALSE))
+          stopifnot(identical(
+            getExportedValue("S4Arrays", "makeNindexFromArrayViewport"),
+            getExportedValue("DelayedArray", "makeNindexFromArrayViewport")))
       - name: Check
         shell: Rscript {0}
         run: |
