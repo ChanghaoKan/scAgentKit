@@ -26,15 +26,21 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
       - name: Install audited sources with required dependencies only
+        env:
+          # Match the validated dependency builds. Preserve source for this
+          # package's Check below, not serialized source-reference metadata
+          # copied between upstream re-exporting dependency namespaces.
+          R_KEEP_PKG_SOURCE: "no"
         shell: Rscript {0}
         run: |
-          # Keep the action's full check dependency set above. These two
+          # Keep the action's full check dependency set above. These three
           # overrides need their Imports, not their own optional vignette/data
           # packages. Match the accepted classifier and rebuild the array alias
           # against this job's S4Arrays rather than a cached repository binary.
           library(pak, lib.loc = Sys.getenv("R_LIB_FOR_PAK"))
           pak::pkg_install(c(
             "github::bioc/scDblFinder@a712645413b638a956e80d87c82da92d6bc92394",
+            "github::bioc/S4Arrays@fd4e6c339dc25b7c4e29c3d8d3d0fa95f41a08f4?reinstall&nocache",
             "github::bioc/DelayedArray@63285a4ab9f3b74c894e5f709e9cde408fca78c0?reinstall&nocache"
           ), dependencies = NA, upgrade = FALSE, ask = FALSE)
       - name: Verify audited dependency and clean namespace imports
@@ -43,12 +49,20 @@ jobs:
           stopifnot(identical(as.character(packageVersion("scDblFinder")), "1.26.7"))
           # Fail here on import warnings; do not hide them in the test suite.
           withCallingHandlers({
+            stopifnot(requireNamespace("S4Arrays", quietly = TRUE))
+            stopifnot(requireNamespace("DelayedArray", quietly = TRUE))
+          }, warning = function(w) stop(conditionMessage(w), call. = FALSE))
+          left <- getExportedValue("S4Arrays", "makeNindexFromArrayViewport")
+          right <- getExportedValue("DelayedArray", "makeNindexFromArrayViewport")
+          cat("Array export identity:", identical(left, right), "\n")
+          if (!identical(left, right)) {
+            print(left); print(right)
+            stop("Dependency array re-export differs; full Check was not started.")
+          }
+          withCallingHandlers({
             stopifnot(requireNamespace("SummarizedExperiment", quietly = TRUE))
             stopifnot(requireNamespace("scDblFinder", quietly = TRUE))
           }, warning = function(w) stop(conditionMessage(w), call. = FALSE))
-          stopifnot(identical(
-            getExportedValue("S4Arrays", "makeNindexFromArrayViewport"),
-            getExportedValue("DelayedArray", "makeNindexFromArrayViewport")))
       - name: Check
         shell: Rscript {0}
         run: |
