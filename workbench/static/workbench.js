@@ -387,7 +387,9 @@ function wbRenderResultSummary() {
   let more = null;
   for (const [index, {cluster, reasons}] of flagged.entries()) {
     const card = wbNode("div", null, {class: "wb-question", "data-cluster-id": cluster.id}), button = wbNode("button", "Inspect cluster " + cluster.id, {type: "button", class: "button quiet small"});
-    button.addEventListener("click", () => {wbSelectCluster(cluster.id); wbSelectSection("analysis", true);});
+    // This result panel is already visible in overview/analysis. Keep its
+    // layout stable while selecting so repeated clicks cannot hit another row.
+    button.addEventListener("click", () => wbSelectCluster(cluster.id));
     card.append(button, wbNode("p", reasons.join(" · ")));
     if (wbArray(value.annotation?.review?.details?.annotations).some(row => row.clusterId === cluster.id))
       card.append(wbNode("a", value.project.frozen ? "Inspect saved proposal" : "Review this proposal", {class: "wb-inline-link", href: wbScopeURL("/review", value.project.project_id, wbState.child) + "#cluster=" + encodeURIComponent(cluster.id)}));
@@ -401,7 +403,7 @@ function wbRenderResultSummary() {
   const all = wbNode("details", null, {class: "wb-all-clusters"}); all.append(wbNode("summary", "All clusters + saved proposals (" + clusters.length + ")"));
   for (const cluster of clusters) {
     const row = wbArray(value.annotation?.review?.details?.annotations).find(item => item.clusterId === cluster.id), button = wbNode("button", "Cluster " + cluster.id + " · " + cluster.cellCount + " cells" + (row?.proposal ? " · " + wbText(row.proposal.label) + " / " + wbText(row.proposal.confidence) + " (recorded proposal)" : ""), {type: "button", class: "wb-cluster-summary"});
-    button.addEventListener("click", () => {wbSelectCluster(cluster.id); wbSelectSection("analysis", true);}); all.append(button);
+    button.addEventListener("click", () => wbSelectCluster(cluster.id)); all.append(button);
   }
   questions.append(all);
 }

@@ -314,7 +314,7 @@ await check("question list prioritizes explicit conflict, keeps all literal clus
   h.wire("parent", value); await h.call("wbLoad"); const before = JSON.stringify(h.state.view), requests = h.requests.length;
   const flagged = h.el("wb-questions").children.filter(node => node.getAttribute("data-cluster-id")); assert.equal(flagged.length, 2); assert.deepEqual(flagged.map(node => node.getAttribute("data-cluster-id")), ["1", "01"]); assert.match(flagged[0].textContent, /Saved candidate disagreement/);
   assert.equal(flagged[0].children.at(-1).getAttribute("href"), "/review?project_id=parent#cluster=1");
-  flagged[0].children[0].listeners.click[0](); assert.equal(h.state.clusterId, "1"); assert.equal(h.state.section, "analysis"); assert.equal(h.requests.length, requests); assert.equal(JSON.stringify(h.state.view), before);
+  flagged[0].children[0].listeners.click[0](); flagged[0].children[0].listeners.click[0](); assert.equal(h.state.clusterId, "1"); assert.equal(h.state.section, "overview"); assert.equal(h.requests.length, requests); assert.equal(JSON.stringify(h.state.view), before);
   const all = h.el("wb-questions").children.at(-1); assert.match(all.textContent, /All clusters.*Cluster 01.*Cluster 1/s); assert.equal(all.children.length, 3);
 });
 await check("absent flags do not imply a valid identity, and a stale refresh clears result summaries", async () => {
