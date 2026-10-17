@@ -1,9 +1,10 @@
 # Documentation
 
-For a first project, follow the [README offline PBMC example](../README.md#try-a-complete-run-without-an-api).
+For a first project, follow the [README analysis walkthrough](../README.md#first-analysis).
 Then use the [完整中文操作指南](RESEARCHER_PROTOCOL_ZH.md) for installation,
-your own data, approvals, results, recovery and server use. Both use the current
-`sc_run()` project workflow. The [workbench guide](../workbench/README.md)
+your own data, approvals, results, recovery and server use. The README uses the four high-level R entries; the protocol retains the
+advanced `sc_run()` workflow. The [complete previous walkthrough](COMPLETE_ANALYSIS_WALKTHROUGH.md)
+is preserved for manual schemas, model setup and detailed editing. The [workbench guide](../workbench/README.md)
 explains optional browser review and local computation.
 
 ## Analysis and review
