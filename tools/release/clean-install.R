@@ -3,6 +3,10 @@ local({
   secret_names <- grep("API_?KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL", names(Sys.getenv()),
     value=TRUE, ignore.case=TRUE)
   Sys.unsetenv(secret_names)
+  repositories <- readLines("container-repositories.txt", warn=FALSE)
+  stopifnot(length(repositories)>0L, all(grepl("^https://",repositories)))
+  options(repos=stats::setNames(repositories,
+    if(length(repositories)==1L) "CRAN" else paste0("CRAN",seq_along(repositories))))
   lib <- path.expand("~/R/scagentkit-library")
   stopifnot(!dir.exists(lib) || !length(list.files(lib, all.files=TRUE, no..=TRUE)))
   initial <- as.data.frame(installed.packages(), stringsAsFactors=FALSE)
@@ -30,12 +34,13 @@ local({
   pid <- NULL
   on.exit(if(!is.null(pid))try(tools::pskill(pid,signal=15L),silent=TRUE),add=TRUE)
   options(scAgentKit.checkout=NULL)
-  service <- sc_start(SeuratObject::pbmc_small,"installed-entry-project",browse=FALSE,
+  saveRDS(SeuratObject::pbmc_small,"installed-entry-input.rds")
+  service <- sc_start("installed-entry-input.rds","installed-entry-project",browse=FALSE,
     context=list(species="human", tissue="Public software control",
       research_goal="Check public Release installation entry"))
   pid <- as.integer(service$pid)
   inspected <- sc_run_inspect("installed-entry-project")
-  again <- sc_start(SeuratObject::pbmc_small,"installed-entry-project",browse=FALSE)
+  again <- sc_start("installed-entry-input.rds","installed-entry-project",browse=FALSE)
   stopifnot(inspected$status=="awaiting_review", again$reused,
     identical(service$pid,again$pid))
   download <- jsonlite::read_json("download-receipt.json", simplifyVector=TRUE)

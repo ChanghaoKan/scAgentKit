@@ -9,6 +9,7 @@ import urllib.request
 parser = argparse.ArgumentParser()
 parser.add_argument("mode", choices=["artifact", "public"])
 parser.add_argument("commit")
+parser.add_argument("sha256", help="Trusted SHA256 from this workflow's build job")
 args = parser.parse_args()
 version = "0.6.0"
 tag = "v" + version
@@ -33,6 +34,7 @@ if args.mode == "public":
     assert obj["type"] == "commit" and obj["sha"] == args.commit
 
 sha = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+assert sha == args.sha256, "Downloaded bytes differ from this run's accepted build"
 assert Path("SHA256SUMS").read_text().split() == [sha, name]
 with tarfile.open(name) as archive:
     description = archive.extractfile("scAgentKit/DESCRIPTION").read().decode()
@@ -48,6 +50,7 @@ Path("README-install.R").write_text(block("## Installation"))
 Path("README-offline.R").write_text(block("## Offline installation check"))
 receipt = dict(status="passed", mode=args.mode, anonymous_public_download=args.mode == "public",
                tag=tag, source_commit=args.commit, sha256=sha, checksum_matches=True,
-               archive_modified=False, readme_commands_extracted_verbatim=True)
+               archive_modified=False, build_sha256_matches=True,
+               readme_commands_extracted_verbatim=True)
 Path("download-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt))

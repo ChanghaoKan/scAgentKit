@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       commit: ${{ steps.provenance.outputs.commit }}
+      sha256: ${{ steps.provenance.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,12 +47,15 @@ jobs:
           if [ "$RELEASE_EVENT" = workflow_dispatch ]; then
             test "$RELEASE_TAG" = v0.6.0
             test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$source_commit"
+            git merge-base --is-ancestor "$source_commit" origin/main
+            test "$(git show -s --format=%P "$source_commit" | wc -w)" -eq 2
           fi
           test -z "$(git status --porcelain --untracked-files=no)"
           R CMD build .
           test -z "$(git status --porcelain --untracked-files=no)"
           sha256sum scAgentKit_0.6.0.tar.gz > SHA256SUMS
           echo "commit=$source_commit" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(cut -d ' ' -f1 SHA256SUMS)" >> "$GITHUB_OUTPUT"
           python3 - <<'PY'
           import hashlib,json,os,pathlib,subprocess,tarfile
           source=pathlib.Path('scAgentKit_0.6.0.tar.gz')
@@ -97,13 +101,17 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
           RELEASE_COMMIT: ${{ needs.build.outputs.commit }}
+          RELEASE_SHA256: ${{ needs.build.outputs.sha256 }}
         with:
           script: |
             const fs = require('fs');
+            const crypto = require('crypto');
             const tag = process.env.RELEASE_TAG;
             if (tag !== 'v0.6.0') throw new Error('Unexpected release tag');
             const receipt = JSON.parse(fs.readFileSync('release-source/build-receipt.json'));
-            if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified)
+            const archiveHash = crypto.createHash('sha256').update(fs.readFileSync('release-source/scAgentKit_0.6.0.tar.gz')).digest('hex');
+            if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified ||
+                receipt.sha256 !== process.env.RELEASE_SHA256 || archiveHash !== receipt.sha256)
               throw new Error('Source provenance mismatch');
             const body = fs.readFileSync('docs/RELEASE_NOTES_0.6.0.md','utf8') +
               '\n\nSource commit: `' + receipt.source_commit + '`. SHA256: `' + receipt.sha256 +
@@ -128,6 +136,7 @@ jobs:
     env:
       R_LIBS_SITE: /tmp/scagentkit-empty-site
       R_LIBS_USER: /tmp/scagentkit-empty-user
+      R_LIBS: /tmp/scagentkit-empty-extra
       MAKEFLAGS: -j2
       OPENBLAS_NUM_THREADS: 1
       OMP_NUM_THREADS: 1
@@ -141,7 +150,7 @@ jobs:
             build-essential gfortran cmake pkg-config libcurl4-openssl-dev libssl-dev \
             libxml2-dev libpng-dev libjpeg-dev libtiff-dev libfontconfig1-dev \
             libfreetype6-dev libharfbuzz-dev libfribidi-dev libhdf5-dev libglpk-dev libgmp-dev
-          mkdir -p "$R_LIBS_SITE" "$R_LIBS_USER"
+          mkdir -p "$R_LIBS_SITE" "$R_LIBS_USER" "$R_LIBS"
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.build.outputs.commit }}
@@ -153,6 +162,7 @@ jobs:
       - name: Anonymous public download or PR artifact preflight
         env:
           SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
+          SOURCE_SHA256: ${{ needs.build.outputs.sha256 }}
           RELEASE_EVENT: ${{ github.event_name }}
         shell: bash
         run: |
@@ -162,13 +172,17 @@ jobs:
           cd acceptance
           mode=artifact
           if [ "$RELEASE_EVENT" = workflow_dispatch ]; then mode=public; fi
-          python3 prepare-acceptance.py "$mode" "$SOURCE_COMMIT" 2>&1 | tee download.log
+          python3 prepare-acceptance.py "$mode" "$SOURCE_COMMIT" "$SOURCE_SHA256" 2>&1 | tee download.log
       - name: Exact README install from empty R libraries and installed offline example
         shell: bash
         run: |
           set -euo pipefail
           cd acceptance
-          Rscript clean-install.R 2>&1 | tee clean-install.log
+          # Preserve only repository URLs, not the image's Rprofile/library setup.
+          Rscript -e 'writeLines(unname(getOption("repos")), "container-repositories.txt")'
+          export R_PROFILE=/dev/null R_PROFILE_USER=/dev/null
+          export R_ENVIRON=/dev/null R_ENVIRON_USER=/dev/null R_INSTALL_VANILLA=true
+          Rscript --vanilla clean-install.R 2>&1 | tee clean-install.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
