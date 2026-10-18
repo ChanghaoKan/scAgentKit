@@ -54,6 +54,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL) {
+  if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
+      !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
+    stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
   scientific_review <- .sc_run_science_options(scientific_review)
   start_stage <- match.arg(start_stage)
   if (!identical(strategy, TRUE) && !identical(strategy, FALSE)) stop("strategy must be TRUE or FALSE.", call. = FALSE)

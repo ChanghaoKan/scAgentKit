@@ -47,6 +47,19 @@
     list(cluster=id,cells=length(inside),genes=measured(inside,outside),samples=strata,cross_sample_consistency=consistency,
       cross_sample_status=if(length(Filter(function(x) x$status=="measured",strata))>=2L) "descriptive_replication" else "unavailable")
   })
+  totals <- as.numeric(Matrix::colSums(counts)); detected <- as.numeric(Matrix::colSums(counts>0))
+  quality_groups <- if(is.null(sample)) rep("unstratified",length(cells)) else sample
+  high_count <- rep(NA,length(cells)); count_z <- rep(NA_real_,length(cells))
+  for(group in unique(quality_groups)) {
+    index <- which(quality_groups==group); transformed <- log10(totals[index]+1)
+    center <- stats::median(transformed); spread <- stats::mad(transformed,constant=1.4826)
+    if(length(index)>=30L && is.finite(spread) && spread>sqrt(.Machine$double.eps)) {
+      count_z[index] <- (transformed-center)/spread; high_count[index] <- count_z[index]>3
+    }
+  }
+  cell_quality <- lapply(seq_along(cells),function(i) list(cell_id=cells[i],group=quality_groups[i],
+    total_umi=totals[i],detected_features=detected[i],count_robust_z=if(is.na(count_z[i])) NULL else count_z[i],
+    high_count_flag=if(is.na(high_count[i])) NULL else high_count[i]))
   coexpression <- NULL
   lineage_panels <- panels[setdiff(names(panels),"cited_marker_review")]
   if(isTRUE(mixed_lineage) && length(lineage_panels)>=2L) {
@@ -64,6 +77,8 @@
       list(panels=pair,status=if(eligible) "measured" else "unavailable",detected_gene_counts=list(
         first=stats::setNames(support[[pair[1]]],cells),second=stats::setNames(support[[pair[2]]],cells)),
         coexpressing_cells=if(eligible) cells[selected] else NULL,
+        coexpressing_cell_quality=if(eligible) cell_quality[selected] else list(),
+        lineage_relationship=if(all(pair %in% c("T","NK"))) "Related T/NK programs can overlap; not an exclusive-lineage rule" else "Distinct panel names do not establish biological exclusivity; inspect literal genes and tissue context",
         threshold="At least min(2, measured panel genes) detected per panel; exploratory display, not a doublet or ambient classifier.")
     })
   }
@@ -77,6 +92,6 @@
       interpretation="Detection in at least half of cells in >=80% of clusters is a descriptive broad-expression flag, not lineage specificity or semantic evidence.")
   })
   list(status="measured",panels=panels,measured_genes=present,missing_genes=missing,clusters=clusters, common_marker_review=common,
-    mixed_lineage=coexpression,ambient_status="not_estimated_without_an_explicit_background_model",
+    mixed_lineage=coexpression,cell_quality=cell_quality,high_count_interpretation="Within-declared-sample log10(total_UMI+1) robust z>3, >=30 cells/nonzero MAD; pooled unstratified scope is disclosed. Flag-only, never deletion or doublet truth.",ambient_status="not_estimated_without_an_explicit_background_model",
     interpretation="Mean is mean log-normalized expression; pct is raw-count detection. Panels overlap and expression may reflect state, related lineages, doublets or ambient RNA. No automatic type, contamination diagnosis, correction or deletion. Cross-sample contrasts are descriptive and sample counts are not donor replicates.")
 }

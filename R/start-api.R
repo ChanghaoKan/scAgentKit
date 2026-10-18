@@ -25,6 +25,9 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   model_suggestions = c("off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL) {
+  if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
+      !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
+    stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
   scientific_review <- .sc_run_science_options(scientific_review)
   model_suggestions <- match.arg(model_suggestions)
   .sc_project_string(project_dir, "project_dir")

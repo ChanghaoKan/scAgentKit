@@ -55,3 +55,13 @@ test_that("expression review joins shuffled literal cell IDs rather than canonic
   expect_identical(result$status,"measured")
   expect_identical(.sc_run_hash(x),before)
 })
+test_that("cell-level panel review retains measured counts without calling high RNA a doublet", {
+  x <- SeuratObject::pbmc_small
+  value <- .sc_run_expression_panels(x,"RNA","counts","data","RNA_snn_res.1",list(B=c("MS4A1","CD79A"),T=c("CD3D","CD3E")),mixed_lineage=TRUE)
+  expect_length(value$cell_quality,ncol(x))
+  counts <- SeuratObject::LayerData(x,assay="RNA",layer="counts")
+  expect_equal(vapply(value$cell_quality,`[[`,0,"total_umi"),as.numeric(Matrix::colSums(counts)))
+  expect_true(all(vapply(value$cell_quality,function(row) identical(row$group,"unstratified"),logical(1))))
+  expect_match(value$high_count_interpretation,"Flag-only")
+  expect_error(sc_run(x,tempfile(),context=list(species="mouse"),strategy=TRUE,scientific_review=list(panels="blood")),"human species")
+})
