@@ -180,10 +180,8 @@ annot_subcluster <- function(obj,
   if (!"subcluster_id" %in% colnames(obj@data@meta.data)) {
     obj@data@meta.data$subcluster_id <- rep(NA_character_, n_meta)
   }
-  # Cells never subclustered mirror the current broad label, so a corrected
-  # cell_type is not hidden behind a stale fine label from an earlier run.
-  never <- is.na(obj@data@meta.data$subcluster_id)
-  obj@data@meta.data$cell_type_fine[never] <- as.character(obj@data@meta.data$cell_type)[never]
+  # Existing fine labels may differ within a new subcluster. Preserve every
+  # cell's value until a usable new proposal explicitly replaces that cell.
 
   results <- list()
 
@@ -247,8 +245,11 @@ annot_subcluster <- function(obj,
         broad, length(cell_idx), length(res$cell_type_fine)
       ))
     }
-    obj@data@meta.data$cell_type_fine[cell_idx] <- res$cell_type_fine
-    obj@data@meta.data$subcluster_id[cell_idx]  <- res$subcluster_id
+    eligible <- res$writeback_eligible
+    if (!is.logical(eligible) || length(eligible) != length(cell_idx) || anyNA(eligible))
+      stop("Subcluster writeback requires an explicit per-cell evidence-usability mask.")
+    obj@data@meta.data$cell_type_fine[cell_idx[eligible]] <- res$cell_type_fine[eligible]
+    obj@data@meta.data$subcluster_id[cell_idx[eligible]] <- res$subcluster_id[eligible]
 
     # Register figure
     if (!is.null(res$umap_path) && file.exists(res$umap_path)) {
@@ -305,6 +306,8 @@ annot_subcluster <- function(obj,
     "# specific prompt constraints. See obj@params$subcluster_results.\n"
   )
 
+  step_success <- all(vapply(results, function(x)
+    isTRUE(all(x$annotations$label_usable)) && length(x$annotations$label_usable) > 0L, logical(1)))
   obj <- .record_step(
     obj           = obj,
     step_name     = "annot_subcluster",
@@ -320,9 +323,8 @@ annot_subcluster <- function(obj,
     ),
     rationale      = rationale,
     script_snippet = script,
-    new_stage      = "fine_annotated",
-    success = all(vapply(results,function(x)
-      all(x$annotations$annotation_status %in% c("ok","not_requested")),logical(1)))
+    new_stage      = if (step_success) "fine_annotated" else "fine_annotation_review",
+    success = step_success
   )
   .attach_step_tokens(obj, "annot_subcluster", .tok_before)
 }
@@ -545,13 +547,17 @@ annot_subcluster <- function(obj,
   annotations$hallucinated_markers <- ""
   annotations$hallucination_rate <- NA_real_
   annotations$recommended_action <- "flag_for_review"
+  annotations$proposed_cell_type_fine <- NA_character_
+  annotations$raw_confidence <- NA_character_
+  annotations$evidence_status <- "needs_review"
+  annotations$label_usable <- FALSE
+  annotations$evidence_reasons <- "annotation_not_requested"
   annotations$response_audit <- rep(list(list()),nrow(annotations))
 
   for (i in seq_len(nrow(annotations))) {
     cid <- annotations$subcluster[i]
     if (annotations$n_cells[i] < min_cells_per_subcluster) {
-      annotations$cell_type_fine[i] <- sprintf("%s: too small to annotate",
-                                                broad)
+      annotations$evidence_reasons[i] <- "too_small_to_annotate"
       annotations$confidence[i]     <- "low"
       annotations$reasoning[i]      <- sprintf("Only %d cells; below threshold %d.",
                                                 annotations$n_cells[i],
@@ -565,7 +571,7 @@ annot_subcluster <- function(obj,
     annotations$top_markers[i] <- paste(sub_markers$gene, collapse = ", ")
 
     if (nrow(sub_markers) == 0) {
-      annotations$cell_type_fine[i] <- sprintf("%s: no markers", broad)
+      annotations$evidence_reasons[i] <- "no_marker_evidence"
       annotations$confidence[i]     <- "low"
       annotations$reasoning[i]      <- "No positive markers found."
       annotations$followup[i]       <- ""
@@ -584,7 +590,12 @@ annot_subcluster <- function(obj,
       chat_fn           = chat_fn,
       max_retries       = max_retries
     )
-    annotations$cell_type_fine[i] <- res$label
+    annotations$proposed_cell_type_fine[i] <- res$label
+    annotations$cell_type_fine[i] <- if (isTRUE(res$label_usable)) res$label else NA_character_
+    annotations$raw_confidence[i] <- res$raw_confidence
+    annotations$evidence_status[i] <- res$evidence_status
+    annotations$label_usable[i] <- res$label_usable
+    annotations$evidence_reasons[i] <- paste(res$evidence_reasons, collapse = ";")
     annotations$confidence[i]     <- res$confidence
     annotations$reasoning[i]      <- res$reasoning
     annotations$followup[i]       <- res$followup
@@ -596,9 +607,10 @@ annot_subcluster <- function(obj,
   }
 
   # 9. Apply annotation to cells
-  cell_type_fine_vec <- annotations$cell_type_fine[
-    match(cluster_ids, annotations$subcluster)
-  ]
+  annotation_index <- match(cluster_ids, annotations$subcluster)
+  writeback_eligible <- annotations$label_usable[annotation_index]
+  cell_type_fine_vec <- as.character(obj@data@meta.data$cell_type_fine[cell_idx])
+  cell_type_fine_vec[writeback_eligible] <- annotations$cell_type_fine[annotation_index[writeback_eligible]]
   subcluster_id_vec <- sprintf("%s_sub%s", broad, cluster_ids)
 
   # 10. UMAP figure (sub-UMAP coloured by sub-type)
@@ -628,6 +640,7 @@ annot_subcluster <- function(obj,
     cells             = cells,
     cell_idx          = cell_idx,
     cell_type_fine    = cell_type_fine_vec,
+    writeback_eligible = writeback_eligible,
     subcluster_id     = subcluster_id_vec,
     annotations       = annotations,
     markers           = markers,
@@ -955,7 +968,16 @@ annot_subcluster <- function(obj,
   parsed$hallucination_rate <- grounding$rate
   parsed$marker_validation_status <- if (length(grounding$hallucinated)) "unsupported" else
     if (identical(parsed$annotation_status,"ok")) "ok" else "not_validated"
-  if (length(grounding$hallucinated)) parsed$recommended_action <- "flag_for_review"
+  validity <- .annotation_evidence_validity(parsed, markers_df$gene)
+  parsed$raw_confidence <- parsed$confidence
+  parsed$raw_recommended_action <- parsed$recommended_action
+  parsed$evidence_status <- validity$status
+  parsed$label_usable <- validity$label_usable
+  parsed$evidence_reasons <- validity$reasons
+  if (!validity$label_usable) {
+    parsed$confidence <- "low"
+    if (identical(parsed$recommended_action, "accept")) parsed$recommended_action <- "flag_for_review"
+  }
   parsed$label <- parsed$primary_annotation
   parsed$followup <- if (isTRUE(suggest_followups)) parsed$reasoning else ""
   parsed$response_audit <- attr(parsed,"response_audit")
