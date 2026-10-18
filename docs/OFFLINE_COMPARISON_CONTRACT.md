@@ -129,15 +129,18 @@ Rscript benchmark/contracts/installed_package_smoke.R \
   /tmp/scagentkit-fresh-library /tmp/installed-smoke.json
 ```
 
-The smoke checks the loaded package really resides in the new library, verifies
-all bundled asset/R signatures, changes to a new temporary directory, starts
-without a checkout argument or option, requires the initial review boundary,
-and reopens with unchanged state and the same service PID. It stops its own
-service. It does **not** claim completed analysis: final release acceptance must
-also run the full public-data strategy → analysis → annotation → approval →
-completion → reopen browser path with the source checkout unavailable. Retain
-that separate receipt and authority hashes. Run the complete R/Python/Node
-suites on the frozen final source revision as separately recorded gates.
+The smoke checks that the loaded package resides in the new library, verifies
+all bundled asset/R signatures and changes to a fresh temporary directory. It
+starts/reopens an RDS project, imports a two-sample MEX table with shuffled
+metadata, saves and separately approves complete strategy/annotation proposals,
+and executes both phases through actual installed loopback HTTP background
+workers. It verifies exact counts/metadata, completes with explicit Unknown,
+reuses and restarts the completed service without changing state, reads the
+saved result HTTP projection, and starts a single-directory MEX entry. The
+companion `installed_continue.py` must be copied alongside the smoke. Services
+are stopped on exit. This synthetic HTTP control is not an actual browser or
+biological accuracy test; retain a separate full public-data Chrome walkthrough.
+Run the complete R/Python/Node suites on the frozen revision as separate gates.
 
 `.github/workflows/installed-runtime-contract.yaml` defines fresh hosted
 Ubuntu and macOS jobs with dependency caching disabled. Each resolves the
