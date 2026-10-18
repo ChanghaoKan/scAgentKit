@@ -92,5 +92,5 @@ stopifnot(identical(original,serialize(value,NULL)),!grepl(private,jsonlite::toJ
  identical(display$science$expression$cell_quality_summary$high_count_flagged,1L),
  display$science$expression$cell_quality_summary$total_umi$median==150,
  identical(display$science$expression$mixed_lineage[[1]]$coexpressing_cells,1L),
- is.null(display$science$expression$cell_quality),is.null(display$science$expression$mixed_lineage[[1]]$detected_gene_counts))
+ is.null(display$science$expression[["cell_quality",exact=TRUE]]),is.null(display$science$expression$mixed_lineage[[1]]$detected_gene_counts))
 cat("Scientific display aggregates, exact cluster expression, complete history and immutable input: PASS\n")
