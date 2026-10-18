@@ -4,6 +4,15 @@ scAgentKit is designed to help researchers with a biological background spend le
 
 You receive a new Seurat object with counts, sample metadata, reductions and reviewed labels, plus marker tables, figures and the evidence and reasons behind decisions. QC, integration and clustering still require study judgement; default settings are starting points. FASTQ processing is upstream. Research-specific trajectory, communication and regulatory-network analyses are downstream and are not run automatically.
 
+## Analysis workflow
+
+<img src="docs/diagrams/project-analysis-flow.svg" alt="scAgentKit analysis workflow: counts and metadata, reviewed QC and analysis, measured clustering, reviewed annotation and outputs" width="820">
+
+Current development workflow; optional diagnostics require explicit selection.
+See the [full-size diagram](docs/diagrams/project-analysis-flow.svg),
+[maintainable diagram source](docs/diagrams/generate_project_flow.py), and
+[one-page operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md).
+
 ## Installation
 
 Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.6.0` is experimental.

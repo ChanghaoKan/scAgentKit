@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1762" viewBox="0 0 1100 1762" role="img" aria-labelledby="title desc">
+<title id="title">scAgentKit 项目分析流程</title>
+<desc id="desc">从原始 counts 启动的当前开发分支流程，三次作者确认，可选本地科学诊断及独立 ambient 校正支路。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8095aa"/></marker></defs>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#24384c}.title{font-size:31px;font-weight:650}.subtitle{font-size:17px;fill:#62768b}.node-title{font-size:23px;font-weight:600}.node-detail{font-size:17px;fill:#50677d}.small{font-size:16px;fill:#526b7c}.optional-title{font-size:22px;font-weight:600;fill:#2e6d6b}.optional-detail{font-size:17px;fill:#486f70}</style>
+<rect width="1100" height="1762" rx="20" fill="#fbfcfe"/>
+<text x="64" y="58" class="title">scAgentKit 项目分析流程</text>
+<text x="64" y="91" class="subtitle">当前开发分支 · 可选方法需显式开启，并按输入与研究设计使用</text>
+<rect x="64" y="154" width="620" height="86" rx="13" fill="#eff4fb" stroke="#7c98b8" stroke-width="1.6"/>
+<text x="374.0" y="189" class="node-title" text-anchor="middle">原始 Counts（10x MEX / RDS）</text>
+<text x="374.0" y="218" class="node-detail" text-anchor="middle">样本 metadata 与研究背景</text>
+<path d="M374.0 243 L374.0 263" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="268" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="303" class="node-title" text-anchor="middle">导入检查与事实确认</text>
+<text x="374.0" y="332" class="node-detail" text-anchor="middle">分别声明样本、capture、条件及批次</text>
+<path d="M374.0 357 L374.0 377" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="382" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="417" class="node-title" text-anchor="middle">本地 QC 与可选证据</text>
+<text x="374.0" y="446" class="node-detail" text-anchor="middle">样本分布、细胞指标；可选 doublet / 周期诊断</text>
+<path d="M374.0 471 L374.0 491" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="496" width="620" height="86" rx="13" fill="#fff3dc" stroke="#d59a3d" stroke-width="1.6"/>
+<text x="374.0" y="531" class="node-title" text-anchor="middle">① 作者确认分析方案</text>
+<text x="374.0" y="560" class="node-detail" text-anchor="middle">QC、PC 规则与可选方法</text>
+<path d="M374.0 585 L374.0 605" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="610" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="645" class="node-title" text-anchor="middle">执行已确认的 QC 与细胞选择</text>
+<text x="374.0" y="674" class="node-detail" text-anchor="middle">按方案保留细胞或处理质量异常 / 预测 doublet</text>
+<path d="M374.0 699 L374.0 719" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="724" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="759" class="node-title" text-anchor="middle">Normalize → HVG</text>
+<text x="374.0" y="788" class="node-detail" text-anchor="middle">默认全局；可选样本汇总 / 周期回归</text>
+<path d="M374.0 813 L374.0 833" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="838" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="873" class="node-title" text-anchor="middle">Scale / PCA → PC 选择</text>
+<text x="374.0" y="902" class="node-detail" text-anchor="middle">top50 80/85% 与肘部候选；执行已确认的规则</text>
+<path d="M374.0 927 L374.0 947" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="952" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="987" class="node-title" text-anchor="middle">可选 Harmony → 邻居图</text>
+<text x="374.0" y="1016" class="node-detail" text-anchor="middle">明确技术设计后选择整合；UMAP 可选</text>
+<path d="M374.0 1041 L374.0 1061" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="1066" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="1101" class="node-title" text-anchor="middle">多分辨率扫描与候选 marker</text>
+<text x="374.0" y="1130" class="node-detail" text-anchor="middle">簇关系树；可选 k±5 与重采样比较</text>
+<path d="M374.0 1155 L374.0 1175" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="1180" width="620" height="86" rx="13" fill="#fff3dc" stroke="#d59a3d" stroke-width="1.6"/>
+<text x="374.0" y="1215" class="node-title" text-anchor="middle">② 作者确认最终分群</text>
+<text x="374.0" y="1244" class="node-detail" text-anchor="middle">审查实际扫描结果，选择分辨率</text>
+<path d="M374.0 1269 L374.0 1289" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="1294" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="374.0" y="1329" class="node-title" text-anchor="middle">注释证据与候选标签</text>
+<text x="374.0" y="1358" class="node-detail" text-anchor="middle">marker、面板表达、参考；可选 LLM 建议</text>
+<path d="M374.0 1383 L374.0 1403" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="1408" width="620" height="86" rx="13" fill="#fff3dc" stroke="#d59a3d" stroke-width="1.6"/>
+<text x="374.0" y="1443" class="node-title" text-anchor="middle">③ 作者确认注释</text>
+<text x="374.0" y="1472" class="node-detail" text-anchor="middle">确认标签或保留 Unknown</text>
+<path d="M374.0 1497 L374.0 1517" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="64" y="1522" width="620" height="86" rx="13" fill="#e9f5ee" stroke="#7caa90" stroke-width="1.6"/>
+<text x="374.0" y="1557" class="node-title" text-anchor="middle">输出可复核结果</text>
+<text x="374.0" y="1586" class="node-detail" text-anchor="middle">Seurat · markers · metadata · report</text>
+<rect x="756" y="493" width="294" height="144" rx="13" fill="#edf8f6" stroke="#71a6a2" stroke-width="1.6" stroke-dasharray="6 4"/>
+<path d="M688 539 L748 539" fill="none" stroke="#8095aa" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="903" y="525" class="optional-title" text-anchor="middle">可选 ambient 校正</text>
+<text x="903" y="555" class="optional-detail" text-anchor="middle">SoupX / decontX 单独运行</text>
+<text x="903" y="584" class="optional-detail" text-anchor="middle">另存校正 counts 与前后对照</text>
+<text x="903" y="613" class="optional-detail" text-anchor="middle">以新输入另建项目</text>
+<text x="902" y="663" class="small" text-anchor="middle">不替换原始 counts 或项目</text>
+<rect x="756" y="1286" width="294" height="110" rx="13" fill="#eff4fb" stroke="#94b5d7" stroke-width="1.6"/>
+<text x="903" y="1321" class="optional-title" text-anchor="middle">已处理 RDS：显式复用</text>
+<text x="903" y="1352" class="optional-detail" text-anchor="middle">保留现有分析基础</text>
+<text x="903" y="1379" class="optional-detail" text-anchor="middle">从当前注释证据进入</text>
+<path d="M748 1339 L692 1339" fill="none" stroke="#8095aa" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="64" y="1642" width="20" height="20" rx="4" fill="#eef5fd" stroke="#9bafc1"/>
+<text x="94" y="1659" class="small" text-anchor="start">本地处理 / 证据</text>
+<rect x="344" y="1642" width="20" height="20" rx="4" fill="#fff3dc" stroke="#9bafc1"/>
+<text x="374" y="1659" class="small" text-anchor="start">作者确认</text>
+<rect x="574" y="1642" width="20" height="20" rx="4" fill="#edf8f6" stroke="#9bafc1"/>
+<text x="604" y="1659" class="small" text-anchor="start">可选支路</text>
+<text x="64" y="1703" class="small" text-anchor="start">保存项目后可重开审查；方案、分群与注释的确认分别记录。</text>
+<text x="64" y="1729" class="small" text-anchor="start">本图展示开发分支能力；不表示所有可选方法已验证有效或默认启用。</text>
+</svg>
