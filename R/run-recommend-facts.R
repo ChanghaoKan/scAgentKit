@@ -111,7 +111,15 @@
   if (length(merged$doublet)) {
     config$doublet_diagnostics <- NULL
     preparation <- .sc_run_recommend_doublet_options(config)
-    if (isTRUE(preparation$ready)) config$doublet_diagnostics <- preparation$options
+    if (isTRUE(preparation$ready)) {
+      options <- preparation$options
+      # Facts may correct provenance without silently changing the original
+      # author's explicit, noneditable classifier settings or output columns.
+      if (is.list(declared)) for (key in intersect(c("column_prefix", "seed", "nfeatures",
+          "dims", "artificial_doublets", "iter", "clusters"), names(declared)))
+        options[[key]] <- declared[[key]]
+      config$doublet_diagnostics <- .sc_run_doublet_options(context, options)
+    }
   } else if (!is.null(config$doublet_diagnostics)) {
     config$doublet_diagnostics <- .sc_run_doublet_options(context, config$doublet_diagnostics)
   }

@@ -139,3 +139,31 @@ test_that("explicit method switches prune only incompatible old facts and retain
   expect_null(inherited$recommendation_facts$doublet$seed)
   expect_null(inherited$doublet_diagnostics) # The unsupported cohort never enables a new scorer.
 })
+
+test_that("existing noneditable doublet algorithm settings survive single author-fact corrections", {
+  captured <- NULL
+  testthat::local_mocked_bindings(.sc_run_doublet_versions = function() list(
+    scDblFinder = "1.26.7", xgboost = "3.1.0", SingleCellExperiment = "1.0.0",
+    SummarizedExperiment = "1.0.0", S4Vectors = "1.0.0", BiocParallel = "1.0.0"),
+    .sc_run_recommend_facts_doublet_guard = function(input, config) {
+      captured <<- config$doublet_diagnostics
+      list(ready = FALSE, reasons = list("Unsupported fixture cohort; do not score"), capture_counts = list(), scoring_executed = FALSE)
+    }, .package = "scAgentKit")
+  fixture <- facts_fixture_functions()
+  input <- fixture$recommend_workspace_input()
+  context <- list(species = "human")
+  original <- .sc_run_doublet_options(context, list(data_type = "scrna_droplet",
+    technology = "declared_droplet_other", input_source = "Original author input", empty_droplets_removed = TRUE,
+    capture = list(method = "single", id = "one", source = "Author loading record"),
+    rate = list(method = "manual", value = .05, source = "Author sourced rate"),
+    nfeatures = 200L, seed = 321L, column_prefix = "prior_doublet", dims = 10L, artificial_doublets = 600L))
+  config <- list(context = context, assay = "RNA", counts_layer = "counts", doublet_diagnostics = original)
+  out <- .sc_run_recommend_facts_config(list(config = config),
+    list(doublet = list(input_source = "Corrected author provenance")), input)
+  for (key in c("column_prefix", "seed", "nfeatures", "dims", "artificial_doublets", "iter", "clusters")) {
+    expect_identical(captured[[key]], original[[key]], info = key)
+    expect_null(out$recommendation_facts$doublet[[key]], info = key)
+  }
+  expect_identical(captured$input_source, "Corrected author provenance")
+  expect_null(out$doublet_diagnostics)
+})
