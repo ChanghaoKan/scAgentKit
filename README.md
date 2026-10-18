@@ -104,7 +104,9 @@ Check the displayed study facts, measured QC distributions and projected cell re
 
 The initial PC policy requests at most 50 components, with a visible smaller request for the proposed cell/feature scope, and suggests the first leading PCs reaching 80% **within the first at most 50 actually computed PCs**. The denominator is their variance sum, not total HVG or transcriptome variance. Inspect the computed count, shortfall, exact denominator and candidate status; a one-PC or numerically rank-deficient choice is rejected, not silently repaired. This empirical rule is editable and does not establish an optimal PC count.
 
-Save the complete strategy, inspect the updated review, then choose **Approve and continue**. The local worker runs the approved steps and stops at annotation preparation. Expect saved clusters, embeddings and marker evidence. You can close the page and reopen the same project later.
+Save the complete strategy, inspect the updated review, then choose **Approve and continue**. The main entry requests a bounded resolution grid. After computing it on the same cells, PCs, neighbour graph and seed, the worker returns to the strategy review with a cluster tree, marker contrasts and sample composition. Edges show shared cells between parameter choices; this is not a lineage tree. Adjacent ARI describes parameter sensitivity, not resampling stability or biological accuracy. No value, including 0.5, is automatically recommended.
+
+Select an actually scanned resolution, save any edit, then approve the measured strategy and continue. This binds final memberships and markers to your choice before annotation preparation. A model may help compare the saved evidence only through the existing exact request approval; it is optional and the default makes no model request. You can close the page and reopen the same project later.
 
 ### 3. Prepare and review annotations
 

@@ -11,7 +11,7 @@ entry reuses its declared foundation instead of rerunning these steps.
 | QC | Exact range rules or explicit sample-aware [MAD candidates](MAD_REVIEW.md) |
 | Preparation | LogNormalize, VST features and recorded effective dimensions |
 | PCs | Fixed leading PCs or guarded computed-PC variance policy |
-| Clustering | Approved Louvain resolution, with optional numeric diagnostics |
+| Clustering | Fixed-graph resolution comparison and cluster tree; author selects a measured resolution in the existing strategy review |
 | Batch | Default none, explicit manual stop, or guarded [Harmony](HARMONY_PC_REVIEW.md) |
 | Cell cycle | Optional full-input diagnostics; approved keep/full/difference choices within the [contract](CELL_CYCLE_REVIEW.md) |
 | Doublets | Explicit capture/rate prerequisites, default keep; jointly approved removal under the [adapter contract](DOUBLET_REVIEW.md) |
@@ -136,7 +136,14 @@ strategy_example_decide(project_dir, s, "approve", "analyst",
   "Approve this exact synthetic software-test strategy; biology remains unresolved.")
 strategy_example_continue(project_dir, sc_run_inspect(project_dir))
 
-# Local Continue stops at annotation evidence. It never dispatches a provider.
+# A requested diagnostic grid first returns to the same strategy review.
+# Inspect measured transitions/markers/sample composition and select a scanned value.
+s <- strategy_example_inspect(project_dir)
+strategy_example_decide(project_dir, s, "approve", "analyst",
+  "Reviewed this measured synthetic resolution comparison; retain its selected value.")
+strategy_example_continue(project_dir, sc_run_inspect(project_dir))
+
+# Local Continue now stops at annotation evidence. It never dispatches a provider.
 s <- strategy_example_inspect(project_dir)
 strategy_example_unknown(project_dir, s, "analyst")
 s <- strategy_example_inspect(project_dir)  # separate label decision is mandatory
@@ -237,11 +244,22 @@ relevant heterogeneity and sensitivity to dimensionality. Its example numbers
 are not universal defaults for unrelated tissues or designs.
 [Seurat guided clustering tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial).
 
-A scalar clustering resolution controls graph partition granularity. Numeric
-diagnostics can report cluster counts, small-cluster sizes and adjacent adjusted
-Rand index using the package's existing helper. ARI measures agreement between
-partitions; stability alone cannot establish correct cell types. A diagnostic
-sweep is evidence, not a separate scientific approval for every candidate.
+A scalar clustering resolution controls graph partition granularity. A requested
+diagnostic grid reports cluster counts, small-cluster sizes, marker contrasts,
+declared sample composition and a shared-cell transition graph. The worker then
+returns to the existing strategy review so the author can select an actually
+scanned value before markers and annotation proceed. Changing the graph inputs or
+grid requires a fresh scan; a resolution-only revision retains the exact saved
+neighbour artifact. Final cluster memberships and marker computation are bound to
+the approved value. A single explicitly chosen resolution without diagnostics
+retains its existing path.
+
+Adjacent adjusted Rand index measures agreement across parameter choices, not
+resampling stability. A cluster tree is not a lineage tree. Neither agreement nor
+same-data markers establish correct cell types or a best resolution. The sweep
+uses one measured strategy review, not one approval per candidate; 0.5 is not an
+automatic recommendation. Optional model comparison uses the existing exact
+transfer approval and cannot automatically commit a choice.
 Seurat exposes resolution, algorithm and random seed as clustering parameters.
 [Seurat FindClusters reference](https://satijalab.org/seurat/reference/findclusters).
 
