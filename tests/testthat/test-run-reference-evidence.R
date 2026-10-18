@@ -285,3 +285,18 @@ test_that("a declared reference SHA-256 that differs from the read file is surfa
   expect_identical(wrong$provenance$source_file_status, "declared_sha256_mismatch")
   expect_identical(wrong$provenance$source_sha256, actual)
 })
+
+test_that("joint review retains all saved contrasts and marks semantic assessment unavailable", {
+  fixture <- reference_joint_fixture()
+  fixture$supplied$markers[[2]] <- list(clusterId = "001", gene = "LOW",
+    avgLog2FC = -2, pct1 = .1, pct2 = .9, pAdj = .01, source = "saved contrast")
+  result <- reference_joint_run(fixture)
+  expect_length(result$current$citations, 1L)
+  expect_length(result$expression_review$records, 2L)
+  expect_identical(result$expression_review$records[[2]]$direction, "lower_in_cluster")
+  expect_identical(result$expression_review$negative_lineage_panel, "not_assessed")
+  expect_false(result$expression_review$semantic_validation)
+  expect_identical(result$counterevidence$status, "not_supplied")
+  expect_match(paste(unlist(result$limitations), collapse = " "), "1/1.*10/20")
+  expect_match(paste(unlist(result$limitations), collapse = " "), "not.*biologically correct")
+})
