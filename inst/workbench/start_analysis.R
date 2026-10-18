@@ -39,6 +39,8 @@ if (file.exists(request$project)) {
   if (!identical(request$cluster_column,state$config$cluster_column) ||
       (identical(request$entry,"processed") && !identical(request$processed_reason,state$config$processed_reason)))
     stop("Reopening cannot replace saved reuse settings.")
+  if(!is.null(request$scientific_review) && !identical(get(".sc_run_science_options",ns)(request$scientific_review),state$config$scientific_review))
+    stop("Reopening cannot replace saved scientific diagnostics.")
   view <- scAgentKit::sc_run_inspect(root)
   jsonlite::write_json(list(project_id=view$project_id,status=view$status,stage=view$stage,provider=provider_metadata(root)),args[2],auto_unbox=TRUE)
   quit(status=0L)
@@ -54,7 +56,7 @@ if (identical(request$entry, "processed")) {
     start_stage = "processed", processed_reason = request$processed_reason,
     cluster_column = request$cluster_column, provider = NULL, budget = 0)
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
-  provider = NULL, budget = 0)
+  provider = NULL, budget = 0, scientific_review=request$scientific_review)
 view <- scAgentKit::sc_run_inspect(request$project)
 jsonlite::write_json(list(project_id = view$project_id, status = view$status, stage = view$stage,
   provider = provider_metadata(request$project)),

@@ -75,7 +75,7 @@
   if ("risks" %in% names(edits)) base$risks <- as.list(edits$risks)
   if ("analysis" %in% names(edits)) {
     if (!is.list(edits$analysis) || is.null(names(edits$analysis)) ||
-        length(setdiff(names(edits$analysis), names(base$analysis)))) stop("Unknown analysis settings.", call. = FALSE)
+        length(setdiff(names(edits$analysis), c(names(base$analysis),"hvg_method","hvg_column")))) stop("Unknown analysis settings.", call. = FALSE)
     base$analysis[names(edits$analysis)] <- edits$analysis
   }
   if (new_draft) {

@@ -9,6 +9,9 @@
   if (is.null(x$panels)) x$panels <- list()
   if (is.character(x$panels) && length(x$panels)==1L) x$panels <- .sc_run_classic_panels(x$panels)
   if (!is.list(x$panels) || (length(x$panels) && (is.null(names(x$panels)) || anyDuplicated(names(x$panels)) || any(!nzchar(names(x$panels)))))) stop("panels requires a named list or blood/pancreas.",call.=FALSE)
+  x$panels <- lapply(x$panels,function(genes) {
+    if(is.list(genes) && is.null(names(genes)) && all(vapply(genes,function(g) is.character(g) && length(g)==1L,logical(1)))) unlist(genes,use.names=FALSE) else genes
+  })
   for (genes in x$panels) if (!is.character(genes) || !length(genes) || anyNA(genes) || any(!nzchar(genes)) || anyDuplicated(genes)) stop("Panel genes must be unique literal symbols.",call.=FALSE)
   x
 }
@@ -68,6 +71,12 @@
   }
   if (length(k)>1L) k <- length(k)
   measured <- function(fn) tryCatch(c(list(status="measured"),fn()),error=function(e) list(status="unavailable",reason=conditionMessage(e)))
+  corrected_pipeline <- identical(plan$batch$method,"harmony") ||
+    (!is.null(plan$cycle) && !identical(plan$cycle$method,"none"))
+  if(corrected_pipeline && (options$pc_sensitivity || options$resampling || options$resolution_extension))
+    return(list(schema="scagentkit.scientific-diagnostics.v1",status="unavailable",
+      reason="Copy-based PCA diagnostics do not yet reproduce approved Harmony/cycle regression; no PCA-only run is presented as same-pipeline stability.",
+      default_changed=FALSE,provider_calls=0L))
   out <- list(schema="scagentkit.scientific-diagnostics.v1",options=options,
     cells=cells,input_object_hash=before,approved_pc_count=k,approved_resolution=plan$clustering$resolution,
     default_changed=FALSE,provider_calls=0L)
