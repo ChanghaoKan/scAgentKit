@@ -18,6 +18,7 @@ from urllib.parse import urlencode, urlsplit
 from run_workbench_runtime import RunWorkbenchRuntime
 from run_review_runtime import RunReviewRuntime
 from run_continue_runtime import RunContinueRuntime
+from run_suggestion_runtime import RunSuggestionRuntime, _environment
 from server import WorkbenchServer, Handler
 from store import scrub_secrets
 
@@ -117,7 +118,10 @@ def serve(config_path):
     editable = config.get("review_mode") is True
     review = RunReviewRuntime(config["project"], config.get("library"), config["rscript"]) if editable else SavedReview(runtime, view["run"]["project_id"])
     continuation = RunContinueRuntime(config["project"], config.get("library"), config["rscript"]) if editable else None
-    server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=review, run_workbench=runtime, run_continue=continuation)
+    mode = config.get("model_mode", "off")
+    model_options = {"simulate": mode == "simulate"} if editable and mode != "off" else None
+    suggestion = RunSuggestionRuntime(config["project"], config.get("library"), config["rscript"], **model_options) if model_options else None
+    server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=review, run_workbench=runtime, run_continue=continuation, run_suggestion=suggestion, model_suggestion_options=model_options)
     server.RequestHandlerClass = ReviewHandler if editable else ResultsHandler
     server.launch_identity = config["identity"]
     server.results_url = "/workbench?" + urlencode({"project_id": review.project_id})
@@ -129,7 +133,9 @@ def serve(config_path):
         server.server_close()
 
 
-def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90, review_mode=False):
+def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90, review_mode=False, model_mode="off", key_env=None):
+    if model_mode not in {"off", "configured", "simulate"} or not review_mode and model_mode != "off":
+        raise ValueError("Model workflow requires an explicit supported review mode")
     project = Path(project).expanduser()
     if project.is_symlink():
         raise ValueError("Saved project directory must not be a symlink")
@@ -143,6 +149,7 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
     if review_mode:
         identity["schema"] = "scagentkit.review-launcher.v1"
         identity["review_mode"] = True
+        identity["model_mode"] = model_mode
     base = project / (".workbench-review-launcher" if review_mode else ".workbench-launcher")
     base.mkdir(mode=0o700, exist_ok=True)
     if base.is_symlink():
@@ -156,11 +163,14 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
             pass
         reused = record is not None and probe(record, identity)
         if not reused:
-            config = {"project": str(project), "rscript": str(rscript), "library": library, "identity": identity, "review_mode": review_mode}
+            config = {"project": str(project), "rscript": str(rscript), "library": library, "identity": identity, "review_mode": review_mode, "model_mode": model_mode}
             atomic(base / "config.json", config)
+            launch_env = _environment(library, key_name=key_env if model_mode == "configured" else None)
+            if model_mode != "configured" and isinstance(key_env, str):
+                launch_env.pop(key_env, None)
             with (base / "server.log").open("ab") as log:
                 process = subprocess.Popen([sys.executable, str(ROOT / "open_results.py"), "--serve", str(base / "config.json")],
-                    env=scrub_secrets(dict(os.environ)), stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                    env=launch_env, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                     start_new_session=True, close_fds=True)
             _LAUNCHED[process.pid] = process
             deadline = time.monotonic() + timeout

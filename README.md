@@ -61,6 +61,14 @@ review it before approving and continuing to the result. An explicit bulk action
 can retain unfilled populations as `Unknown` with a shared reason; unresolved
 population and cell counts remain visible.
 
+The annotation worksheet brings saved marker statistics and scoped local reference
+candidates into the same view. Selecting a candidate can carry its label and
+checkable citations into an untouched row; confidence and interpretation remain
+yours. Coverage is descriptive overlap, never a probability. Local drafts survive
+a same-tab reload only for their exact evidence/revision. See
+[annotation assistance](docs/ANNOTATION_ASSISTANCE.md) for protection, unknowns
+and optional configured-model access.
+
 Repeating the call uses the installed resources and reuses its matching live
 service or restarts a stopped service, preserving the saved analysis:
 

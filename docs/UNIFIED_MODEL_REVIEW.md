@@ -47,6 +47,23 @@ the exact initialized configuration. There is no late browser provider, model,
 endpoint, generation-setting or budget mutation. A different configuration needs
 a new project.
 
+## Reach the existing component from the installed entry
+
+For a saved project already initialized from the same local RDS and immutable
+supported provider, use `sc_start("a.rds", "analysis", model_suggestions="configured")`.
+This enables the existing component; it does not request a model or approve a
+transfer. The annotation worksheet has an explicit route to that same preview.
+Default `"off"` and missing provider configuration leave the local manual path
+available. Explicit `"simulate"` requires an immutable mock project and makes
+only marked software-control responses, never biological inference.
+
+The browser cannot add a provider to a manual project. Initialization still uses
+the existing R APIs described above. A prepared local worksheet now participates
+in unsaved-edit protection: save it as a complete proposal or explicitly discard
+its current local edits before model actions. Model adopt remains a complete
+proposal operation; it never fills selected rows or overwrites locally kept rows.
+See [annotation assistance](ANNOTATION_ASSISTANCE.md).
+
 ## Preview, approve, request, adopt or discard
 
 The public R action is `sc_run_suggest()`; its actions have distinct effects:

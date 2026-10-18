@@ -214,3 +214,30 @@ they are excluded from R packages. Installation generates a manifest from the
 R function signatures and every shipped runtime asset. Startup checks both
 against the selected installed R namespace before execution. Missing, extra or
 changed runtime files fail closed. Python bytecode caches are excluded.
+
+## Evidence-assisted annotation
+
+The preparation table presents saved marker/reference facts and sources before
+any labels are selected. It lists tied reference evidence first, with details
+collapsed. Candidates retain their actual coverage numerator/denominator and
+single-marker limitations. Choose one explicitly to populate an untouched row's
+label and admissible citations; write confidence and interpretation yourself.
+Human-edited or locally kept rows cannot be overwritten by candidate/bulk actions.
+
+The complete worksheet still saves one typed proposal for separate approval.
+Local keeping is optional draft protection, not row-level scientific approval.
+Same-tab drafts restore only for exact project/input/evidence/revision bindings;
+older drafts are not silently migrated. Discard local edits explicitly to switch
+to the model path. See [the formal guide](../docs/ANNOTATION_ASSISTANCE.md).
+
+For an already configured saved provider, enable its existing preview/authorize/
+request/adopt component through the same R entry:
+
+```r
+sc_start("a.rds", "analysis", model_suggestions = "configured")
+```
+
+The default is `"off"`. Unconfigured manual projects continue locally without a
+model. Provider/model/budget remain immutable R-side configuration; no browser
+credential input is added. Explicit `"simulate"` is for saved mock projects only
+and is visibly marked as a zero-model software control.

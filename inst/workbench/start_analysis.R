@@ -6,6 +6,10 @@ request <- jsonlite::fromJSON(args[1], simplifyVector = FALSE)
 suppressPackageStartupMessages(library(scAgentKit))
 ns <- asNamespace("scAgentKit")
 get(".sc_start_runtime_check",ns)(request$runtime,request$checkout)
+provider_metadata <- function(root) {
+  state <- get(".sc_run_load",ns)(get(".sc_run_root",ns)(root))
+  list(name=state$config$provider$name,api_key_env=state$config$provider$api_key_env)
+}
 input <- readRDS(request$input)
 if (inherits(input, "Seurat") && (length(input@reductions) || "seurat_clusters" %in% colnames(input[[]])))
   message("Input contains saved reductions or clusters. They do not establish analysis quality. Selected entry: ", request$entry)
@@ -25,7 +29,7 @@ if (file.exists(request$project)) {
       (identical(request$entry,"processed") && !identical(request$processed_reason,state$config$processed_reason)))
     stop("Reopening cannot replace saved reuse settings.")
   view <- scAgentKit::sc_run_inspect(root)
-  jsonlite::write_json(list(project_id=view$project_id,status=view$status,stage=view$stage),args[2],auto_unbox=TRUE)
+  jsonlite::write_json(list(project_id=view$project_id,status=view$status,stage=view$stage,provider=provider_metadata(root)),args[2],auto_unbox=TRUE)
   quit(status=0L)
 }
 # Validate counts/layers and declared context before sc_run creates a directory.
@@ -41,5 +45,6 @@ if (identical(request$entry, "processed")) {
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
   provider = NULL, budget = 0)
 view <- scAgentKit::sc_run_inspect(request$project)
-jsonlite::write_json(list(project_id = view$project_id, status = view$status, stage = view$stage),
+jsonlite::write_json(list(project_id = view$project_id, status = view$status, stage = view$stage,
+  provider = provider_metadata(request$project)),
   args[2], auto_unbox = TRUE)

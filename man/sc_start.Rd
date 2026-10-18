@@ -4,13 +4,15 @@
 \usage{
 sc_start(input, project_dir, context = NULL, checkout = NULL,
   python = NULL, browse = interactive(), reuse_processed = FALSE,
-  processed_reason = NULL, cluster_column = "seurat_clusters")
+  processed_reason = NULL, cluster_column = "seurat_clusters",
+  model_suggestions = c("off", "configured", "simulate"))
 }
 \arguments{
 \item{input}{Local RDS file containing raw counts or a Seurat object.}
 \item{project_dir}{New project path or the same saved project to reopen.}
 \item{context}{Declared species, tissue, research_goal and optional notes, columns and design; required for a new project, otherwise saved context is used.}
 \item{checkout}{Optional matching developer checkout, selected explicitly or via options(scAgentKit.checkout=...). Installed package resources are the default.}
+\item{model_suggestions}{Explicit operator mode: off (default), configured (saved provider), or simulate (immutable mock provider only). Preview and exact transfer authorization remain separate from scientific approval.}
 \item{python}{Existing Python 3.9+ executable, detected by default.}
 \item{browse}{Open the URL in the browser; FALSE returns it without browser dispatch.}
 \item{reuse_processed}{Explicitly reuse processed layers and clusters. FALSE by default.}

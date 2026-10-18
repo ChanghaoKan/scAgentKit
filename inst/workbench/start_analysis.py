@@ -39,6 +39,9 @@ def main(argv=None):
     parser.add_argument("--reopen", action="store_true", help="Open an existing project after verifying its original RDS binding")
     parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
     parser.add_argument("--source-checkout", help="Explicit matching developer source tree")
+    model = parser.add_mutually_exclusive_group()
+    model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
+    model.add_argument("--model-mock", action="store_true", help="Explicit offline simulation for a saved mock project")
     args = parser.parse_args(argv)
     if sys.version_info < (3, 9):
         parser.error("Python 3.9 or later is required")
@@ -94,13 +97,17 @@ def main(argv=None):
             raise RuntimeError("Analysis startup failed; inspect the R error and preserve any saved project")
         identity = json.loads(result.read_text())
     if args.background:
-        print(json.dumps(open_results(project, rscript, library, not args.no_browser, review_mode=True)))
+        print(json.dumps(open_results(project, rscript, library, not args.no_browser, review_mode=True,
+            model_mode="simulate" if args.model_mock else "configured" if args.model_suggestions else "off",
+            key_env=identity.get("provider", {}).get("api_key_env"))))
         return
     print("Project prepared: %s · %s / %s. Review and continue in the browser; Ctrl-C closes this service." %
           (identity["project_id"], identity["status"], identity["stage"]), flush=True)
     options = ["--run-project", str(project), "--local-continue", "--rscript", rscript, "--port", str(args.port)]
     if library:
         options += ["--r-library", library]
+    if args.model_suggestions: options += ["--model-suggestions"]
+    if args.model_mock: options += ["--model-mock"]
     serve(options)
 
 

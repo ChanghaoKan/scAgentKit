@@ -18,7 +18,7 @@ test_that("bundled runtime matches R and detects missing, extra and modified ass
   writeLines("unexpected",file.path(copy,"unexpected.py"))
   expect_error(scAgentKit:::.sc_start_runtime_check(copy),"asset inventory differs")
   unlink(file.path(copy,"unexpected.py"))
-  dir.create(file.path(copy,"__pycache__"))
+  dir.create(file.path(copy,"__pycache__"),showWarnings=FALSE)
   writeBin(as.raw(1),file.path(copy,"__pycache__","example.pyc"))
   expect_silent(scAgentKit:::.sc_start_runtime_check(copy))
   manifest_path <- file.path(copy,"runtime-manifest.json")

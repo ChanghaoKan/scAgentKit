@@ -7,6 +7,8 @@
 #'   Set explicitly or via options(scAgentKit.checkout=...) only for development.
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
+#' @param model_suggestions Explicit operator mode: off, configured, or simulate.
+#'   Uses the saved immutable provider; preview and transfer approval remain required.
 #' @param reuse_processed Explicitly reuse processed layers/clusters. Default FALSE.
 #' @param processed_reason Required reason for processed reuse.
 #' @param cluster_column Saved cluster column for processed reuse.
@@ -14,7 +16,9 @@
 #' @export
 sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   python = NULL, browse = interactive(), reuse_processed = FALSE,
-  processed_reason = NULL, cluster_column = "seurat_clusters") {
+  processed_reason = NULL, cluster_column = "seurat_clusters",
+  model_suggestions = c("off", "configured", "simulate")) {
+  model_suggestions <- match.arg(model_suggestions)
   .sc_project_string(input, "input RDS path")
   .sc_project_string(project_dir, "project_dir")
   input <- normalizePath(path.expand(input), mustWork = TRUE)
@@ -70,7 +74,9 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     "--context-file",shQuote(context_file),
     if (!is.null(checkout)) c("--source-checkout",shQuote(checkout)),
     "--cluster-column", shQuote(if (!existing && !reuse_processed && missing(cluster_column)) "sc_strategy_clusters" else cluster_column),
-    if (!browse) "--no-browser", if (existing) "--reopen")
+    if (!browse) "--no-browser", if (existing) "--reopen",
+    if (model_suggestions == "configured") "--model-suggestions",
+    if (model_suggestions == "simulate") "--model-mock")
   if (reuse_processed) {
     .sc_project_string(processed_reason, "processed_reason")
     args <- c(args, "--reuse-processed", "--processed-reason", shQuote(processed_reason))

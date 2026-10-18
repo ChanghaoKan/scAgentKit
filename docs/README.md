@@ -43,3 +43,6 @@ describe planned evaluations, not validated comparative results.
 Version history remains in [NEWS](../NEWS.md), Git history, tags and GitHub
 Releases. Development-session test receipts are not user instructions; current
 checks are defined in [.github/workflows](../.github/workflows).
+
+- [Annotation evidence assistance](ANNOTATION_ASSISTANCE.md): local facts, explicit candidates, protected drafts and complete-proposal review.
+- [Offline comparison contract](OFFLINE_COMPARISON_CONTRACT.md): public cases, synthetic controls, installation/platform gates and benchmark prerequisites.

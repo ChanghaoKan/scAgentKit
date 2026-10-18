@@ -1,0 +1,66 @@
+name: installed-runtime-contract
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'R/**'
+      - 'inst/workbench/**'
+      - 'tools/**'
+      - 'configure*'
+      - 'DESCRIPTION'
+      - 'NAMESPACE'
+      - 'benchmark/contracts/**'
+      - 'benchmark/tests/**'
+      - 'benchmark/fixtures/**'
+      - '.github/workflows/installed-runtime-contract.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache: false
+          dependencies: '"hard"'
+          extra-packages: any::knitr
+      - name: Offline comparison contract controls
+        run: python -B -m unittest discover -s benchmark/tests -v
+      - name: Build archive and install into a new library
+        shell: bash
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/source-contract" "$RUNNER_TEMP/fresh-library"
+          R CMD build --no-build-vignettes .
+          archive=$(find . -maxdepth 1 -name 'scAgentKit_*.tar.gz' -print)
+          test -n "$archive"
+          cp "$archive" "$RUNNER_TEMP/source-contract/"
+          R CMD INSTALL --library="$RUNNER_TEMP/fresh-library" "$archive"
+          cp benchmark/contracts/installed_package_smoke.R "$RUNNER_TEMP/source-contract/"
+          # Hide the checkout so bundled R/Python/static resources must suffice.
+          mv "$GITHUB_WORKSPACE" "${GITHUB_WORKSPACE}.hidden"
+          trap 'mv "${GITHUB_WORKSPACE}.hidden" "$GITHUB_WORKSPACE"' EXIT
+          cd "$RUNNER_TEMP/source-contract"
+          Rscript installed_package_smoke.R "$RUNNER_TEMP/fresh-library" "$RUNNER_TEMP/installed-smoke.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-runtime-${{ matrix.os }}
+          path: ${{ runner.temp }}/installed-smoke.json
+          if-no-files-found: warn

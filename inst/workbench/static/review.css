@@ -138,3 +138,9 @@ body.compact-review :is(#annotation-draft-status, #strategy-draft-status, #strat
 @media (max-width: 600px) {
   body.compact-review .strategy-overview, body.compact-review .strategy-parameters-panel, body.compact-review .strategy-impact-panel, body.compact-review .strategy-layout .strategy-decision, body.compact-review .annotation-decision { padding: 16px; }
 }
+
+.preparation-row {border-left:3px solid #d8e2ef; margin:12px 0; padding:16px;}
+.preparation-row h3 {display:inline-block;margin:0 12px 8px 0;}
+.preparation-row>label {display:block;margin:10px 0;}
+.preparation-row textarea {min-height:64px;}
+.preparation-row details {margin:12px 0;}
