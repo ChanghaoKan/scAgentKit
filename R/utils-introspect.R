@@ -4,7 +4,7 @@
 
 # Literal species-specific ribosomal protein symbols, excluding kinases
 # such as RPS6KA1/RPS6KB1. Shared by legacy and saved-run QC.
-.ribo_pattern <- function(species) {
+.sc_run_ribo_pattern <- function(species) {
   switch(species, human="^RP[SL][0-9]+[AXY]?[0-9]*$",
     mouse="^Rp[sl][0-9]+[axy]?[0-9]*$", NULL)
 }
@@ -31,8 +31,8 @@
   has_mouse_mt <- any(grepl("^mt-", genes))
 
   # Fallback: ribosomal protein conventions
-  has_human_rp <- sum(grepl(.ribo_pattern("human"), genes)) > 30
-  has_mouse_rp <- sum(grepl(.ribo_pattern("mouse"), genes)) > 30
+  has_human_rp <- sum(grepl(.sc_run_ribo_pattern("human"), genes)) > 30
+  has_mouse_rp <- sum(grepl(.sc_run_ribo_pattern("mouse"), genes)) > 30
 
   if (has_human_mt || has_human_rp) return("human")
   if (has_mouse_mt || has_mouse_rp) return("mouse")

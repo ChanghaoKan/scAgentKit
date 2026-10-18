@@ -141,8 +141,8 @@
 .sc_run_mad_diagnostic_percent <- function(counts, cells, species, kind) {
   # Anchor the gene-family suffix: "^HB[ABDEGQZ]" also matched HBEGF and HBB
   # pseudogenes, and "^RP[SL]" matched kinases such as RPS6KA1.
-  patterns <- list(human = c(ribo = .ribo_pattern("human"), hb = "^HB(A[12]|B|D|E1|G[12]|M|Q1|Z)$"),
-                   mouse = c(ribo = .ribo_pattern("mouse"), hb = "^Hb(a-a[12]|b-b[st]|b-b[hy]1?|b-y|q1[ab]?|z|m)$"))
+  patterns <- list(human = c(ribo = .sc_run_ribo_pattern("human"), hb = "^HB(A[12]|B|D|E1|G[12]|M|Q1|Z)$"),
+                   mouse = c(ribo = .sc_run_ribo_pattern("mouse"), hb = "^Hb(a-a[12]|b-b[st]|b-b[hy]1?|b-y|q1[ab]?|z|m)$"))
   # Exact declared-species symbol patterns are software diagnostics. No case
   # conversion, synonym lookup, reference download, or inferred species occurs.
   pattern <- if (is.null(species)) NULL else unname(patterns[[species]][kind])
