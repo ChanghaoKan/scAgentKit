@@ -1,6 +1,6 @@
 # scAgentKit
 
-scAgentKit helps researchers with a biological background spend less time maintaining a single-cell RNA-seq workflow. Starting from counts and sample facts or a Seurat/RDS object, it guides QC, basic analysis and annotation through a saved, reviewable project.
+scAgentKit is designed to help researchers with a biological background spend less time maintaining a single-cell RNA-seq workflow. Starting from counts and sample facts or a Seurat/RDS object, it guides QC, basic analysis and annotation through a saved, reviewable project.
 
 You receive a new Seurat object with counts, sample metadata, reductions and reviewed labels, plus marker tables, figures and the evidence and reasons behind decisions. QC, integration and clustering still require study judgement; default settings are starting points. FASTQ processing is upstream. Research-specific trajectory, communication and regulatory-network analyses are downstream and are not run automatically.
 
@@ -93,7 +93,7 @@ table(result$sc_annotation)
 sc_open(project_dir)$view$output
 ```
 
-`result` is the verified final Seurat object, ready for research-specific follow-up. The project directory also holds markers, metadata, parameters, figures and decision records. Before annotation is complete, `sc_result(project_dir, stage="analysis")` explicitly returns the provisional analysis object.
+`result` is the saved final Seurat object, loaded after its recorded file-integrity checks, ready for research-specific follow-up. The project directory also holds markers, metadata, parameters, figures and decision records. Before annotation is complete, `sc_result(project_dir, stage="analysis")` explicitly returns the provisional analysis object.
 
 ### 5. Reopen and continue
 
