@@ -162,3 +162,13 @@ fees. Public CI normal operation is authorized; any new security/environment or
 paid-resource requirement must be reported concretely. Optional method failures
 remain visible. A blocked or scientifically ineligible stage cannot be checked
 as complete merely because a helper exists.
+
+### Execution-order amendment (before any benchmark outcome)
+
+The user subsequently requested implementation first, then one consolidated
+full validation and before/after benchmark. Accordingly baseline SHA, input
+identity, mappings and metrics above stay frozen; baseline numerical execution
+is deferred until the final comparison. During implementation run only necessary
+focused regressions and quick checks. The original PR-triggered baseline CI is
+already running and is retained; no local benchmark has started. The first
+PBMC3k comparison is still executed before expanded-dataset outcome inspection.
