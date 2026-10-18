@@ -1,0 +1,13 @@
+test_that("legacy and saved-run QC use the same ribosomal family", {
+  genes <- c("RPS6KA1","RPS6KB1","RPS3","RPL10","MT-CO1","HBB","OTHER")
+  counts <- Matrix::Matrix(matrix(10,7,4,dimnames=list(genes,paste0("c",1:4))),sparse=TRUE)
+  obj <- AgentSeurat(Seurat::CreateSeuratObject(counts))
+  out <- qc_add_metrics(obj,species="human")
+  expected <- rep(200/7,4)
+  expect_equal(unname(out@data$percent.ribo),expected,tolerance=1e-8)
+  diagnostic <- scAgentKit:::.sc_run_mad_diagnostic_percent(counts,colnames(counts),"human","ribo")
+  expect_equal(unname(diagnostic$values),expected,tolerance=1e-8)
+  removed <- qc_remove_genes(obj,species="human",remove_mt=FALSE,remove_hb=FALSE)
+  expect_true(all(c("RPS6KA1","RPS6KB1") %in% rownames(removed@data)))
+  expect_false(any(c("RPS3","RPL10") %in% rownames(removed@data)))
+})
