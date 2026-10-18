@@ -38,6 +38,13 @@ async function r(action) {
   });} finally {await log.close();}
 }
 async function test(name,fn) {const begin=Date.now();try{await fn();report.tests.push({name,status:'passed',milliseconds:Date.now()-begin});console.log('PASS '+name);}catch(e){report.tests.push({name,status:'failed',error:e.message});throw e;}}
+async function reveal(locator) {
+  while(!await locator.isVisible()){
+    const closed=locator.locator('xpath=ancestor::details[not(@open)]').first();
+    assert(await closed.count(),'Evidence must be visible or inside an expandable section');
+    await closed.locator(':scope > summary').click();
+  }
+}
 async function screenshot(name) {await page.screenshot({path:path.join(output,name+'.png'),fullPage:true});report.screenshots.push(name+'.png');}
 async function fresh(allowBusy=false) {
   const received=page.waitForResponse(r=>r.request().method()==='GET' && (r.url().includes('/api/run-review/inspect') || r.url().includes('/api/run-review/scopes') && r.status()>=400));
@@ -100,21 +107,34 @@ try {
     assert(d.mad_panel,'Main entry must attach the saved sample-aware MAD/QC panel');
     assert.equal(p.pcs.method,'computed_top50');assert.equal(p.pcs.threshold,.8);assert(p.analysis.npcs<=50);
     assert(Array.isArray(p.clustering.diagnostic_resolutions)&&p.clustering.diagnostic_resolutions.length>1,'Main entry must request several resolutions');
-    assert(/first|50|computed/i.test(await ui('pc-policy-note').textContent()));
+    await reveal(ui('pc-policy-note'));
+    assert(/first|50|computed/i.test(await ui('pc-policy-note').innerText()));
+    const qc=page.locator('#strategy-group-qc');
+    if(await qc.count() && !await qc.getAttribute('open').then(x=>x!==null))await qc.locator(':scope > summary').click();
     report.initial_policy=p;await screenshot('01-main-strategy');
   });
   await test('author approval runs the real worker once and stops at measured cluster-tree review',async()=>{
     await approveStrategy();const run=await continueOnce();assert.equal(run.status,'awaiting_review');assert.equal(run.review_node.kind,'strategy');
     const d=run.strategy_review.details.cluster_diagnostics;assert(d?.tree?.nodes&&d.tree.edges);assert(d.resolutions.length>1);
-    assert(await page.locator('svg').count()>0,'Measured cluster tree must be rendered');
-    report.cluster_diagnostics=d;await screenshot('02-measured-cluster-tree');
+    const tree=page.locator('.cluster-tree-evidence');await reveal(tree);
+    const treeSVG=tree.locator('svg[aria-label="Shared cell transitions between scanned clustering resolutions"]');
+    assert.equal(await treeSVG.isVisible(),true,'Measured cluster SVG must actually be visible');
+    assert.equal(await treeSVG.locator('circle').count(),d.tree.nodes.length);
+    assert.equal(await treeSVG.locator('line').count(),d.tree.edges.length);
+    assert.equal(await tree.getByRole('columnheader',{name:'Shared cells',exact:true}).isVisible(),true);
+    assert.equal(await tree.getByRole('heading',{name:'Cluster sample composition',exact:true}).isVisible(),true);
+    for(const sample of ['offline_A','offline_B'])assert.equal(await tree.getByRole('cell',{name:sample,exact:true}).first().isVisible(),true);
+    const markerDetails=tree.locator('details').first();await markerDetails.locator(':scope > summary').click();
+    assert.equal(await markerDetails.getByRole('columnheader',{name:'Gene',exact:true}).isVisible(),true);
+    assert.equal(await markerDetails.getByRole('columnheader',{name:'Detected outside',exact:true}).isVisible(),true);
+    report.cluster_diagnostics=d;await screenshot('02-tree-visible');
+    await reveal(ui('pc-candidates'));assert.equal(await ui('pc-status').getAttribute('data-status'),'computed');
+    assert(/Computed PCs: \d+; reference PCs: \d+; shortfall: \d+/.test(await ui('pc-candidates').innerText()));
+    assert(/not total expressed-gene variance/.test(await ui('pc-policy-note').innerText()));
+    report.visible_pc_evidence=await ui('pc-candidates').innerText();await screenshot('02-computed-PC-evidence-visible');
     const chosen=d.resolutions.find(x=>x!==d.provisional_resolution)??d.resolutions[0];
     const control=page.locator('#clustering-resolution');
-    while(!await control.isVisible()){
-      const closed=control.locator('xpath=ancestor::details[not(@open)]').first();
-      assert(await closed.count(),'Resolution control must be visible or inside an expandable section');
-      await closed.locator(':scope > summary').click();
-    }
+    await reveal(control);
     await control.fill(String(chosen));
     await ui('strategy-reviewer').fill('Offline real-browser acceptance author');
     await ui('strategy-reason').fill('Choose this scanned resolution after inspecting measured cluster relationships; this is software acceptance, not biological optimization.');
