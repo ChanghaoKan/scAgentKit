@@ -33,7 +33,7 @@ test_that("opted-in science review actually rebuilds partitions and five subsamp
     pcs=list(method="fixed",ndim=5L),batch=list(method="none",reason="Software fixture"),
     clustering=list(resolution=.6,diagnostic_resolutions=c(.2,1.2)),umap=list(run=FALSE,n_neighbors=20L))
   obj$cluster <- unname(.sc_run_science_partition(obj,5,.6,42))
-  obj@misc$strategy_execution$neighbors$pcs <- 1:5
+  obj@misc$strategy_execution$neighbors$pcs <- list(ndim=5L,policy="fixed",total_computed_pcs=10L)
   config <- list(assay="RNA",counts_layer="counts",normalized_layer="data",cluster_column="cluster",context=list(),
     scientific_review=list(pc_sensitivity=TRUE,resampling=TRUE,resolution_extension=TRUE))
   before <- .sc_run_hash(obj); seed <- .Random.seed

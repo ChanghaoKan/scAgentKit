@@ -29,6 +29,9 @@
 .sc_run_science_partition <- function(seu, k, resolution, seed) {
   if (!"pca" %in% names(seu) || k < 2 || k > ncol(SeuratObject::Embeddings(seu,"pca")) || ncol(seu)<21)
     stop("Sensitivity needs actual PCA dimensions and at least 21 cells.",call.=FALSE)
+  seed_exists <- exists(".Random.seed",.GlobalEnv,inherits=FALSE); old_seed <- if(seed_exists) get(".Random.seed",.GlobalEnv) else NULL
+  on.exit(if(seed_exists) assign(".Random.seed",old_seed,.GlobalEnv) else if(exists(".Random.seed",.GlobalEnv,inherits=FALSE)) rm(".Random.seed",envir=.GlobalEnv),add=TRUE)
+  set.seed(seed)
   working <- Seurat::FindNeighbors(seu,reduction="pca",dims=seq_len(k),k.param=20L,
     graph.name=c("science_nn","science_snn"),verbose=FALSE)
   working <- Seurat::FindClusters(working,graph.name="science_snn",resolution=resolution,
@@ -69,7 +72,8 @@
   if (is.null(k)) k <- if(identical(plan$pcs$method,"fixed")) plan$pcs$ndim else {
     p <- .sc_run_pc_candidates(SeuratObject::Stdev(seu[["pca"]])); p$candidates[[if(plan$pcs$threshold==.85) "p85" else "p80"]]$ndim
   }
-  if (length(k)>1L) k <- length(k)
+  if(is.list(k)) k <- k$ndim else if(length(k)>1L) k <- length(k)
+  if(!is.numeric(k) || length(k)!=1L || !is.finite(k) || k<2L || k!=floor(k)) stop("Approved neighbor PC count is absent or invalid.",call.=FALSE)
   measured <- function(fn) tryCatch(c(list(status="measured"),fn()),error=function(e) list(status="unavailable",reason=conditionMessage(e)))
   corrected_pipeline <- identical(plan$batch$method,"harmony") ||
     (!is.null(plan$cycle) && !identical(plan$cycle$method,"none"))
@@ -84,8 +88,11 @@
     available <- ncol(SeuratObject::Embeddings(seu,"pca"))
     candidates <- sort(unique(pmax(2L,pmin(available,c(k-5L,k,k+5L)))))
     list(actual_pcs=available,requested=c(k-5L,k,k+5L),bounded_candidates=candidates,
-      comparisons=lapply(candidates,function(n) c(list(pcs=n),.sc_run_science_partition_compare(membership,
-        .sc_run_science_partition(seu,n,plan$clustering$resolution,plan$analysis$seed)))))
+      comparisons=lapply(candidates,function(n) {
+        partition <- .sc_run_science_partition(seu,n,plan$clustering$resolution,plan$analysis$seed)
+        c(list(pcs=n),.sc_run_science_partition_compare(membership,partition),
+          list(marker_consistency=.sc_run_science_marker_consistency(seu,config,membership,partition)))
+      }))
   })
   if(options$resampling) out$resampling <- measured(function() {
     seed_exists <- exists(".Random.seed",.GlobalEnv,inherits=FALSE)
@@ -128,4 +135,30 @@
   if(!identical(before,.sc_run_hash(seu))) stop("Scientific diagnostics changed their input object.",call.=FALSE)
   out$hash <- .sc_run_hash(out)
   out
+}
+
+.sc_run_science_marker_consistency <- function(seu,config,reference,candidate) {
+  marker_config <- config; marker_config$scientific_review <- NULL
+  signature <- function(membership) {
+    working <- seu
+    working[[config$cluster_column]] <- unname(membership[colnames(working)])
+    found <- .sc_run_markers(working,marker_config)$marker_summary
+    split(as.character(found$gene),as.character(found$cluster))
+  }
+  a <- signature(reference); b <- signature(candidate)
+  rows <- lapply(sort(unique(reference),method="radix"),function(id) {
+    cells <- names(reference)[reference==id]
+    ids <- sort(unique(candidate),method="radix")
+    scores <- vapply(ids,function(other) {
+      selected <- names(candidate)[candidate==other]
+      length(intersect(cells,selected))/length(union(cells,selected))
+    },numeric(1))
+    matched <- ids[which.max(scores)]
+    genes_a <- unique(a[[id]]); genes_b <- unique(b[[matched]])
+    list(reference_cluster=id,matched_cluster=matched,cell_jaccard=max(scores),
+      reference_marker_count=length(genes_a),candidate_marker_count=length(genes_b),
+      marker_jaccard=if(length(genes_a) && length(genes_b)) length(intersect(genes_a,genes_b))/length(union(genes_a,genes_b)) else NULL)
+  })
+  list(status="measured",clusters=rows,
+    interpretation="Native pooled differential top-marker sets after best shared-cell cluster matching; empty sets are unavailable. Same-data marker overlap is not independent identity validation.")
 }

@@ -35,7 +35,16 @@
         reason=if(length(a)>=20L && length(b)>=20L) NULL else "At least 20 cells inside and outside this cluster in this sample are required.",
         genes=if(length(a)>=20L && length(b)>=20L) measured(a,b) else list())
     })
-    list(cluster=id,cells=length(inside),genes=measured(inside,outside),samples=strata,
+    eligible <- Filter(function(row) identical(row$status,"measured"),strata)
+    consistency <- lapply(present,function(gene) {
+      rows <- lapply(eligible,function(sample) Filter(function(row) identical(row$gene,gene),sample$genes)[[1L]])
+      positive <- vapply(rows,function(row) row$mean_difference>0 && row$detection_difference>0,logical(1))
+      negative <- vapply(rows,function(row) row$mean_difference<0 && row$detection_difference<0,logical(1))
+      list(gene=gene,samples_evaluable=length(rows),positive_samples=sum(positive),negative_samples=sum(negative),
+        consistent_positive=if(length(rows)>=2L) all(positive) else NULL,
+        interpretation="Concordant positive mean-log-expression and detection contrasts in every evaluable sample; descriptive, not a sample-level significance test.")
+    })
+    list(cluster=id,cells=length(inside),genes=measured(inside,outside),samples=strata,cross_sample_consistency=consistency,
       cross_sample_status=if(length(Filter(function(x) x$status=="measured",strata))>=2L) "descriptive_replication" else "unavailable")
   })
   coexpression <- NULL
