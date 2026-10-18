@@ -73,3 +73,15 @@ test_that("unreachable legacy workflow changes do not invalidate the coordinator
     expect_identical(.sc_run_implementation(), before)
   })
 })
+
+test_that("mocked coordinator environments cannot redirect helper discovery", {
+  before <- .sc_run_implementation()
+  testthat::local_mocked_bindings(.sc_run_drive = function(...) NULL,
+    .package = "scAgentKit")
+  mocked <- .sc_run_implementation()
+  expect_match(mocked, "^[[:xdigit:]]{64}$")
+  expect_false(identical(mocked, before))
+  implementation_mutation("sc_find_markers", function() {
+    expect_false(identical(.sc_run_implementation(), mocked))
+  })
+})
