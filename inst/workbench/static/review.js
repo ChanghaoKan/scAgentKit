@@ -780,7 +780,9 @@ function renderJointEvidence(item) {
   const sources = jointDetail(details, "Saved database and current proposal sources", "annotation-joint-source", {database: evidenceSource(database.provenance), current: evidenceSource(source)}); sources.append(element("p", "A missing dataset license is unknown; an article's license does not establish a database redistribution license."));
   jointDetail(details, "Declared database scope", "annotation-joint-scope", evidenceRecord(database.provenance?.scope, ["method", "tissue_all_rows", "unavailable_columns", "excluded_unavailable_rows"]));
   jointDetail(details, "Canonical symbols and explicit aliases", "annotation-joint-symbols", evidenceRecord(database.marker_symbols, ["original", "canonical", "unique", "duplicate_count", "alias_resolutions"]));
-  jointDetail(details, "Saved candidate details, including zero overlap", "annotation-joint-all-candidates", array(database.all_candidates).map(row => evidenceRecord(row, ["label", "score", "overlap", "referenceSize", "markers", "formula", "referenceGenes", "availableGenes", "unmeasuredGenes", "notInTopMarkers", "tiedBest", "source"])));
+  jointDetail(details, "Saved candidate details, including zero overlap", "annotation-joint-all-candidates", array(database.all_candidates).map(row => evidenceRecord(row, ["label", "score", "overlap", "referenceSize", "markers", "formula", "referenceGenes", "availableGenes", "unmeasuredGenes", "notInTopMarkers", "tiedBest", "enrichment", "source"])));
+  const enrichment = jointDetail(details, "Saved Fisher enrichment and tested-gene background", "annotation-marker-enrichment", database.enrichment);
+  enrichment.append(element("p", "One-sided enrichment uses the saved native eligible-gene universe and BH correction across all tested labels. It does not change coverage ranking or validate cell identity; missing background remains unavailable."));
   jointDetail(details, "Explicit name and relationship comparisons", "annotation-joint-comparison-details", evidenceRecord(comparison, ["source", "label", "label_normalized", "label_map", "reference_labels", "related_candidates", "ambiguous", "reason", "relationships"]));
   const expression = joint.expression_review;
   if (expression) {
@@ -788,6 +790,10 @@ function renderJointEvidence(item) {
     contrasts.append(element("h3", "Saved expression contrasts; label semantics not validated"), element("p", expression.interpretation || "Only saved contrasts are available; no systematic negative-lineage panel was assessed."));
     contrasts.append(table(["Gene", "Saved contrast direction", "pct1 - pct2"], array(expression.records).map(row => [row.gene, row.direction, evidenceNumber(row.detection_difference)]), (value, index) => index === 0 ? geneNode(value) : null));
     details.append(contrasts);
+  }
+  if (item.measured_expression) {
+    const panels = jointDetail(details, "Saved panel expression, cross-sample contrasts and local coexpression", "annotation-measured-panels", item.measured_expression);
+    panels.append(element("p", "These saved local measurements include missing genes and per-cell count flags. Coexpression is not a doublet or ambient diagnosis, and cells are not donor replicates."));
   }
   const currentCitations = jointDetail(details, "Current proposal citations", "annotation-joint-citations", array(current.citations).map(row => ({gene: row?.gene, status: row?.status, statistics: evidenceRecord(row?.statistics, ["gene", "avgLog2FC", "pct1", "pct2", "pAdj", "source"])})));
   currentCitations.append(geneParagraph("Supplied citation genes: ", array(current.citations).map(row => row?.gene).filter(gene => typeof gene === "string")));
