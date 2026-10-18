@@ -90,8 +90,15 @@ print(snapshot$strategy_review$details) # 完整参数、预计保留及风险
 researcher_pbmc_decide(project_dir, snapshot, reviewer = "tutorial analyst",
   reason = "已阅读这份公开小数据软件控制策略及预计范围；不把它当成推荐QC。")
 run <- researcher_pbmc_resume(project_dir, chat_fn = mock)
-# 执行 approved QC/normalize/HVG/PCA/neighbors/cluster/UMAP/markers 后，
-# mock 依据实际 cluster IDs 提出 Unknown/low，并停在 annotation awaiting_review。
+# 执行获批的基础步骤和多 resolution 扫描后，返回同一个 strategy 审阅。
+snapshot <- researcher_pbmc_inspect(project_dir)
+print(snapshot$strategy_review$details$cluster_diagnostics)
+# 检查成员迁移图、marker、样本构成；这个软件控制明确保留已扫描的0.4。
+researcher_pbmc_decide(project_dir, snapshot, reviewer = "tutorial analyst",
+  reason = "已阅读实际扫描证据，本软件控制保留0.4；不声称最佳分辨率或生物稳定性。")
+run <- researcher_pbmc_resume(project_dir, chat_fn = mock)
+# 最终聚类/markers绑定所选分辨率；mock仅为实际cluster IDs提出Unknown/low。
+# 此时停在 annotation awaiting_review。
 
 snapshot <- researcher_pbmc_inspect(project_dir) # 必须使用新的 annotation snapshot
 print(snapshot$annotation_review$details)       # 真实 markers 与 unresolved 提案
