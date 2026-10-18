@@ -31,7 +31,7 @@ explains optional browser review and local computation.
 
 Installed function documentation is available through `help(package = "scAgentKit")`.
 [Installed examples](../inst/examples) include the PBMC tutorial and focused
-R/CLI workflows. The [package vignette](../vignettes/scAgentKit-pbmc3k.Rmd)
+R/CLI workflows. The [package vignette](../vignettes/scAgentKit-pbmc_small.Rmd)
 uses the same offline tutorial.
 
 [Workbench technical references](../workbench/README.md#technical-reference)

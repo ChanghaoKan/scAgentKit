@@ -14,7 +14,19 @@ in that case. CI uses its existing read-only job token, not a new credential.
 
 Download [scAgentKit_0.6.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz) from the [v0.6.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.6.0), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release gates](docs/RELEASE_PLAN.md).
 
+Download both assets and verify the archive before installing:
+
+```sh
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.6.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/SHA256SUMS
+shasum -a 256 -c SHA256SUMS  # macOS; on Linux use: sha256sum -c SHA256SUMS
+```
+
+Stop on a checksum failure. In a fresh R session, allow enough time for large
+dependency downloads and check that the intended private installation loads:
+
 ```r
+options(timeout=max(1800, getOption("timeout", 60)))
 lib <- path.expand("~/R/scagentkit-library")
 dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
@@ -22,11 +34,16 @@ if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
 remotes::install_local("scAgentKit_0.6.0.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
-library(scAgentKit)
+library(scAgentKit, lib.loc=lib)
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.6.0",
+  identical(normalizePath(find.package("scAgentKit")),
+    normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
 ```
 
 Run from the directory containing the downloaded archive, or give its full path.
+An installation log containing `ERROR` is not success: the explicit load,
+version and library-path assertions must pass before running the offline check.
 This installs required dependencies, including the declared
 `ChanghaoKan/agentomicsCore@v0.1.1`. Record the archive SHA256, package versions
 and `sessionInfo()` for reproducibility. Do not substitute mutable `main` or an

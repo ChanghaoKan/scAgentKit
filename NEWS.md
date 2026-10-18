@@ -1,4 +1,24 @@
-# scAgentKit 0.6.0 (unreleased)
+# Development (unreleased)
+
+## Breaking changes
+
+The reviewed workflow and helper fingerprints change. Preserve each existing
+project and its exact original package/dependencies; restore that environment
+to continue, or start a new project from the original input and review it again.
+Never edit saved hashes, approvals or authoritative checkpoints to force resume.
+The published v0.6.0 tag and assets remain unchanged.
+
+- The main entry offers measured sample-aware QC/MAD candidates, a disclosed
+  at-most-50-PC internal 80% policy and measured resolution-tree review before
+  final clustering selection. These are review options, not biological optima.
+- Annotation coverage, raw weighted confidence and citation checks do not
+  establish calibrated probability, label semantics or independent accuracy.
+  Invalid model evidence cannot promote an automatic authoritative label;
+  original proposals and failed audits remain available for review.
+- An evidence-backed source lock and installed-archive real-browser acceptance
+  supplement environment records; full OS reconstruction is not promised.
+
+# scAgentKit 0.6.0 (2026-10-18)
 
 ## Saved-project compatibility and metadata priors
 
