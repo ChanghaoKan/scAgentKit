@@ -60,3 +60,12 @@ a local draft with no POST or saved-authority change; explicit Save must rebuild
 proposal/review hashes before author approval. The completion banner must remain
 visible about unassessed doublets and unresolved decisions. This banner is not
 replaced by software completion or a biological/QC certification claim.
+
+For additional main-UI sample-HVG coverage, use `--sample-hvg true` with another
+fresh output directory. This mode explicitly duplicates the bundled public
+counts into two named software-control groups, with unique prefixed cell IDs;
+they are not biological replicates. It adds a real UI edit/save of the typed
+sample-consensus policy (80 HVGs/10 PCs), keeps saving separate from approval,
+and requires the installed R oracle to verify actual per-sample HVGs and their
+use in the final analysis. All original completion, integrity, model-off and
+three-approval checks remain. The standard mode remains unchanged.

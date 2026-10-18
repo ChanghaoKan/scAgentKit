@@ -61,3 +61,11 @@ pair measurements remain preserved and include the old collector's overhead;
 do not compare their wall times directly with the new collection policy, or
 attribute that overhead to numerical algorithms. An operation includes API
 integrity checks, optional continuation and rendering; it is not kernel time.
+
+`runtime_segments.R VARIANT_DIRECTORY output.json` reads and verifies the sealed
+state before reporting execution/review wall-time intervals. It separates
+approved computation/persistence windows from review/printing windows, while
+explicitly retaining integrity-check overhead. It does not label review time
+as pure collection overhead or human effort. Dataset orchestration reuses only
+complete variants with exact input/reference/library identity and successful
+matching process receipts; incomplete/failed work is never silently repeated.
