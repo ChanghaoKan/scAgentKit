@@ -173,7 +173,8 @@ test_that("QC and PC recommendation records expose the complete plain-list contr
     .sc_run_recommend_pc(list(status = "processed_reuse"), list()))
   expected <- c("id", "status", "assessment", "title", "reasons", "completed", "candidates", "conflicts", "uncertainty", "missing", "next_decision")
   for (record in records) {
-    expect_identical(names(record), expected)
+    expect_identical(names(record)[names(record) %in% expected], expected)
+    expect_true(all(names(record) %in% c(expected,"sample_comparison","draft_preselection")))
     expect_true(is.list(record$reasons) && is.list(record$completed) && is.list(record$missing))
     expect_true(record$status %in% c("recommend_execute", "recommend_skip", "insufficient_information"))
     for (candidate in record$candidates) {
