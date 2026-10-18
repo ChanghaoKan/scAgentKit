@@ -1,0 +1,28 @@
+{
+  "protocol": "evaluation-v1",
+  "baseline_commit": "b3227303a14bf68bbfb643b090998aa81614d8d2",
+  "dataset": "10x PBMC3k Cell Ranger1.1.0 filtered hg19",
+  "source": "https://cf.10xgenomics.com/samples/cell/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz",
+  "sha256": "847d6ebd9a1ec9a768f2be7e40ca42cbfe75ebeb6d76a4c24167041699dc28b5",
+  "bytes": 7621991,
+  "members": [
+    {
+      "name": "filtered_gene_bc_matrices/hg19/matrix.mtx",
+      "bytes": 28179564,
+      "sha256": "7d92358b9d29128a225c50f2a662d6ccca9c71bc665e0af82692ed1361eb94e4"
+    },
+    {
+      "name": "filtered_gene_bc_matrices/hg19/genes.tsv",
+      "bytes": 816952,
+      "sha256": "8778dd78085086be6dcafa8334f95f7cf76b25526e8ef2b63186db5127a1492c"
+    },
+    {
+      "name": "filtered_gene_bc_matrices/hg19/barcodes.tsv",
+      "bytes": 45900,
+      "sha256": "58c2a224a2b4258f7e8799a18890bda6d23824b247b80db2b08a0dcc36a4c660"
+    }
+  ],
+  "independent_truth_available": false,
+  "tutorial_labels_used": false,
+  "official_redownload_comparison": "pending"
+}
