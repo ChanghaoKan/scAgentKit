@@ -11,7 +11,15 @@ source is accepted by an adapter.
 | --- | --- |
 | Modern doublet adapter | scDblFinder exactly 1.26.7, xgboost >= 3.1, and accepted canonical classifier function hashes |
 | Additional doublet adapter | scDblFinder exactly 1.22.0 paired with xgboost exactly 1.7.11.1, and its accepted canonical hashes |
+| Other scDblFinder versions, including 1.26.9 | Unsupported. Dependency preflight reports the actual installed version and stops before classifier execution; it never silently skips detection. |
 | Harmony | Harmony 2.0.x with the exact supported modern public method signatures and options object; runtime function identities are recorded and checked during execution |
+
+The legacy `qc_doublet()` entry also checks the supported version pair. For an
+unsupported installation, use a separately verified isolated R library with a
+supported pair and the accepted adapter sources, or explicitly disable optional
+doublet analysis in a new reviewed plan. Do not replace packages in a shared
+global environment to bypass this guard. A newer official release is not
+automatically an accepted adapter; acceptance requires independent verification.
 
 The doublet pairs are selected in `R/run-doublet.R`; the Harmony API guard is in
 `R/run-harmony.R`. A generic latest-version install is not a compatibility check.

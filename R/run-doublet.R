@@ -122,6 +122,7 @@
 .sc_run_doublet_dependencies <- function() {
   .sc_run_strategy_runtime_dependencies(c("SeuratObject", "Matrix", "digest", "scDblFinder",
     "SingleCellExperiment", "SummarizedExperiment", "S4Vectors", "BiocParallel", "xgboost"))
+  .sc_run_doublet_classifier_versions_verify(.sc_run_doublet_classifier_installed_versions())
   invisible(TRUE)
 }
 
@@ -215,7 +216,11 @@
        private_training = "d9be56120cc9b3e32a117366fbade307f13d06ad08e3e3150f38436fd3d3611a"))
   if (!is.character(version) || length(version) != 1L || is.na(version) ||
       !version %in% names(releases))
-    .sc_project_fail("Doublet classifier auditing supports verified scDblFinder 1.26.7 or 1.22.0 only; another version requires explicit adapter acceptance before retrying.")
+    .sc_project_fail(paste0("Doublet classifier auditing supports verified scDblFinder 1.26.7 or 1.22.0 only. Installed scDblFinder version: ",
+      if (is.character(version) && length(version)==1L && !is.na(version)) version else "<unknown>",
+      ". Supported versions: 1.26.7 (xgboost >=3.1) or 1.22.0 (xgboost exactly 1.7.11.1), with accepted classifier source hashes. ",
+      "Use a separately verified isolated R library with a supported pair, or explicitly disable optional doublet analysis in a new reviewed plan. ",
+      "An unsupported release requires adapter verification before retrying; no global environment is changed automatically."))
   releases[[version]]
 }
 
