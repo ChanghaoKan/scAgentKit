@@ -67,8 +67,10 @@ if (action == 'setup') {
     readRDS(file)
   }
   ledger_path <- file.path(project,'provider','ledger.json')
-  ledger <- if(file.exists(ledger_path)) jsonlite::read_json(ledger_path) else list(entries=list())
-  stopifnot(length(ledger$entries)==0L,identical(state$config$provider$name,'manual'),
+  ledger_exists <- file.exists(ledger_path)
+  ledger <- if(ledger_exists) jsonlite::read_json(ledger_path) else list(schema='scagentkit.provider-ledger.v1',entries=list())
+  stopifnot(is.list(ledger),identical(ledger$schema,'scagentkit.provider-ledger.v1'),
+    'entries' %in% names(ledger),is.list(ledger$entries),length(ledger$entries)==0L,identical(state$config$provider$name,'manual'),
     identical(state$config$provider$external,FALSE))
   selection <- jsonlite::read_json(file.path(output,'author-selection.json'))
   review <- artifact('strategy_review'); scan <- artifact('cluster_scan')
@@ -102,7 +104,7 @@ if (action == 'setup') {
     marker_rows=nrow(table),actual_final_membership_and_markers_verified=TRUE)
   write_json(list(status='passed',view=view,cells=ncol(final),labels=unique(final$sc_annotation),
     output_sha256=digest::digest(file=view$output$seurat,algo='sha256'),
-    executed_stages=executed,approval_kinds=kinds,ledger=ledger,provider_calls=length(ledger$entries),
+    executed_stages=executed,approval_kinds=kinds,ledger=ledger,ledger_file_exists=ledger_exists,provider_calls=length(ledger$entries),
     provider=state$config$provider,resolution_binding=resolution_binding,
     scientific_accuracy_tested=FALSE),'r-output-verification.json')
 } else stop('Unknown action')
