@@ -17,7 +17,8 @@ sc_resolution_recommend(
   panel_dpi = 110,
   panel_width = 5,
   panel_height = 4.5,
-  max_retries = 2
+  max_retries = 2,
+  use_metadata_prior = FALSE
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ reduces base64 payload size. Default 110.}
 \item{panel_width}{Numeric. Panel width in inches. Default 5.}
 
 \item{panel_height}{Numeric. Panel height in inches. Default 4.5.}
+
+\item{use_metadata_prior}{Logical, default FALSE. Explicitly opt in to a prior from author metadata. Do not use held-out evaluation truth. The opt-in, actual column and derived range are recorded.}
 
 \item{max_retries}{Integer. Default 2.}
 }

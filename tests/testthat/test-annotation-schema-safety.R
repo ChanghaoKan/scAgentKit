@@ -180,7 +180,8 @@ test_that("independent mode omits reference candidates and automatic author prio
   expect_identical(cached@params$llm_annotation_responses, out@params$llm_annotation_responses)
   expect_identical(cached@params$llm_annotations, out@params$llm_annotations)
 
-  guided <- annot_llm_annotate(obj, provider, "PBMC", max_retries = 0L, verbose = FALSE)
+  guided <- annot_llm_annotate(obj, provider, "PBMC", max_retries = 0L, verbose = FALSE,
+    use_metadata_prior = TRUE)
   expect_match(seen, "ACT_SECRET_LABEL", fixed = TRUE)
   expect_match(seen, "AUTHOR_ALPHA", fixed = TRUE)
   expect_identical(guided@params$llm_annotation_responses[["0"]]$reference_mode, "guided")

@@ -67,6 +67,9 @@
 #'   reduces base64 payload size. Default 110.
 #' @param panel_width Numeric. Panel width in inches. Default 5.
 #' @param panel_height Numeric. Panel height in inches. Default 4.5.
+#' @param use_metadata_prior Logical, default FALSE. Explicitly opt in to a
+#'   prior derived from an author cell-type metadata column. Do not use held-out
+#'   evaluation truth. The opt-in, used column and derived range are recorded.
 #' @export
 sc_resolution_recommend <- function(obj,
                                     chat_fn,
@@ -80,9 +83,12 @@ sc_resolution_recommend <- function(obj,
                                     panel_dpi            = 110,
                                     panel_width          = 5,
                                     panel_height         = 4.5,
-                                    max_retries          = 2) {
+                                    max_retries          = 2,
+                                    use_metadata_prior   = FALSE) {
 
   stopifnot(methods::is(obj, "AgentSeurat"))
+  if (!is.logical(use_metadata_prior) || length(use_metadata_prior)!=1L || is.na(use_metadata_prior))
+    stop("`use_metadata_prior` must be TRUE or FALSE.")
   if (obj@data_type != "seurat") {
     stop("sc_resolution_recommend expects a merged Seurat object.")
   }
@@ -112,7 +118,8 @@ sc_resolution_recommend <- function(obj,
   # if user didn't pass one explicitly. We allow some "wiggle room" around
   # the author's count: +/-50% in each direction (clamped to [3, 30]) so
   # the LLM can sub-divide a bit if marker evidence supports it.
-  if (is.null(expected_n_celltypes)) {
+  auto_col <- NA_character_
+  if (isTRUE(use_metadata_prior) && is.null(expected_n_celltypes)) {
     auto_col <- .detect_celltype_col(meta)
     if (!is.na(auto_col)) {
       n_author <- length(unique(meta[[auto_col]]))
@@ -324,6 +331,8 @@ sc_resolution_recommend <- function(obj,
     params         = list(
       tissue                = tissue,
       expected_n_celltypes  = expected_n_celltypes,
+      use_metadata_prior    = use_metadata_prior,
+      metadata_prior_column = auto_col,
       sweep_resolutions     = res_values,
       recommended           = chosen,
       confidence            = recommendation$confidence,
