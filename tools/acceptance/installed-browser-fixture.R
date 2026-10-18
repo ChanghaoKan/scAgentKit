@@ -36,8 +36,21 @@ if (action == 'setup') {
   invisible(capture.output(launch <- sc_start(input, project, context=list(
     species='human',tissue='public PBMC software fixture',
     research_goal='Offline software acceptance; Unknown labels, no biological accuracy claim',
-    columns=list(sample='acceptance_sample')), browse=FALSE,model_suggestions='off')))
-  write_json(list(launch=launch,package=installed,runtime=runtime,
+    columns=list(sample='acceptance_sample')), browse=FALSE,model_suggestions='off',
+    scientific_review=list(pc_sensitivity=TRUE,resampling=TRUE,resolution_extension=TRUE,
+      panels='blood',cross_sample=TRUE,mixed_lineage=TRUE))))
+  # Explicit synthetic eligibility control for local-only QC preselection.
+  genes <- c('MT-CO1','RPS3','HBA1',paste0('Gene',4:80))
+  m <- matrix(0,80,120,dimnames=list(genes,paste0('cell',1:120)))
+  for(i in 1:120) { z <- (i-1L) %% 60L+1L; m[seq_len(20L+z %% 30L),i] <- 2L+z %% 9L; m[1,i] <- 1L+z %% 10L }
+  for(i in c(1L,61L)) { m[,i] <- 0; m[1,i] <- 1 }
+  synthetic <- Seurat::CreateSeuratObject(Matrix::Matrix(m,sparse=TRUE),min.cells=0,min.features=0)
+  synthetic$sample <- rep(c('A','B'),length.out=120)
+  preselection_input <- file.path(output,'preselection-input.rds');saveRDS(synthetic,preselection_input)
+  preselection_launch <- NULL
+  invisible(capture.output(preselection_launch <- sc_start(preselection_input,file.path(output,'preselection-project'),
+    context=list(species='human',tissue='Synthetic diagnostics',research_goal='Test unapproved local preselection only',columns=list(sample='sample')),browse=FALSE)))
+  write_json(list(launch=launch,preselection_launch=preselection_launch,package=installed,runtime=runtime,
     version=as.character(packageVersion('scAgentKit')), R=R.version.string,
     input_cells=colnames(pbmc_small), archive_sha256=digest::digest(file=archive,algo='sha256'),
     model_suggestions='off', source_checkout=NULL), 'launch.json')
@@ -110,9 +123,13 @@ if (action == 'setup') {
     identical(view$scientific_assessment$certified_qc,FALSE),
     'doublet' %in% unlist(view$scientific_assessment$unassessed_steps),
     length(view$scientific_assessment$unresolved_steps)>0L)
+  science <- scan$scientific_diagnostics
+  stopifnot(identical(science$pc_sensitivity$status,'measured'),identical(science$resampling$status,'measured'),
+    length(science$resampling$replicates)==5L,identical(science$expression$status,'measured'),
+    identical(science$default_changed,FALSE),!is.null(evidence$private$expression_review))
   write_json(list(status='passed',view=view,cells=ncol(final),labels=unique(final$sc_annotation),
     output_sha256=digest::digest(file=view$output$seurat,algo='sha256'),
     executed_stages=executed,approval_kinds=kinds,ledger=ledger,ledger_file_exists=ledger_exists,provider_calls=length(ledger$entries),
     provider=state$config$provider,resolution_binding=resolution_binding,
-    scientific_accuracy_tested=FALSE),'r-output-verification.json')
+    scientific_diagnostics=science,scientific_accuracy_tested=FALSE),'r-output-verification.json')
 } else stop('Unknown action')

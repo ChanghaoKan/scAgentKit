@@ -182,12 +182,26 @@ try {
   browser=await chromium.launch({headless:true,executablePath:args.chrome||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
   report.actual_browser=true;report.browser_version=browser.version();
   context=await browser.newContext({viewport:{width:1440,height:1080}});
-  const origin=new URL(launch.launch.url).origin;
-  await context.route('**/*',route=>{const u=route.request().url();if(u.startsWith(origin+'/')||u.startsWith('data:'))return route.continue();report.external_requests.push(u);return route.abort();});
+  const origin=new URL(launch.launch.url).origin,preselectionOrigin=new URL(launch.preselection_launch.url).origin;
+  await context.route('**/*',route=>{const u=route.request().url();if(u.startsWith(origin+'/')||u.startsWith(preselectionOrigin+'/')||u.startsWith('data:'))return route.continue();report.external_requests.push(u);return route.abort();});
   page=await context.newPage();page.on('pageerror',e=>report.page_errors.push(e.message));
   page.on('request',req=>{if(req.method()==='POST')requests.push({path:new URL(req.url()).pathname,body:req.postDataJSON()});});
   page.on('response',res=>{if(res.url().includes('/api/run-review/')) responses.push({path:new URL(res.url()).pathname,status:res.status()});});
   page.on('dialog',dialog=>dialog.accept());
+  await test('eligible QC comparison is preselected locally without save, approval or cell mutation',async()=>{
+    const statePath=path.join(output,'preselection-project','state.rds');
+    const before=await fs.readFile(statePath),posts=requests.length;
+    await page.goto(launch.preselection_launch.url);await ui('run-refresh').waitFor();
+    await page.waitForFunction(()=>document.getElementById('strategy-json').value.includes('any_quality3'));
+    const draft=JSON.parse(await ui('strategy-json').inputValue());
+    assert.equal(draft.qc.rules.find(rule=>rule.op==='mad_preset').preset_id,'any_quality3');
+    assert.equal(await ui('strategy-approve').isDisabled(),true);
+    assert.match(await ui('run-message').innerText(),/NOT SAVED, NOT APPROVED/);
+    assert.equal(requests.length,posts,'Preselection cannot POST');
+    assert.deepEqual(await fs.readFile(statePath),before,'Preselection cannot mutate authority');
+    report.qc_preselection={actual_browser:true,local_draft_only:true,no_post:true,authority_unchanged:true};
+    await screenshot('00-unapproved-QC-preselection');
+  });
   await page.goto(launch.launch.url);await ui('run-refresh').waitFor();await fresh();
   await test('main entry exposes sample-aware QC, top-50 empirical PC policy and editable strategy',async()=>{
     const d=view.run.strategy_review?.details,p=d?.canonical_proposal;assert(d&&p);
@@ -299,6 +313,7 @@ finally {
   await context?.close().catch(()=>{});await browser?.close().catch(()=>{});
   // Terminate only the service created for this fresh private project.
   if(launch?.launch?.pid)try{process.kill(launch.launch.pid,'SIGTERM');}catch{}
+  if(launch?.preselection_launch?.pid)try{process.kill(launch.preselection_launch.pid,'SIGTERM');}catch{}
   report.finished_at=new Date().toISOString();report.browser_responses=responses;
   // Request bindings are retained for reproducibility, never CSRF tokens/headers.
   report.browser_requests=requests;
