@@ -1,6 +1,6 @@
 # scAgentKit 研究者操作协议
 
-这份指南面向第一次使用 scAgentKit 的研究者：在数据所在的机器上用 `sc_run()` 创建项目，检查 AI 或人工提出的参数，批准后继续计算，最后读取新的 Seurat 对象。网页是同一项目的可选复核窗口；日常分析不需要手动搬运大 RDS 或导出、导入 ZIP。默认没有外部模型调用。
+这份指南面向第一次使用 scAgentKit 的研究者：在数据所在的机器上用已安装包的 `sc_start()` 创建项目，在网页检查人工或可选模型提出的参数，批准后继续计算，最后读取新的 Seurat 对象。R-only 协调器仍可用 `sc_run()`；两者使用同一项目和审批记录。日常分析不需要手动搬运大 RDS 或导出、导入 ZIP。默认没有外部模型调用。
 
 建议先用第 3 节的公开小数据、零费用示例练习完整流程，再接入自己的数据。已有处理好的 Seurat 对象可从第 5 节进入，明确复用已有基础计算。需要网页时，按第 8 节启动一个只绑定本机的服务。
 
@@ -140,7 +140,18 @@ dim(SeuratObject::LayerData(seu, assay = "RNA", layer = "counts"))
 
 多个 split counts 层时，先按数据来源在自己的数据准备代码中明确 join／重构，并核对 counts 层覆盖全部 object cells。协调器不会替你猜一个层，也不会悄悄修复 ID。matrix 的 gene ID 含 `_` 或 `|` 时 Seurat 会改名，需在进入前自行作有记录的明确映射并排除碰撞。
 
-这不是任意文件格式的导入器。10x、h5ad 等先用可信、经验证的 loader 转成支持对象；不要把 `.h5ad`、ZIP 或任意压缩文件路径当作 `.rds` 输入。
+主入口直接支持 10x MEX 目录及样本表，不需要另写 loader：
+
+```r
+input <- "filtered_feature_bc_matrix"
+project_dir <- "analysis"
+sc_start(input, project_dir, context=context,
+  sample_id="S1", matrix_kind="filtered")
+```
+
+`matrix_kind="raw"` 仅记录 raw 来源并保留输入 barcodes，不代表已完成 empty-droplet calling。多个样本可传入包含 `sample_id`、`path` 和 `matrix_kind` 的表，格式与 feature/metadata 对齐规则见 [10x 输入](TENX_INPUT.md)。R-only 的 `sc_run()` 接受已读取的受支持对象；不要把两个入口的输入合同混用。
+
+这不是任意文件格式的导入器。`.h5ad` 尚需可信、经验证的外部转换，随后核对 raw counts 和 metadata；不要把 `.h5ad`、ZIP 或任意压缩文件路径当作 `.rds` 输入。
 
 ### 4.2 context 描述真实研究设计
 
@@ -363,19 +374,19 @@ doublet 的受审运行时组合是 scDblFinder `1.26.7` + xgboost `>=3.1`，以
 
 ### 8.0 重新打开已保存的结果
 
-在已安装本版包的本机 R 中，第一次指定公开 checkout 的位置：
+在已安装本版包的本机 R 中，直接使用随包安装的网页资源：
 
 ```r
 library(scAgentKit)
-sc_run_open("/durable/path/to/project", checkout = "/path/to/scAgentKit")
+sc_open("/durable/path/to/project")
 ```
 
-以后关闭网页或 R 再重开，只需 `sc_run_open("/durable/path/to/project")`。
-它自动使用当前 Rscript、当前 `.libPaths()` 和已有 Python 3，记住 checkout 位置，
+以后关闭网页或 R 再重开，仍可调用 `sc_open("/durable/path/to/project")`；低层只读入口 `sc_run_open()` 也使用已安装资源。
+它自动使用当前 Rscript、当前 `.libPaths()` 和已有 Python 3，
 只读打开结果首页；不会重新分析、恢复计算或发送模型请求。服务仍在时复用同一项目服务，
 服务退出则重新启动；端口上的项目身份不符时不会误用。`browse=FALSE` 只打印/返回地址。
 不需要新凭据；仅绑定 `127.0.0.1`，服务日志位于项目 `.workbench-launcher/server.log`。
-需要现有 macOS/Linux Python 3 与同机公开源代码 checkout；不自动下载软件。
+需要现有 macOS/Linux Python 3；正常使用不需要源码 checkout，不自动下载软件。仅开发者可显式指定匹配 checkout。
 远程计算机的浏览器与 SSH 隧道仍按下文处理，本入口不修改服务器认证。
 
 ### 8.1 只绑定 loopback
