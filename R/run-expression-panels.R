@@ -4,8 +4,10 @@
   counts <- .sc_project_layer(seu,assay,counts_layer,raw_counts=TRUE)
   data <- .sc_project_layer(seu,assay,data_layer)
   cells <- colnames(seu); metadata <- seu[[]]
-  if(!identical(colnames(counts),cells) || !identical(colnames(data),cells) || !identical(rownames(counts),rownames(data)))
+  if(!setequal(colnames(counts),cells) || !setequal(colnames(data),cells) || !setequal(rownames(counts),rownames(data)) || !setequal(rownames(metadata),cells))
     stop("Expression review requires exact aligned raw and normalized layers.",call.=FALSE)
+  counts <- counts[,cells,drop=FALSE]; data <- data[rownames(counts),cells,drop=FALSE]
+  metadata <- metadata[cells,,drop=FALSE]
   membership <- as.character(metadata[[cluster_column]])
   if(length(membership)!=length(cells) || anyNA(membership) || any(!nzchar(membership))) stop("Expression review requires complete clusters.",call.=FALSE)
   genes <- sort(unique(unlist(panels,use.names=FALSE)),method="radix")
@@ -37,13 +39,14 @@
       cross_sample_status=if(length(Filter(function(x) x$status=="measured",strata))>=2L) "descriptive_replication" else "unavailable")
   })
   coexpression <- NULL
-  if(isTRUE(mixed_lineage) && length(panels)>=2L) {
+  lineage_panels <- panels[setdiff(names(panels),"cited_marker_review")]
+  if(isTRUE(mixed_lineage) && length(lineage_panels)>=2L) {
     support <- lapply(panels,function(g) {
       g <- intersect(g,rownames(counts))
       if(!length(g)) return(rep(NA_integer_,length(cells)))
       as.integer(Matrix::colSums(counts[g,,drop=FALSE]>0))
     })
-    pairs <- utils::combn(names(panels),2,simplify=FALSE)
+    pairs <- utils::combn(names(lineage_panels),2,simplify=FALSE)
     coexpression <- lapply(pairs,function(pair) {
       measured_a <- length(intersect(panels[[pair[1]]],rownames(counts)))
       measured_b <- length(intersect(panels[[pair[2]]],rownames(counts)))

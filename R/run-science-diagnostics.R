@@ -92,6 +92,8 @@
     old_seed <- if(seed_exists) get(".Random.seed",.GlobalEnv) else NULL
     on.exit(if(seed_exists) assign(".Random.seed",old_seed,.GlobalEnv) else if(exists(".Random.seed",.GlobalEnv,inherits=FALSE)) rm(".Random.seed",envir=.GlobalEnv),add=TRUE)
     counts <- .sc_project_layer(seu,config$assay,config$counts_layer,raw_counts=TRUE)
+    if(!setequal(colnames(counts),cells)) stop("Resampling source cell IDs differ.")
+    counts <- counts[,cells,drop=FALSE]
     results <- lapply(42:46,function(seed) {
       set.seed(seed); selected <- sort(sample.int(ncol(seu),floor(.8*ncol(seu))))
       working <- Seurat::CreateSeuratObject(counts[,selected,drop=FALSE],assay=config$assay,

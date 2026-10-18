@@ -48,3 +48,10 @@ test_that("opted-in science review actually rebuilds partitions and five subsamp
   expect_identical(.Random.seed,seed)
   expect_false(value$default_changed)
 })
+test_that("expression review joins shuffled literal cell IDs rather than canonical matrix positions", {
+  x <- SeuratObject::pbmc_small
+  before <- .sc_run_hash(x)
+  result <- .sc_run_expression_panels(x,"RNA","counts","data","RNA_snn_res.1",list(B=c("MS4A1","CD79A")))
+  expect_identical(result$status,"measured")
+  expect_identical(.sc_run_hash(x),before)
+})

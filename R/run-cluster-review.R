@@ -82,7 +82,7 @@
 }
 
 .sc_run_cluster_after <- function(root, state, plan) {
-  if (!length(plan$clustering$diagnostic_resolutions)) return(state)
+  if (!length(plan$clustering$diagnostic_resolutions) && is.null(state$config$scientific_review)) return(state)
   scan <- .sc_run_cluster_scan_get(root, state)
   if (is.null(scan)) {
     scan <- .sc_run_cluster_scan(.sc_run_get(root, state, "analysis"), state$config, plan,
