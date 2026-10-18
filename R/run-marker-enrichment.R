@@ -20,3 +20,17 @@
     multiplicity="BH across all tested labels in this cluster, before top-N display",
     interpretation="Descriptive over-representation conditional on eligible measured genes; marker dependencies and reference selection limit inference. Not cell-label probability, independent validation or ranking replacement.")
 }
+
+.sc_run_marker_background <- function(working, assay, settings) {
+  ids <- sort(unique(as.character(SeuratObject::Idents(working))),method="radix")
+  out <- lapply(ids,function(id) {
+    membership <- as.character(SeuratObject::Idents(working))
+    if(sum(membership==id)<3L || sum(membership!=id)<3L) return(character())
+    if(settings$logfc_threshold!=0 || isTRUE(settings$only_pos)) return(NULL)
+    # Use the same implementation as FindMarkers' pct prefilter (including
+    # Seurat's rounding); do not approximate its boundary from raw fractions.
+    fc <- Seurat::FoldChange(working,ident.1=id,assay=assay,slot="data",features=rownames(working[[assay]]))
+    rownames(fc)[pmax(fc$pct.1,fc$pct.2)>=settings$min_pct]
+  }); names(out) <- ids
+  out
+}

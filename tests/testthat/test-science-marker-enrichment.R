@@ -9,3 +9,15 @@ test_that("Fisher uses eligible background, retains all cells and adjusts all la
   expect_identical(.sc_run_marker_enrichment("g1",sets)$status,"unavailable")
   expect_error(.sc_run_marker_enrichment("g1",sets,c("g1","g1")),"unique")
 })
+test_that("eligible background uses Seurat detection rounding at prefilter boundaries", {
+  counts <- Matrix::Matrix(matrix(c(1,0,0,0,0,0, 1,1,1,1,1,1, 0,0,0,1,0,0),3,6,byrow=TRUE,
+    dimnames=list(c("G1","G2","G3"),letters[1:6])),sparse=TRUE)
+  obj <- Seurat::CreateSeuratObject(counts)
+  obj <- Seurat::NormalizeData(obj,verbose=FALSE)
+  SeuratObject::Idents(obj) <- rep(c("0","1"),each=3)
+  background <- .sc_run_marker_background(obj,"RNA",list(logfc_threshold=0,only_pos=FALSE,min_pct=.3332))
+  expect_false("G1" %in% background[["0"]])
+  expect_true("G2" %in% background[["0"]])
+  background2 <- .sc_run_marker_background(obj,"RNA",list(logfc_threshold=0,only_pos=FALSE,min_pct=.333))
+  expect_true("G1" %in% background2[["0"]])
+})

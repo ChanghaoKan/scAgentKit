@@ -101,17 +101,7 @@
   markers$cluster <- as.character(markers$cluster)
   summary$cluster <- as.character(summary$cluster)
   attr(markers, "cluster_column") <- attr(summary, "cluster_column") <- cluster_column
-  detection <- identity$counts > 0
-  tested_background <- lapply(sort(unique(identity$membership),method="radix"),function(id) {
-    inside <- which(identity$membership==id); outside <- which(identity$membership!=id)
-    if(length(inside)<3L || length(outside)<3L) return(character())
-    pct1 <- Matrix::rowMeans(detection[,inside,drop=FALSE]); pct2 <- Matrix::rowMeans(detection[,outside,drop=FALSE])
-    # The supported coordinator test is Wilcoxon, logfc.threshold=0 by default.
-    # For other configured logFC filtering the precise pre-test FC set is not
-    # reconstructed from significant output: enrichment remains unavailable.
-    if(settings$logfc_threshold!=0 || isTRUE(settings$only_pos)) return(NULL)
-    rownames(identity$counts)[pmax(pct1,pct2)>=settings$min_pct]
-  }); names(tested_background) <- sort(unique(identity$membership),method="radix")
+  tested_background <- .sc_run_marker_background(working,assay,settings)
   attr(summary,"tested_background") <- tested_background
   science <- .sc_run_science_options(config$scientific_review)
   if(!is.null(science) && (length(science$panels) || science$cross_sample || science$mixed_lineage)) {
