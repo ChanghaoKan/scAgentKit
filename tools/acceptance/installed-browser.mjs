@@ -39,9 +39,13 @@ async function r(action) {
 }
 async function test(name,fn) {const begin=Date.now();try{await fn();report.tests.push({name,status:'passed',milliseconds:Date.now()-begin});console.log('PASS '+name);}catch(e){report.tests.push({name,status:'failed',error:e.message});throw e;}}
 async function screenshot(name) {await page.screenshot({path:path.join(output,name+'.png'),fullPage:true});report.screenshots.push(name+'.png');}
-async function fresh() {
-  const received=page.waitForResponse(r=>r.url().includes('/api/run-review/inspect') && r.request().method()==='GET');
-  await ui('run-refresh').click();const res=await received;assert.equal(res.status(),200);
+async function fresh(allowBusy=false) {
+  const received=page.waitForResponse(r=>r.request().method()==='GET' && (r.url().includes('/api/run-review/inspect') || r.url().includes('/api/run-review/scopes') && r.status()>=400));
+  await ui('run-refresh').click();const res=await received;
+  if(allowBusy && res.status()===409 && res.url().includes('/scopes')) {
+    await page.waitForFunction(()=>!document.getElementById('run-refresh').disabled);return null;
+  }
+  assert.equal(res.status(),200);
   view=await res.json();await page.waitForFunction(()=>!document.getElementById('run-refresh').disabled);return view.run;
 }
 async function clickResponse(id,suffix) {
@@ -52,8 +56,8 @@ async function clickResponse(id,suffix) {
 async function untilBoundary() {
   const deadline=Date.now()+10*60*1000;
   while(Date.now()<deadline){
-    const run=await fresh();
-    if(['awaiting_review','awaiting_configuration','complete','failed'].includes(run.status))return run;
+    const run=await fresh(true);
+    if(run && ['awaiting_review','awaiting_configuration','complete','failed'].includes(run.status))return run;
     await wait(1000);
   }throw new Error('Real R worker did not reach review/configuration/completion in ten minutes');
 }
@@ -105,7 +109,13 @@ try {
     assert(await page.locator('svg').count()>0,'Measured cluster tree must be rendered');
     report.cluster_diagnostics=d;await screenshot('02-measured-cluster-tree');
     const chosen=d.resolutions.find(x=>x!==d.provisional_resolution)??d.resolutions[0];
-    const control=page.locator('#clustering-resolution');await control.fill(String(chosen));
+    const control=page.locator('#clustering-resolution');
+    while(!await control.isVisible()){
+      const closed=control.locator('xpath=ancestor::details[not(@open)]').first();
+      assert(await closed.count(),'Resolution control must be visible or inside an expandable section');
+      await closed.locator(':scope > summary').click();
+    }
+    await control.fill(String(chosen));
     await ui('strategy-reviewer').fill('Offline real-browser acceptance author');
     await ui('strategy-reason').fill('Choose this scanned resolution after inspecting measured cluster relationships; this is software acceptance, not biological optimization.');
     if(await ui('strategy-save').isEnabled())await clickResponse('strategy-save','/api/run-review/decision');
