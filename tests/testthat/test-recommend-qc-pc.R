@@ -212,7 +212,8 @@ test_that("QC draft preselection is bound, guarded and never replaces an explici
   fixture <- recommend_qc_fixture()
   step <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
   expect_true(isTRUE(step$draft_preselection$draft_only))
-  if(isTRUE(step$draft_preselection$automatic)) {
+  expect_true(step$draft_preselection$automatic)
+  {
     expect_identical(step$draft_preselection$candidate_id,"any_quality3")
     candidate <- Filter(function(x) x$id=="any_quality3",step$candidates)[[1L]]
     expect_lte(candidate$impact$removed,.1*fixture$validated$qc_validated$retention$before)
