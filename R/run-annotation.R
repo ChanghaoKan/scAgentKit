@@ -101,7 +101,29 @@
   markers$cluster <- as.character(markers$cluster)
   summary$cluster <- as.character(summary$cluster)
   attr(markers, "cluster_column") <- attr(summary, "cluster_column") <- cluster_column
-  list(markers = markers, marker_summary = summary,
+  detection <- identity$counts > 0
+  tested_background <- lapply(sort(unique(identity$membership),method="radix"),function(id) {
+    inside <- which(identity$membership==id); outside <- which(identity$membership!=id)
+    if(length(inside)<3L || length(outside)<3L) return(character())
+    pct1 <- Matrix::rowMeans(detection[,inside,drop=FALSE]); pct2 <- Matrix::rowMeans(detection[,outside,drop=FALSE])
+    # The supported coordinator test is Wilcoxon, logfc.threshold=0 by default.
+    # For other configured logFC filtering the precise pre-test FC set is not
+    # reconstructed from significant output: enrichment remains unavailable.
+    if(settings$logfc_threshold!=0 || isTRUE(settings$only_pos)) return(NULL)
+    rownames(identity$counts)[pmax(pct1,pct2)>=settings$min_pct]
+  }); names(tested_background) <- sort(unique(identity$membership),method="radix")
+  attr(summary,"tested_background") <- tested_background
+  science <- .sc_run_science_options(config$scientific_review)
+  if(!is.null(science) && (length(science$panels) || science$cross_sample || science$mixed_lineage)) {
+    panels <- science$panels
+    panels$cited_marker_review <- unique(as.character(summary$gene))
+    panels <- Filter(length,panels)
+    expression_review <- .sc_run_expression_panels(seu,assay,
+      .sc_run_annotation_option(config,"counts_layer","counts"),normalized_layer,cluster_column,
+      panels,config$context$columns$sample,science$mixed_lineage)
+    attr(summary,"expression_review") <- expression_review
+  }
+  list(markers = markers, marker_summary = summary, tested_background = tested_background,
        summary_lines = agent@params$markers_summary,
        cycling_score = agent@params$cluster_cycling_score,
        cluster_column = cluster_column, parameters = settings)
@@ -181,7 +203,9 @@
       list(clusterId = x$clusterId, status = x$status, candidates = x$candidates))
     summary$reference_dependency <- "Supplied local database candidates guide this branch; agreement is not independent replication."
   }
+  expression_review <- if (!is.null(attr(table,"expression_review"))) attr(table,"expression_review") else NULL
   list(summary = summary, private = list(input_cells = input_cells,
+    expression_review = expression_review,
     cluster_column = cluster_column, candidates = local$matches,
     candidates_all = local$all_matches, reference_provenance = local$provenance,
     reference_evidence = local, reference_options = options,
@@ -228,6 +252,13 @@
     source <- clusters[[match(entry$clusterId, ids)]]
     admissible <- vapply(source$markers, function(x) x$gene, character(1))
     if (any(!genes %in% admissible)) stop("Annotation cites genes absent from the supplied cluster evidence.", call. = FALSE)
+    if (length(genes) && !tolower(trimws(parsed$primary_annotation)) %in% c("unknown","unannotated")) {
+      cited <- source$markers[match(genes,admissible)]
+      positive <- vapply(cited,function(marker) is.numeric(marker$avgLog2FC) && length(marker$avgLog2FC)==1L &&
+        is.finite(marker$avgLog2FC) && marker$avgLog2FC>0 && is.numeric(marker$pct1) && is.numeric(marker$pct2) &&
+        length(marker$pct1)==1L && length(marker$pct2)==1L && is.finite(marker$pct1) && is.finite(marker$pct2) && marker$pct1>marker$pct2,logical(1))
+      if(!all(positive)) stop("Known-label supporting citations require positive saved FC and detection difference; retain Unknown or revise the evidence.",call.=FALSE)
+    }
     if (!length(genes) && !tolower(trimws(parsed$primary_annotation)) %in% c("unknown", "unannotated"))
       stop("A known annotation requires supporting marker evidence; use Unknown when uncertain.", call. = FALSE)
     list(clusterId = entry$clusterId, label = parsed$primary_annotation,

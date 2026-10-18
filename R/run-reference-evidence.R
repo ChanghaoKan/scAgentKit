@@ -160,6 +160,8 @@
       any(!nzchar(trimws(as.character(table$gene)))) ||
       any(!as.character(table$cluster) %in% ids))
     stop("Reference marker table requires current cluster IDs and nonempty genes.", call. = FALSE)
+  tested_background <- attr(table,"tested_background")
+  if(!is.null(tested_background)) tested_background <- lapply(tested_background,function(genes) unique(.sc_run_reference_resolve(genes,options$symbol_aliases)))
   table <- table[, c("cluster", "gene"), drop = FALSE]
   table$cluster <- as.character(table$cluster); table$gene <- trimws(as.character(table$gene))
   marker_original <- table
@@ -268,6 +270,7 @@
     positive <- all[all$overlap_count > 0L, , drop = FALSE]
     best <- if (nrow(positive)) max(positive$score) else NA_real_
     genes <- table$gene[table$cluster == id]
+    enrichment <- .sc_run_marker_enrichment(genes,by_type,if(is.null(tested_background)) NULL else tested_background[[id]])
     candidates <- lapply(seq_len(nrow(all)), function(i) {
       row <- all[i, , drop = FALSE]; ref_genes <- unique(by_type[[row$cell_type]])
       list(clusterId = id, label = row$cell_type, score = unname(row$score),
@@ -279,6 +282,7 @@
         notInTopMarkers = .sc_project_array(setdiff(intersect(ref_genes, features), genes)),
         formula = .sc_run_reference_scoring()$formula,
         tiedBest = is.finite(best) && abs(row$score - best) <= 1e-12,
+        enrichment = if(identical(enrichment$status,"measured")) Filter(function(x) identical(x$label,row$cell_type),enrichment$records) else enrichment,
         source = "local_marker_reference")
     })
     shown <- head(Filter(function(x) x$overlap > 0L, candidates), options$top_n)
@@ -286,7 +290,7 @@
     if (status %in% c("matched", "no_overlap")) status <- if (!length(genes))
       "missing_marker_information" else if (length(shown)) "matched" else "no_overlap"
     list(clusterId = id, cellCount = sum(membership == id), status = status,
-      candidates = shown, all_candidates = candidates,
+      candidates = shown, all_candidates = candidates, enrichment = enrichment,
       marker_symbols = .sc_run_reference_symbols(marker_original$gene[marker_original$cluster == id],
                                                 options$symbol_aliases))
   })

@@ -164,6 +164,7 @@
         if (!length(local) && !length(local_all)) "no_candidates" else "available"
     list(clusterId = id, cell_count = length(cells), cell_ids = cells, proposal = row,
          cited_marker_stats = cited_stats, supplied_marker_stats = supplied,
+         measured_expression = evidence$private$expression_review,
          local_reference = list(status = reference_status, candidates = local,
            all_candidates = local_all, provenance = provenance),
          expression_assessment = list(per_cell_assessed = FALSE,
