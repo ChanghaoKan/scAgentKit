@@ -69,3 +69,14 @@ explicitly retaining integrity-check overhead. It does not label review time
 as pure collection overhead or human effort. Dataset orchestration reuses only
 complete variants with exact input/reference/library identity and successful
 matching process receipts; incomplete/failed work is never silently repeated.
+
+## Eligibility bookkeeping
+
+The three-metric QC-OR ablation requires measured counts, features and
+mitochondrial fractions. The driver reads the frozen baseline MAD checkpoint,
+records its hash and explicit unavailability reasons, and skips an ineligible
+ablation without substituting a two-metric rule. Independent eligible variants
+still run. Existing failed attempts and their logs are preserved separately.
+`--only-variant after-qc-or` or `--only-variant after-sample-hvg` can finish one
+preregistered ablation after a preserved driver failure. This mode verifies the
+complete frozen baseline and does not repeat completed numerical variants.

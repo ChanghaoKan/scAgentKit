@@ -1,7 +1,7 @@
 """One frozen dataset: execute variants once, preserve failures, score original cells."""
 import argparse,csv,hashlib,json,os,subprocess,time
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('evidence');p.add_argument('baseline_library');p.add_argument('after_library');p.add_argument('dataset',choices=['pbmc3k','ifnb','baron']);p.add_argument('--after-directory',help='Explicit verified PBMC stopped-snapshot finalization directory; changes storage only, never analysis criteria');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('evidence');p.add_argument('baseline_library');p.add_argument('after_library');p.add_argument('dataset',choices=['pbmc3k','ifnb','baron']);p.add_argument('--after-directory',help='Explicit verified PBMC stopped-snapshot finalization directory; changes storage only, never analysis criteria');p.add_argument('--only-variant',choices=['after-qc-or','after-sample-hvg'],help='Complete one preregistered ablation after a preserved orchestration failure; never rerun completed variants');a=p.parse_args()
 repo=Path(__file__).resolve().parents[2];scripts=Path(__file__).resolve().parent
 e=Path(a.evidence).resolve();dataset=a.dataset;out=e/'comparison'/dataset;out.mkdir(parents=True,exist_ok=True)
 input_dir=e/'prepared-v2'/dataset
@@ -37,7 +37,30 @@ variants=['baseline','after','after-no-diagnostics','after-qc-or']
 if dataset=='baron':variants+=['after-sample-hvg']
 else:
  (out/'sample-hvg-ineligible.json').write_text(json.dumps(dict(dataset=dataset,status='ineligible',reason='PBMC3k has one sample; IFNB has condition but no declared actual sample. Treatment is never a sample surrogate.'),indent=2)+'\n')
+if a.only_variant:
+ assert a.only_variant in variants,'Requested ablation is ineligible for this dataset'
+ baseline_receipt=json.loads((out/'baseline-1/run.json').read_text())
+ assert baseline_receipt['status']=='complete' and baseline_receipt['dataset']==dataset
+ assert Path(baseline_receipt['source_library']).resolve()==Path(a.baseline_library).resolve()
+ assert baseline_receipt['input_sha256']==hashlib.sha256((input_dir/'input.rds').read_bytes()).hexdigest()
+ assert baseline_receipt['reference_sha256']==hashlib.sha256((e/'references'/(reference+'-markers.csv')).read_bytes()).hexdigest()
+ variants=[a.only_variant]
 for variant in variants:
+ # Missing measurements make the preregistered three-metric OR unavailable.
+ # Record this before attempting it, and continue independent eligible variants.
+ # Existing failed attempts remain untouched and are never reused as successes.
+ if variant=='after-qc-or':
+  checkpoints=list((out/'baseline-1/project/checkpoints').glob('qc_mad-*.rds'))
+  assert len(checkpoints)==1,'Expected one frozen baseline MAD checkpoint'
+  eligibility=out/'qc-or-frozen-eligibility.json'
+  if not eligibility.exists():
+   run('qc-or-frozen-eligibility',['Rscript','--vanilla',str(scripts/'qc_eligibility.R'),str(checkpoints[0]),str(eligibility)])
+  proof=json.loads(eligibility.read_text())
+  assert proof['checkpoint_sha256']==hashlib.sha256(checkpoints[0].read_bytes()).hexdigest(),'Stale QC eligibility proof'
+  assert proof['status'] in ('eligible','ineligible')
+  if proof['status']=='ineligible':
+   print('INELIGIBLE '+dataset+' after-qc-or: '+str(proof['preset']['unavailable_reasons']),flush=True)
+   continue
  # Independently executed complete variants may be reused only on exact frozen
  # inputs/library/reference identity. Never repeat failed or incomplete work.
  name=variant+'-1';root=out/name
@@ -74,4 +97,4 @@ for variant in variants:
  evaluate('singler-author-agreement',classifier/'predictions.csv',name)
  evaluate('reviewed-control-agreement',manual,name)
  evaluate('candidate-reference-agreement',root/'reference-candidates.csv',name,out/'singler-baseline-1'/'predictions.csv')
-print('DATASET COMPLETE '+dataset,flush=True)
+print(('REQUESTED ABLATION COMPLETE ' if a.only_variant else 'DATASET COMPLETE ')+dataset,flush=True)
