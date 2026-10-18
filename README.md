@@ -102,6 +102,8 @@ Use a new `project_dir` for each new analysis. Starting from counts reruns basic
 
 Check the displayed study facts, measured QC distributions and projected cell retention. The main entry shows the existing MAD candidates for declared sample/QC groups, with their measured thresholds, retention and unavailable reasons. With no declared group it shows pooled, unstratified evidence. The initial keep-all quality choice avoids deleting uncertain cells without study evidence; `nCount >= 1` only excludes all-zero input, not low-quality cells in general. High counts, ribosomal or haemoglobin expression do not authorize automatic deletion. Raw MEX import is not empty-droplet calling. Edit the candidate or ranges and inspect their impact before approval. Batch correction and doublet detection require separate explicit settings.
 
+The initial PC policy requests at most 50 components, with a visible smaller request for the proposed cell/feature scope, and suggests the first leading PCs reaching 80% **within the first at most 50 actually computed PCs**. The denominator is their variance sum, not total HVG or transcriptome variance. Inspect the computed count, shortfall, exact denominator and candidate status; a one-PC or numerically rank-deficient choice is rejected, not silently repaired. This empirical rule is editable and does not establish an optimal PC count.
+
 Save the complete strategy, inspect the updated review, then choose **Approve and continue**. The local worker runs the approved steps and stops at annotation preparation. Expect saved clusters, embeddings and marker evidence. You can close the page and reopen the same project later.
 
 ### 3. Prepare and review annotations
