@@ -55,6 +55,11 @@
   old <- state$config$recommendation_facts
   if (is.null(old)) old <- list()
   declared <- state$config$doublet_diagnostics
+  algorithm_keys <- c("column_prefix", "seed", "nfeatures", "dims", "artificial_doublets", "iter", "clusters")
+  # Diagnostics may be disabled by an unavailable dependency or input guard.
+  # Retain the author's algorithm settings independently across later edits.
+  settings <- state$config$recommendation_doublet_settings
+  if (is.null(settings) && is.list(declared)) settings <- declared[intersect(algorithm_keys, names(declared))]
   if (is.list(declared)) {
     keys <- intersect(c("data_type", "technology", "input_source", "empty_droplets_removed",
       "full_called_cohort", "capture", "rate"), names(declared))
@@ -69,6 +74,7 @@
   merged <- utils::modifyList(old, facts, keep.null = TRUE)
   .sc_run_recommend_facts_typed(merged)
   config <- state$config
+  config$recommendation_doublet_settings <- settings
   context <- config$context
   for (role in names(merged$columns)) context$columns[[role]] <- merged$columns[[role]]
   capture <- merged$doublet$capture
@@ -115,10 +121,10 @@
       options <- preparation$options
       # Facts may correct provenance without silently changing the original
       # author's explicit, noneditable classifier settings or output columns.
-      if (is.list(declared)) for (key in intersect(c("column_prefix", "seed", "nfeatures",
-          "dims", "artificial_doublets", "iter", "clusters"), names(declared)))
-        options[[key]] <- declared[[key]]
+      if (is.list(settings)) for (key in intersect(algorithm_keys, names(settings)))
+        options[[key]] <- settings[[key]]
       config$doublet_diagnostics <- .sc_run_doublet_options(context, options)
+      config$recommendation_doublet_settings <- config$doublet_diagnostics[algorithm_keys]
     }
   } else if (!is.null(config$doublet_diagnostics)) {
     config$doublet_diagnostics <- .sc_run_doublet_options(context, config$doublet_diagnostics)

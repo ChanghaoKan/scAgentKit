@@ -166,4 +166,48 @@ test_that("existing noneditable doublet algorithm settings survive single author
   }
   expect_identical(captured$input_source, "Corrected author provenance")
   expect_null(out$doublet_diagnostics)
+  # The first guard intentionally disabled the diagnostic. A second correction
+  # must still retain its original noneditable algorithm settings.
+  second <- .sc_run_recommend_facts_config(list(config = out),
+    list(doublet = list(input_source = "Second author correction")), input)
+  for (key in c("column_prefix", "seed", "nfeatures", "dims", "artificial_doublets", "iter", "clusters")) {
+    expect_identical(captured[[key]], original[[key]], info = key)
+    expect_identical(second$recommendation_doublet_settings[[key]], original[[key]], info = key)
+    expect_null(second$recommendation_facts$doublet[[key]], info = key)
+  }
+  expect_null(second$doublet_diagnostics)
+  expect_error(.sc_run_recommend_facts_typed(list(recommendation_doublet_settings = list(seed = 99))), "supported")
+})
+
+test_that("an initial dependency gap preserves settings for later ready preparation", {
+  dependency_available <- FALSE
+  captured <- NULL
+  testthat::local_mocked_bindings(.sc_run_doublet_versions = function() list(
+    scDblFinder = if (dependency_available) "1.26.7" else NA_character_, xgboost = "3.1.0",
+    SingleCellExperiment = "1.0.0", SummarizedExperiment = "1.0.0", S4Vectors = "1.0.0", BiocParallel = "1.0.0"),
+    .sc_run_recommend_facts_doublet_guard = function(input, config) {
+      captured <<- config$doublet_diagnostics
+      list(ready = FALSE, reasons = list("Unsupported fixture cohort"), capture_counts = list(), scoring_executed = FALSE)
+    }, .package = "scAgentKit")
+  fixture <- facts_fixture_functions()
+  input <- fixture$recommend_workspace_input()
+  context <- list(species = "human")
+  original <- .sc_run_doublet_options(context, list(data_type = "scrna_droplet",
+    technology = "declared_droplet_other", input_source = "Original author input", empty_droplets_removed = TRUE,
+    capture = list(method = "single", id = "one", source = "Author loading record"),
+    rate = list(method = "manual", value = .05, source = "Author sourced rate"),
+    nfeatures = 200L, seed = 321L, column_prefix = "prior_doublet"))
+  config <- list(context = context, assay = "RNA", counts_layer = "counts", doublet_diagnostics = original)
+  first <- .sc_run_recommend_facts_config(list(config = config),
+    list(doublet = list(input_source = "Corrected during dependency gap")), input)
+  expect_null(first$doublet_diagnostics)
+  expect_null(captured)
+  expect_identical(first$recommendation_doublet_settings$seed, original$seed)
+  dependency_available <- TRUE
+  second <- .sc_run_recommend_facts_config(list(config = first),
+    list(doublet = list(input_source = "Corrected after dependency availability")), input)
+  expect_identical(captured$seed, original$seed)
+  expect_identical(captured$nfeatures, original$nfeatures)
+  expect_identical(captured$column_prefix, original$column_prefix)
+  expect_null(second$doublet_diagnostics)
 })
