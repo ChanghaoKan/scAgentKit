@@ -241,3 +241,5 @@ The default is `"off"`. Unconfigured manual projects continue locally without a
 model. Provider/model/budget remain immutable R-side configuration; no browser
 credential input is added. Explicit `"simulate"` is for saved mock projects only
 and is visibly marked as a zero-model software control.
+
+Direct R entry also accepts [10x MEX directories or a single sample/path table](../docs/TENX_INPUT.md). The browser shows the protected input receipt before reviewing basic analysis; advanced downstream modules are not run by default.

@@ -1,255 +1,124 @@
 # scAgentKit
 
-scAgentKit is an R package for single-cell RNA-seq analysis with Seurat. It
-organizes quality control, dimensionality reduction, clustering, marker analysis
-and cell-type annotation into a saved project with explicit strategy and
-annotation review. Analyses can be continued across R sessions, with optional
-model proposals and browser-based review.
+scAgentKit helps researchers with a biological background spend less time maintaining a single-cell RNA-seq workflow. Starting from counts and sample facts or a Seurat/RDS object, it guides QC, basic analysis and annotation through a saved, reviewable project.
 
-The standard workflow accepts a named genes × cells raw-count matrix, a Seurat
-object containing RNA counts, or an RDS file containing either. It produces a
-new Seurat object, cluster annotations, marker tables, figures and an analysis
-record. Processed-object reuse, batch methods and child analyses are described
-in the [documentation](docs/README.md).
+You receive a new Seurat object with counts, sample metadata, reductions and reviewed labels, plus marker tables, figures and the evidence and reasons behind decisions. QC, integration and clustering still require study judgement; default settings are starting points. FASTQ processing is upstream. Research-specific trajectory, communication and regulatory-network analyses are downstream and are not run automatically.
 
 ## Installation
 
-Requires R ≥ 4.2 and Seurat ≥ 5. Browser use also requires an existing Python
-≥ 3.9 executable. Browser assets and Python modules are included in the R
-package; no separate checkout is needed after installation. To install this
-source version, download and unpack the repository, or clone it once:
+Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.5.0.9000` is experimental.
 
-```sh
-git clone https://github.com/ChanghaoKan/scAgentKit.git ~/src/scAgentKit
-```
-
-Install the package from that same directory into a separate R library:
+Install the source archive supplied with this version into your own R library:
 
 ```r
-lib <- path.expand("~/R/scagentkit")
-checkout <- normalizePath("~/src/scAgentKit", mustWork = TRUE)
-dir.create(lib, recursive = TRUE, showWarnings = FALSE)
+lib <- path.expand("~/R/scagentkit-library")
+dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
-if (!requireNamespace("remotes", quietly = TRUE))
-  install.packages("remotes", repos = "https://cloud.r-project.org")
-remotes::install_local(checkout, lib = lib,
-  dependencies = c("Depends", "Imports"), upgrade = "never", build = FALSE)
+if (!requireNamespace("remotes", quietly=TRUE))
+  install.packages("remotes", repos="https://cloud.r-project.org")
+remotes::install_local("scAgentKit_0.5.0.9000.tar.gz", lib=lib,
+  dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit)
+packageVersion("scAgentKit")
 ```
 
-This installs the required dependencies, including `agentomicsCore` from its
-declared GitHub source. Optional methods have additional requirements. For
-version pinning, managed environments and platform support, see
-[installation](docs/RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认) and
-[runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
+Run from the directory containing the downloaded archive, or give its full path.
+This installs required dependencies, including the declared
+`ChanghaoKan/agentomicsCore@v0.1.1`. For a verified local checkout, replace the
+archive argument with that checkout's full path. Existing managed environments
+can instead use `R CMD INSTALL` after dependencies are available.
 
-## Start from an RDS file
+Use the archive/checkout that supplies this README; an older installed release or remote `main` may not contain these interfaces. Optional model and analysis methods have additional configuration. See [installation and runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
 
-In R, start a new project from a local RDS containing raw counts or a Seurat
-object. Declare the study facts; they are not inferred from the input:
+## Analysis protocol
+
+### 1. Choose counts and declare sample facts
+
+For one 10x MEX directory, declare a unique sample ID and whether the source matrix is raw or filtered:
 
 ```r
-sc_start("a.rds", "analysis",
-  context = list(species = "human", tissue = "Peripheral blood",
-    research_goal = "Characterize the major immune populations."))
+input <- "filtered_feature_bc_matrix"
+project_dir <- "analysis"
+context <- list(species="human", tissue="Actual tissue",
+  research_goal="Actual study question")
+service <- sc_start(input, project_dir, context=context,
+  sample_id="S1", matrix_kind="filtered")
 ```
 
-The function opens the local browser and returns control to R. Inspect and edit
-the strategy, then approve and continue. At annotation, prepare the blank table,
-enter interpretations and supporting markers, save the complete proposal, and
-review it before approving and continuing to the result. An explicit bulk action
-can retain unfilled populations as `Unknown` with a shared reason; unresolved
-population and cell counts remain visible.
+The local review page opens and R returns control. Expect an import summary and an unapproved strategy. Raw input keeps all supplied barcodes; import does not perform empty-droplet calling. Check source class, cell counts, feature-key changes and metadata alignment before proceeding.
 
-The annotation worksheet brings saved marker statistics and scoped local reference
-candidates into the same view. Selecting a candidate can carry its label and
-checkable citations into an untouched row; confidence and interpretation remain
-yours. Coverage is descriptive overlap, never a probability. Local drafts survive
-a same-tab reload only for their exact evidence/revision. See
-[annotation assistance](docs/ANNOTATION_ASSISTANCE.md) for protection, unknowns
-and optional configured-model access.
-
-Repeating the call uses the installed resources and reuses its matching live
-service or restarts a stopped service, preserving the saved analysis:
+For multiple samples, replace the call above with one table containing both paths and study facts:
 
 ```r
-sc_start("a.rds", "analysis")
+input <- data.frame(sample_id=c("S1", "S2"),
+  path=c("counts/control", "counts/treated"),
+  matrix_kind=c("filtered", "filtered"),
+  donor=c("D1", "D2"), condition=c("control", "treated"))
+service <- sc_start(input, project_dir, context=context)
 ```
 
-The original RDS must retain the same path and content for this entry. Use
-`sc_run_open("analysis")` for a read-only saved-result viewer. See the
-[workbench guide](workbench/README.md#start-from-r) for environment setup,
-processed-object reuse and server access. No R/terminal switching is required
-between strategy review, annotation and results.
+Cell IDs become `sample_id::barcode`, so repeated barcodes across samples remain distinct. Optional cell metadata joins by exact sample/barcode keys. Gene Expression feature ID sets must match across samples; no feature intersection or aggregation is applied. See [10x input and sample tables](docs/TENX_INPUT.md) for file/table formats, original feature identity and alignment details.
 
-## First analysis
-
-The example uses the public 10x Genomics PBMC3k counts introduced in the
-[Seurat tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial).
-Work through each review step in sequence, recording your reviewer identity
-and the rationale for each decision.
-
-### 1. Load the data
+For an existing RDS containing raw counts or a Seurat object, use:
 
 ```r
-data_dir <- file.path(getwd(), "pbmc3k-data")
-dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
-archive <- file.path(data_dir, "pbmc3k_filtered_gene_bc_matrices.tar.gz")
-download.file(
-  "https://cf.10xgenomics.com/samples/cell/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz",
-  archive, mode = "wb")
-untar(archive, exdir = data_dir)
-counts <- Seurat::Read10X(file.path(data_dir, "filtered_gene_bc_matrices", "hg19"))
-seu <- Seurat::CreateSeuratObject(counts = counts, project = "PBMC3k")
-project_dir <- file.path(getwd(), "pbmc3k-analysis")
+input <- "a.rds"
+service <- sc_start(input, project_dir, context=context)
 ```
 
-For your own study, replace the input and describe its species, tissue,
-research question and available experimental design. Use a new project
-directory for a new analysis.
+Use a new `project_dir` for each new analysis. Starting from counts reruns basic analysis; [processed-object reuse](workbench/README.md) is an explicit alternative.
 
-### 2. Review the analysis strategy
+### 2. Review the strategy and run basic analysis
 
-`sc_analyze()` prepares a strategy and its projected QC impact. Here, the
-feature-count and mitochondrial thresholds follow the PBMC tutorial's starting
-choices; select settings appropriate to the observed distributions and study.
+Check the displayed study facts, measured QC distributions and projected cell retention. Edit QC, normalization, PC selection, batch handling and clustering choices for your data. Initial QC retains count-positive cells; it is not study-optimized filtering. Batch correction and doublet detection are not enabled just by supplying sample metadata.
 
-```r
-project <- sc_analyze(seu, project_dir,
-  context = list(
-    species = "human", tissue = "Peripheral blood",
-    research_goal = "Characterize the major immune populations in this PBMC library.",
-    notes = "Single public library; donor and capture metadata are unavailable."),
-  plan = list(
-    rationale = "PBMC starting strategy for review against measured QC distributions.",
-    qc = list(nFeature = c(200, 2500), percent_mt = c(NA, 5)),
-    pcs = 10, resolution = 0.5))
-strategy <- sc_review(project)
-```
+Save the complete strategy, inspect the updated review, then choose **Approve and continue**. The local worker runs the approved steps and stops at annotation preparation. Expect saved clusters, embeddings and marker evidence. You can close the page and reopen the same project later.
 
-Review cell retention, normalization, PC selection, batch handling and
-clustering in the displayed plan. To change a choice, save a revision with
-`sc_review(strategy, "revise", plan = list(...), reviewer = ..., reason = ...)`
-and inspect the returned plan. For example, `plan = list(pcs = 12)` changes PC
-selection while preserving the other displayed settings.
+### 3. Prepare and review annotations
 
-Approve the reviewed strategy to run the local analysis through clustering and
-marker detection:
+Open the annotation worksheet. Each row shows a saved cluster's markers and any configured local reference candidates. Conflicts and missing evidence are flagged; detailed statistics and provenance expand in place.
+
+Enter a label, qualitative confidence, evidence-based rationale and supporting supplied markers for each population. Explicitly selecting a reference candidate can copy its label and same-cluster citations into an untouched row; confidence and interpretation remain yours. Coverage is overlap, not a probability. Use a coarse label or **Unknown** when the evidence is insufficient. The bulk Unknown action requires an entered reason and preserves edited rows.
+
+Choose **Save complete proposal**, inspect all populations together, then **Approve annotation and continue**. Saving a draft does not apply labels. Expect the completed state and result page after approval. A model is optional; the manual path requires no provider. See [annotation assistance](docs/ANNOTATION_ASSISTANCE.md) and [configured model requests](docs/UNIFIED_MODEL_REVIEW.md) for details.
+
+### 4. Retrieve the result
+
+In the same R library environment:
 
 ```r
-annotation <- sc_review(strategy, "approve", reviewer = "researcher",
-  reason = "Reviewed QC retention and the analysis strategy for this PBMC library.",
-  continue = TRUE)
-```
-
-### 3. Review and submit cluster annotations
-
-The returned review contains the cluster markers and an annotation worksheet.
-Inspect expression and the embedding alongside the supplied marker evidence:
-
-```r
-analysis <- sc_result(annotation, stage = "analysis")
-Seurat::DimPlot(analysis, reduction = "umap", label = TRUE)
-Seurat::FeaturePlot(analysis, features = c("CD3D", "MS4A1", "LYZ", "NKG7"))
-annotations <- utils::edit(annotation$annotations)
-```
-
-In the R data editor, retain each `clusterId` and complete the remaining fields
-for every cluster:
-
-| Field | Content |
-| --- | --- |
-| `label` | The reviewed cell type or population description |
-| `confidence` | `low`, `medium` or `high`, as a qualitative assessment |
-| `rationale` | Evidence supporting the assignment and any unresolved alternatives |
-| `markers` | Semicolon-separated gene names from that cluster's supplied marker evidence |
-
-For example, concordant CD79A and MS4A1 evidence can support a B-cell assignment;
-its worksheet entry would cite `CD79A;MS4A1` and explain that interpretation.
-Use `Unknown` with a rationale for unresolved populations. Cluster IDs and
-annotations depend on the data and analysis settings. For file-based editing,
-see the [detailed walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md#3-read-markers-and-submit-annotations).
-The [annotation guide](docs/ANNOTATION_REVIEW.md) describes evidence and review decisions.
-
-Save the completed worksheet, inspect the full annotation proposal returned by
-`sc_review()`, and approve it to apply the labels:
-
-```r
-proposal <- sc_review(annotation, "revise", annotations = annotations,
-  reviewer = "researcher",
-  reason = "Prepared cluster annotations from the supplied markers and expression plots.")
-completed <- sc_review(proposal, "approve", reviewer = "researcher",
-  reason = "Reviewed the complete annotation proposal and supporting evidence.",
-  continue = TRUE)
-```
-
-### 4. Retrieve results and reopen the project
-
-```r
-result <- sc_result(completed)
-Seurat::DimPlot(result, reduction = "umap", group.by = "sc_annotation", label = TRUE)
+result <- sc_result(project_dir)
+Seurat::DimPlot(result, reduction="umap", group.by="sc_annotation", label=TRUE)
 table(result$sc_annotation)
-completed$view$output
+sc_open(project_dir)$view$output
 ```
 
-`result` is the final Seurat object with the reviewed annotations. The project
-also retains marker tables, figures and the analysis record. `sc_result(...,
-stage = "analysis")` retrieves the earlier analysis object when annotation is
-still in progress.
+`result` is the verified final Seurat object, ready for research-specific follow-up. The project directory also holds markers, metadata, parameters, figures and decision records. Before annotation is complete, `sc_result(project_dir, stage="analysis")` explicitly returns the provisional analysis object.
 
-In a later R session, load the same package environment and reopen the project:
+### 5. Reopen and continue
+
+Use the same package/dependency environment. Repeat the relevant input call with the same project and original inputs/options, omitting context to reuse saved facts:
 
 ```r
-library(scAgentKit)
-project <- sc_open("pbmc3k-analysis")
-review <- sc_review(project)
-result <- sc_result(project)
+# For the single-directory example:
+sc_start("filtered_feature_bc_matrix", project_dir,
+  sample_id="S1", matrix_kind="filtered")
+# For the sample-table example: sc_start(input, project_dir)
+# For the RDS example: sc_start("a.rds", project_dir)
 ```
 
-For an unfinished project, `sc_review()` displays the current stage so you can
-continue its review and execution. Opening a project does not resume work.
-See [recovery and saved results](docs/RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)
-for interrupted runs and environment changes.
+The page shows the saved stage; reopening does not approve or rerun it. Keep the original input binding unchanged for this entry. To inspect saved results independently of the original source location, use `sc_open(project_dir)`, `sc_result(project_dir)`, or `sc_run_open(project_dir)` for the read-only browser.
 
-## Optional model assistance
+## More detail
 
-A configured provider can propose analysis strategies and cluster annotations.
-The [model-assisted R workflow](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md#model-assisted-workflow-with-the-r-interface)
-covers provider setup, budget configuration and the complete request sequence
-using the same R interface. Review the outgoing evidence before authorizing a
-request, then review the returned scientific proposal before local execution.
-Model use is optional; the workflow above does not require a provider.
+- [R-only protocol with public PBMC3k](docs/R_ANALYSIS_PROTOCOL.md)
+- [10x MEX, sample tables and keyed cell metadata](docs/TENX_INPUT.md)
+- [Analysis strategy and supported methods](docs/ANALYSIS_STRATEGY_SUPPORT.md)
+- [Annotation evidence and decisions](docs/ANNOTATION_REVIEW.md)
+- [Browser and remote server setup](workbench/README.md)
+- [Researcher protocol — 中文](docs/RESEARCHER_PROTOCOL_ZH.md)
+- [Documentation index](docs/README.md)
 
-For model requests in the optional browser, see [model review](docs/UNIFIED_MODEL_REVIEW.md).
-
-## Browser review
-
-The [local workbench](workbench/README.md) displays saved embeddings, labels and
-proportions, marker evidence and questions requiring review. It also provides
-annotation editing and supported review controls. It requires Python ≥ 3.9 and
-the resources included in the R package; follow the workbench guide for
-local and remote setup.
-
-## Documentation
-
-| Topic | Reference |
-| --- | --- |
-| Complete operating guide, including installation and recovery | [Researcher protocol — 中文](docs/RESEARCHER_PROTOCOL_ZH.md) |
-| Analysis settings, QC and supported methods | [Strategy guide](docs/ANALYSIS_STRATEGY_SUPPORT.md) |
-| Annotation evidence and decisions | [Annotation review](docs/ANNOTATION_REVIEW.md) |
-| Model configuration and requests | [Model-assisted workflow](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md#model-assisted-workflow-with-the-r-interface) |
-| Browser use and server setup | [Workbench guide](workbench/README.md) |
-| Advanced workflows and additional methods | [Documentation index](docs/README.md) |
-
-R function documentation is available through `?sc_analyze` and
-`help(package = "scAgentKit")`. The [detailed walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md)
-retains the advanced R workflows and examples.
-
-## Project status
-
-The current version, **0.5.0.9000**, is experimental. Method selection,
-annotations and biological interpretation require study-specific review.
-Supported runtime combinations and deployment scope are documented in the
-[runtime guide](docs/LINUX_RUNTIME_SUPPORT.md).
+R help: `?sc_start`, `?sc_analyze`, `help(package="scAgentKit")`.
 
 [Version history](NEWS.md) · [License](LICENSE.md)

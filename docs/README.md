@@ -46,3 +46,7 @@ checks are defined in [.github/workflows](../.github/workflows).
 
 - [Annotation evidence assistance](ANNOTATION_ASSISTANCE.md): local facts, explicit candidates, protected drafts and complete-proposal review.
 - [Offline comparison contract](OFFLINE_COMPARISON_CONTRACT.md): public cases, synthetic controls, installation/platform gates and benchmark prerequisites.
+
+- [Direct 10x MEX input and sample tables](TENX_INPUT.md): explicit source class, unique cell IDs, feature identity and exact metadata alignment.
+
+- [R-only public PBMC3k protocol](R_ANALYSIS_PROTOCOL.md): full manual strategy, annotation and result sequence.

@@ -133,7 +133,16 @@
 #' Start an analysis with an editable strategy draft
 #' @export
 sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL,
-                       chat_fn = NULL, budget = 0, review = list(allow_external = FALSE), ...) {
+                       chat_fn = NULL, budget = 0, review = list(allow_external = FALSE),
+                       sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
+                       feature_key = c("name", "id"), ...) {
+  imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
+  input <- imported$input; context <- imported$context
+  if (imported$imported) {
+    transport <- tempfile("scagentkit-tenx-",fileext=".rds")
+    on.exit(unlink(transport),add=TRUE)
+    saveRDS(input,transport,version=2L);input<-transport
+  }
   extra <- list(...)
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)

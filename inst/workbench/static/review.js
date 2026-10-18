@@ -1417,8 +1417,20 @@ function renderStrategy() {
   $("strategy-record").replaceChildren(raw(record));
   updateStrategyDraftStatus();
 }
+function renderImport(summary) {
+  const target = $("run-import"); if (!target) return;
+  target.hidden = !summary; target.replaceChildren(); if (!summary) return;
+  target.append(element("h2", "10x input and sample alignment"),
+    element("p", `${summary.n_cells} supplied barcodes · ${summary.n_features} Gene Expression features · cell IDs: ${summary.cell_id_format}`),
+    table(["Sample", "Source directory", "Declared matrix", "Barcodes"], array(summary.samples).map(s => [s.sample_id, s.path, s.matrix_kind, s.n_cells])),
+    element("p", summary.feature_policy), element("p", `${summary.n_key_changes} analysis keys changed; original feature identities and counts retained.`), element("p", summary.symbol_note),
+    element("p", `Cell metadata: ${summary.cell_metadata.supplied ? "joined by exact sample_id + barcode" : "not supplied"}; ${summary.cell_metadata.reordered_by_key ? "reordered to counts by key" : "no reordering needed"}; missing ${summary.cell_metadata.missing}, extra ${summary.cell_metadata.extra}.`),
+    element("p", "Explicit role mapping: " + json(summary.columns)), element("p", summary.raw_note));
+  const details = element("details"); details.append(element("summary", "Analysis-key mapping, source hashes and excluded modalities"), raw({key_changes:summary.key_changes,files:summary.files,source_tables:summary.source_tables})); target.append(details);
+}
 function render() {
   const run = state.view.run, current = run.review_node;
+  renderImport(run.input_import);
   $("run-workbench-link").hidden = false; $("run-workbench-link").setAttribute("href", scopedRunURL("/workbench"));
   $("run-home").setAttribute("href", scopedRunURL("/workbench"));
   $("run-header-scope").hidden = state.scopes?.workspace_enabled === false || !state.scopes;

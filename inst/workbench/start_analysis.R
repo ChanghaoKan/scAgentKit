@@ -11,14 +11,25 @@ provider_metadata <- function(root) {
   list(name=state$config$provider$name,api_key_env=state$config$provider$api_key_env)
 }
 input <- readRDS(request$input)
+if (isTRUE(request$tenx_import) && (!inherits(input,"Seurat") ||
+    !identical(input@misc$scagentkit_tenx_import$schema,"scagentkit.tenx-import.v1")))
+  stop("10x input requires the R entry adapter and its source receipt.")
 if (inherits(input, "Seurat") && (length(input@reductions) || "seurat_clusters" %in% colnames(input[[]])))
   message("Input contains saved reductions or clusters. They do not establish analysis quality. Selected entry: ", request$entry)
 if (file.exists(request$project)) {
   if (!isTRUE(request$reopen)) stop("Use a new project path; open saved projects explicitly.")
   root <- get(".sc_run_root", ns)(request$project)
   state <- get(".sc_run_load", ns)(root)
+  imported <- isTRUE(request$tenx_import)
+  if (imported) {
+    saved <- get(".sc_run_get",ns)(root,state,"input")
+    receipt <- input@misc$scagentkit_tenx_import
+    if (is.null(receipt) || !identical(receipt$schema,"scagentkit.tenx-import.v1") ||
+        !identical(receipt,saved@misc$scagentkit_tenx_import))
+      stop("10x import differs from the protected input; reopen with the exact original inputs/options or start a new project.")
+  }
   if (!identical(state$source$type, "local_rds") ||
-      !identical(state$source$path, normalizePath(request$input, mustWork = TRUE)) ||
+      (!imported && !identical(state$source$path, normalizePath(request$input, mustWork = TRUE))) ||
       !identical(state$source$rds_sha256, get(".sc_project_sha_file", ns)(request$input)))
     stop("Existing project has a different original RDS binding; open the intended project without replacing its input.")
   if (!identical(state$config$start_stage, if (identical(request$entry, "processed")) "processed" else "qc"))

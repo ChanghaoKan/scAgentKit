@@ -42,8 +42,10 @@ answer <- tryCatch({
       result <- do.call(scAgentKit::sc_run_prepare_annotation, c(list(project_dir = project_dir), request))
     } else result <- do.call(scAgentKit::sc_run_review, c(list(project_dir = project_dir), request))
   }
-  if (identical(result$schema,"scagentkit.run.v1"))
+  if (identical(result$schema,"scagentkit.run.v1")) {
     result <- getFromNamespace(".sc_ui_annotation_assistance","scAgentKit")(project_dir,result)
+    result <- getFromNamespace(".sc_ui_import_summary","scAgentKit")(project_dir,result)
+  }
   list(ok = TRUE, result = result, error = NULL)
 }, error = function(problem) list(ok = FALSE, result = NULL,
   error = if (startsWith(operation, "suggestion_"))

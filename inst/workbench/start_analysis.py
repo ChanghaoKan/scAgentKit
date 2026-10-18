@@ -37,6 +37,7 @@ def main(argv=None):
     parser.add_argument("--background", action="store_true", help="Reuse the existing local service launcher and return its identity")
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--reopen", action="store_true", help="Open an existing project after verifying its original RDS binding")
+    parser.add_argument("--tenx-import", action="store_true", help="Internal R adapter: input RDS contains an exact 10x import receipt")
     parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
     parser.add_argument("--source-checkout", help="Explicit matching developer source tree")
     model = parser.add_mutually_exclusive_group()
@@ -69,7 +70,7 @@ def main(argv=None):
                            "research_goal": args.research_goal},
                "entry": "processed" if args.reuse_processed else "raw",
                "processed_reason": args.processed_reason, "cluster_column": args.cluster_column,
-               "reopen": args.reopen}
+               "reopen": args.reopen, "tenx_import": args.tenx_import}
     if args.notes.strip():
         request["context"]["notes"] = args.notes
     if args.context_file:

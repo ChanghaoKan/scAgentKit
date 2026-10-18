@@ -1,5 +1,9 @@
 #' Start or reopen a reviewed analysis in the local browser
-#' @param input Local RDS path containing counts or a Seurat object.
+#' @param input Local RDS, 10x MEX directory, or sample table (data.frame/CSV/TSV).
+#' @param sample_id Explicit ID for one MEX directory; table inputs declare it per row.
+#' @param matrix_kind Explicit raw/filtered declaration for one MEX directory.
+#' @param cell_metadata Optional keyed sample_id/barcode cell metadata data.frame/CSV/TSV.
+#' @param feature_key Original names with recorded technical keys (default), or compatible IDs.
 #' @param project_dir New project directory, or the same saved project to reopen.
 #' @param context Declared species, tissue, research_goal, optional notes, columns and design.
 #'   Required on creation; omitted when reopening with saved context.
@@ -17,10 +21,22 @@
 sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   python = NULL, browse = interactive(), reuse_processed = FALSE,
   processed_reason = NULL, cluster_column = "seurat_clusters",
-  model_suggestions = c("off", "configured", "simulate")) {
+  model_suggestions = c("off", "configured", "simulate"),
+  sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
+  feature_key = c("name", "id")) {
   model_suggestions <- match.arg(model_suggestions)
-  .sc_project_string(input, "input RDS path")
   .sc_project_string(project_dir, "project_dir")
+  existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
+  if (existing && is.null(context)) context <- .sc_run_load(.sc_run_root(project_dir))$config$context
+  imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
+  context <- imported$context
+  if (imported$imported) {
+    if (reuse_processed) stop("10x MEX is raw counts; processed reuse requires an explicitly prepared Seurat RDS.",call.=FALSE)
+    input <- tempfile("scagentkit-tenx-",fileext=".rds")
+    on.exit(unlink(input),add=TRUE)
+    saveRDS(imported$input,input,version=2L)
+  }
+  .sc_project_string(input, "input RDS path")
   input <- normalizePath(path.expand(input), mustWork = TRUE)
   if (dir.exists(input)) stop("input must be an RDS file.", call. = FALSE)
   for (flag in c("browse", "reuse_processed")) if (!is.logical(get(flag)) ||
@@ -75,6 +91,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     if (!is.null(checkout)) c("--source-checkout",shQuote(checkout)),
     "--cluster-column", shQuote(if (!existing && !reuse_processed && missing(cluster_column)) "sc_strategy_clusters" else cluster_column),
     if (!browse) "--no-browser", if (existing) "--reopen",
+    if (imported$imported) "--tenx-import",
     if (model_suggestions == "configured") "--model-suggestions",
     if (model_suggestions == "simulate") "--model-mock")
   if (reuse_processed) {
