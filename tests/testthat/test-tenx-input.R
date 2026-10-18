@@ -79,6 +79,11 @@ test_that("feature ambiguity and incomplete MEX fail without silent repair",{
 
 test_that("sample TSV resolves relative directories and sc_analyze uses the existing review kernel",{
   root<-tempfile();dir.create(root);f<-tenx_fixture(file.path(root,"sample"),n_genes=80,n_cells=40)
+  # The small reader fixture repeats modulo-five columns at 80 genes. This
+  # entry smoke needs genuinely varying profiles; constant-data rejection is
+  # tested separately and must not be bypassed just to check the importer.
+  varied<-outer(seq_len(80L),seq_len(40L),function(g,cell) (17*g+23*cell+11*g*cell)%%101)
+  Matrix::writeMM(Matrix::Matrix(rbind(varied,rep(2L,40L)),sparse=TRUE),file.path(f$path,"matrix.mtx"))
   samples<-data.frame(sample_id="S1",path="sample",matrix_kind="filtered",donor="D1",condition="control")
   table<-file.path(root,"samples.tsv");utils::write.table(samples,table,sep="\t",quote=FALSE,row.names=FALSE)
   x<-.sc_ui_tenx_input(table,tenx_context())
