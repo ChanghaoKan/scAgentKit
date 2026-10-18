@@ -39,7 +39,7 @@ class RStartTests(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr.decode())
                 value=json.loads(result.stdout.decode().splitlines()[-1]);pids.add(value["pid"]);return value
             try:
-                first=start(',context=list(species="human",tissue="Public PBMC",research_goal="Offline entry validation",columns=list(sample="orig.ident")),checkout=a[3]')
+                first=start(',context=list(species="human",tissue="Public PBMC",research_goal="Offline entry validation",columns=list(sample="orig.ident"))')
                 self.assertFalse(first["reused"])
                 protected=[project/"state.rds",*sorted((project/"checkpoints").glob("*.rds"))]
                 hashes=lambda:{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in protected}

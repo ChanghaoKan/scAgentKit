@@ -14,9 +14,10 @@ in the [documentation](docs/README.md).
 
 ## Installation
 
-Requires R ≥ 4.2 and Seurat ≥ 5. Browser use also requires Python ≥ 3.9 and a
-matching source checkout: browser assets are not included in the installed R
-package. Download and unpack this repository, or clone it once:
+Requires R ≥ 4.2 and Seurat ≥ 5. Browser use also requires an existing Python
+≥ 3.9 executable. Browser assets and Python modules are included in the R
+package; no separate checkout is needed after installation. To install this
+source version, download and unpack the repository, or clone it once:
 
 ```sh
 git clone https://github.com/ChanghaoKan/scAgentKit.git ~/src/scAgentKit
@@ -50,8 +51,7 @@ object. Declare the study facts; they are not inferred from the input:
 ```r
 sc_start("a.rds", "analysis",
   context = list(species = "human", tissue = "Peripheral blood",
-    research_goal = "Characterize the major immune populations."),
-  checkout = checkout)
+    research_goal = "Characterize the major immune populations."))
 ```
 
 The function opens the local browser and returns control to R. Inspect and edit
@@ -61,7 +61,7 @@ review it before approving and continuing to the result. An explicit bulk action
 can retain unfilled populations as `Unknown` with a shared reason; unresolved
 population and cell counts remain visible.
 
-The project remembers the checkout. Repeating the call reuses its matching live
+Repeating the call uses the installed resources and reuses its matching live
 service or restarts a stopped service, preserving the saved analysis:
 
 ```r
@@ -219,7 +219,7 @@ For model requests in the optional browser, see [model review](docs/UNIFIED_MODE
 The [local workbench](workbench/README.md) displays saved embeddings, labels and
 proportions, marker evidence and questions requiring review. It also provides
 annotation editing and supported review controls. It requires Python ≥ 3.9 and
-a source checkout in addition to the R package; follow the workbench guide for
+the resources included in the R package; follow the workbench guide for
 local and remote setup.
 
 ## Documentation

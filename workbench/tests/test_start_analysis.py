@@ -32,6 +32,7 @@ class StartAnalysisTests(unittest.TestCase):
                 str(input_path)], env=env, capture_output=True, timeout=30)
             self.assertEqual(setup.returncode, 0, setup.stderr)
             request = {"input": str(input_path), "project": str(project), "checkout": str(ROOT),
+                       "runtime": str(ROOT / "inst/workbench"),
                        "context": {"species": "human", "tissue": "software fixture"},
                        "entry": "raw", "cluster_column": "seurat_clusters"}
             config.write_text(json.dumps(request))

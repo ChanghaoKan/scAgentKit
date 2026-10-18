@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+"${R_HOME}/bin/Rscript.exe" --vanilla tools/build-workbench-manifest.R

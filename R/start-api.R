@@ -3,8 +3,8 @@
 #' @param project_dir New project directory, or the same saved project to reopen.
 #' @param context Declared species, tissue, research_goal, optional notes, columns and design.
 #'   Required on creation; omitted when reopening with saved context.
-#' @param checkout Matching source checkout containing workbench/start_analysis.py.
-#'   Supply once or set options(scAgentKit.checkout=...). Remembered per project.
+#' @param checkout Optional matching developer checkout. Installed resources are the default.
+#'   Set explicitly or via options(scAgentKit.checkout=...) only for development.
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
 #' @param reuse_processed Explicitly reuse processed layers/clusters. Default FALSE.
@@ -24,9 +24,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
   if (!existing && !reuse_processed && !missing(cluster_column) && !identical(cluster_column,"sc_strategy_clusters"))
     stop("cluster_column selects processed input membership; raw analysis creates sc_strategy_clusters.",call.=FALSE)
-  saved <- list()
   preferences <- file.path(path.expand(project_dir), ".workbench-review-launcher", "preferences.json")
-  if (file.exists(preferences)) saved <- jsonlite::fromJSON(preferences)
   if (existing) {
     state <- .sc_run_load(.sc_run_root(project_dir))
     if (!is.null(context) && (!is.list(context) || is.null(names(context)) || anyDuplicated(names(context)) ||
@@ -47,11 +45,16 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   for (field in c("species", "tissue", "research_goal")) .sc_project_string(context[[field]], field)
   if (!is.null(context$notes) && (!is.character(context$notes) || length(context$notes)!=1L || is.na(context$notes)))
     stop("notes must be one text value.",call.=FALSE)
-  if (is.null(checkout)) checkout <- getOption("scAgentKit.checkout", saved$checkout)
-  if (is.null(checkout)) stop("First use needs a matching source checkout: set checkout='/path/to/scAgentKit' or options(scAgentKit.checkout=...). Python and browser assets are not included in the installed R package.", call. = FALSE)
-  checkout <- normalizePath(path.expand(checkout), mustWork = TRUE)
-  launcher <- file.path(checkout, "workbench", "start_analysis.py")
-  if (!file.exists(launcher)) stop("checkout must contain workbench/start_analysis.py.", call. = FALSE)
+  if (is.null(checkout)) checkout <- getOption("scAgentKit.checkout")
+  if (!is.null(checkout)) {
+    checkout <- normalizePath(path.expand(checkout),mustWork=TRUE)
+    runtime <- file.path(checkout,"inst","workbench")
+    if (!dir.exists(file.path(checkout,"R"))) stop("Developer checkout must contain R sources.",call.=FALSE)
+  } else runtime <- system.file("workbench",package="scAgentKit")
+  if (!nzchar(runtime) || !file.exists(file.path(runtime,"start_analysis.py")))
+    stop("Installed browser runtime missing; reinstall scAgentKit.",call.=FALSE)
+  runtime <- .sc_start_runtime_check(runtime,checkout)
+  launcher <- file.path(runtime,"start_analysis.py")
   if (is.null(python)) python <- unname(Sys.which("python3"))
   if (length(python) != 1L || is.na(python) || !nzchar(python)) stop("Install/configure Python 3.9+ before starting the workbench.", call. = FALSE)
   context_file <- tempfile("scagentkit-context-",fileext=".json")
@@ -65,6 +68,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     "--rscript", shQuote(file.path(R.home("bin"), "Rscript")),
     "--r-library", shQuote(paste(.libPaths(), collapse=.Platform$path.sep)), "--background",
     "--context-file",shQuote(context_file),
+    if (!is.null(checkout)) c("--source-checkout",shQuote(checkout)),
     "--cluster-column", shQuote(if (!existing && !reuse_processed && missing(cluster_column)) "sc_strategy_clusters" else cluster_column),
     if (!browse) "--no-browser", if (existing) "--reopen")
   if (reuse_processed) {
@@ -82,7 +86,14 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   }
   result <- jsonlite::fromJSON(paste(response,collapse="\n"))
   dir.create(dirname(preferences),recursive=TRUE,showWarnings=FALSE,mode="0700")
-  jsonlite::write_json(list(checkout=checkout),preferences,auto_unbox=TRUE)
+  jsonlite::write_json(list(checkout=checkout,runtime=runtime),preferences,auto_unbox=TRUE,null="null")
+  # The existing read-only opener accepts a root containing workbench/. Point it
+  # at the installed package without changing its saved execution fingerprint.
+  readonly <- file.path(path.expand(project_dir),".workbench-launcher","preferences.json")
+  if (!file.exists(readonly)) {
+    dir.create(dirname(readonly),recursive=TRUE,showWarnings=FALSE,mode="0700")
+    jsonlite::write_json(list(checkout=dirname(runtime)),readonly,auto_unbox=TRUE)
+  }
   cat(result$url,"\n")
   invisible(result)
 }

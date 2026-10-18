@@ -10,22 +10,25 @@ first; the browser is optional.
 
 ### Start from R
 
-After installing the package from this matching checkout, keep using R:
+After installing the package, keep using R:
 
 ```r
 library(scAgentKit)
 sc_start("a.rds", "analysis",
   context = list(species = "human", tissue = "Peripheral blood",
-    research_goal = "Characterize the major immune populations."),
-  checkout = "/path/to/scAgentKit")
-# Later: reopen the saved project; its checkout is remembered.
+    research_goal = "Characterize the major immune populations."))
+# Later: reopen the saved project.
 sc_start("a.rds", "analysis")
 ```
 
 This opens a loopback review service with explicit local continuation and returns
 control to R. It passes the current R executable and library paths. On first use,
-Python ≥ 3.9 and a matching source checkout must already be available; browser
-assets are excluded from the installed package. The launcher installs nothing.
+Python ≥ 3.9 must already be available. Browser assets and Python modules are
+included in the R package. The launcher installs nothing. A matching source
+checkout can be selected explicitly with `checkout=` (or the developer option
+`scAgentKit.checkout`); it is checked against the installed R functions and
+resource manifest. Development changes require regenerating the manifest with
+`Rscript tools/build-workbench-manifest.R` and reinstalling the package.
 Repeating the call reuses a matching live service or restarts a stopped service.
 Changed RDS paths/content or explicitly changed saved context/reuse settings are
 rejected rather than replacing the existing project. For a read-only viewer use
@@ -76,29 +79,23 @@ preparation; it does not perform or claim a new strategy/QC approval.
 ## Open saved results
 
 Install the R package using the [R package installation](../README.md#installation).
-The installation above retains a matching source checkout. In a separate
-environment, obtain the source and install the package from that same directory
-(Git and Python >= 3.9 are required for this route):
-
-```sh
-git clone https://github.com/ChanghaoKan/scAgentKit.git
-cd scAgentKit
-```
-
-Keep this checkout path and the private R library together in your project notes.
-Use the matching source for an older project rather than upgrading its kernel
-or replacing its saved state to make it open.
+Projects started with `sc_start()` also configure the existing read-only viewer
+with the installed package resources. Keep the matching R environment for saved
+projects; changing their execution kernel does not grant fresh approval.
+For projects created directly with `sc_run()`, select the installed package root
+once using `checkout = system.file(package = "scAgentKit")`.
 
 With scAgentKit loaded in the project's R environment:
 
 ```r
-sc_run_open(project_dir, checkout = "/path/to/scAgentKit")
+sc_run_open(project_dir, checkout = system.file(package = "scAgentKit"))
 # Subsequent sessions reuse the saved viewer configuration:
 sc_run_open(project_dir)
 ```
 
 This read-only viewer starts or reuses a matching loopback service. It performs
-no analysis or model request. Python >= 3.9 and a source checkout are required.
+no analysis or model request. Python >= 3.9 is required. Installed resources
+are sufficient; a matching checkout remains an optional developer override.
 The [researcher guide](../docs/RESEARCHER_PROTOCOL_ZH.md#8-同一项目的可选网页与服务器运行)
 has remote-use and scheduler templates.
 
@@ -208,3 +205,12 @@ The historical frozen PBMC adapter can still be started with
 It expects the exact fixture allowlist in `evidence.py`, rather than arbitrary
 input data. Its test requirements are documented in the test plans above.
 The workbench is excluded from R package builds.
+
+## Runtime distribution
+
+`inst/workbench/` is the single canonical production source. The root
+`workbench/` entry points and assets are compatibility symlinks for development;
+they are excluded from R packages. Installation generates a manifest from the
+R function signatures and every shipped runtime asset. Startup checks both
+against the selected installed R namespace before execution. Missing, extra or
+changed runtime files fail closed. Python bytecode caches are excluded.
