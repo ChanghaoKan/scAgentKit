@@ -43,13 +43,15 @@ sc_run_ambient_correction <- function(input, method=c("SoupX","decontX"), captur
   }
   if(method=="SoupX" && (is.null(raw_counts) || length(setdiff(colnames(raw_counts),colnames(counts)))<20L))
     stop("SoupX requires matched raw+filtered counts with at least 20 additional background droplets; filtered-only correction is unavailable.",call.=FALSE)
+  background <- if(is.null(raw_counts)) NULL else raw_counts[,setdiff(colnames(raw_counts),colnames(counts)),drop=FALSE]
+  if(!is.null(background) && ncol(background)==0L) background <- NULL
   package <- if(method=="SoupX") "SoupX" else "celda"
   if(!requireNamespace(package,quietly=TRUE)) stop("Optional ambient dependency unavailable: ",package,". Install explicitly from CRAN/Bioconductor; no automatic substitution.",call.=FALSE)
   if(!is.null(output_dir) && file.exists(output_dir)) stop("Use a new output directory to preserve previous results.",call.=FALSE)
   seed_exists <- exists(".Random.seed",.GlobalEnv,inherits=FALSE); old <- if(seed_exists) get(".Random.seed",.GlobalEnv) else NULL
   on.exit(if(seed_exists) assign(".Random.seed",old,.GlobalEnv) else if(exists(".Random.seed",.GlobalEnv,inherits=FALSE)) rm(".Random.seed",envir=.GlobalEnv),add=TRUE)
   set.seed(seed)
-  fit <- .sc_run_ambient_fit(counts,raw_counts,clusters,method,seed)
+  fit <- .sc_run_ambient_fit(counts,if(method=="SoupX") raw_counts else background,clusters,method,seed)
   corrected <- methods::as(fit$counts,"dgCMatrix")
   valid_matrix(corrected)
   if(!identical(dimnames(corrected),dimnames(counts))) stop("Ambient method changed literal feature/cell scope.",call.=FALSE)
@@ -61,8 +63,10 @@ sc_run_ambient_correction <- function(input, method=c("SoupX","decontX"), captur
   receipt <- list(schema="scagentkit.ambient-correction.v1",method=method,version=as.character(utils::packageVersion(package)),
     capture=capture,seed=seed,rounded=round_counts,input_hash=input_hash,
     original_counts_hash=.sc_project_sparse_hash(counts),corrected_counts_hash=.sc_project_sparse_hash(corrected),
-    raw_background_hash=if(is.null(raw_counts)) NULL else .sc_project_sparse_hash(raw_counts),
-    background=if(is.null(raw_counts)) "decontX infers background from other clusters; no empty-droplet measurement" else "matched raw droplets",
+    raw_background_hash=if(is.null(background)) NULL else .sc_project_sparse_hash(background),
+    raw_input_hash=if(is.null(raw_counts)) NULL else .sc_project_sparse_hash(raw_counts),
+    background_cells=if(is.null(background)) character() else colnames(background),
+    background=if(is.null(background)) "decontX infers background from other clusters; no empty-droplet measurement" else "matched raw droplets",
     cells=colnames(counts),features=rownames(counts),clusters=clusters,
     contamination=stats::setNames(contamination,colnames(counts)),
     before_umi=stats::setNames(as.numeric(Matrix::colSums(counts)),colnames(counts)),
