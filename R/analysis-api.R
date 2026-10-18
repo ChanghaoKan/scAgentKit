@@ -44,10 +44,10 @@
     stop("Configuration or implementation changed; restore the pinned environment or start a new project.", call. = FALSE)
   invisible(state)
 }
-.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL) {
+.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL) {
   if (!is.list(edits) || (length(edits) && (is.null(names(edits)) ||
       anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list.", call. = FALSE)
-  allowed <- c("rationale", "risks", "qc", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap")
+  allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap")
   if (length(setdiff(names(edits), allowed))) stop("Unknown plan fields: ", paste(setdiff(names(edits), allowed), collapse = ", "), call. = FALSE)
   if (is.null(base)) {
     npcs <- min(30L, dimensions[[1]] - 1L, dimensions[[2]] - 1L)
@@ -55,8 +55,8 @@
       rationale = "Editable software starting draft. Review input QC and study facts before approval.",
       risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices."),
       inferences = list(), qc = list(schema = "scagentkit.qc.v1",
-        rationale = "Starting draft retains count-positive cells; analyst must review measured QC distributions.",
-        risks = list("No study-specific quality threshold has been established."),
+        rationale = "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
+        risks = list("No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
         filters = list(list(op = "range", metric = "nCount", min = 1))),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
         nfeatures = min(2000L, dimensions[[1]]), npcs = npcs, seed = 17L),
@@ -79,6 +79,15 @@
     list(method = "fixed", ndim = edits$pcs) else edits$pcs
   if ("resolution" %in% names(edits)) base$clustering$resolution <- edits$resolution
   if ("diagnostic_resolutions" %in% names(edits)) base$clustering["diagnostic_resolutions"] <- list(edits$diagnostic_resolutions)
+  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = "keep_all", panel_hash = mad$panel_hash) else {
+    existing <- Filter(function(rule) identical(rule$op, "mad_preset"), base$qc$rules)
+    if (length(existing)) existing[[1L]] else NULL
+  }
+  if ("qc_preset" %in% names(edits)) {
+    if (is.null(mad_rule)) stop("qc_preset requires the saved MAD candidate panel.", call. = FALSE)
+    .sc_project_string(edits$qc_preset, "qc_preset")
+    mad_rule$preset_id <- edits$qc_preset
+  }
   if ("qc" %in% names(edits)) {
     qc <- edits$qc
     if (!is.list(qc) || is.null(names(qc)) || !length(qc) || anyDuplicated(names(qc)) ||
@@ -96,7 +105,23 @@
     base$qc <- list(schema = "scagentkit.qc.v1", rationale = base$rationale,
       risks = base$risks, filters = filters)
   }
+  if (!is.null(mad_rule)) {
+    ranges <- if (identical(base$qc$schema, "scagentkit.qc.v1")) base$qc$filters else
+      Filter(function(rule) !identical(rule$op, "mad_preset"), base$qc$rules)
+    base$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = base$qc$rationale,
+      risks = base$qc$risks, remove_if = "any", rules = c(ranges, list(mad_rule)))
+  }
   base
+}
+.sc_ui_mad_setup <- function(context) {
+  columns <- context$columns
+  if (is.character(columns)) columns <- as.list(columns)
+  role <- if (!is.null(columns$qc_group)) "qc_group" else if (!is.null(columns$sample)) "sample" else NULL
+  grouping <- if (is.null(role)) list(method = "single", id = "unstratified_input",
+    source = "No sample/QC-group role was declared. Pooled unstratified diagnostics, not a declared single sample; per-sample conclusions are unavailable.") else
+    list(method = "column", column = columns[[role]], declared_role = role,
+      source = paste0("Explicit context$columns$", role, " declaration; no donor or capture role inferred."))
+  list(grouping = grouping)
 }
 .sc_ui_annotation <- function(table) {
   if (is.character(table) && length(table) == 1L) table <- utils::read.delim(table,
@@ -146,16 +171,32 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   extra <- list(...)
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)
+  if (!"qc_mad" %in% names(extra)) extra$qc_mad <- .sc_ui_mad_setup(context)
   proposal <- NULL
   if (is.null(provider) || !is.null(plan)) {
     object <- if (is.character(input) && length(input) == 1L) readRDS(input) else input
     dimensions <- dim(object)
     if (length(dimensions) != 2L) stop("input must be a counts matrix, Seurat object or its RDS path.", call. = FALSE)
-    proposal <- .sc_ui_plan(if (is.null(plan)) list() else plan, dimensions = dimensions)
+    panel <- NULL
+    if (!is.null(extra$qc_mad) && !identical(extra$qc_mad, FALSE)) {
+      # Construct the ordinary immutable panel on a copy so the first draft can
+      # bind its exact hash. sc_run independently recreates and verifies it.
+      config <- list(context = context, assay = if (is.null(extra$assay)) "RNA" else extra$assay,
+        counts_layer = if (is.null(extra$counts_layer)) "counts" else extra$counts_layer,
+        qc_mad = extra$qc_mad, doublet_diagnostics = extra$doublet_diagnostics,
+        prefilter = .sc_run_prefilter_options(extra$qc_mad$prefilter))
+      checked <- .sc_run_input(object, context, config$assay, config$counts_layer)
+      config$context <- checked$context
+      config$qc_mad <- .sc_run_mad_options(config$context, extra$qc_mad[setdiff(names(extra$qc_mad), "prefilter")])
+      qc <- .sc_run_qc_evidence(checked$seu, config$context, config$assay, config$counts_layer)
+      prefilter <- .sc_run_prefilter_evidence(checked$seu, config)
+      panel <- .sc_run_mad_evidence(checked$seu, config, qc, prefilter_record = prefilter)
+    }
+    proposal <- .sc_ui_plan(if (is.null(plan)) list() else plan, dimensions = dimensions, mad = panel)
   }
-  sc_run(input, project_dir, context = context, strategy = TRUE,
+  do.call(sc_run, c(list(input = input, project_dir = project_dir, context = context, strategy = TRUE,
     strategy_proposal = proposal, provider = provider, chat_fn = chat_fn,
-    budget = budget, review = review, ...)
+    budget = budget, review = review), extra))
   sc_open(project_dir)
 }
 

@@ -84,7 +84,7 @@ test_that("offline external callbacks preserve separate exact transfer consent a
     calls <<- calls + 1L
     payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
     proposal <- if (grepl("strategy.v1", system_prompt, fixed = TRUE))
-      .sc_ui_plan(ui_plan(), dimensions = dim(input)) else
+      .sc_ui_plan(ui_plan(), dimensions = dim(input), mad = payload$evidence$qc_mad) else
       list(schema = "scagentkit.annotation.v1", annotations = lapply(payload$evidence$clusters,
         function(cl) list(clusterId = cl$clusterId, label = "Unknown", confidence = "low",
           rationale = "Offline fixture abstention; no scientific identity claim.", markers = list())))
