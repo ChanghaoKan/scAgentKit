@@ -29,6 +29,7 @@
     return(step)
   }
   step$assessment <- "assessed"
+  step$sample_comparison <- evidence$qc$summary$sample_comparison
   step$completed <- list("Measured group QC distributions and saved MAD flags.")
   replace_preset <- function(id) {
     choice <- qc
@@ -140,6 +141,12 @@
     which(vapply(seq_along(candidates), function(j) j != i && !is.null(selections[[i]]) && identical(selections[[i]], selections[[j]]), logical(1))),
     function(j) candidates[[j]]$id, character(1)))
   step$candidates <- candidates
+  conservative <- Filter(function(item) identical(item$id, "conservative_and3") && isTRUE(item$available) &&
+    isTRUE(item$impact$new_removed_within_range_keep > 0), candidates)
+  step$draft_preselection <- if (length(conservative) == 1L && !length(step$conflicts) && !length(step$missing))
+    list(candidate_id = "conservative_and3", automatic = FALSE,
+      reason = "Optional comparison with joint low-count/low-feature/high-MT flags; load into a draft only after inspection. It is not a validated best policy.") else
+    list(candidate_id = NULL, automatic = FALSE, reason = "No unconflicted joint-flag comparison is available; no preselection is justified.")
   step$completed <- c(step$completed, list("Computed exact candidate impacts under the unchanged range and outer-combination policy."))
   executable <- any(vapply(candidates, function(item) item$id != "keep_all" && item$available, logical(1)))
   if (!length(step$missing) && !length(step$conflicts) && executable) step$status <- "recommend_execute"

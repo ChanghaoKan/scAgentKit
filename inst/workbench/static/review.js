@@ -1563,6 +1563,10 @@ function renderRecommendations() {
       if (array(step.missing).length) {
         card.append(element("h4","Missing information"),table(["Fact","Why it matters"],array(step.missing).map(row => [row.label || row.field || "Unspecified fact",row.reason || "Reason not supplied"])));
       }
+      if (step.sample_comparison && typeof step.sample_comparison === "object") {
+        const samples = element("details"); samples.append(element("summary","Per-sample medians and cross-sample diagnostics (separate from cell MAD)"),raw(step.sample_comparison)); card.append(samples);
+      }
+      if (step.draft_preselection?.candidate_id) card.append(element("p","Optional draft comparison: " + step.draft_preselection.candidate_id + ". " + step.draft_preselection.reason,{class:"microcopy"}));
       for (const candidate of step.candidates) {
         const item = element("section",null,{class:"recommendation-candidate","data-testid":"recommendation-candidate-"+step.id+"-"+candidate.id});
         item.append(element("h4",candidate.label || candidate.id)); recommendationList(item,"Candidate reasons",candidate.reasons); recommendationList(item,"Candidate conflicts",candidate.conflicts);
@@ -1571,7 +1575,7 @@ function renderRecommendations() {
         }
         let valid = candidate.available === true;
         try {recommendationDraft(strategyDraft(),step.id,candidate);} catch (_) {valid = false;}
-        const apply = element("button","Use candidate in local draft",{type:"button",class:"button quiet","data-unavailable":String(!valid),"data-testid":"recommendation-use-"+step.id+"-"+candidate.id}); controls.push(apply);
+        const apply = element("button",step.draft_preselection?.candidate_id === candidate.id ? "Load suggested comparison in local draft" : "Use candidate in local draft",{type:"button",class:"button quiet","data-unavailable":String(!valid),"data-testid":"recommendation-use-"+step.id+"-"+candidate.id}); controls.push(apply);
         apply.addEventListener("click",()=>applyRecommendation(step.id,candidate.id,context.reviewHash)); item.append(apply);
         if (!valid) item.append(element("p","Unavailable for this draft. Inspect the saved reasons and supported parameter groups; no assessment or choice is invented.",{class:"microcopy"}));
         card.append(item);
