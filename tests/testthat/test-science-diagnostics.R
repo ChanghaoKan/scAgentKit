@@ -20,3 +20,31 @@ test_that("explicit expression panels distinguish missing and zero, align cells 
   expect_false(.sc_run_science_options(list())$resampling)
   expect_error(.sc_run_science_options(list(code="delete")),"Unsupported")
 })
+test_that("opted-in science review actually rebuilds partitions and five subsamples without authority mutation", {
+  set.seed(17)
+  counts <- Matrix::Matrix(matrix(rpois(120*80,4),120,80,
+    dimnames=list(paste0("g",1:120),paste0("c",1:80))),sparse=TRUE)
+  obj <- Seurat::CreateSeuratObject(counts)
+  obj <- Seurat::NormalizeData(obj,verbose=FALSE)
+  obj <- Seurat::FindVariableFeatures(obj,nfeatures=40,verbose=FALSE)
+  obj <- Seurat::ScaleData(obj,verbose=FALSE)
+  obj <- Seurat::RunPCA(obj,npcs=10,verbose=FALSE)
+  plan <- list(analysis=list(normalization_method="LogNormalize",scale_factor=10000,nfeatures=40,npcs=10,seed=42L),
+    pcs=list(method="fixed",ndim=5L),batch=list(method="none",reason="Software fixture"),
+    clustering=list(resolution=.6,diagnostic_resolutions=c(.2,1.2)),umap=list(run=FALSE,n_neighbors=20L))
+  obj$cluster <- unname(.sc_run_science_partition(obj,5,.6,42))
+  obj@misc$strategy_execution$neighbors$pcs <- 1:5
+  config <- list(assay="RNA",counts_layer="counts",normalized_layer="data",cluster_column="cluster",context=list(),
+    scientific_review=list(pc_sensitivity=TRUE,resampling=TRUE,resolution_extension=TRUE))
+  before <- .sc_run_hash(obj); seed <- .Random.seed
+  value <- suppressWarnings(.sc_run_science_diagnostics(obj,config,plan))
+  expect_identical(value$pc_sensitivity$status,"measured")
+  expect_identical(value$pc_sensitivity$bounded_candidates,c(2L,5L,10L))
+  expect_identical(value$resampling$status,"measured")
+  expect_length(value$resampling$replicates,5)
+  expect_true(all(vapply(value$resampling$replicates,function(x) x$shared_cells==64L,logical(1))))
+  expect_identical(value$resolution_extension$status,"measured")
+  expect_identical(.sc_run_hash(obj),before)
+  expect_identical(.Random.seed,seed)
+  expect_false(value$default_changed)
+})
