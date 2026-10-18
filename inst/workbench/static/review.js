@@ -493,6 +493,7 @@ async function suggestionAction(action, modify = false, requestAfterApproval = f
   finally {state.busy = false; state.suggestionChaining = false; renderSuggestion(); buttons(); if (activeSuggestion() && !state.suggestionLost) scheduleSuggestionPoll();}
 }
 function buttons() {
+  updateRecommendationAvailability();
   for (const control of $("annotation-preparation")?.querySelectorAll?.("input,textarea,select,button") || []) control.disabled = !ready();
   for (const row of state.preparationControls || []) {row.apply.disabled = !ready() || row.data.touched || row.keep.checked; row.clear.disabled = !ready() || row.keep.checked;}
   $("run-refresh").disabled = state.busy || state.suggestionChaining;
@@ -1381,6 +1382,100 @@ function updateStrategyDraftStatus() {
   $("strategy-impact-draft-status").setAttribute("data-invalid", String(!!(typedError || savedError)));
   renderContinuation();
 }
+function recommendationContext() {
+  const run = state.view?.run, record = run?.strategy_review, review = run?.review_node;
+  const recommendations = record?.details?.recommendations;
+  const bound = !state.stale && !state.connectionLost && !state.awaitingFreshInspect && review?.kind === "strategy" &&
+    review.review_hash === record?.hash && review.expected_revision === run?.revision &&
+    record?.input_hash === run?.input_hash && review.project_id === run?.project_id && review.input_hash === run?.input_hash;
+  if (!bound) return {current:false, reason:"Recommendations are not current. Refresh the saved review before using a candidate."};
+  if (recommendations == null) return {current:false, reason:"Recommendations were not recorded for this saved review; no assessment is inferred from default choices."};
+  const ids = ["qc","doublet","pcs","batch","resolution"], statuses = ["recommend_execute","recommend_skip","insufficient_information"], assessments = ["assessed","pending_computation","unavailable"];
+  if (recommendations.schema !== "scagentkit.recommendations.v1" || recommendations.policy_version !== "1" || !Array.isArray(recommendations.steps) ||
+      new Set(recommendations.steps.map(step => step?.id)).size !== recommendations.steps.length || recommendations.steps.some(step => !ids.includes(step?.id) || !statuses.includes(step.status) || !assessments.includes(step.assessment) || !Array.isArray(step.candidates) || step.candidates.some(candidate => !candidate || typeof candidate.id !== "string" || !candidate.id || typeof candidate.label !== "string" || typeof candidate.available !== "boolean") || new Set(step.candidates.map(candidate => candidate.id)).size !== step.candidates.length))
+    return {current:false, reason:"Recommendations are unavailable: the saved schema or policy is unsupported. No assessment is inferred."};
+  return {current:true, recommendations, reviewHash:record.hash};
+}
+function recommendationDraft(draft, stepId, candidate) {
+  const key = {qc:"qc",doublet:"doublet",pcs:"pcs",batch:"batch",resolution:"clustering"}[stepId], changes = candidate?.changes;
+  if (!key || candidate?.available !== true || !changes || typeof changes !== "object" || Array.isArray(changes) || Object.keys(changes).length !== 1 || !Object.hasOwn(changes,key))
+    throw new Error("Only an available saved candidate for this operation can edit the local draft.");
+  const choice = changes[key];
+  if (!choice || typeof choice !== "object" || Array.isArray(choice)) throw new Error("The candidate must contain a complete typed choice.");
+  const next = JSON.parse(JSON.stringify(draft));
+  if (key === "clustering") {
+    if (!next.clustering || Object.keys(choice).length !== 1 || !Object.hasOwn(choice,"resolution") || typeof choice.resolution !== "number" || !Number.isFinite(choice.resolution) || choice.resolution <= 0 || choice.resolution > 2)
+      throw new Error("A resolution candidate changes only its measured resolution; the diagnostic grid stays in the draft.");
+    next.clustering = {...next.clustering,resolution:choice.resolution};
+  } else next[key] = JSON.parse(JSON.stringify(choice));
+  const error = typedStrategyError(next); if (error) throw new Error(error);
+  return next;
+}
+function applyRecommendation(stepId, candidateId, reviewHash) {
+  const context = recommendationContext();
+  if (!ready() || node()?.kind !== "strategy" || !node()?.can_revise || !context.current || context.reviewHash !== reviewHash) {
+    message("Refresh the saved strategy review before using this recommendation. Your local draft is preserved.",true); return false;
+  }
+  const step = context.recommendations.steps.find(row => row.id === stepId), candidate = step?.candidates.find(row => row.id === candidateId);
+  try {
+    const draft = recommendationDraft(strategyDraft(),stepId,candidate);
+    setStrategyDraft(draft,true);
+    message("Candidate copied to the local draft. Save complete strategy using ‘Save edits and rebuild review’, then inspect R's rebuilt evidence before approval. Saved measurements and approvals have not changed.");
+    return true;
+  } catch (error) {message(error.message + " The draft was not changed.",true); return false;}
+}
+function recommendationList(target, title, values) {
+  if (!Array.isArray(values) || !values.length) return;
+  const list = element("ul",null,{class:"recommendation-list"});
+  for (const value of values) list.append(element("li",typeof value === "string" ? value : json(value)));
+  target.append(element("h4",title),list);
+}
+function updateRecommendationAvailability() {
+  const region = state.recommendationRegion; if (!region) return;
+  const context = recommendationContext();
+  region.notice.textContent = context.current ? "Saved R assessment · candidates change the local draft only. Draft edits do not update these measurements." : context.reason;
+  region.cards.hidden = !context.current;
+  for (const control of region.controls) control.disabled = !ready() || !node()?.can_revise || !context.current || control.getAttribute("data-unavailable") === "true";
+}
+function renderRecommendations() {
+  const target = $("strategy-recommendations"); if (!target) return;
+  target.replaceChildren(element("h2","Recommendations and your next decision"));
+  const notice = element("p",null,{class:"recommendation-notice",role:"status","data-testid":"recommendations-status"}), cards = element("div",null,{class:"recommendation-grid","data-testid":"recommendations-steps"});
+  target.append(notice,cards); const controls = []; state.recommendationRegion = {notice,cards,controls};
+  const context = recommendationContext();
+  if (context.current) {
+    const rec = context.recommendations;
+    recommendationList(cards,"Completed work recorded by R",rec.completed);
+    if (typeof rec.next_decision === "string") cards.append(element("p","Next decision: " + rec.next_decision,{class:"recommendation-next","data-testid":"recommendations-next-decision"}));
+    for (const step of rec.steps) {
+      const card = element("section",null,{class:"recommendation-step","data-recommendation-step":step.id,"data-testid":"recommendation-step-"+step.id});
+      const statuses = {recommend_execute:"Recommend execute",recommend_skip:"Recommend skip",insufficient_information:"Insufficient information"}, assessments = {assessed:"Assessed from saved evidence",pending_computation:"Assessment pending computation",unavailable:"Assessment unavailable"};
+      card.append(element("h3",step.title || step.id),element("p",statuses[step.status],{class:"pill muted","data-testid":"recommendation-status-"+step.id}),element("p",assessments[step.assessment],{class:"microcopy","data-testid":"recommendation-assessment-"+step.id}));
+      recommendationList(card,"Completed",step.completed); recommendationList(card,"Reasons",step.reasons); recommendationList(card,"Conflicts to review",step.conflicts); recommendationList(card,"Uncertainty",step.uncertainty);
+      if (array(step.missing).length) {
+        card.append(element("h4","Missing information"),table(["Fact","Why it matters"],array(step.missing).map(row => [row.label || row.field || "Unspecified fact",row.reason || "Reason not supplied"])));
+      }
+      for (const candidate of step.candidates) {
+        const item = element("section",null,{class:"recommendation-candidate","data-testid":"recommendation-candidate-"+step.id+"-"+candidate.id});
+        item.append(element("h4",candidate.label || candidate.id)); recommendationList(item,"Candidate reasons",candidate.reasons); recommendationList(item,"Candidate conflicts",candidate.conflicts);
+        if (candidate.impact && typeof candidate.impact === "object" && Object.keys(candidate.impact).length) {
+          const impact = element("details"); impact.append(element("summary","Saved candidate impact"),raw(candidate.impact)); item.append(impact);
+        }
+        let valid = candidate.available === true;
+        try {recommendationDraft(strategyDraft(),step.id,candidate);} catch (_) {valid = false;}
+        const apply = element("button","Use candidate in local draft",{type:"button",class:"button quiet","data-unavailable":String(!valid),"data-testid":"recommendation-use-"+step.id+"-"+candidate.id}); controls.push(apply);
+        apply.addEventListener("click",()=>applyRecommendation(step.id,candidate.id,context.reviewHash)); item.append(apply);
+        if (!valid) item.append(element("p","Unavailable for this draft. Inspect the saved reasons and supported parameter groups; no assessment or choice is invented.",{class:"microcopy"}));
+        card.append(item);
+      }
+      if (typeof step.next_decision === "string") card.append(element("p","Next decision: " + step.next_decision,{class:"recommendation-next"}));
+      cards.append(card);
+    }
+    recommendationList(cards,"Limits of these recommendations",rec.limitations);
+  }
+  target.append(element("p","The existing author decisions remain: strategy and QC, measured resolution selection, and annotations. Using a candidate does not save, approve, compute or request a model.",{class:"microcopy"}));
+  updateRecommendationAvailability();
+}
 function savedOperationSummary(key, proposal) {
   const choice = proposal[key === "qc-mad" ? "qc" : key];
   if (choice === null) return "Explicit reuse · no new parameters";
@@ -1435,6 +1530,7 @@ function renderStrategy() {
   const original = counts.original_cells ?? impact.input_cell_count ?? details.quality?.cell_count;
   $("strategy-impact-summary").textContent = Number.isFinite(Number(retained)) && retained != null ? "Saved projected retention: " + fmt(retained) + (original != null ? " of " + fmt(original) + " input cells" : " cells") + ". Inspect the exact scopes and applicable operations below before approval." : "Exact cell retention and applicability are saved in the detailed impact evidence below. Approval covers this complete typed strategy; no calculation runs while reviewing.";
   renderStrategyOperations(details, proposal);
+  renderRecommendations();
   const cycleSupported = details.cycle_diagnostics != null || Object.hasOwn(proposal, "cycle") || Array.isArray(details.capabilities?.cycle);
   const doubletSupported = doubletEnabled(details, proposal);
   $("strategy-blockers").replaceChildren(strategyTextSection("Local blockers", applicability.blockers, "No local blockers were recorded.", true));
