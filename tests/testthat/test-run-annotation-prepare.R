@@ -19,6 +19,11 @@ test_that("first annotation submissions bind evidence and remain separate from a
   args <- list(project_dir = path, project_id = view$project_id, input_hash = view$input_hash,
     expected_revision = view$revision, evidence_hash = preparation$evidence_hash, proposal = proposal,
     reviewer = "offline reviewer", reason = "Explicit unresolved proposal for software testing", request_id = "first-worksheet")
+  invalid <- args
+  invalid$proposal$annotations[[1]]$label <- "Known label"
+  invalid$proposal$annotations[[1]]$markers <- list("FOREIGN_UNSUPPLIED_MARKER")
+  expect_error(do.call(sc_run_prepare_annotation, invalid))
+  expect_identical(.sc_project_sha_file(file.path(path,"state.rds")),original)
   invalid <- args; invalid$proposal$annotations[[1]]$label <- ""
   expect_error(do.call(sc_run_prepare_annotation, invalid))
   expect_identical(.sc_project_sha_file(file.path(path, "state.rds")), original)

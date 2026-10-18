@@ -13,7 +13,9 @@ import sys
 import tempfile
 
 from server import main as serve
+from open_results import open_results
 from store import scrub_secrets
+from evidence import strict_json
 
 ROOT = Path(__file__).resolve().parent
 
@@ -32,6 +34,10 @@ def main(argv=None):
     parser.add_argument("--rscript", default="Rscript")
     parser.add_argument("--r-library")
     parser.add_argument("--port", type=int, default=0, help="Loopback port; default chooses an available port")
+    parser.add_argument("--background", action="store_true", help="Reuse the existing local service launcher and return its identity")
+    parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--reopen", action="store_true", help="Open an existing project after verifying its original RDS binding")
+    parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
     args = parser.parse_args(argv)
     if sys.version_info < (3, 9):
         parser.error("Python 3.9 or later is required")
@@ -43,7 +49,7 @@ def main(argv=None):
         parser.error("Processed reuse requires --processed-reason")
     input_path = Path(args.input).expanduser().resolve(strict=True)
     project = Path(args.project).expanduser().absolute()
-    if not input_path.is_file() or project.exists() or project.is_symlink():
+    if not input_path.is_file() or project.is_symlink() or (project.exists() and not args.reopen):
         parser.error("Supply an RDS file and a new project path")
     rscript = shutil.which(args.rscript)
     if not rscript:
@@ -53,9 +59,21 @@ def main(argv=None):
         probe.bind(("127.0.0.1", args.port))
     request = {"input": str(input_path), "project": str(project), "checkout": str(ROOT.parent),
                "context": {"species": args.species, "tissue": args.tissue,
-                           "research_goal": args.research_goal, "notes": args.notes},
+                           "research_goal": args.research_goal},
                "entry": "processed" if args.reuse_processed else "raw",
-               "processed_reason": args.processed_reason, "cluster_column": args.cluster_column}
+               "processed_reason": args.processed_reason, "cluster_column": args.cluster_column,
+               "reopen": args.reopen}
+    if args.notes.strip():
+        request["context"]["notes"] = args.notes
+    if args.context_file:
+        context_path = Path(args.context_file)
+        if context_path.stat().st_size > 1024 * 1024:
+            parser.error("Study context exceeds 1 MB")
+        context = strict_json(context_path.read_text(encoding="utf-8"))
+        if not isinstance(context, dict) or any(context.get(key) != request["context"][key] for key in ("species", "tissue", "research_goal")):
+            parser.error("Context file must match the declared species, tissue and research goal")
+        if context.get("notes") == "": context.pop("notes")
+        request["context"] = context
     env = scrub_secrets(dict(os.environ))
     library = args.r_library or env.get("R_LIBS_USER")
     if library:
@@ -64,9 +82,16 @@ def main(argv=None):
         config, result = Path(temporary) / "request.json", Path(temporary) / "result.json"
         config.write_text(json.dumps(request), encoding="utf-8")
         config.chmod(0o600)
-        subprocess.run([rscript, "--vanilla", str(ROOT / "start_analysis.R"), str(config), str(result)],
-                       env=env, check=True, shell=False)
+        created = subprocess.run([rscript, "--vanilla", str(ROOT / "start_analysis.R"), str(config), str(result)],
+                                 env=env, capture_output=args.background, check=False, shell=False)
+        if created.returncode:
+            if args.background:
+                sys.stderr.buffer.write(created.stderr)
+            raise RuntimeError("Analysis startup failed; inspect the R error and preserve any saved project")
         identity = json.loads(result.read_text())
+    if args.background:
+        print(json.dumps(open_results(project, rscript, library, not args.no_browser, review_mode=True)))
+        return
     print("Project prepared: %s · %s / %s. Review and continue in the browser; Ctrl-C closes this service." %
           (identity["project_id"], identity["status"], identity["stage"]), flush=True)
     options = ["--run-project", str(project), "--local-continue", "--rscript", rscript, "--port", str(args.port)]

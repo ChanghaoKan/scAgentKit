@@ -16,6 +16,8 @@ from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
 from run_workbench_runtime import RunWorkbenchRuntime
+from run_review_runtime import RunReviewRuntime
+from run_continue_runtime import RunContinueRuntime
 from server import WorkbenchServer, Handler
 from store import scrub_secrets
 
@@ -93,6 +95,18 @@ class ResultsHandler(Handler):
         return value
 
 
+class ReviewHandler(Handler):
+    def do_GET(self):
+        if urlsplit(self.path).path == "/launcher-status":
+            try:
+                self._trusted_request()
+                self._respond(200, self.server.launch_identity)
+            except Exception:
+                self._respond(403, {"error": "Local review service identity unavailable"})
+        else:
+            super().do_GET()
+
+
 def serve(config_path):
     config_path = Path(config_path)
     config = json.loads(config_path.read_text())
@@ -100,9 +114,11 @@ def serve(config_path):
     view = runtime.describe()
     if view["run"]["project_id"] != config["identity"]["project_id"]:
         raise ValueError("Saved project identity changed before opening")
-    review = SavedReview(runtime, view["run"]["project_id"])
-    server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=review, run_workbench=runtime)
-    server.RequestHandlerClass = ResultsHandler
+    editable = config.get("review_mode") is True
+    review = RunReviewRuntime(config["project"], config.get("library"), config["rscript"]) if editable else SavedReview(runtime, view["run"]["project_id"])
+    continuation = RunContinueRuntime(config["project"], config.get("library"), config["rscript"]) if editable else None
+    server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=review, run_workbench=runtime, run_continue=continuation)
+    server.RequestHandlerClass = ReviewHandler if editable else ResultsHandler
     server.launch_identity = config["identity"]
     server.results_url = "/workbench?" + urlencode({"project_id": review.project_id})
     atomic(config_path.with_name("service.json"),
@@ -113,7 +129,7 @@ def serve(config_path):
         server.server_close()
 
 
-def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90):
+def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90, review_mode=False):
     project = Path(project).expanduser()
     if project.is_symlink():
         raise ValueError("Saved project directory must not be a symlink")
@@ -124,7 +140,10 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
                 "input_hash": view["run"]["input_hash"],
                 "directory": [project.stat().st_dev, project.stat().st_ino],
                 "code_hash": code_hash(), "rscript": str(rscript), "library": library}
-    base = project / ".workbench-launcher"
+    if review_mode:
+        identity["schema"] = "scagentkit.review-launcher.v1"
+        identity["review_mode"] = True
+    base = project / (".workbench-review-launcher" if review_mode else ".workbench-launcher")
     base.mkdir(mode=0o700, exist_ok=True)
     if base.is_symlink():
         raise ValueError("Launcher directory must not be a symlink")
@@ -137,7 +156,7 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
             pass
         reused = record is not None and probe(record, identity)
         if not reused:
-            config = {"project": str(project), "rscript": str(rscript), "library": library, "identity": identity}
+            config = {"project": str(project), "rscript": str(rscript), "library": library, "identity": identity, "review_mode": review_mode}
             atomic(base / "config.json", config)
             with (base / "server.log").open("ab") as log:
                 process = subprocess.Popen([sys.executable, str(ROOT / "open_results.py"), "--serve", str(base / "config.json")],
@@ -153,11 +172,11 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
                 if record and probe(record, identity):
                     break
                 if process.poll() is not None:
-                    raise RuntimeError("Result viewer did not start; inspect .workbench-launcher/server.log")
+                    raise RuntimeError("Local viewer did not start; inspect " + str(base / "server.log"))
                 time.sleep(0.1)
             else:
-                raise TimeoutError("Result viewer is not ready; inspect .workbench-launcher/server.log")
-        url = "http://127.0.0.1:%s/workbench?%s" % (record["port"], urlencode({"project_id": identity["project_id"]}))
+                raise TimeoutError("Local viewer is not ready; inspect " + str(base / "server.log"))
+        url = "http://127.0.0.1:%s/%s?%s" % (record["port"], "review" if review_mode else "workbench", urlencode({"project_id": identity["project_id"]}))
     if browse:
         webbrowser.open(url)
     return {"url": url, "reused": reused, "pid": record["pid"], "project_id": identity["project_id"]}

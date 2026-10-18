@@ -8,7 +8,7 @@ checkout <- normalizePath(request$checkout, mustWork = TRUE)
 ns <- asNamespace("scAgentKit")
 installed <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE))
 installed <- unique(c(installed, grep("^\\.sc_ui_", ls(ns, all.names = TRUE), value = TRUE),
-  "sc_analyze", "sc_open", "sc_review", "sc_project_prepare", ".sc_project_layer",
+  "sc_analyze", "sc_open", "sc_review", "sc_start", "sc_project_prepare", ".sc_project_layer",
   ".sc_project_identity", "sc_select_pcs", ".adjusted_rand_index", "sc_cycle_gene_set"))
 definitions <- list()
 for (file in sort(list.files(file.path(checkout, "R"), pattern = "[.]R$", full.names = TRUE))) {
@@ -33,7 +33,25 @@ if (!setequal(source_names, grep("^(sc_run|\\.sc_run_)", installed, value = TRUE
 input <- readRDS(request$input)
 if (inherits(input, "Seurat") && (length(input@reductions) || "seurat_clusters" %in% colnames(input[[]])))
   message("Input contains saved reductions or clusters. They do not establish analysis quality. Selected entry: ", request$entry)
-if (file.exists(request$project)) stop("Use a new project path; open saved projects with server.py --run-project instead.")
+if (file.exists(request$project)) {
+  if (!isTRUE(request$reopen)) stop("Use a new project path; open saved projects explicitly.")
+  root <- get(".sc_run_root", ns)(request$project)
+  state <- get(".sc_run_load", ns)(root)
+  if (!identical(state$source$type, "local_rds") ||
+      !identical(state$source$path, normalizePath(request$input, mustWork = TRUE)) ||
+      !identical(state$source$rds_sha256, get(".sc_project_sha_file", ns)(request$input)))
+    stop("Existing project has a different original RDS binding; open the intended project without replacing its input.")
+  if (!identical(state$config$start_stage, if (identical(request$entry, "processed")) "processed" else "qc"))
+    stop("Existing project entry differs; reopening never replaces its saved configuration.")
+  for (field in names(request$context)) if (!identical(request$context[[field]],state$config$context[[field]]))
+    stop("Reopening cannot replace saved study facts.")
+  if (!identical(request$cluster_column,state$config$cluster_column) ||
+      (identical(request$entry,"processed") && !identical(request$processed_reason,state$config$processed_reason)))
+    stop("Reopening cannot replace saved reuse settings.")
+  view <- scAgentKit::sc_run_inspect(root)
+  jsonlite::write_json(list(project_id=view$project_id,status=view$status,stage=view$stage),args[2],auto_unbox=TRUE)
+  quit(status=0L)
+}
 # Validate counts/layers and declared context before sc_run creates a directory.
 # This reads the input only and uses the same scientific input validation.
 invisible(get(".sc_run_input", ns)(request$input, context = request$context,

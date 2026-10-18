@@ -1,304 +1,247 @@
 # scAgentKit
 
-Analyze single-cell counts with Seurat, review the complete strategy and marker
-supported annotations, and resume the same saved project after closing R.
-Four R functions handle the routine workflow: `sc_analyze()`, `sc_open()`,
-`sc_review()` and `sc_result()`.
+scAgentKit is an R package for single-cell RNA-seq analysis with Seurat. It
+organizes quality control, dimensionality reduction, clustering, marker analysis
+and cell-type annotation into a saved project with explicit strategy and
+annotation review. Analyses can be continued across R sessions, with optional
+model proposals and browser-based review.
 
-This experimental development version is **0.5.0.9000**. Analysis settings and
-labels remain analyst decisions. A successful run does not validate biological
-identity. No provider, external-transfer permission or spending is enabled by default.
+The standard workflow accepts a named genes × cells raw-count matrix, a Seurat
+object containing RNA counts, or an RDS file containing either. It produces a
+new Seurat object, cluster annotations, marker tables, figures and an analysis
+record. Processed-object reuse, batch methods and child analyses are described
+in the [documentation](docs/README.md).
 
 ## Installation
 
-The four-function interface is included in `main`. Start with the tested commit
-below in a private R library; no existing checkout is required for the R workflow.
-Requires R >= 4.2, Seurat >= 5 and the Imports in [DESCRIPTION](DESCRIPTION).
-This downloads the package and required dependencies from GitHub/CRAN, including
-`agentomicsCore` from its declared `v0.1.1` source. Optional algorithms are not enabled.
+Requires R ≥ 4.2 and Seurat ≥ 5. Browser use also requires Python ≥ 3.9 and a
+matching source checkout: browser assets are not included in the installed R
+package. Download and unpack this repository, or clone it once:
 
-```r
-private_lib <- file.path(path.expand("~/R"), "scagentkit-preview")
-dir.create(private_lib, recursive = TRUE, showWarnings = FALSE)
-.libPaths(c(private_lib, .libPaths()))
-if (!requireNamespace("remotes", quietly = TRUE))
-  install.packages("remotes", lib = private_lib, repos = "https://cloud.r-project.org")
-remotes::install_github(
-  "ChanghaoKan/scAgentKit@727b1afc30b532683e7bf25f85a75d4c04399780",
-  lib = private_lib, dependencies = c("Depends", "Imports"),
-  upgrade = "never", build = FALSE)
-library(scAgentKit, lib.loc = private_lib)
-stopifnot(all(c("sc_analyze", "sc_open", "sc_review", "sc_result") %in%
-              getNamespaceExports("scAgentKit")))
-packageVersion("scAgentKit")
-packageDescription("scAgentKit")$RemoteSha
+```sh
+git clone https://github.com/ChanghaoKan/scAgentKit.git ~/src/scAgentKit
 ```
 
-The pinned commit passed both R and workbench CI. It is a development version,
-not a dependency lockfile; CRAN requirements may need platform build tools or a
-supported managed environment. Keep the same package/library when resuming an
-existing project. For an optional browser viewer, Python >= 3.9 and a matching
-source checkout are also required; follow the [workbench setup](workbench/README.md).
-See the
-[installation and dependency guide](docs/RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认).
+Install the package from that same directory into a separate R library:
+
+```r
+lib <- path.expand("~/R/scagentkit")
+checkout <- normalizePath("~/src/scAgentKit", mustWork = TRUE)
+dir.create(lib, recursive = TRUE, showWarnings = FALSE)
+.libPaths(c(lib, .libPaths()))
+if (!requireNamespace("remotes", quietly = TRUE))
+  install.packages("remotes", repos = "https://cloud.r-project.org")
+remotes::install_local(checkout, lib = lib,
+  dependencies = c("Depends", "Imports"), upgrade = "never", build = FALSE)
+library(scAgentKit)
+```
+
+This installs the required dependencies, including `agentomicsCore` from its
+declared GitHub source. Optional methods have additional requirements. For
+version pinning, managed environments and platform support, see
+[installation](docs/RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认) and
+[runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
+
+## Start from an RDS file
+
+In R, start a new project from a local RDS containing raw counts or a Seurat
+object. Declare the study facts; they are not inferred from the input:
+
+```r
+sc_start("a.rds", "analysis",
+  context = list(species = "human", tissue = "Peripheral blood",
+    research_goal = "Characterize the major immune populations."),
+  checkout = checkout)
+```
+
+The function opens the local browser and returns control to R. Inspect and edit
+the strategy, then approve and continue. At annotation, prepare the blank table,
+enter interpretations and supporting markers, save the complete proposal, and
+review it before approving and continuing to the result. An explicit bulk action
+can retain unfilled populations as `Unknown` with a shared reason; unresolved
+population and cell counts remain visible.
+
+The project remembers the checkout. Repeating the call reuses its matching live
+service or restarts a stopped service, preserving the saved analysis:
+
+```r
+sc_start("a.rds", "analysis")
+```
+
+The original RDS must retain the same path and content for this entry. Use
+`sc_run_open("analysis")` for a read-only saved-result viewer. See the
+[workbench guide](workbench/README.md#start-from-r) for environment setup,
+processed-object reuse and server access. No R/terminal switching is required
+between strategy review, annotation and results.
 
 ## First analysis
 
-Run these examples one block at a time. Stop at each displayed review, read the
-evidence, and decide whether to revise, reject or approve. Replace the example
-reviewer and reasons with your actual decision. Do not run all approval blocks
-as an automatic script.
+The example uses the public 10x Genomics PBMC3k counts introduced in the
+[Seurat tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial).
+Work through each review step in sequence, recording your reviewer identity
+and the rationale for each decision.
 
-Load a named genes × cells raw count matrix or a Seurat object containing genuine
-counts. For the public [PBMC3k tutorial data](https://satijalab.org/seurat/articles/pbmc3k_tutorial),
-load the already-downloaded 10x directory:
+### 1. Load the data
 
 ```r
-counts <- Seurat::Read10X("/path/to/filtered_gene_bc_matrices/hg19")
-seu <- Seurat::CreateSeuratObject(counts)
-x <- sc_analyze(seu, "pbmc-study", context = list(
-  species = "human", tissue = "Peripheral blood",
-  research_goal = "Describe the major immune populations in this public library.",
-  notes = "Donor and capture metadata are unavailable."),
+data_dir <- file.path(getwd(), "pbmc3k-data")
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+archive <- file.path(data_dir, "pbmc3k_filtered_gene_bc_matrices.tar.gz")
+download.file(
+  "https://cf.10xgenomics.com/samples/cell/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz",
+  archive, mode = "wb")
+untar(archive, exdir = data_dir)
+counts <- Seurat::Read10X(file.path(data_dir, "filtered_gene_bc_matrices", "hg19"))
+seu <- Seurat::CreateSeuratObject(counts = counts, project = "PBMC3k")
+project_dir <- file.path(getwd(), "pbmc3k-analysis")
+```
+
+For your own study, replace the input and describe its species, tissue,
+research question and available experimental design. Use a new project
+directory for a new analysis.
+
+### 2. Review the analysis strategy
+
+`sc_analyze()` prepares a strategy and its projected QC impact. Here, the
+feature-count and mitochondrial thresholds follow the PBMC tutorial's starting
+choices; select settings appropriate to the observed distributions and study.
+
+```r
+project <- sc_analyze(seu, project_dir,
+  context = list(
+    species = "human", tissue = "Peripheral blood",
+    research_goal = "Characterize the major immune populations in this PBMC library.",
+    notes = "Single public library; donor and capture metadata are unavailable."),
   plan = list(
-    rationale = "PBMC starting plan; review the measured QC distributions.",
+    rationale = "PBMC starting strategy for review against measured QC distributions.",
     qc = list(nFeature = c(200, 2500), percent_mt = c(NA, 5)),
-    pcs = 10, resolution = .5))
-shown <- sc_review(x)
+    pcs = 10, resolution = 0.5))
+strategy <- sc_review(project)
 ```
 
-The plan is an editable draft. The PBMC thresholds above are tutorial starting
-choices, not recommendations for your experiment. With no supplied plan or
-provider, the draft retains count-positive cells and proposes standard analysis
-settings; review and revise them before approving. Declare study facts yourself;
-Ca/Ctrl is not inferred as batch, and capture is not inferred as donor.
+Review cell retention, normalization, PC selection, batch handling and
+clustering in the displayed plan. To change a choice, save a revision with
+`sc_review(strategy, "revise", plan = list(...), reviewer = ..., reason = ...)`
+and inspect the returned plan. For example, `plan = list(pcs = 12)` changes PC
+selection while preserving the other displayed settings.
 
-Read the displayed QC impact, normalization/PCA/PC/batch/clustering choices and
-limitations. `shown$plan` contains the complete canonical strategy for inspection.
-Change only the choices you need; omitted choices preserve the displayed plan:
+Approve the reviewed strategy to run the local analysis through clustering and
+marker detection:
 
 ```r
-# Optional: save an edited draft, then inspect its freshly displayed impact.
-shown <- sc_review(shown, "revise", plan = list(pcs = 12, resolution = .6),
-  reviewer = "your-name", reason = "Explain the evidence for these choices.")
-# After reviewing the entire current draft:
-next_step <- sc_review(shown, "approve", reviewer = "your-name",
-  reason = "Explain why this complete strategy is suitable.", continue = TRUE)
+annotation <- sc_review(strategy, "approve", reviewer = "researcher",
+  reason = "Reviewed QC retention and the analysis strategy for this PBMC library.",
+  continue = TRUE)
 ```
 
-This explicit approval runs local computation and stops before annotation.
-Approval without `continue = TRUE` saves the decision; use
-`next_step <- sc_review(next_step, "continue")` to run it later. Continue never
-calls a model. `sc_review(shown, "reject", reviewer=..., reason=...)` stops the
-proposal; revise the rejected snapshot to create a new draft.
+### 3. Review and submit cluster annotations
 
-## Review labels and read results
-
-`next_step` displays the actual cluster markers and an annotation table with
-blank labels. Inspect the provisional Seurat object if needed:
+The returned review contains the cluster markers and an annotation worksheet.
+Inspect expression and the embedding alongside the supplied marker evidence:
 
 ```r
-analysis <- sc_result(next_step, stage = "analysis")
-Seurat::FeaturePlot(analysis, features = c("MS4A1", "CD3D"))
-labels <- next_step$annotations
-View(labels)
+analysis <- sc_result(annotation, stage = "analysis")
+Seurat::DimPlot(analysis, reduction = "umap", label = TRUE)
+Seurat::FeaturePlot(analysis, features = c("CD3D", "MS4A1", "LYZ", "NKG7"))
+annotations <- utils::edit(annotation$annotations)
 ```
 
-Fill each literal `clusterId` exactly once, with `label`, `confidence`
-(`low`, `medium` or `high`), a specific `rationale`, and `markers` containing
-semicolon-separated gene names actually supplied for that cluster. Use
-`Unknown` with a reason when the evidence is unresolved; blanks are never
-converted to a biological label. You can edit the data frame in R or round-trip
-it through a quoted UTF-8 TSV:
+In the R data editor, retain each `clusterId` and complete the remaining fields
+for every cluster:
+
+| Field | Content |
+| --- | --- |
+| `label` | The reviewed cell type or population description |
+| `confidence` | `low`, `medium` or `high`, as a qualitative assessment |
+| `rationale` | Evidence supporting the assignment and any unresolved alternatives |
+| `markers` | Semicolon-separated gene names from that cluster's supplied marker evidence |
+
+For example, concordant CD79A and MS4A1 evidence can support a B-cell assignment;
+its worksheet entry would cite `CD79A;MS4A1` and explain that interpretation.
+Use `Unknown` with a rationale for unresolved populations. Cluster IDs and
+annotations depend on the data and analysis settings. For file-based editing,
+see the [detailed walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md#3-read-markers-and-submit-annotations).
+The [annotation guide](docs/ANNOTATION_REVIEW.md) describes evidence and review decisions.
+
+Save the completed worksheet, inspect the full annotation proposal returned by
+`sc_review()`, and approve it to apply the labels:
 
 ```r
-write.table(labels, "annotations.tsv", sep = "\t", quote = TRUE,
-  qmethod = "double", row.names = FALSE)
-# Edit the file and check the complete marker evidence before submitting:
-proposal <- sc_review(next_step, "revise", annotations = "annotations.tsv",
-  reviewer = "your-name", reason = "Explain the evidence supporting these drafts.")
-done <- sc_review(proposal, "approve", reviewer = "your-name",
-  reason = "Explain the review of all provisional annotations.", continue = TRUE)
-result <- sc_result(done)
+proposal <- sc_review(annotation, "revise", annotations = annotations,
+  reviewer = "researcher",
+  reason = "Prepared cluster annotations from the supplied markers and expression plots.")
+completed <- sc_review(proposal, "approve", reviewer = "researcher",
+  reason = "Reviewed the complete annotation proposal and supporting evidence.",
+  continue = TRUE)
 ```
 
-Revise stages a draft for fresh review. A model suggestion or saved marker hit
-does not approve a label. The final getter requires a completed run and returns
-the verified Seurat object; source counts and existing metadata are preserved.
-`done$view$output` lists saved artifacts. Finalization is recorded as `EXECUTED`,
-not automatic scientific acceptance.
-
-## Reopen and keep confirmations current
+### 4. Retrieve results and reopen the project
 
 ```r
-x <- sc_open("pbmc-study")       # read only; no analysis or model request
-shown <- sc_review(x)             # display a fresh bound snapshot
-result <- sc_result(x)            # available after completion
-# A displayed snapshot may also survive an R restart:
-saveRDS(shown, "reviewed-snapshot.rds")
+result <- sc_result(completed)
+Seurat::DimPlot(result, reduction = "umap", group.by = "sc_annotation", label = TRUE)
+table(result$sc_annotation)
+completed$view$output
 ```
 
-Confirm the object returned by `sc_review()`. If a colleague, another session or
-your own revision changes the project, that old snapshot is rejected, including
-a duplicate approval. Reopen and review the new version. The interface never
-silently transfers an old confirmation to new evidence. Opening, printing and
-reading results do not resume a run. Interrupted/failed work uses the existing
-[explicit recovery protocol](docs/RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
+`result` is the final Seurat object with the reviewed annotations. The project
+also retains marker tables, figures and the analysis record. `sc_result(...,
+stage = "analysis")` retrieves the earlier analysis object when annotation is
+still in progress.
 
-## Optional model proposals
-
-This independent route creates a new project and does not use the manual
-project above. Run each block separately and read its output before moving on.
-There are two exact-payload disclosure decisions and two scientific decisions;
-none should be approved automatically. Default policy still blocks external
-transfer. Enable it only for a new project whose disclosure you have reviewed.
-
-<details>
-<summary>Configure independent input, study facts, provider and budget</summary>
-
-Configure `DEEPSEEK_API_KEY` in the analysis R process using your usual secret
-mechanism (`XAI_API_KEY` for Grok). Set the six non-secret environment values
-below using your verified model ID, current USD-per-million-token rates and
-chosen spending limits. The helper reads the key's presence but returns only
-its environment variable name. This block makes no model request.
+In a later R session, load the same package environment and reopen the project:
 
 ```r
 library(scAgentKit)
-source(system.file("examples", "first-run.R", package = "scAgentKit"))
-
-model_counts <- Seurat::Read10X("/path/to/filtered_gene_bc_matrices/hg19")
-model_input <- Seurat::CreateSeuratObject(model_counts)
-model_context <- list(
-  species = "human", tissue = "Peripheral blood",
-  research_goal = "Describe the major immune populations in this public library.",
-  notes = "Donor and capture metadata are unavailable."
-)
-read_usd <- function(name) {
-  value <- suppressWarnings(as.numeric(Sys.getenv(name)))
-  stopifnot(length(value) == 1L, is.finite(value), value >= 0)
-  value
-}
-model_provider <- first_run_provider("deepseek", # or "grok" with XAI_API_KEY
-  model = Sys.getenv("SC_MODEL_ID"),
-  pricing = list(
-    input_per_million = read_usd("SC_INPUT_USD_PER_MILLION"),
-    output_per_million = read_usd("SC_OUTPUT_USD_PER_MILLION"),
-    cached_input_per_million = read_usd("SC_CACHED_INPUT_USD_PER_MILLION")
-  ),
-  reservation_usd = read_usd("SC_REQUEST_RESERVATION_USD")
-)
-model_budget <- read_usd("SC_PROJECT_BUDGET_USD")
-stopifnot(model_provider$reservation_usd > 0, model_budget > 0)
-model_chat_fn <- NULL # use the configured built-in provider
-model_project <- file.path(getwd(), "pbmc-model-study") # must be new
-model_reviewer <- "your-name"
+project <- sc_open("pbmc3k-analysis")
+review <- sc_review(project)
+result <- sc_result(project)
 ```
 
-An explicit offline callback can instead be supplied through `model_chat_fn`
-with its matching provider configuration. Validation of this interface used
-offline callbacks, not a live DeepSeek/Grok request. Model responses can be
-invalid or require parameter edits; review the returned state before proceeding.
+For an unfinished project, `sc_review()` displays the current stage so you can
+continue its review and execution. Opening a project does not resume work.
+See [recovery and saved results](docs/RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)
+for interrupted runs and environment changes.
 
-</details>
+## Optional model assistance
 
-Start with no manual plan to ask the configured provider for a strategy. This
-first block saves and displays the exact outgoing QC/context aggregate payload;
-it stops before sending it:
+A configured provider can propose analysis strategies and cluster annotations.
+The [model-assisted R workflow](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md#model-assisted-workflow-with-the-r-interface)
+covers provider setup, budget configuration and the complete request sequence
+using the same R interface. Review the outgoing evidence before authorizing a
+request, then review the returned scientific proposal before local execution.
+Model use is optional; the workflow above does not require a provider.
 
-```r
-model_run <- sc_analyze(model_input, model_project, context = model_context,
-  provider = model_provider, chat_fn = model_chat_fn, budget = model_budget,
-  review = list(allow_external = TRUE))
-model_transfer <- sc_review(model_run)
-```
+For model requests in the optional browser, see [model review](docs/UNIFIED_MODEL_REVIEW.md).
 
-Read that payload, provider, model and budget. If you consent to this exact
-disclosure, record the first transfer approval and explicitly request the
-response. Stop to read the returned complete strategy and projected QC impact:
+## Browser review
 
-```r
-model_consent <- sc_review(model_transfer, "approve", reviewer = model_reviewer,
-  reason = "Explain consent for this exact QC/context payload and provider.")
-model_strategy <- sc_review(model_consent, "request", chat_fn = model_chat_fn)
-```
+The [local workbench](workbench/README.md) displays saved embeddings, labels and
+proportions, marker evidence and questions requiring review. It also provides
+annotation editing and supported review controls. It requires Python ≥ 3.9 and
+a source checkout in addition to the R package; follow the workbench guide for
+local and remote setup.
 
-Revise or reject an unsuitable plan. Once you have reviewed the entire current
-strategy, this separate scientific approval runs only local computation and
-stops at annotation configuration:
+## Documentation
 
-```r
-model_next <- sc_review(model_strategy, "approve", reviewer = model_reviewer,
-  reason = "Explain why this complete strategy and QC scope suit the study.",
-  continue = TRUE)
-```
+| Topic | Reference |
+| --- | --- |
+| Complete operating guide, including installation and recovery | [Researcher protocol — 中文](docs/RESEARCHER_PROTOCOL_ZH.md) |
+| Analysis settings, QC and supported methods | [Strategy guide](docs/ANALYSIS_STRATEGY_SUPPORT.md) |
+| Annotation evidence and decisions | [Annotation review](docs/ANNOTATION_REVIEW.md) |
+| Model configuration and requests | [Model-assisted workflow](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md#model-assisted-workflow-with-the-r-interface) |
+| Browser use and server setup | [Workbench guide](workbench/README.md) |
+| Advanced workflows and additional methods | [Documentation index](docs/README.md) |
 
-Prepare the second outgoing payload from the actual saved markers and study
-context. This block displays that new preview without transmitting it:
+R function documentation is available through `?sc_analyze` and
+`help(package = "scAgentKit")`. The [detailed walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md)
+retains the advanced R workflows and examples.
 
-```r
-model_transfer <- sc_review(model_next, "request", chat_fn = model_chat_fn)
-```
+## Project status
 
-Read the second payload. If you consent, record its own transfer approval, then
-explicitly request the annotation response. Stop to inspect every proposed
-label, confidence, rationale and supplied marker citation:
+The current version, **0.5.0.9000**, is experimental. Method selection,
+annotations and biological interpretation require study-specific review.
+Supported runtime combinations and deployment scope are documented in the
+[runtime guide](docs/LINUX_RUNTIME_SUPPORT.md).
 
-```r
-model_consent <- sc_review(model_transfer, "approve", reviewer = model_reviewer,
-  reason = "Explain consent for this exact marker/context payload and provider.")
-model_annotation <- sc_review(model_consent, "request", chat_fn = model_chat_fn)
-```
-
-If needed, edit `model_annotation$annotations` and submit it with
-`sc_review(model_annotation, "revise", annotations=labels, reviewer=..., reason=...)`;
-use the newly returned snapshot for the next decision. A model suggestion does
-not itself approve a label. After reviewing the complete current annotation,
-the second scientific approval finishes the local work, and the getter returns
-the verified final Seurat object:
-
-```r
-model_done <- sc_review(model_annotation, "approve", reviewer = model_reviewer,
-  reason = "Explain the review of every provisional annotation and citation.",
-  continue = TRUE)
-model_result <- sc_result(model_done)
-model_done$view$output
-```
-
-Transfer consent and scientific approval remain separate. Reattach in-memory
-callbacks after restarting R. Requests never automatically retry failed or
-unknown paid attempts. An existing manual project's immutable configuration
-cannot be changed by this wrapper. See the [complete model walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md)
-for provider setup, failure handling and advanced edits.
-
-## What became shorter
-
-| Operation | Existing advanced interface | User interface |
-| --- | --- | --- |
-| Start a reviewed plan | Build strategy/QC schemas and nested settings, then `sc_run()` | `sc_analyze(..., plan=list(qc=..., pcs=10))` |
-| Review a proposal | Inspect, copy project/input/proposal/review hashes and revision into `sc_run_review()` | `shown <- sc_review(x)`; `sc_review(shown, "approve", ...)` |
-| Submit labels | Build the annotation schema and one record per cluster | Edit `next_step$annotations`; `sc_review(..., "revise", annotations=labels)` |
-| Compute after approval | Inspect/copy bindings into `sc_run_continue()` | Explicit `continue=TRUE` or `sc_review(ready, "continue")` |
-| Read output | Locate and validate the correct saved artifact | `sc_result(x)` or explicit `stage="analysis"` |
-
-The [before/after runnable examples](inst/examples/simple-analysis.R) run on the
-public `pbmc_small` fixture, without a provider, and explicitly retain unresolved
-labels as software controls. The [complete previous walkthrough](docs/COMPLETE_ANALYSIS_WALKTHROUGH.md)
-is preserved for direct kernel use, typed proposals, model setup and detailed
-TSV editing. Function reference: `?sc_analyze`.
-
-For processed Seurat reuse, optional diagnostics, batch methods, child projects,
-browser/server review and scientific limits, see the
-[full Chinese protocol](docs/RESEARCHER_PROTOCOL_ZH.md),
-[documentation index](docs/README.md) and [workbench guide](workbench/README.md).
-The advanced APIs remain available. No shared-server authentication changes or
-external services are required for this local workflow.
-
-Counting workflow calls only (excluding installation, data loading, standalone print/plot calls,
-label/file editing, provider setup and optional revisions), the runnable manual
-before/after example goes from 11 calls to 6. The previous complete README's
-manual route used 14 calls plus two label-conversion helper calls; the new route
-uses 6. The external model route goes from 17 to 10 calls. Both routes retain
-two scientific approvals; the external route also retains two transfer
-approvals. Scientific judgments and the four per-cluster annotation fields have
-not been removed. The new blank confidence field must also be filled; the old
-worksheet helper defaulted it to low.
+[Version history](NEWS.md) · [License](LICENSE.md)

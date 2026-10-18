@@ -8,6 +8,37 @@ first; the browser is optional.
 
 ## Start from an RDS file
 
+### Start from R
+
+After installing the package from this matching checkout, keep using R:
+
+```r
+library(scAgentKit)
+sc_start("a.rds", "analysis",
+  context = list(species = "human", tissue = "Peripheral blood",
+    research_goal = "Characterize the major immune populations."),
+  checkout = "/path/to/scAgentKit")
+# Later: reopen the saved project; its checkout is remembered.
+sc_start("a.rds", "analysis")
+```
+
+This opens a loopback review service with explicit local continuation and returns
+control to R. It passes the current R executable and library paths. On first use,
+Python ≥ 3.9 and a matching source checkout must already be available; browser
+assets are excluded from the installed package. The launcher installs nothing.
+Repeating the call reuses a matching live service or restarts a stopped service.
+Changed RDS paths/content or explicitly changed saved context/reuse settings are
+rejected rather than replacing the existing project. For a read-only viewer use
+`sc_run_open()` instead.
+
+Supply known metadata roles through `context$columns` and experimental design
+through `context$design`; the normal coordinator validates them. The launcher
+does not infer these facts. Explicit processed reuse uses
+`reuse_processed=TRUE, processed_reason="..."`, with `cluster_column` if needed.
+It starts at annotation and does not claim a new raw strategy/QC approval.
+
+### Start from a terminal
+
 In an environment with R, Seurat, the package and Python ≥ 3.9 already installed,
 one command creates a new project and starts the local review service:
 
@@ -44,14 +75,14 @@ preparation; it does not perform or claim a new strategy/QC approval.
 
 ## Open saved results
 
-Install the R package using the [pinned installation](../README.md#installation).
-The browser files are excluded from R package builds, so obtain the same source
-separately (Git and Python >= 3.9 are required):
+Install the R package using the [R package installation](../README.md#installation).
+The installation above retains a matching source checkout. In a separate
+environment, obtain the source and install the package from that same directory
+(Git and Python >= 3.9 are required for this route):
 
 ```sh
 git clone https://github.com/ChanghaoKan/scAgentKit.git
 cd scAgentKit
-git checkout --detach 727b1afc30b532683e7bf25f85a75d4c04399780
 ```
 
 Keep this checkout path and the private R library together in your project notes.

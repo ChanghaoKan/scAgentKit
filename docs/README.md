@@ -20,6 +20,7 @@ explains optional browser review and local computation.
 | Parameter edits, processed reuse and child context | [Parameter controls](PARAMETER_CONTEXT_CONTROLS.md) |
 | Whole-plan annotation and undo | [Annotation review](ANNOTATION_REVIEW.md) |
 | Local CellMarker evidence and provenance | [Reference evidence](CM2_EVIDENCE_REVIEW.md) |
+| Model-assisted workflow with the high-level R interface | [Model workflow](COMPLETE_ANALYSIS_WALKTHROUGH.md#model-assisted-workflow-with-the-r-interface) |
 | Model payload consent, requests and candidates | [Model review](UNIFIED_MODEL_REVIEW.md) |
 | Incomplete model responses and new-project recovery | [Response recovery](annotation-response-recovery.md) |
 | Child analysis, exact-ID application and undo | [Subcluster review](SUBCLUSTER_REVIEW.md) |
