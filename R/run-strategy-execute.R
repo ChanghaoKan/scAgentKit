@@ -118,9 +118,14 @@
       length(deviation) != settings$analysis$npcs || any(!is.finite(deviation)) ||
       any(deviation <= 0) || !is.finite(sum(deviation^2)) || sum(deviation^2) <= 0)
     .sc_project_fail("Strategy PCA must contain the exact requested, finite, positive-variance components and exact cell order.")
+  rank_tolerance <- max(deviation) * max(nrow(embeddings), settings$analysis$nfeatures, 1L) * .Machine$double.eps
+  if (any(deviation <= rank_tolerance))
+    .sc_project_fail("Strategy PCA has insufficient numerical rank for the approved component request; revise the visible request and obtain fresh approval, with no clipping or variance repair.")
   fractions <- deviation^2 / sum(deviation^2)
   cumulative <- cumsum(fractions)
   evidence <- list(available_pcs = ncol(embeddings),
+                   numerical_rank_check = list(tolerance = rank_tolerance,
+                     rule = "max(stdev) * max(selected cells, requested HVGs, 1) * .Machine$double.eps; every approved component must exceed this threshold; floating-point rank check, not a biological or noise signal threshold; no clipping"),
                    fraction_per_pc = as.numeric(fractions),
                    cumulative_fraction = as.numeric(cumulative),
                    denominator = "sum of variances of computed PCs only; not total expressed-gene variance",
