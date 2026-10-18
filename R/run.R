@@ -37,6 +37,8 @@
 #' @param qc_mad Optional explicit QC grouping and finite deterministic MAD panel.
 #'   A nested prefilter may declare an explicitly preapproved minimum-count rule;
 #'   default prefilter and quality preset retain all cells.
+#' @param scientific_review Optional local PC sensitivity, resampling, resolution
+#'   extension and expression-panel diagnostics; disabled by default.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
 #'   creation receipts supplied by sc_run_subcluster, not analysis settings.
 #' @return Durable run status. Use sc_run_inspect, sc_run_approve and sc_run_resume.
@@ -49,9 +51,10 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    annotation_proposal = NULL, qc_preview = list(),
                    reference_review = list(), annotation_history = NULL,
                    strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
-                   doublet_diagnostics = NULL, qc_mad = NULL,
+                   doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL) {
+  scientific_review <- .sc_run_science_options(scientific_review)
   start_stage <- match.arg(start_stage)
   if (!identical(strategy, TRUE) && !identical(strategy, FALSE)) stop("strategy must be TRUE or FALSE.", call. = FALSE)
   if (!is.null(strategy_proposal)) strategy <- TRUE
@@ -115,6 +118,10 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
+  if (!is.null(scientific_review)) {
+    if (!strategy || start_stage != "qc") stop("scientific_review requires raw strategy entry.",call.=FALSE)
+    config$scientific_review <- scientific_review
+  }
   if (strategy) config$strategy <- TRUE
   if (!is.null(subcluster_origin)) {
     config$subcluster_origin <- subcluster_origin

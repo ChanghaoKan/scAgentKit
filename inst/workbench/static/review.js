@@ -811,6 +811,7 @@ function renderCluster() {
   const joint = renderJointEvidence(item); suggestion.hidden = joint; $("annotation-reference-section").hidden = joint;
   $("annotation-cell-ids").textContent = array(item.cell_ids).join("\n"); renderMarkers(item);
   const reference = $("annotation-reference"); reference.replaceChildren(element("p", "Saved reference status: " + (item.local_reference?.status || "unavailable"), {class: "annotation-reference-status"}), raw(item.local_reference || {status: "unavailable", interpretation: "No local-reference evidence was supplied."}));
+  if (item.measured_expression) reference.append(raw(item.measured_expression));
   const row = state.drafts.get(item.clusterId); $("annotation-label").value = row.label; $("annotation-confidence").value = row.confidence; $("annotation-rationale").value = row.rationale;
   const citations = $("annotation-citations"), genes = admissibleGenes(item); citations.replaceChildren(); state.citationInputs = [];
   for (const gene of genes) {
@@ -1563,6 +1564,7 @@ function renderRecommendations() {
       if (array(step.missing).length) {
         card.append(element("h4","Missing information"),table(["Fact","Why it matters"],array(step.missing).map(row => [row.label || row.field || "Unspecified fact",row.reason || "Reason not supplied"])));
       }
+      if (step.scientific_diagnostics) { const diagnostics = element("details"); diagnostics.append(element("summary","Optional local sensitivity, resampling and expression evidence"),raw(step.scientific_diagnostics)); card.append(diagnostics); }
       if (step.sample_comparison && typeof step.sample_comparison === "object") {
         const samples = element("details"); samples.append(element("summary","Per-sample medians and cross-sample diagnostics (separate from cell MAD)"),raw(step.sample_comparison)); card.append(samples);
       }

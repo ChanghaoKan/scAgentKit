@@ -62,6 +62,7 @@
     provisional_resolution = plan$clustering$resolution,
     candidates = execution$cluster$candidates, tree = tree, markers = markers,
     interpretation = "No resolution is automatically recommended. Review transitions, marker contrasts and sample composition; optional model suggestions require explicit existing transfer approval, and the author approves the final selection.")
+  if (!is.null(config$scientific_review)) result$scientific_diagnostics <- .sc_run_science_diagnostics(seu,config,plan)
   result$hash <- .sc_run_hash(result)
   result
 }

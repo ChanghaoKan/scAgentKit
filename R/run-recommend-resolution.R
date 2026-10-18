@@ -88,6 +88,7 @@
     if (equivalent) parent[find(i)] <- find(j)
   }
   step$assessment <- "assessed"
+  if (!is.null(scan$scientific_diagnostics)) step$scientific_diagnostics <- scan$scientific_diagnostics
   step$reasons <- list("Retain measured alternatives for author comparison; no composite score, ranking or default-0.5 preference is used.")
   step$completed <- list("Fixed-cell, fixed-PC/neighbor-graph resolution scan and recorded cluster transitions are available.")
   step$conflicts <- list()

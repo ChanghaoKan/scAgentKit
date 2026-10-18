@@ -1,0 +1,22 @@
+test_that("named subset partitions report disappearing clusters and exact coverage", {
+  reference <- c(a="0",b="0",c="1",d="1")
+  x <- .sc_run_science_partition_compare(reference,c(a="a",b="a"))
+  expect_equal(x$per_cluster[[2]]$coverage,0)
+  expect_null(x$per_cluster[[2]]$best_jaccard)
+  expect_error(.sc_run_science_partition_compare(reference,c(foreign="a")),"exact cell")
+})
+test_that("explicit expression panels distinguish missing and zero, align cells and preserve input", {
+  x <- Matrix::Matrix(matrix(c(1,0,0,3, 0,0,2,0, 0,1,0,2),3,4,
+    dimnames=list(c("G1","G2","G3"),letters[1:4])),sparse=TRUE)
+  obj <- Seurat::CreateSeuratObject(x); obj$cluster <- c("0","0","1","1")
+  obj <- Seurat::NormalizeData(obj,verbose=FALSE)
+  before <- .sc_run_hash(obj)
+  value <- .sc_run_expression_panels(obj,"RNA","counts","data","cluster",list(A=c("G1","ABSENT"),B="G2"),mixed_lineage=TRUE)
+  expect_identical(value$missing_genes,"ABSENT")
+  expect_identical(value$clusters[[1]]$genes[[1]]$pct_detected,1)
+  expect_identical(value$clusters[[1]]$cross_sample_status,"unavailable")
+  expect_identical(value$mixed_lineage[[1]]$status,"measured")
+  expect_identical(.sc_run_hash(obj),before)
+  expect_false(.sc_run_science_options(list())$resampling)
+  expect_error(.sc_run_science_options(list(code="delete")),"Unsupported")
+})
