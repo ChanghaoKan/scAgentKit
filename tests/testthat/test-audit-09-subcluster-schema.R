@@ -46,3 +46,30 @@ test_that("subcluster failure states survive the actual result annotation table"
   expect_identical(out$batch_processing,"none; per-lineage processing without batch correction")
   expect_false(tail(result@decisions,1)[[1]]$success)
 })
+
+test_that("one failed lineage remains visible when another lineage succeeds", {
+  withr::local_options(lifecycle_verbosity="quiet")
+  obj <- AgentSeurat(SeuratObject::pbmc_small)
+  obj@data$cell_type <- rep(c("T","B"),each=40)
+  obj@data$cell_type_fine <- "saved original label"
+  obj@data$subcluster_id <- rep(c("T_sub0","B_sub0"),each=40)
+  previous <- list(annotations=data.frame(cell_type_fine="old T result"))
+  obj@params$subcluster_results <- list(T=previous)
+  testthat::local_mocked_bindings(.subcluster_one_broad=function(obj,broad,...) {
+    if(broad=="T") stop("lineage calculation failed")
+    idx <- which(obj@data$cell_type==broad)
+    list(cells=colnames(obj@data)[idx],cell_idx=idx,cell_type_fine=rep("new B label",length(idx)),
+      subcluster_id=rep("B_sub0",length(idx)),umap_path=NULL,resolution_used=.5,
+      annotations=data.frame(cell_type_fine="new B label",annotation_status="ok"))
+  },.package="scAgentKit")
+  root <- tempfile();dir.create(root);withr::local_dir(root)
+  expect_warning(result <- annot_subcluster(obj,function(...) stop("no provider calls"),
+    target=c("T","B"),min_cells_per_broad=1,verbose=FALSE),"lineage calculation failed")
+  failed <- result@params$subcluster_results$T
+  expect_identical(failed$status,"failed")
+  expect_match(failed$error,"lineage calculation failed")
+  expect_identical(failed$previous_result,previous)
+  expect_true(all(result@data$cell_type_fine[1:40]=="saved original label"))
+  expect_true(all(result@data$cell_type_fine[41:80]=="new B label"))
+  expect_false(tail(result@decisions,1)[[1]]$success)
+})

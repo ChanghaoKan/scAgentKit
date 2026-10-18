@@ -2,6 +2,12 @@
 
 ## Legacy workflow migration
 
+Legacy `annot_subcluster()` replies now use the same eight-field annotation
+schema and optional cluster echo as `annot_llm_annotate()`. Old three-field
+`label` replies fail visibly. Marker citations, failed attempts and lineage
+calculation errors are retained for review; one failed lineage prevents an
+overall successful decision while preserving its previous labels and result.
+
 The legacy `qc_*` execution wrappers, basic-analysis `sc_*` wrappers and
 recommendation functions, `annot_match_reference()`, `annot_llm_annotate()`,
 `annot_apply()` and `annot_subcluster()` now emit lifecycle deprecation warnings

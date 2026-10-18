@@ -192,6 +192,7 @@ annot_subcluster <- function(obj,
 
   for (broad in target) {
     res_for_this <- res_per_target[[broad]]
+    lineage_error <- NULL
     if (verbose) {
       message(sprintf(
         "\n[annot_subcluster] >>> %s (%d cells, resolution = %s)",
@@ -218,12 +219,21 @@ annot_subcluster <- function(obj,
         verbose                  = verbose
       ),
       error = function(e) {
+        lineage_error <<- conditionMessage(e)
         warning(sprintf("[annot_subcluster] %s failed: %s",
                         broad, conditionMessage(e)))
         NULL
       }
     )
-    if (is.null(res)) next
+    if (is.null(res)) {
+      results[[broad]] <- list(status="failed",error=lineage_error,
+        resolution_used=NA_real_,
+        annotations=data.frame(subcluster=NA_character_,cell_type_fine=NA_character_,
+          annotation_status="failed",annotation_error=lineage_error,
+          annotation_attempts=0L,stringsAsFactors=FALSE),
+        previous_result=obj@params$subcluster_results[[broad]])
+      next
+    }
 
     # Merge back using INTEGER row indices (never character names --
     # character indexing on an unnamed character vector silently
@@ -273,6 +283,7 @@ annot_subcluster <- function(obj,
   summary_str <- paste(
     vapply(names(results), function(b) {
       r <- results[[b]]
+      if (identical(r$status,"failed")) return(sprintf("%s: failed: %s",b,r$error))
       sprintf("%s: %d sub-clusters at res=%s -> %s",
               b, nrow(r$annotations),
               format(r$resolution_used),
