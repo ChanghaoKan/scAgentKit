@@ -16,14 +16,16 @@
   }
   facts
 }
-.sc_run_recommend_fact_fields <- function(steps, state, columns) {
-  facts <- state$config$recommendation_facts
+.sc_run_recommend_fact_fields <- function(steps, state, columns, facts = state$config$recommendation_facts) {
   descriptions <- list(
     "columns.sample" = "Explicit sample column for a newly measured grouped QC panel",
     "columns.qc_group" = "Explicit quality-group column for a newly measured QC panel",
     "columns.capture" = "Physical capture/loading-unit metadata column",
     "columns.batch" = "Declared technical batch metadata column",
     "columns.condition" = "Biological condition/contrast metadata column",
+    "columns.group" = "Explicit biological-group metadata column",
+    "columns.treatment" = "Explicit treatment metadata column",
+    "columns.donor" = "Explicit donor metadata column",
     "batch.technical_batch" = "Does the grouping represent a technical batch?",
     "batch.source" = "Source of the technical-batch declaration",
     "doublet.data_type" = "Actual assay type",
@@ -48,11 +50,19 @@
     if (identical(item$field, "context.columns.sample")) item$field <- "columns.sample"
     item
   })
-  keys <- unique(vapply(missing, function(x) as.character(x$field), character(1)))
+  known_keys <- function(value, prefix = "") {
+    if (!is.list(value) || is.null(names(value))) return(prefix)
+    unlist(lapply(names(value), function(key) known_keys(value[[key]],
+      if (nzchar(prefix)) paste(prefix, key, sep = ".") else key)), use.names = FALSE)
+  }
+  keys <- unique(c(vapply(missing, function(x) as.character(x$field), character(1)), known_keys(facts)))
   # Provenance is requested only when a declaration needs it; the author does
   # not have to fill unrelated optional protocols or algorithm parameters.
   if ("batch.technical_batch" %in% keys) keys <- c(keys, "batch.source")
   keys <- unique(keys[keys %in% names(descriptions)])
+  rate_value <- facts$doublet$rate$value
+  if (!is.null(rate_value) && (is.list(rate_value) || length(rate_value) != 1L))
+    keys <- setdiff(keys, "doublet.rate.value") # Per-capture maps remain typed R facts; do not present a scalar editor.
   lapply(keys, function(key) {
     value <- .sc_run_recommend_fact_value(facts, key)
     options <- choices[[key]]
@@ -81,6 +91,13 @@
   columns <- if (inherits(input, "Seurat")) names(input[[]]) else character()
   facts <- state$config$recommendation_facts
   if (is.null(facts)) facts <- list()
+  if (!is.null(state$config$doublet_diagnostics)) {
+    declared <- state$config$doublet_diagnostics[c("data_type", "technology", "input_source",
+      "empty_droplets_removed", "full_called_cohort", "capture", "rate")]
+    facts$doublet <- utils::modifyList(declared, if (is.null(facts$doublet)) list() else facts$doublet)
+  }
+  if (is.null(facts$batch$technical_batch) && !is.null(state$config$context$design$technical_batch))
+    facts$batch$technical_batch <- state$config$context$design$technical_batch
   # Existing explicit roles are shown as facts, never guessed from column names.
   for (role in names(state$config$context$columns)) if (is.null(facts$columns[[role]]))
     facts$columns[[role]] <- state$config$context$columns[[role]]
@@ -92,7 +109,7 @@
       pc_basis_sha256 = pc_review$artifact$sha256),
     steps = steps, completed = list("Raw-count, ID and declared-role validation; local QC measurements and proposal impacts are saved."),
     fact_editable = .sc_run_recommend_fact_editable(review_state), fact_values = facts,
-    fact_fields = .sc_run_recommend_fact_fields(steps, state, columns),
+    fact_fields = .sc_run_recommend_fact_fields(steps, state, columns, facts),
     next_decision = if (is.null(scan))
       "Review the measured QC candidates, missing optional facts, PC rule and batch alternatives together. Save the complete corrected plan, then approve this first scientific strategy; local computation stops at measured resolution review." else
       "Compare the measured resolution candidates and conflicts. Apply a candidate to the draft, save the complete strategy, and approve the measured selection; current markers and annotation then have their own third scientific submission.",

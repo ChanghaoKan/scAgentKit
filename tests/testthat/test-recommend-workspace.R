@@ -55,6 +55,10 @@ test_that("facts are snapshot-bound and rebuild diagnostics without approval or 
   view <- sc_run_inspect(path); rec <- view$strategy_review$details$recommendations
   batch <- Filter(function(x) x$id == "batch", rec$steps)[[1L]]
   expect_identical(batch$status, "recommend_skip")
+  known <- Filter(function(field) identical(field$key, "batch.technical_batch"), rec$fact_fields)
+  expect_length(known, 1L)
+  expect_identical(known[[1L]]$value, FALSE)
+  expect_true("columns.sample" %in% vapply(rec$fact_fields, `[[`, character(1), "key"))
   expect_identical(.sc_run_load(path)$files$input, input)
   expect_false(identical(view$review_node$review_hash, before$review_node$review_hash))
   expect_length(.sc_run_load(path)$approvals, 0L)
