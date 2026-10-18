@@ -6,6 +6,42 @@ history. **Review current step** opens `/review` for decisions and optional loca
 computation. Start a project with the [R tutorial](../README.md#first-analysis)
 first; the browser is optional.
 
+## Start from an RDS file
+
+In an environment with R, Seurat, the package and Python ≥ 3.9 already installed,
+one command creates a new project and starts the local review service:
+
+```sh
+python3 workbench/start_analysis.py a.rds --project pbmc-analysis \
+  --species human --tissue "Peripheral blood" \
+  --research-goal "Characterize the major immune populations"
+# Add --r-library /path/to/private/R-library when needed.
+```
+
+Use the printed loopback URL. Review and edit the strategy, then select
+**Approve strategy and continue locally**. At the annotation boundary, select
+**Prepare annotation table**, inspect the markers and fill in the blank rows.
+Save the complete proposal, inspect it, then select **Approve annotation and
+continue locally** to produce the saved result. These are two scientific
+approvals; starting the service and preparing a table grant neither approval.
+
+To leave populations unresolved, supply one reason and explicitly select
+**Keep all unfilled populations Unknown**. Known labels require citations from
+their own supplied marker evidence. Unresolved population and cell counts remain
+visible in the result; a completed workflow does not resolve their identities.
+
+The launcher does not install software, infer species or experimental design,
+configure a provider, request a model, or replace an existing output directory.
+The selected R library must contain this checkout's workflow implementation.
+Keep the terminal open; Ctrl-C closes the local service. Existing projects can
+be reopened with `server.py --run-project PATH --local-continue`.
+
+Raw-count analysis is the default even when the input has saved reductions or
+clusters. To deliberately reuse normalized data and supplied clusters, add
+`--reuse-processed --processed-reason "Explain the reuse decision"` and, if
+needed, `--cluster-column COLUMN`. This advanced entry starts at annotation
+preparation; it does not perform or claim a new strategy/QC approval.
+
 ## Open saved results
 
 Install the R package using the [pinned installation](../README.md#installation).

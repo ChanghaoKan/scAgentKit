@@ -245,13 +245,16 @@ function wbRenderMainRisk() {
   const value = wbState.view, proposal = value.strategy?.review?.details?.canonical_proposal, annotations = wbArray(value.annotation?.review?.details?.annotations), provider = value.provider || {};
   const parts = [provider.name === "manual" ? "Manual configuration · no provider selected." : provider.name === "mock" ? "Mock suggestions · simulated." : typeof provider.name === "string" && provider.name ? "Configured provider: " + provider.name + "." : "Provider configuration unavailable."];
   const allUnknown = annotations.length > 0 && annotations.every(row => row.proposal?.label === "Unknown"), allLow = allUnknown && annotations.every(row => row.proposal?.confidence === "low");
+  const unresolved = annotations.filter(row => ["unknown", "unannotated"].includes((row.proposal?.label || "").trim().toLowerCase()));
+  const unresolvedText = unresolved.length + " unresolved populations · " + unresolved.reduce((sum, row) => sum + Number(row.cell_count || 0), 0) + " cells retained as Unknown/unannotated.";
+  if (unresolved.length) parts.push(unresolvedText);
   if (allUnknown) parts.push("All " + annotations.length + " saved annotation suggestions are Unknown" + (allLow ? " / low qualitative confidence." : "."));
   const risks = []; for (const source of [proposal?.risks, proposal?.qc?.risks]) for (const risk of Array.isArray(source) ? source : typeof source === "string" ? [source] : []) if (typeof risk === "string" && risk.trim()) risks.push(risk);
   parts.push(...risks, "Biological identities remain provisional.");
   const uniqueRisks = [...new Set(risks)], full = [...new Set(parts)].join(" ");
   if (value.run.status === "complete") {
     const compact = [provider.name === "manual" ? "Manual / no provider" : provider.name === "mock" ? "SIMULATED suggestions" : parts[0]];
-    if (allUnknown) compact.push("all " + annotations.length + " Unknown" + (allLow ? " / low, uncalibrated confidence" : ""));
+    if (unresolved.length) compact.push(unresolvedText);
     compact.push("biological identities unverified / provisional");
     if (wbQCProposal()) compact.push("QC can remove valid populations");
     if (uniqueRisks.includes("These neutral ranges are a control starting point, not suggested QC thresholds.")) compact.push("QC rules are a control example, not recommended thresholds");

@@ -185,13 +185,14 @@ it makes zero model/API requests and costs zero.
 From this checkout, on the machine with the project and installed package:
 
 ```sh
-python3 workbench/server.py --run-project /absolute/path/to/project --port 8772
+python3 workbench/server.py --run-project /absolute/path/to/project --local-continue --port 8772
 # For a private R package library, add --r-library /path/to/R-library.
 # Colon-separated R library paths are supported where R uses that separator.
 ```
 
 Open `http://127.0.0.1:8772/review`. The same route shows the current QC or
-annotation node and updates when the operator explicitly resumes the run in R.
+annotation node. With `--local-continue`, the page also offers explicit local
+continuation after an approved plan; the worker stops at the next review.
 Choose a free port. On a server use an already authorized SSH connection to
 forward the loopback port; no public listener or firewall change is required.
 The server binds to loopback and passes allowlisted typed JSON through its fixed
@@ -203,9 +204,25 @@ Editing a label is a revision first. Saving the replacement creates a fresh
 review snapshot; inspect it before approval. Retaining a suggestion, setting a
 coarser label or `Unknown`, rejecting, and recording a reason use the same R
 authority. A duplicate decision is idempotent and cannot apply annotations twice.
-After approval, explicitly call `sc_run_resume(project_dir)` in R, then refresh
-the page to see the completion and output paths. The browser does not configure
-providers, run computation or expose a resume endpoint.
+After approval, select the explicit local continuation action to compute in the
+saved project. The combined approve-and-continue control records the decision
+before submitting the local job. Without `--local-continue`, resume in R with
+`sc_run_resume(project_dir)`. Merely opening or refreshing a page never starts
+analysis or a provider request. Model requests use separately enabled preview,
+transfer-approval and request controls; scientific approval remains separate.
+
+At a saved annotation boundary with no proposal, select **Prepare annotation
+table**. The fields start blank. Inspect the supplied markers, enter labels,
+qualitative confidence and rationale, and cite markers from that exact cluster.
+Alternatively, explicitly retain all unfilled populations as `Unknown` with one
+overall reason. Save the complete proposal, inspect the resulting annotation
+review and then approve and continue. Unknown populations remain visibly
+unresolved in the saved result; workflow completion does not resolve their
+biological identities. Preparing or editing the table makes no model request.
+
+For a new RDS input in an already configured environment, the
+[single-command workflow](../workbench/README.md#start-from-an-rds-file) creates
+the project and opens the same review service without an intermediate R session.
 
 This live-project route approves coordinator nodes. The separate completed
 annotation `bundle/` workbench and `sc_review_validate()` / `sc_review_apply()`

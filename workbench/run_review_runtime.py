@@ -22,6 +22,26 @@ class RunReviewRuntime(QCRuntime):
 
     @staticmethod
     def validate(payload):
+        if isinstance(payload, dict) and payload.get("action") == "prepare":
+            required = {"action", "project_id", "input_hash", "expected_revision", "evidence_hash",
+                        "proposal", "reviewer", "reason", "request_id"}
+            if set(payload) != required:
+                raise StoreError("Annotation preparation requires its exact evidence binding and complete proposal")
+            for field in ("input_hash", "evidence_hash"):
+                if not isinstance(payload[field], str) or not HASH.fullmatch(payload[field]):
+                    raise StoreError("Annotation preparation requires exact SHA-256 fingerprints")
+            revision = payload["expected_revision"]
+            if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+                raise StoreError("expected_revision must be a nonnegative integer")
+            for field, limit in (("project_id", 200), ("request_id", 200), ("reviewer", 200), ("reason", 4000)):
+                value = payload[field]
+                if not isinstance(value, str) or not value.strip() or len(value) > limit or "\x00" in value:
+                    raise StoreError("Annotation preparation requires nonempty bounded " + field)
+            if not isinstance(payload["proposal"], dict) or payload["proposal"].get("schema") != "scagentkit.annotation.v1":
+                raise StoreError("Annotation preparation requires a typed annotation proposal")
+            if len(canonical(payload).encode("utf-8")) > 1024 * 1024:
+                raise StoreError("Annotation preparation exceeds 1 MB", 413)
+            return
         common = {"action", "kind", "project_id", "input_hash", "proposal_hash", "review_hash",
                   "expected_revision", "reviewer", "reason"}
         if not isinstance(payload, dict) or not common <= set(payload):

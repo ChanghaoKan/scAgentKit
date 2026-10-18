@@ -37,7 +37,10 @@ answer <- tryCatch({
       }
       panel
     })
-    result <- do.call(scAgentKit::sc_run_review, c(list(project_dir = project_dir), request))
+    if (identical(request$action, "prepare")) {
+      request$action <- NULL
+      result <- do.call(scAgentKit::sc_run_prepare_annotation, c(list(project_dir = project_dir), request))
+    } else result <- do.call(scAgentKit::sc_run_review, c(list(project_dir = project_dir), request))
   }
   list(ok = TRUE, result = result, error = NULL)
 }, error = function(problem) list(ok = FALSE, result = NULL,

@@ -493,6 +493,7 @@ async function suggestionAction(action, modify = false, requestAfterApproval = f
   finally {state.busy = false; state.suggestionChaining = false; renderSuggestion(); buttons(); if (activeSuggestion() && !state.suggestionLost) scheduleSuggestionPoll();}
 }
 function buttons() {
+  for (const control of $("annotation-preparation")?.querySelectorAll?.("input,textarea,select,button") || []) control.disabled = !ready();
   $("run-refresh").disabled = state.busy || state.suggestionChaining;
   const annotation = ready() && node()?.kind === "annotation";
   $("annotation-save").disabled = !annotation || !node().can_revise || !annotationDirty() || !!draftError();
@@ -687,6 +688,15 @@ function verify(answer) {
     }
     if (details.cell_count !== scope.size || details.cluster_count !== rows.length || array(details.input_cells).length !== scope.size || array(details.input_cells).some(row => scope.get(row.cell_id) !== row.cluster) || new Set(array(details.input_cells).map(row => row.cell_id)).size !== scope.size) throw new Error("The annotation preview does not cover the exact saved input membership.");
   }
+  const preparation = run.annotation_preparation;
+  if (preparation != null) {
+    const ids = new Set(), clusters = array(preparation.clusters);
+    if (preparation.schema !== "scagentkit.annotation-preparation.v1" || preparation.project_id !== run.project_id || preparation.input_hash !== run.input_hash || preparation.expected_revision !== run.revision || !hash(preparation.evidence_hash) || run.stage !== "annotation_propose" || run.pending != null || run.annotation_review != null || !clusters.length) throw new Error("The blank annotation worksheet has a stale or inconsistent evidence binding.");
+    for (const cluster of clusters) {
+      if (typeof cluster.clusterId !== "string" || !cluster.clusterId || ids.has(cluster.clusterId) || !Number.isInteger(cluster.cellCount) || cluster.cellCount < 1 || array(cluster.markers).some(marker => typeof marker.gene !== "string" || !marker.gene)) throw new Error("The blank annotation worksheet has invalid cluster evidence.");
+      ids.add(cluster.clusterId);
+    }
+  }
   if (answer.continuation != null) verifyContinuation(answer.continuation, run, true);
   return answer;
 }
@@ -824,6 +834,63 @@ function renderAnnotation() {
   $("annotation-provenance").replaceChildren(raw(details.source));
   $("annotation-limitations").replaceChildren(...array(details.limitations).map(value => element("li", value)));
   renderCluster();
+}
+function renderAnnotationPreparation() {
+  const target = $("annotation-preparation"), preparation = state.view.run.annotation_preparation;
+  if (!target) return;
+  target.hidden = preparation == null || state.view.effective_readonly === true;
+  if (target.hidden) {target.replaceChildren(); state.preparationKey = null; return;}
+  const key = json(preparation);
+  if (state.preparationKey === key) return;
+  state.preparationKey = key;
+  target.replaceChildren(element("h2", "Prepare cluster annotations"), element("p", "No annotation proposal is saved. Start with a blank table, inspect the saved markers, and supply your interpretations. Saving creates a proposal for a separate complete review; it does not approve labels or run a model."));
+  const start = element("button", "Prepare annotation table", {type: "button", class: "button primary", "data-testid": "annotation-prepare-start"}); target.append(start);
+  start.addEventListener("click", () => {
+    if (!ready()) return;
+    start.remove();
+    const form = element("form", null, {"data-testid": "annotation-prepare-form"}), controls = [];
+    const field = (parent, title, tag, testid) => {const label = element("label", title), input = element(tag, null, {"data-testid": testid}); label.append(input); parent.append(label); return input;};
+    for (const cluster of array(preparation.clusters)) {
+      const card = element("section", null, {class: "panel", "data-cluster-id": cluster.clusterId});
+      card.append(element("h3", "Cluster " + cluster.clusterId + " · " + cluster.cellCount + " cells"));
+      const label = field(card, "Reviewed label", "input", "prepare-label-" + cluster.clusterId), confidence = field(card, "Qualitative confidence", "select", "prepare-confidence-" + cluster.clusterId), rationale = field(card, "Evidence and unresolved alternatives", "textarea", "prepare-rationale-" + cluster.clusterId);
+      confidence.append(...["", "low", "medium", "high"].map(value => element("option", value || "Choose confidence", {value})));
+      label.required = confidence.required = rationale.required = true;
+      const markers = [], savedMarkers = array(cluster.markers);
+      card.append(table(["Supplied marker", "Average log2 FC", "Within-cluster fraction", "Other-cell fraction"], savedMarkers.map(marker => [marker.gene, marker.avgLog2FC ?? "Unavailable", marker.pct1 ?? "Unavailable", marker.pct2 ?? "Unavailable"])));
+      const citations = element("fieldset"); citations.append(element("legend", "Cite supporting supplied markers"));
+      for (const gene of [...new Set(savedMarkers.map(marker => marker.gene))]) {
+        const wrapper = element("label", null, {class: "annotation-citation"}), box = element("input", null, {type: "checkbox"});
+        wrapper.append(box, geneNode(gene)); citations.append(wrapper); markers.push({gene, box});
+      }
+      card.append(citations); form.append(card); controls.push({cluster, label, confidence, rationale, markers});
+    }
+    const unresolvedReason = field(form, "Reason for retaining unfilled populations as Unknown", "textarea", "prepare-unknown-reason"), unresolved = element("button", "Keep all unfilled populations Unknown", {type: "button", class: "button quiet", "data-testid": "prepare-unknown-all"});
+    form.append(unresolved);
+    unresolved.addEventListener("click", () => {
+      if (!ready()) return;
+      if (!unresolvedReason.value.trim()) {message("Provide a reason for leaving these populations unresolved.", true); return;}
+      for (const row of controls) if (!row.label.value.trim()) {
+        row.label.value = "Unknown"; row.confidence.value = "low"; row.rationale.value = unresolvedReason.value.trim();
+        for (const marker of row.markers) marker.box.checked = false;
+      }
+      message("Unfilled populations are explicitly retained as Unknown in this local draft. Review and save the complete proposal before approval.");
+    });
+    const reviewer = field(form, "Reviewer", "input", "prepare-reviewer"), reason = field(form, "Overall submission reason", "textarea", "prepare-reason"); reviewer.required = reason.required = true;
+    const save = element("button", "Save complete proposal for review", {type: "submit", class: "button primary", "data-testid": "prepare-submit"}); form.append(save); target.append(form);
+    let requestId = null, submittedText = null;
+    form.addEventListener("submit", async event => {
+      event.preventDefault(); if (!ready() || !form.reportValidity()) return;
+      const annotations = controls.map(row => ({clusterId: row.cluster.clusterId, label: row.label.value.trim(), confidence: row.confidence.value, rationale: row.rationale.value.trim(), markers: row.markers.filter(marker => marker.box.checked).map(marker => marker.gene)}));
+      if (annotations.some(row => !row.label || !row.rationale || !["low", "medium", "high"].includes(row.confidence) || !unresolvedLabel(row.label) && !row.markers.length)) {message("Complete each row; a known label needs a supplied marker citation.", true); return;}
+      const payload = {action: "prepare", project_id: preparation.project_id, input_hash: preparation.input_hash, expected_revision: preparation.expected_revision, evidence_hash: preparation.evidence_hash, reviewer: reviewer.value.trim(), reason: reason.value.trim(), proposal: {schema: "scagentkit.annotation.v1", annotations}};
+      const text = json(payload); if (submittedText !== text) {requestId = "annotation-" + crypto.randomUUID(); submittedText = text;} payload.request_id = requestId;
+      state.busy = true; buttons();
+      try {const answer = await request(payload); state.view = answer; state.continuation = answer.continuation || null; state.stale = false; render(); message("Complete proposal saved. Inspect every label and its evidence in the review below, then explicitly approve and continue.");}
+      catch (error) {state.stale = true; message(error.message + " Refresh the saved state before submitting again.", true);}
+      finally {state.busy = false; buttons();}
+    });
+  });
 }
 function strategySection(title, value, notice) {
   const section = element("section", null, {class: "strategy-evidence-card"}); section.append(element("h3", title));
@@ -1302,6 +1369,7 @@ function render() {
     else next.append(element("p", "The decision is saved. Start the next computation on the data machine in R, then refresh this page."), element("code", "scAgentKit::sc_run_resume(project_dir)"));
   }
   else if (run.status === "complete") next.append(element("p", "The reviewed labels and audit are saved in the new output object. Inspect the output in R; biological result acceptance remains a separate analyst judgement."));
+  else if (run.annotation_preparation) next.append(element("p", "Analysis and markers are saved. Prepare the blank annotation table below, save the complete proposal and review it before approving and continuing."));
   else if (run.status === "rejected" || run.status === "awaiting_configuration") next.append(element("p", current?.can_revise ? "The previous decision is inactive. Edit the supported saved proposal and rebuild the review, or provide a corrected proposal in R." : state.view.suggestion_enabled === true ? "Preview and request a configured model suggestion above, or prepare a supported manual proposal in R. A suggestion must still pass the central scientific review." : "The project needs a supported proposal or configuration in R. No browser calculation or external request is started."));
   else if (run.status === "awaiting_review") next.append(element("p", current ? `Review the saved ${current.kind} snapshot below. Approval records this plan; ${continuationEnabled() ? "continue approved local work separately after approval." : "execution still requires R resume."}` : run.pending?.kind === "external_transfer" && state.view.suggestion_enabled === true ? "Review the exact aggregate preview above. Approve transmission before requesting a model suggestion; scientific review remains a separate decision." : "This node is outside the browser's supported review scope. Inspect and decide on it in R."));
   else next.append(element("p", "Saved status: " + run.status + ". Inspect or resume the computation in R, then refresh the saved state."));
@@ -1311,8 +1379,13 @@ function render() {
   if (run.strategy_review) renderStrategy(); else state.strategyDraftText = null;
   $("run-annotation").hidden = !run.annotation_review;
   if (run.annotation_review) renderAnnotation(); else state.drafts.clear();
+  renderAnnotationPreparation();
   $("run-complete").hidden = run.status !== "complete" && !current?.can_undo;
   const output = $("run-output"); output.replaceChildren();
+  if (run.status === "complete") {
+    const unresolved = annotationRows().filter(row => unresolvedLabel(row.proposal.label));
+    if (unresolved.length) output.append(element("p", unresolved.length + " unresolved populations · " + unresolved.reduce((sum, row) => sum + row.cell_count, 0) + " cells retained as Unknown/unannotated. Saved workflow output does not establish their biological identities.", {role: "status", "data-testid": "completed-unresolved"}));
+  }
   if (run.output && typeof run.output === "object") {
     const list = element("ul", null, {class: "saved-artifact-list"});
     for (const [name, value] of Object.entries(run.output)) {
