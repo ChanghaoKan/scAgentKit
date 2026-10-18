@@ -47,7 +47,7 @@
 
 #' Review the exact current QC or annotation snapshot
 #' @param project_dir Durable run directory on the data machine.
-#' @param action approve, reject, revise, QC preview, or executed annotation undo.
+#' @param action approve, reject, revise, initial author facts, QC preview, or executed annotation undo.
 #' @param kind qc or annotation, as displayed in review_node.
 #' @param project_id,input_hash Exact project identity and original input fingerprint.
 #' @param proposal_hash,review_hash,expected_revision Exact inspected snapshot.
@@ -55,11 +55,15 @@
 #' @param proposal Complete typed replacement proposal for revise only.
 #' @param sensitivity,gene_panels Explicit QC preview settings only.
 #' @param decision_id Exact current executed annotation decision for undo only.
+#' @param facts Typed partial columns/batch/doublet author declarations, for
+#'   facts only before any scientific approval. Saving schedules fresh evidence;
+#'   it does not compute, approve, remove cells or request a provider.
 #' @return Fresh inspection. Never computes, calls a provider or runs R text.
 #' @export
 sc_run_review <- function(project_dir, action, kind, project_id, input_hash,
                           proposal_hash, review_hash, expected_revision, reviewer, reason,
-                          proposal = NULL, sensitivity = NULL, gene_panels = NULL, decision_id = NULL) {
+                          proposal = NULL, sensitivity = NULL, gene_panels = NULL, decision_id = NULL,
+                          facts = NULL) {
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_project_string(project_id, "project_id")
   .sc_run_review_hash_string(input_hash, "input_hash")
@@ -68,12 +72,16 @@ sc_run_review <- function(project_dir, action, kind, project_id, input_hash,
   if (!is.character(kind) || length(kind) != 1L || is.na(kind) || !kind %in% c("qc", "annotation", "strategy"))
     stop("Review kind must be qc, strategy or annotation.", call. = FALSE)
   if (!is.character(action) || length(action) != 1L || is.na(action) ||
-      !action %in% c("approve", "reject", "revise", "preview", "undo"))
+      !action %in% c("approve", "reject", "revise", "preview", "undo", "facts"))
     stop("Unsupported review action.", call. = FALSE)
   if (!is.numeric(expected_revision) || length(expected_revision) != 1L ||
       !is.finite(expected_revision) || expected_revision < 0 || expected_revision != floor(expected_revision))
     stop("expected_revision must be the exact nonnegative inspected revision.", call. = FALSE)
   if (action != "revise" && !is.null(proposal)) stop("Only revise accepts a typed proposal.", call. = FALSE)
+  if (action == "facts") {
+    if (kind != "strategy") stop("Facts apply only to the initial strategy review.", call. = FALSE)
+    .sc_run_recommend_facts_typed(facts)
+  } else if (!is.null(facts)) stop("Only facts accepts typed author facts.", call. = FALSE)
   if (!is.null(proposal) && (!is.list(proposal) || is.null(names(proposal))))
     stop("A replacement proposal must be a typed object, never R text or a path.", call. = FALSE)
   if ((!is.null(sensitivity) || !is.null(gene_panels)) &&
@@ -102,7 +110,9 @@ sc_run_review <- function(project_dir, action, kind, project_id, input_hash,
       if (kind == "qc") review_hash else NULL, expected_revision)
   } else {
     .sc_run_qc_revision_check(state, expected_revision)
-    if (action == "undo") {
+    if (action == "facts") {
+      .sc_run_recommend_facts_save(root, state, facts, reviewer, reason)
+    } else if (action == "undo") {
       if (!isTRUE(node$can_undo) || !identical(decision_id, node$decision_id))
         stop("No current exact executed annotation decision matches this undo.", call. = FALSE)
       .sc_run_undo_locked(root, state, decision_id, reviewer, reason,

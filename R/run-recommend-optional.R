@@ -79,8 +79,10 @@
     preparation <- .sc_run_recommend_doublet_options(config)
     cells <- evidence$private$cell_ids
     cohort_blockers <- list()
+    checked <- config$recommendation_doublet_preparation
+    if (!is.null(checked) && !isTRUE(checked$ready)) cohort_blockers <- as.list(checked$reasons)
     if (length(cells) && length(cells) < 100L)
-      cohort_blockers <- list("The actual input has fewer than 100 cells; no physical capture can meet this adapter's minimum cohort size. No classifier has executed.")
+      cohort_blockers <- c(cohort_blockers, list("The actual input has fewer than 100 cells; no physical capture can meet this adapter's minimum cohort size. No classifier has executed."))
     capture_values <- evidence$private$roles$capture
     if (length(cells) && length(capture_values) == length(cells) && !anyNA(capture_values)) {
       capture_counts <- .sc_run_strategy_group_counts(capture_values)
