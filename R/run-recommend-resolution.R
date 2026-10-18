@@ -139,7 +139,7 @@
     if (length(gap)) conflicts <- c(conflicts, list(paste0("Passing marker support missing for literal cluster(s): ", paste(gap, collapse = ", "), ". This is an evidence gap, not a biological rejection.")))
     if (concentrated) conflicts <- c(conflicts, list("Single-sample clusters require biological/technical design review; do not erase them merely to increase mixing."))
     if (split_sources || merge_targets) conflicts <- c(conflicts, list("Observed splits/merges need marker and study-context interpretation; additional clusters are not automatically improvements."))
-    step$candidates[[i]] <- list(id = paste0("resolution_", key), label = paste0("Resolution ", key, " — ", length(level), " observed clusters"),
+    step$candidates[[i]] <- list(id = paste0("resolution_", key), label = paste0("Resolution ", key, " \u2014 ", length(level), " observed clusters"),
       changes = list(clustering = list(resolution = r)), available = TRUE,
       role = if (length(equivalent)) "equivalent" else if (length(conflicts) || !measured_markers || measured_samples < length(level)) "alternative_with_conflicts" else "candidate",
       reasons = reasons,
