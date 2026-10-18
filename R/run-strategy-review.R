@@ -16,6 +16,7 @@
   if (!is.null(config$prefilter)) fields <- c(fields, "prefilter")
   if (!is.null(config$recommendation_facts)) fields <- c(fields, "recommendation_facts")
   if (!is.null(config$recommendation_doublet_preparation)) fields <- c(fields, "recommendation_doublet_preparation")
+  if (!is.null(config$recommendation_doublet_settings)) fields <- c(fields, "recommendation_doublet_settings")
   if (!is.null(config$qc_mad)) fields <- c(fields, "qc_mad")
   if (!is.null(config$subcluster_origin)) fields <- c(fields, "subcluster_origin", "subcluster_creation")
   .sc_run_hash(config[fields])
