@@ -45,6 +45,7 @@
     fraction_per_pc = fractions, cumulative_fraction = cumulative,
     threshold_comparison = "First cumulative_fraction >= threshold using exact saved numeric values; displayed rounding never changes selection.",
     candidates = list(p80 = candidate(.80), p85 = candidate(.85)),
+    elbow = .sc_run_pc_elbow(variance),
     interpretation = "80% and 85% are finite empirical options for analyst review. A short reference records fewer than 50 computed PCs without inventing missing components; none of these diagnostics certifies biological correctness.")
   record$hash <- .sc_run_pc_hash(record)
   record
@@ -101,4 +102,22 @@
   graphics::mtext("Denominator is reference-PC variance only; biological correctness requires analyst review.",
     side = 1L, outer = TRUE, cex = .8)
   invisible(path)
+}
+
+# Deterministic maximum chord-distance knee, disclosed as a visual heuristic.
+.sc_run_pc_elbow <- function(variance) {
+  n <- length(variance)
+  if (n < 3L || any(!is.finite(variance)) || any(variance <= 0) ||
+      any(diff(variance) > sqrt(.Machine$double.eps)) ||
+      variance[1L] - variance[n] <= sqrt(.Machine$double.eps) * max(variance))
+    return(list(status = "unavailable", reason = "At least three nonconstant decreasing positive variances are required."))
+  x <- (seq_len(n) - 1) / (n - 1)
+  y <- (variance - variance[n]) / (variance[1L] - variance[n])
+  distance <- (1 - x - y) / sqrt(2)
+  i <- which.max(distance)
+  if (i %in% c(1L,n) || distance[i] <= sqrt(.Machine$double.eps))
+    return(list(status = "unavailable", reason = "No interior knee separates this curve from its endpoint chord."))
+  list(status = "measured", ndim = as.integer(i), chord_distance = unname(distance[i]),
+    method = "maximum perpendicular distance below endpoint chord after unit-range axis scaling",
+    interpretation = "Descriptive elbow heuristic on computed reference PCs; not an optimal biological dimension or automatic replacement.")
 }

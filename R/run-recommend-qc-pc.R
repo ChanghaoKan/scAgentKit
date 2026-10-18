@@ -200,6 +200,10 @@
         fraction_at_selected = record$cumulative_fraction[[item$ndim]], denominator = record$denominator),
       conflicts = if (item$supported) list() else list("The exact crossing selects one PC and is unsupported; no clipping to two is permitted."))
   })
+  if (identical(record$elbow$status, "measured")) step$candidates <- c(step$candidates,
+    list(list(id = "elbow", label = paste0("Chord-distance elbow: ", record$elbow$ndim, " PCs"),
+      changes = list(pcs = list(method = "fixed", ndim = record$elbow$ndim)), available = record$elbow$ndim >= 2L,
+      reasons = list(record$elbow$interpretation), impact = record$elbow, conflicts = list())))
   if (any(vapply(step$candidates, `[[`, logical(1), "available"))) step$status <- "recommend_execute" else
     step$conflicts <- list("Neither empirical crossing is supported; explicitly revise the request/rule or select a supported fixed dimension after review.")
   if (identical(validated$proposal$pcs$method, "fixed")) {
