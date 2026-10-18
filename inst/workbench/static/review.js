@@ -495,6 +495,7 @@ async function suggestionAction(action, modify = false, requestAfterApproval = f
 function buttons() {
   updateRecommendationAvailability();
   updateRecommendationFactsAvailability();
+  renderScientificAssessment();
   for (const control of $("annotation-preparation")?.querySelectorAll?.("input,textarea,select,button") || []) control.disabled = !ready();
   for (const row of state.preparationControls || []) {row.apply.disabled = !ready() || row.data.touched || row.keep.checked; row.clear.disabled = !ready() || row.keep.checked;}
   $("run-refresh").disabled = state.busy || state.suggestionChaining;
@@ -1383,6 +1384,21 @@ function updateStrategyDraftStatus() {
   $("strategy-impact-draft-status").setAttribute("data-invalid", String(!!(typedError || savedError)));
   renderContinuation();
 }
+function renderScientificAssessment() {
+  const target=$("run-scientific-assessment");if(!target)return;
+  const run=state.view?.run,assessment=run?.scientific_assessment;target.replaceChildren();
+  target.hidden=!assessment&&run?.status!=="complete";if(target.hidden)return;
+  const valid=assessment?.schema==="scagentkit.scientific-assessment.v1"&&assessment.certified_qc===false&&
+    assessment.workflow_status===run.status&&hash(assessment.source_review_hash)&&assessment.source_review_hash===run.strategy_review?.hash&&Array.isArray(assessment.unassessed_steps);
+  if(!valid){target.append(element("h2","Scientific assessment unavailable"),element("p","Scientific assessment was not recorded or is unverified for this saved result. Software completion does not certify QC or cell identities."));return;}
+  const unresolved=array(assessment.unresolved_steps),incomplete=assessment.unassessed_steps.length>0||unresolved.length>0;
+  target.append(element("h2",incomplete?"Scientific assessment remains incomplete":"Recorded decisions and diagnostic assessment"),element("p",assessment.message||"Software completion is not biological or QC certification."));
+  if(assessment.qc_choice==="keep_all_quality_deferred")target.append(element("p","QC thresholds remain deferred: the keep-all quality starting point does not establish adequate QC.",{class:"scientific-assessment-deferred"}));
+  if(assessment.unassessed_steps.length)target.append(element("p","Unassessed steps: "+assessment.unassessed_steps.join(", "),{"data-testid":"scientific-unassessed-steps"}));
+  if(unresolved.length)target.append(element("p","Unresolved decisions or conflicts: "+unresolved.join(", "),{"data-testid":"scientific-unresolved-steps"}));
+  if(array(assessment.unresolved_details).length){const details=element("details");details.append(element("summary","Unresolved facts, conflicts and uncertainty"));for(const step of assessment.unresolved_details){details.append(element("h3",step.id));recommendationList(details,"Missing facts",step.missing);recommendationList(details,"Conflicts",step.conflicts);recommendationList(details,"Uncertainty",step.uncertainty);}target.append(details);}
+  if(state.stale||state.awaitingFreshInspect)target.append(element("p","Last saved assessment shown; refresh the verified state before another decision.",{class:"microcopy"}));
+}
 function recommendationContext() {
   const run = state.view?.run, record = run?.strategy_review, review = run?.review_node;
   const recommendations = record?.details?.recommendations;
@@ -1391,6 +1407,8 @@ function recommendationContext() {
     record?.input_hash === run?.input_hash && review.project_id === run?.project_id && review.input_hash === run?.input_hash;
   if (!bound) return {current:false, reason:"Recommendations are not current. Refresh the saved review before using a candidate."};
   if (recommendations == null) return {current:false, reason:"Recommendations were not recorded for this saved review; no assessment is inferred from default choices."};
+  if (recommendations.binding && ["input_hash","config_hash","evidence_hash"].some(key => (recommendations.binding[key] ?? null) !== (record[key] ?? null)))
+    return {current:false,reason:"Recommendations are unavailable: their saved input, configuration or evidence binding is not current."};
   const ids = ["qc","doublet","pcs","batch","resolution"], statuses = ["recommend_execute","recommend_skip","insufficient_information"], assessments = ["assessed","pending_computation","unavailable"];
   if (recommendations.schema !== "scagentkit.recommendations.v1" || recommendations.policy_version !== "1" || !Array.isArray(recommendations.steps) ||
       new Set(recommendations.steps.map(step => step?.id)).size !== recommendations.steps.length || recommendations.steps.some(step => !ids.includes(step?.id) || !statuses.includes(step.status) || !assessments.includes(step.assessment) || !Array.isArray(step.candidates) || step.candidates.some(candidate => !candidate || typeof candidate.id !== "string" || !candidate.id || typeof candidate.label !== "string" || typeof candidate.available !== "boolean") || new Set(step.candidates.map(candidate => candidate.id)).size !== step.candidates.length))
@@ -1442,7 +1460,7 @@ function updateRecommendationAvailability() {
 function recommendationFactValue(field, input) {
   const raw = String(input.value ?? "").trim();
   if (!raw) return null;
-  if (field.type === "checkbox") {
+  if (["boolean","checkbox"].includes(field.type)) {
     if (!["true","false"].includes(raw)) throw new Error("Choose explicitly declared Yes, No or Unknown.");
     return raw === "true";
   }
@@ -1474,7 +1492,7 @@ function recommendationFactsDirty() {
 }
 function updateRecommendationFactsAvailability() {
   const form = state.recommendationFacts; if (!form) return;
-  const context = recommendationContext(), editable = ready() && context.current && context.reviewHash === form.reviewHash && context.recommendations.fact_editable === true && node()?.can_revise && state.view.run.stage === "strategy_propose" && !strategyDirty();
+  const context = recommendationContext(), editable = ready() && context.current && context.reviewHash === form.reviewHash && context.recommendations.fact_editable === true && node()?.can_revise && ["strategy_propose","strategy_apply"].includes(state.view.run.stage) && !strategyDirty();
   for (const control of [...form.items.map(row=>row.input),form.reviewer,form.reason]) control.disabled = !editable;
   form.save.disabled = !editable || !recommendationFactsDirty(); form.discard.disabled = !ready() || !recommendationFactsDirty();
 }
@@ -1483,16 +1501,16 @@ function renderRecommendationFacts(target, context) {
   const fields = context.current ? context.recommendations.fact_fields : null;
   if (!Array.isArray(fields) || !fields.length) return;
   const section = element("section",null,{class:"recommendation-facts","data-testid":"recommendation-facts"});
-  section.append(element("h3","Declare missing or corrected study facts"),element("p","Unknown stays unknown. Choose actual metadata columns and record the source; a sample label does not establish a physical capture. Optional missing facts can remain unassessed while supported work continues. Saving facts rebuilds local suggestions and records no scientific approval.",{class:"microcopy"}));
+  section.append(element("h3","Declare missing or corrected study facts"),element("p","Unknown stays unknown. Choose actual metadata columns and record the source; a sample label does not establish a physical capture. Save just the facts you can establish; only the reviewer and source/reason are required for this submission. Optional missing facts can remain unassessed while supported work continues. Saving facts rebuilds local suggestions and records no scientific approval.",{class:"microcopy"}));
   const form = element("form",null,{"data-testid":"recommendation-facts-form"}), items = [];
   for (const field of fields) {
-    if (!field || typeof field.key !== "string" || !["select","text","number","checkbox"].includes(field.type)) continue;
-    const label = element("label",field.label || field.key), input = element(["select","checkbox"].includes(field.type)?"select":"input",null,{"data-testid":"recommendation-fact-"+field.key.replaceAll(".","-"),"aria-label":field.label || field.key});
-    if (["select","checkbox"].includes(field.type)) {
+    if (!field || typeof field.key !== "string" || !["select","text","number","boolean","checkbox"].includes(field.type)) continue;
+    const label = element("label",field.label || field.key), input = element(["select","boolean","checkbox"].includes(field.type)?"select":"input",null,{"data-testid":"recommendation-fact-"+field.key.replaceAll(".","-"),"aria-label":field.label || field.key});
+    if (["select","boolean","checkbox"].includes(field.type)) {
       input.append(element("option","Unknown — not declared",{value:""}));
-      for (const option of field.type === "checkbox" ? [{value:true,label:"Yes — explicitly declared"},{value:false,label:"No — explicitly declared"}] : array(field.options)) input.append(element("option",option.label || String(option.value),{value:String(option.value)}));
+      for (const option of ["boolean","checkbox"].includes(field.type) ? [{value:true,label:"Yes — explicitly declared"},{value:false,label:"No — explicitly declared"}] : array(field.options)) input.append(element("option",option.label || String(option.value),{value:String(option.value)}));
     } else {input.setAttribute("type",field.type === "number" ? "number" : "text"); if(field.type==="number")input.setAttribute("step","any");}
-    input.value = field.value == null ? "" : String(field.value); input.required = field.required === true;
+    input.value = field.value == null ? "" : String(field.value); input.required = false; input.setAttribute("data-assessment-required",String(field.required === true));
     label.append(input); form.append(label); if(field.reason)form.append(element("p",field.reason,{class:"microcopy"}));
     items.push({field,input}); for(const event of ["input","change"])input.addEventListener(event,()=>buttons());
   }
@@ -1508,7 +1526,7 @@ function renderRecommendationFacts(target, context) {
 }
 async function saveRecommendationFacts(reviewHash) {
   const context = recommendationContext(), form = state.recommendationFacts;
-  if (!ready() || !form || !context.current || context.reviewHash !== reviewHash || form.reviewHash !== reviewHash || context.recommendations.fact_editable !== true || !node()?.can_revise || state.view.run.stage !== "strategy_propose") return false;
+  if (!ready() || !form || !context.current || context.reviewHash !== reviewHash || form.reviewHash !== reviewHash || context.recommendations.fact_editable !== true || !node()?.can_revise || !["strategy_propose","strategy_apply"].includes(state.view.run.stage)) return false;
   if (strategyDirty()) {message("Save or discard the complete strategy draft before saving facts. Local fact edits are preserved.",true);return false;}
   if (!form.form.reportValidity()) return false;
   let facts;

@@ -166,3 +166,8 @@ body.compact-review :is(#annotation-draft-status, #strategy-draft-status, #strat
 .recommendation-facts form label {display:flex;flex-direction:column;gap:5px;}
 .recommendation-facts form > p {grid-column:1/-1;margin-top:0;}
 .recommendation-facts form > button {align-self:end;}
+
+.scientific-assessment {border:1px solid #d6a84b;border-left:4px solid #b88019;background:#fff9ea;padding:16px 20px;margin:16px 0;}
+.scientific-assessment h2 {font-size:18px;margin-top:0;}
+.scientific-assessment p {font-size:14px;line-height:1.55;}
+.scientific-assessment-deferred {font-weight:600;}

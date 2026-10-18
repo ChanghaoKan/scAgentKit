@@ -66,12 +66,14 @@ function recommendations() {
 const value=answer();value.run.strategy_review.details.canonical_proposal.qc={schema:"scagentkit.qc.v1",rationale:"Input review",risks:[],filters:[{op:"range",metric:"nCount",min:1}]};
 const rec=recommendations();rec.fact_editable=true;rec.fact_fields=[
  {key:"columns.capture",label:"Physical capture column",type:"select",options:[{value:"loading_unit",label:"loading_unit"}],value:null,required:false,reason:"Choose actual input metadata; sample is not capture"},
- {key:"doublet.empty_droplets_removed",label:"Upstream cell calling complete",type:"checkbox",value:null,required:false,reason:"Raw MEX is not cell calling"},
+ {key:"doublet.empty_droplets_removed",label:"Upstream cell calling complete",type:"boolean",value:null,required:true,reason:"Raw MEX is not cell calling"},
  {key:"doublet.rate.value",label:"Sourced expected rate",type:"number",value:null,required:false,reason:"Rate is not a deletion quota"}];
 rec.fact_values={};value.run.strategy_review.details.recommendations=rec;
 const h=setup(value),form=h.state.recommendationFacts;
 assert(form,"Fact form rendered from saved fields only");assert.equal(h.call("recommendationFactsDirty"),false);
+assert.equal(form.items.length,3,"Backend boolean fields must not be dropped");
 assert.equal(form.items[1].input.value,"","Unknown is not default FALSE");
+assert.equal(form.items[1].input.required,false,"A fact needed by an optional path does not force all unrelated facts before partial save");
 form.items[0].input.value="loading_unit";form.items[1].input.value="false";form.items[2].input.value="0.08";
 const patch=h.call("recommendationFactPatch",form.items);assert.equal(patch.columns.capture,"loading_unit");assert.equal(patch.doublet.empty_droplets_removed,false);assert.equal(patch.doublet.rate.value,.08);
 assert.equal(h.call("recommendationFactsDirty"),true);h.call("buttons");assert.equal(h.el("strategy-approve").disabled,true,"Unsaved facts do not enter scientific approval");
