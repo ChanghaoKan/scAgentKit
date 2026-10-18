@@ -174,7 +174,7 @@ async function continueOnce() {
 }
 try {
   await test('matching installed archive starts the public entry without checkout or provider',async()=>{
-    await r('setup');launch=JSON.parse(await fs.readFile(path.join(output,'launch.json'),'utf8'));
+    await r(args['sample-hvg']==='true'?'setup-hvg':'setup');launch=JSON.parse(await fs.readFile(path.join(output,'launch.json'),'utf8'));
     assert.equal(launch.archive_sha256,report.archive_sha256);assert.equal(launch.source_checkout,null);
     assert(launch.runtime.startsWith(launch.package+path.sep));assert(launch.launch.url);
     report.runtime=launch.runtime;report.package_version=launch.version;report.R=launch.R;
@@ -225,6 +225,24 @@ try {
     assert.equal(await ui('recommendation-step-qc').isVisible(),true);
     await declarePartialBatchFacts();
     await adoptAndSave('batch',recommendationStep('batch').candidates.find(candidate=>candidate.id==='none'&&candidate.available));
+  });
+  if(args['sample-hvg']==='true')await test('sample-consensus HVGs are edited and saved through the actual main strategy UI before approval',async()=>{
+    assert.equal(launch.sample_hvg_mode,true);
+    const plan=JSON.parse(await ui('strategy-json').inputValue()),before=structuredClone(view.run);
+    plan.analysis={...plan.analysis,nfeatures:80,npcs:10,hvg_method:'sample_consensus',hvg_column:'acceptance_sample'};
+    const count=(await approvals()).length;
+    await reveal(ui('strategy-json'));await ui('strategy-json').fill(JSON.stringify(plan,null,2));
+    assert.equal(await ui('strategy-approve').isDisabled(),true);
+    await ui('strategy-reviewer').fill('Offline sample-HVG UI author');
+    await ui('strategy-reason').fill('Explicit synthetic duplicated-count software control; save sample-consensus method without approval.');
+    await clickResponse('strategy-save','/api/run-review/decision');await fresh();
+    assert.equal((await approvals()).length,count);assert.equal(count,0);
+    assert.notEqual(view.run.strategy_review.hash,before.strategy_review.hash);
+    assert.equal(view.run.strategy_review.details.canonical_proposal.analysis.hvg_method,'sample_consensus');
+    assert.equal(view.run.strategy_review.details.canonical_proposal.analysis.hvg_column,'acceptance_sample');
+    await fs.writeFile(path.join(output,'hvg-ui-choice.json'),JSON.stringify({method:'sample_consensus',column:'acceptance_sample',nfeatures:80,npcs:10,explicit_save:true,approvals_at_save:count}));
+    report.sample_hvg_ui={edited:true,separately_saved:true,approval_count_at_save:count,biological_effect_test:false};
+    await screenshot('01-sample-hvg-saved-before-approval');
   });
   await test('author approval runs the real worker once and stops at measured cluster-tree review',async()=>{
     await approveStrategy();const run=await continueOnce();assert.equal(run.status,'awaiting_review');assert.equal(run.review_node.kind,'strategy');

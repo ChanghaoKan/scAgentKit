@@ -8,7 +8,7 @@ archive <- normalizePath(a[[4L]], mustWork=TRUE)
 suppressPackageStartupMessages(library(scAgentKit))
 write_json <- function(x, name) jsonlite::write_json(x, file.path(output,name), auto_unbox=TRUE, pretty=TRUE, null='null')
 project <- file.path(output,'project'); input <- file.path(output,'input.rds')
-if (action == 'setup') {
+if (action %in% c('setup','setup-hvg')) {
   stopifnot(!dir.exists(project), !file.exists(input))
   stopifnot(is.null(getOption('scAgentKit.checkout')))
   installed <- find.package('scAgentKit')
@@ -29,7 +29,15 @@ if (action == 'setup') {
 
   unlink(temporary,recursive=TRUE)
   data('pbmc_small',package='SeuratObject',envir=environment())
-  pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),length.out=ncol(pbmc_small))
+  if (action == 'setup-hvg') {
+    # Duplicated public counts are an explicit transport/software control, not
+    # two biological samples. Enough cells keep all 80% resamples eligible.
+    counts <- SeuratObject::LayerData(pbmc_small,assay='RNA',layer='counts')
+    duplicated <- cbind(counts,counts)
+    colnames(duplicated) <- c(paste0('control_A::',colnames(counts)),paste0('control_B::',colnames(counts)))
+    pbmc_small <- Seurat::CreateSeuratObject(duplicated,min.cells=0,min.features=0)
+    pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),each=ncol(counts))
+  } else pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),length.out=ncol(pbmc_small))
   saveRDS(pbmc_small,input)
   # sc_start defaults to raw reanalysis, model_suggestions='off', no provider.
   launch <- NULL
@@ -53,7 +61,7 @@ if (action == 'setup') {
   write_json(list(launch=launch,preselection_launch=preselection_launch,package=installed,runtime=runtime,
     version=as.character(packageVersion('scAgentKit')), R=R.version.string,
     input_cells=colnames(pbmc_small), archive_sha256=digest::digest(file=archive,algo='sha256'),
-    model_suggestions='off', source_checkout=NULL), 'launch.json')
+    model_suggestions='off',sample_hvg_mode=identical(action,'setup-hvg'), source_checkout=NULL), 'launch.json')
 } else if (action == 'reopen') {
   launch <- NULL
   invisible(capture.output(launch <- sc_start(input,project,browse=FALSE,model_suggestions='off')))
@@ -127,9 +135,20 @@ if (action == 'setup') {
   stopifnot(identical(science$pc_sensitivity$status,'measured'),identical(science$resampling$status,'measured'),
     length(science$resampling$replicates)==5L,identical(science$expression$status,'measured'),
     identical(science$default_changed,FALSE),!is.null(evidence$private$expression_review))
+  sample_hvg <- NULL
+  if(file.exists(file.path(output,'hvg-ui-choice.json'))) {
+    choice <- jsonlite::read_json(file.path(output,'hvg-ui-choice.json'))
+    sample_hvg <- analysis@misc$scagentkit_sample_hvg
+    stopifnot(identical(review$details$canonical_proposal$analysis$hvg_method,'sample_consensus'),
+      identical(review$details$canonical_proposal$analysis$hvg_column,'acceptance_sample'),
+      identical(sample_hvg$sample_column,'acceptance_sample'),length(sample_hvg$features)==80L,
+      length(sample_hvg$sample_hvgs)==2L,all(unlist(sample_hvg$sample_cells)>=30L),
+      identical(SeuratObject::VariableFeatures(analysis[['RNA']]),sample_hvg$features),
+      identical(choice$method,'sample_consensus'))
+  }
   write_json(list(status='passed',view=view,cells=ncol(final),labels=unique(final$sc_annotation),
     output_sha256=digest::digest(file=view$output$seurat,algo='sha256'),
     executed_stages=executed,approval_kinds=kinds,ledger=ledger,ledger_file_exists=ledger_exists,provider_calls=length(ledger$entries),
     provider=state$config$provider,resolution_binding=resolution_binding,
-    scientific_diagnostics=science,scientific_accuracy_tested=FALSE),'r-output-verification.json')
+    scientific_diagnostics=science,sample_hvg=sample_hvg,scientific_accuracy_tested=FALSE),'r-output-verification.json')
 } else stop('Unknown action')
