@@ -85,7 +85,7 @@ test_that("missing optional package leaves none usable without claiming correcti
   out <- .sc_run_recommend_batch(f$evidence, f$validated, f$config)
   expect_true(out$candidates[[1]]$available)
   expect_false(out$candidates[[2]]$available)
-  expect_identical(out$assessment, "pending_computation")
+  expect_identical(out$assessment, "unavailable")
   expect_true(any(grepl("not installed", unlist(out$candidates[[2]]$reasons))))
 })
 
@@ -133,7 +133,7 @@ test_that("complete supported preparation remains pending and cannot materialize
   expect_identical(f, before)
   f$evidence$private$cell_ids <- paste0("c", 1:40)
   unsupported <- .sc_run_recommend_doublet(f$evidence, f$validated, f$config)
-  expect_identical(unsupported$status, "recommend_skip")
+  expect_identical(unsupported$status, "insufficient_information")
   expect_identical(unsupported$assessment, "unavailable")
   expect_true(any(grepl("100 cells", unlist(unsupported$reasons))))
 })
@@ -150,4 +150,71 @@ test_that("fixed unsupported evidence does not become a scored keep/removal reco
   expect_true(out$candidates[[1]]$available)
   expect_equal(out$candidates[[1]]$changes$doublet$method, "keep")
   expect_true(any(grepl("100 cells", unlist(out$reasons))))
+})
+
+test_that("blank or missing batch levels are information gaps rather than assessed single batches", {
+  for (value in list("", "   ", NA_character_)) {
+    f <- optional_fixture(TRUE)
+    f$evidence$private$roles$batch[] <- value
+    out <- .sc_run_recommend_batch(f$evidence, f$validated, f$config)
+    expect_identical(out$status, "insufficient_information")
+    expect_identical(out$assessment, "unavailable")
+    expect_true(length(out$missing) > 0L)
+  }
+})
+
+test_that("unavailable Harmony changes the top-level recommendation as well as candidate availability", {
+  original <- utils::packageVersion
+  current <- NULL
+  testthat::local_mocked_bindings(packageVersion = function(pkg, ...) {
+    if (pkg == "harmony") {
+      if (is.null(current)) stop("harmony is not installed")
+      return(package_version(current))
+    }
+    original(pkg, ...)
+  }, .package = "utils")
+  f <- optional_fixture(TRUE)
+  for (value in list(NULL, "1.2.4")) {
+    current <- value
+    out <- .sc_run_recommend_batch(f$evidence, f$validated, f$config)
+    expect_identical(out$status, "insufficient_information")
+    expect_identical(out$assessment, "unavailable")
+    expect_false(out$candidates[[2]]$available)
+    expect_true(any(grepl("not installed|outside.*supported", unlist(out$reasons))))
+  }
+})
+
+test_that("unavailable doublet dependencies never imply that doublet assessment should be skipped", {
+  current <- "missing"
+  testthat::local_mocked_bindings(.sc_run_doublet_versions = function() list(
+    scDblFinder = if (current == "missing") NA_character_ else "1.26.9",
+    xgboost = "3.1.0", SingleCellExperiment = "1.0.0", SummarizedExperiment = "1.0.0",
+    S4Vectors = "1.0.0", BiocParallel = "1.0.0"), .package = "scAgentKit")
+  f <- optional_fixture()
+  f$evidence$private$cell_ids <- paste0("c", 1:240)
+  f$config$recommendation_facts$doublet <- list(data_type = "scrna_droplet",
+    technology = "10x_chromium_standard", input_source = "Author called-cell matrix",
+    empty_droplets_removed = TRUE, full_called_cohort = TRUE,
+    capture = list(method = "column", column = "physical_load", source = "Author loading manifest"),
+    rate = list(method = "10x_standard", source = "Documented full-called-capture rule"))
+  for (value in c("missing", "unsupported")) {
+    current <- value
+    out <- .sc_run_recommend_doublet(f$evidence, f$validated, f$config)
+    expect_identical(out$status, "insufficient_information")
+    expect_identical(out$assessment, "unavailable")
+    expect_false(out$candidates[[1]]$available)
+    expect_length(out$completed, 0L)
+    expect_true(length(out$reasons) > 1L)
+  }
+})
+
+test_that("known unsupported assay records applicability only when recommending skipping this adapter", {
+  f <- optional_fixture()
+  f$config$recommendation_facts$doublet <- list(data_type = "snrna")
+  out <- .sc_run_recommend_doublet(f$evidence, f$validated, f$config)
+  expect_identical(out$status, "recommend_skip")
+  expect_identical(out$assessment, "unavailable")
+  expect_identical(out$completed$applicability$supported, FALSE)
+  expect_identical(out$completed$applicability$scoring_executed, FALSE)
+  expect_null(out$completed$scoring)
 })

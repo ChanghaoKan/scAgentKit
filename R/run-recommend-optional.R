@@ -94,8 +94,14 @@
     pending <- preparation$ready && !length(cohort_blockers)
     step$missing <- preparation$missing
     step$reasons <- c(list("Doublet scoring has not been configured or completed; none/keep is not an assessment."), preparation$blockers, cohort_blockers)
-    step$status <- if (length(step$missing)) "insufficient_information" else if (pending) "recommend_execute" else "recommend_skip"
+    declared <- config$doublet_diagnostics
+    if (is.null(declared) || identical(declared, FALSE)) declared <- config$recommendation_facts$doublet
+    inapplicable <- is.character(declared$data_type) && length(declared$data_type) == 1L &&
+      !is.na(declared$data_type) && !identical(declared$data_type, "scrna_droplet")
+    step$status <- if (inapplicable) "recommend_skip" else if (pending) "recommend_execute" else "insufficient_information"
     step$assessment <- if (pending) "pending_computation" else "unavailable"
+    if (inapplicable) step$completed$applicability <- list(data_type = declared$data_type,
+      supported = FALSE, scoring_executed = FALSE)
     step$candidates <- list(.sc_run_recommend_optional_candidate("prepare_doublet", "Prepare supported fixed-cohort diagnostics", list(), FALSE,
       c("Preparation is not an immediately executable deletion choice; creation-time diagnostics must first be explicitly configured and scored.", unlist(c(preparation$blockers, cohort_blockers))),
       list(options_ready = preparation$ready, known_cohort_prerequisites_supported = !length(cohort_blockers))))
@@ -174,7 +180,8 @@
     return(step)
   }
   batch <- roles$batch
-  if (!is.null(columns$batch) && length(batch) > 0L && !anyNA(batch) && length(unique(batch)) == 1L) {
+  if (!is.null(columns$batch) && length(batch) > 0L && !anyNA(batch) &&
+      all(nzchar(trimws(as.character(batch)))) && length(unique(batch)) == 1L) {
     step$status <- "recommend_skip"; step$assessment <- "assessed"
     step$completed <- list(technical_levels = 1L, retained_cells = length(batch))
     step$reasons <- list("The explicitly declared technical batch column has one retained level; between-batch correction is not applicable.")
@@ -187,7 +194,7 @@
   bio <- intersect(c("group", "condition", "treatment"), names(columns))
   if (!length(bio)) add("columns.condition", "Biological contrast column", "Declare group, condition or treatment so technical and biological confounding can be checked.")
   if (length(step$missing)) return(step)
-  if (anyNA(batch) || any(!nzchar(as.character(batch)))) {
+  if (anyNA(batch) || any(!nzchar(trimws(as.character(batch))))) {
     add("columns.batch", "Complete technical labels", "Every retained cell needs a nonempty technical batch value.")
     return(step)
   }
@@ -213,6 +220,10 @@
   } else {
     step$status <- "recommend_execute"; step$assessment <- "pending_computation"
     step$reasons <- list("The declared technical and biological design passes the supported identifiability audit; evaluate Harmony against none, rather than assuming correction helps.")
+  }
+  if (!is.null(dependency)) {
+    step$status <- "insufficient_information"; step$assessment <- "unavailable"
+    step$reasons <- c(step$reasons, list(dependency))
   }
   step$candidates[[2]] <- .sc_run_recommend_optional_candidate("harmony", "Evaluate supported Harmony embedding correction",
     list(batch = choice), isTRUE(audit$executable) && is.null(dependency),
