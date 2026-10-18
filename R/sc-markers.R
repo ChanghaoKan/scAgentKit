@@ -29,6 +29,7 @@ sc_find_markers <- function(obj,
   seu <- obj@data
   markers <- Seurat::FindAllMarkers(
     seu,
+    group.by        = "seurat_clusters",
     only.pos        = only_pos,
     min.pct         = min_pct,
     logfc.threshold = logfc_threshold,
@@ -38,6 +39,7 @@ sc_find_markers <- function(obj,
   script <- sprintf(
 '# ---- Find all markers (min.pct = %s, logfc.threshold = %s) ----
 all_markers <- FindAllMarkers(seurat_obj,
+                              group.by        = "seurat_clusters",
                               only.pos        = %s,
                               min.pct         = %s,
                               logfc.threshold = %s)',
