@@ -1,4 +1,23 @@
-# scAgentKit 0.5.1 (unreleased)
+# scAgentKit 0.6.0 (unreleased)
+
+## Saved-project compatibility and metadata priors
+
+The audited implementation changes the implementation hash relative to earlier
+code. A saved project whose recorded hash differs from the running code or its
+fingerprinted dependency versions cannot continue execution, approval or review
+under that implementation. `sc_run_resume()` checks this before continuing,
+including for a completed run. A package version number alone is not the test.
+
+Keep the original project, inputs, package build and dependency versions. To
+continue that project, restore its original environment and exact package build;
+otherwise create a new project directory from the original input and review the
+analysis again. Do not edit project hashes, approvals or checkpoints to force a
+resume. Previously completed objects still require their recorded file-integrity
+checks; changing convenience exports does not authorize changing authority.
+
+Author-label metadata priors are off by default in legacy annotation and
+resolution recommendation. `use_metadata_prior=TRUE` is an explicit opt-in;
+independent annotation mode continues to exclude these priors.
 
 ## Legacy workflow migration
 
@@ -12,8 +31,9 @@ The legacy `qc_*` execution wrappers, basic-analysis `sc_*` wrappers and
 recommendation functions, `annot_match_reference()`, `annot_llm_annotate()`,
 `annot_apply()` and `annot_subcluster()` now emit lifecycle deprecation warnings
 with concrete reviewed `sc_run` migration paths. They remain exported and callable.
-Removal is planned for version **0.7.0**, subject to the migration notice in that
-release. Utility accessors, reference readers, comparison helpers and current
+The first published deprecation is **0.6.0**. The exports remain available through
+**0.6.x** and **0.7.x**; removal is planned no earlier than **0.8.0**, subject to
+the migration notice in that release. Utility accessors, reference readers, comparison helpers and current
 project APIs are retained. The reviewed coordinator has explicit configuration,
 proposal and approval boundaries; these are not signature-compatible replacements.
 Manual split/merge and gene-removal helpers have no one-to-one coordinator

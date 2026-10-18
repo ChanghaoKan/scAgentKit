@@ -32,7 +32,7 @@
   caller <- if (parent > 0L) sys.function(parent) else NULL
   if (is.function(caller) && identical(environment(caller), asNamespace("scAgentKit")))
     return(invisible(NULL))
-  lifecycle::deprecate_warn("0.5.1", what=paste0(name,"()"),
+  lifecycle::deprecate_warn("0.6.0", what=paste0(name,"()"),
     details=.legacy_workflow_routes()[[name]], id=paste0("scAgentKit-legacy-",name))
   invisible(NULL)
 }
