@@ -98,3 +98,18 @@ test_that("implementation fingerprint is independent of collation locale", {
     expect_false(identical(.sc_run_implementation(), baseline))
   })
 })
+
+test_that("default-only helper bodies are covered without evaluating missing arguments", {
+  ns <- asNamespace("scAgentKit")
+  marker <- get("sc_find_markers", envir = ns, inherits = FALSE)
+  changed <- marker
+  # obj remains a required/missing argument; inspecting defaults must not
+  # evaluate it, or execute this deliberately unusable default expression.
+  formals(changed)$rationale <- quote(annot_subcluster())
+  testthat::local_mocked_bindings(sc_find_markers = changed, .package = "scAgentKit")
+  baseline <- .sc_run_implementation()
+  implementation_mutation("annot_subcluster", function() {
+    expect_false(identical(.sc_run_implementation(), baseline))
+  })
+  expect_identical(.sc_run_implementation(), baseline)
+})

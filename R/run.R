@@ -191,7 +191,10 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   while (length(pending)) {
     referenced <- unique(unlist(lapply(pending, function(name) {
       fn <- get(name, envir = ns, inherits = FALSE)
-      c(all.names(body(fn)), all.names(formals(fn)))
+      # all.names ignores pairlists. A synthetic call exposes nested default
+      # expressions as syntax, retaining required missing arguments unevaluated.
+      defaults <- as.call(c(list(as.name("list")), as.list(formals(fn))))
+      c(all.names(body(fn)), all.names(defaults))
     }), use.names = FALSE))
     local <- referenced[vapply(referenced, function(name)
       exists(name, envir = ns, inherits = FALSE) &&
