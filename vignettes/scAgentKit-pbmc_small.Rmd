@@ -1,8 +1,8 @@
 ---
-title: "A reviewed PBMC tutorial with scAgentKit"
+title: "A reviewed pbmc_small tutorial with scAgentKit"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{A reviewed PBMC tutorial with scAgentKit}
+  %\VignetteIndexEntry{A reviewed pbmc_small tutorial with scAgentKit}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
