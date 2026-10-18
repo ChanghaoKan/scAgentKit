@@ -1,0 +1,181 @@
+name: release-archive
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Merged release tag to build and publish
+        required: true
+        default: v0.6.0
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ steps.provenance.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache: false
+          dependencies: '"hard"'
+          extra-packages: |
+            any::knitr
+            any::rmarkdown
+      - name: Build untouched archive from the exact source
+        id: provenance
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_EVENT: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(Rscript -e 'cat(read.dcf("DESCRIPTION")[1,"Version"])')" = 0.6.0
+          source_commit=$(git rev-parse HEAD)
+          if [ "$RELEASE_EVENT" = workflow_dispatch ]; then
+            test "$RELEASE_TAG" = v0.6.0
+            test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$source_commit"
+          fi
+          test -z "$(git status --porcelain --untracked-files=no)"
+          R CMD build .
+          test -z "$(git status --porcelain --untracked-files=no)"
+          sha256sum scAgentKit_0.6.0.tar.gz > SHA256SUMS
+          echo "commit=$source_commit" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,tarfile
+          source=pathlib.Path('scAgentKit_0.6.0.tar.gz')
+          with tarfile.open(source) as t:
+              description=t.extractfile('scAgentKit/DESCRIPTION').read()
+              assert b'Packaged:' in description
+              for m in t.getmembers():
+                  if m.isfile():
+                      data=t.extractfile(m).read()
+                      assert b'/Users/kan/' not in data and b'/home/kan/' not in data,m.name
+          receipt=dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              source_tree=subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip(),
+              tag=os.environ.get('RELEASE_TAG') or None,build='R CMD build',archive_modified=False,
+              sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+              workflow_url='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID'])
+          pathlib.Path('build-receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-source
+          path: |
+            scAgentKit_0.6.0.tar.gz
+            SHA256SUMS
+            build-receipt.json
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-source
+          path: release-source
+      - name: Publish the exact CI-built tag archive
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_COMMIT: ${{ needs.build.outputs.commit }}
+        with:
+          script: |
+            const fs = require('fs');
+            const tag = process.env.RELEASE_TAG;
+            if (tag !== 'v0.6.0') throw new Error('Unexpected release tag');
+            const receipt = JSON.parse(fs.readFileSync('release-source/build-receipt.json'));
+            if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified)
+              throw new Error('Source provenance mismatch');
+            const body = fs.readFileSync('docs/RELEASE_NOTES_0.6.0.md','utf8') +
+              '\n\nSource commit: `' + receipt.source_commit + '`. SHA256: `' + receipt.sha256 +
+              '`.\nBuild and public-install acceptance: ' + receipt.workflow_url;
+            const result = await github.rest.repos.createRelease({...context.repo, tag_name: tag,
+              target_commitish: receipt.source_commit, name: 'scAgentKit 0.6.0 (experimental)',
+              body, draft: true, prerelease: false});
+            for (const name of ['scAgentKit_0.6.0.tar.gz','SHA256SUMS','build-receipt.json']) {
+              await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: result.data.id,
+                name, data: fs.readFileSync('release-source/'+name)});
+            }
+            await github.rest.repos.updateRelease({...context.repo, release_id: result.data.id, draft: false});
+
+  clean-install:
+    needs: [build, publish]
+    if: >-
+      always() && needs.build.result == 'success' &&
+      (github.event_name == 'pull_request' || needs.publish.result == 'success')
+    runs-on: ubuntu-latest
+    container:
+      image: rocker/r-ver:4.5.2@sha256:fd4ccdd3a4a6f7ef805e2daeee2a0fe3bf126bc231f36351223baecf5a595a4c
+    env:
+      R_LIBS_SITE: /tmp/scagentkit-empty-site
+      R_LIBS_USER: /tmp/scagentkit-empty-user
+      MAKEFLAGS: -j2
+      OPENBLAS_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
+    steps:
+      - name: System build dependencies (no R package library restored)
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends git curl python3 ca-certificates \
+            build-essential gfortran cmake pkg-config libcurl4-openssl-dev libssl-dev \
+            libxml2-dev libpng-dev libjpeg-dev libtiff-dev libfontconfig1-dev \
+            libfreetype6-dev libharfbuzz-dev libfribidi-dev libhdf5-dev libglpk-dev libgmp-dev
+          mkdir -p "$R_LIBS_SITE" "$R_LIBS_USER"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+      - uses: actions/download-artifact@v4
+        if: github.event_name == 'pull_request'
+        with:
+          name: release-source
+          path: acceptance
+      - name: Anonymous public download or PR artifact preflight
+        env:
+          SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
+          RELEASE_EVENT: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p acceptance
+          cp tools/release/prepare-acceptance.py tools/release/clean-install.R acceptance/
+          cd acceptance
+          mode=artifact
+          if [ "$RELEASE_EVENT" = workflow_dispatch ]; then mode=public; fi
+          python3 prepare-acceptance.py "$mode" "$SOURCE_COMMIT" 2>&1 | tee download.log
+      - name: Exact README install from empty R libraries and installed offline example
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd acceptance
+          Rscript clean-install.R 2>&1 | tee clean-install.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clean-release-install-logs
+          path: |
+            acceptance/download.log
+            acceptance/clean-install.log
+            acceptance/download-receipt.json
+            acceptance/clean-install-receipt.json
+          if-no-files-found: warn
