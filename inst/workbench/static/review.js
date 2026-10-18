@@ -1124,6 +1124,27 @@ function chooseClusteringDraft() {
     draft.clustering = {resolution: numericDraft(controls.resolution.value), diagnostic_resolutions: text ? text.split(",").map(numericDraft) : null}; setStrategyDraft(draft);
   } catch (_) {message("Correct the complete JSON draft before changing clustering settings.", true);}
 }
+function renderClusterTree(scan) {
+  const section = element("section", null, {class: "cluster-tree-evidence"});
+  section.append(element("h4", "Measured resolution cluster tree"), element("p", scan.interpretation), element("p", scan.tree?.interpretation));
+  const nodes = array(scan.tree?.nodes), edges = array(scan.tree?.edges), resolutions = array(scan.resolutions);
+  if (!nodes.length) {empty(section, "No measured cluster nodes."); return section;}
+  const width = Math.max(500, resolutions.length * 150), perLevel = resolutions.map(r => nodes.filter(n => n.resolution === r));
+  const height = Math.max(220, ...perLevel.map(level => 70 + 60 * level.length)), positions = new Map();
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", String(width)); svg.setAttribute("height", String(height)); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Shared cell transitions between scanned clustering resolutions");
+  function shape(tag, attrs, text) {const n = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const [k,v] of Object.entries(attrs)) n.setAttribute(k, String(v)); if (text != null) n.textContent = text; svg.append(n); return n;}
+  perLevel.forEach((level, i) => {const x = 70 + i * (width - 140) / Math.max(1, resolutions.length - 1); shape("text", {x, y: 20, "text-anchor": "middle", fill: "currentColor"}, `r = ${resolutions[i]}`); level.forEach((n,j) => positions.set(n.id, {x, y: 60 + j * 60}));});
+  edges.forEach(edge => {const a = positions.get(edge.source), b = positions.get(edge.target); if (!a || !b) return; const line = shape("line", {x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"#64748b","stroke-opacity":.55,"stroke-width":Math.max(1, 8 * edge.source_fraction)}); const title = document.createElementNS("http://www.w3.org/2000/svg", "title"); title.textContent = `${edge.cells} shared cells; source fraction ${edge.source_fraction}; target fraction ${edge.target_fraction}`; line.append(title);});
+  nodes.forEach(n => {const p = positions.get(n.id); shape("circle", {cx:p.x,cy:p.y,r:Math.min(18,6+Math.sqrt(n.cells)),fill:"#0f766e"}); shape("text", {x:p.x+23,y:p.y+4,fill:"currentColor","font-size":11}, `${n.cluster} (${n.cells})`);});
+  const scroll = element("div"); scroll.style.overflowX = "auto"; scroll.append(svg); section.append(scroll);
+  section.append(table(["From", "To", "Shared cells", "Source fraction", "Target fraction"], edges.map(e => [e.source,e.target,e.cells,evidenceNumber(e.source_fraction),evidenceNumber(e.target_fraction)])));
+  section.append(element("h4", "Cluster sample composition"), table(["Resolution", "Cluster", "Sample", "Cells"], nodes.flatMap(n => array(n.sample_counts).map(row => [n.resolution,n.cluster,row.value,row.cells]))));
+  for (const [resolution, record] of Object.entries(scan.markers || {})) {
+    const detail = element("details"); detail.append(element("summary", `Resolution ${resolution}: marker evidence (${record.status})`), element("p", record.limitation), table(["Cluster", "Gene", "log2 FC", "Detected inside", "Detected outside", "Adjusted p"], array(record.markers).map(m => [m.clusterId,m.gene,evidenceNumber(m.avgLog2FC),evidenceNumber(m.pct1),evidenceNumber(m.pct2),evidenceNumber(m.pAdj)]))); section.append(detail);
+  }
+  return section;
+}
 function renderClustering(details, proposal) {
   if (proposal.clustering == null) return strategySection("Clustering and resolution", null, "Processed clusters are reused; no new resolution or diagnostic comparison is invented.");
   const card = cycleNode("section", null, "clustering-card", {class: "strategy-evidence-card clustering-card"}); card.append(element("h3", "Clustering and resolution"));
@@ -1136,6 +1157,7 @@ function renderClustering(details, proposal) {
   const bound = actual?.status === "saved" && actual.source === "analysis_saved_louvain_diagnostics" && hash(actual.basis_artifact_sha256) && actual.basis_artifact_sha256 === diagnostic.basis_artifact_sha256 && hash(actual.analysis_artifact_sha256);
   if (bound && Array.isArray(actual.candidates) && actual.candidates.length) comparison.append(element("p", "Actual saved comparison from the approved analysis checkpoint; new draft values have not been executed."), table(["Resolution", "Chosen", "Clusters", "Smallest", "Largest", "ARI / chosen", "ARI / previous"], actual.candidates.map(row => [evidenceNumber(row.resolution), typeof row.chosen === "boolean" ? String(row.chosen) : "Unknown", evidenceNumber(row.n_clusters), evidenceNumber(row.min_cluster_size), evidenceNumber(row.max_cluster_size), evidenceNumber(row.ari_vs_chosen), evidenceNumber(row.ari_vs_previous)])));
   else empty(comparison, "Not run or no bound saved diagnostic comparison is available. Candidate settings do not imply observed cluster counts.");
+  if (details.cluster_diagnostics) card.append(renderClusterTree(details.cluster_diagnostics));
   card.append(comparison); return card;
 }
 function chooseBatchDraft() {

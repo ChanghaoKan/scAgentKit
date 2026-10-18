@@ -55,7 +55,8 @@
     npcs <- min(50L, nfeatures - 1L, dimensions[[2]] - 1L)
     base <- list(schema = "scagentkit.strategy.v1",
       rationale = "Editable software starting draft. Review input QC and study facts before approval.",
-      risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices."),
+      risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices.",
+        "Resolution 0.5 is a provisional scan starting value, not a recommendation. Review the measured cluster tree before final author selection."),
       inferences = list(), qc = list(schema = "scagentkit.qc.v1",
         rationale = "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
         risks = list("No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
@@ -64,7 +65,7 @@
         nfeatures = nfeatures, npcs = npcs, seed = 17L),
       pcs = list(method = "computed_top50", threshold = .80),
       batch = list(method = "none", reason = "No batch correction selected; technical provenance requires explicit review."),
-      clustering = list(resolution = .5, diagnostic_resolutions = NULL),
+      clustering = list(resolution = .5, diagnostic_resolutions = c(.2, .4, .6, .8, 1)),
       umap = list(run = TRUE, n_neighbors = min(30L, dimensions[[2]] - 1L)))
   }
   for (name in intersect(names(edits), c("rationale", "batch", "umap"))) {

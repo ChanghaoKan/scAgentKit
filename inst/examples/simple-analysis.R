@@ -9,7 +9,7 @@ simple_analysis_after <- function(project_dir) {
   x <- scAgentKit::sc_analyze(e$pbmc_small, project_dir,
     context = list(species = "human", tissue = "Public PBMC software fixture"),
     plan = list(rationale = "Explicit software-control plan, not biological recommendations.",
-      analysis = list(nfeatures = 100, npcs = 6), pcs = 4, umap = FALSE))
+      analysis = list(nfeatures = 100, npcs = 6), pcs = 4, diagnostic_resolutions = NULL, umap = FALSE))
   shown <- scAgentKit::sc_review(x)
   annotation <- scAgentKit::sc_review(shown, "approve", reviewer = "fixture-test",
     reason = "Explicitly exercise this public software-control strategy", continue = TRUE)

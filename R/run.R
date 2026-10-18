@@ -499,6 +499,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         seu <- .sc_run_strategy_cluster(.sc_run_get(root, state, "strategy_neighbors"), state$config, plan)
         state <- .sc_run_put(root, state, "analysis", seu)
         state$completed <- unique(c(state$completed, "analysis")); state$nodes$analysis <- "EXECUTED"
+        state <- .sc_run_cluster_after(root, state, plan)
+        if (identical(state$status, "awaiting_review")) return(.sc_run_public(state))
         state <- .sc_run_checkpoint(root, state, stage, "markers")
       } else if (stage == "qc_evidence") {
         evidence <- .sc_run_qc_evidence(.sc_run_get(root, state, "input"), state$config$context, state$config$assay, state$config$counts_layer)

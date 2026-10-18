@@ -107,7 +107,7 @@
       dependency_hashes = validated$dependency_hashes,
       execution_plan = if (state$config$start_stage == "processed") list("Reuse the supplied QC and processed analysis; compute current markers after approval.") else
         list("Apply the exact projected QC once under this strategy approval.", "LogNormalize, VST HVGs, HVG scaling and PCA.",
-          "Select reviewed PCs; explicit PCA neighbors and optional UMAP.", "Explicit Louvain resolution and optional local numeric diagnostics.",
+          "Select reviewed PCs; explicit PCA neighbors and optional UMAP.", "Compare explicitly requested Louvain resolutions on one fixed graph; review the measured cluster tree, markers and sample composition before selecting the final resolution.",
           "Compute markers and stop for the separate annotation review."),
       source = list(kind = if (!is.null(state$files$manual_strategy)) "manual_typed_strategy" else "saved_provider_response",
         provider = state$config$provider, facts = "User declarations and measured local aggregates; proposal inferences are not facts."),
@@ -118,6 +118,7 @@
     else record$details$source$previous_suggestion <- adopted
   }
   record$details$pc_diagnostics <- .sc_run_strategy_pc_review(root, state, validated, evidence)
+  record$details$cluster_diagnostics <- .sc_run_cluster_scan_get(root, state)
   if (state$config$start_stage != "processed")
     record$details$capabilities$qc_rules <- list(schema = "scagentkit.qc.rules.v1",
       remove_if = c("any", "all"), max_rules = 32L, max_mad_predicates = 1L,
@@ -204,6 +205,9 @@
   if (!is.null(record$details$batch_runtime_source) &&
       !identical(record$details$batch_runtime_source, .sc_run_strategy_batch_source(saved$proposal)))
     stop("Harmony runtime source changed; this strategy approval is stale. Explicitly revise the saved strategy to review the current source and rebuild only its derived correction.", call. = FALSE)
+  if (!is.null(record$details$cluster_diagnostics) &&
+      !identical(record$details$cluster_diagnostics, .sc_run_cluster_scan_get(root, state)))
+    stop("Resolution scan changed; strategy review is stale.", call. = FALSE)
   pc_review <- record$details$pc_diagnostics
   # Initial approval remains a rule approval when its PCA is subsequently
   # computed. A revised review with cached diagnostics binds that exact cache.
@@ -272,7 +276,7 @@
   state$stage <- "strategy_propose"
   record <- .sc_run_strategy_review_verify(root, state)
   files <- intersect(c("input", "prefilter", "qc_mad", "qc_evidence", "strategy_evidence", "cycle_diagnostics", "doublet_diagnostics", "manual_strategy",
-    "strategy_validated", "strategy_review", "qc_validated", "qc_preview", "qc_preview_plot", "strategy_basis", "strategy_batch"), names(state$files))
+    "strategy_validated", "strategy_review", "qc_validated", "qc_preview", "qc_preview_plot", "strategy_basis", "strategy_batch", "strategy_neighbors", "cluster_scan"), names(state$files))
   .sc_run_pending(state, "strategy", list(plan = validated$proposal, review_hash = record$hash),
     evidence$evidence_hash, "strategy_apply", file_names = files)
 }
@@ -365,6 +369,13 @@
       stop("Cached Harmony requires its runtime dependency. Install it explicitly before revising; the correction cannot be silently reused or skipped.", call. = FALSE)
     cached_runtime_changed <- !identical(old_source, new_source)
     if (cached_runtime_changed) changed <- unique(c(changed, "batch", "neighbors", "clustering", "umap"))
+  }
+  scan <- .sc_run_cluster_scan_get(root, state)
+  if (!is.null(scan)) {
+    grid_same <- identical(validated$proposal$clustering$diagnostic_resolutions, scan$diagnostic_resolutions)
+    graph_same <- !length(setdiff(changed, "clustering"))
+    if (grid_same && graph_same) .sc_run_cluster_selection(validated$proposal$clustering$resolution, scan)
+    else state$files$cluster_scan <- NULL
   }
   all_downstream <- c("markers", "annotation_evidence", "annotation_request", "annotation_response", "annotation_validated", "annotation_review", "manual_annotation", "annotated")
   drop <- character()

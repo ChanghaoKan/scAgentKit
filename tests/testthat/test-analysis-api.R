@@ -5,7 +5,7 @@ ui_input <- function() {
 ui_context <- function() list(species = "human", tissue = "Public PBMC software fixture",
   notes = "No donor/capture metadata or established identity is inferred.")
 ui_plan <- function() list(rationale = "Reviewed software-control settings; not study recommendations.",
-  analysis = list(nfeatures = 100L, npcs = 6L), pcs = 4L, umap = FALSE)
+  analysis = list(nfeatures = 100L, npcs = 6L), pcs = 4L, diagnostic_resolutions = NULL, umap = FALSE)
 ui_review <- function(...) {
   text <- capture.output(out <- sc_review(...))
   attr(out, "display") <- text
