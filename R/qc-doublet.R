@@ -25,6 +25,8 @@ qc_doublet <- function(obj,
                        remove    = TRUE,
                        seed      = 999,
                        rationale = NULL) {
+  .legacy_workflow_warn("qc_doublet")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat_list") {
@@ -36,6 +38,7 @@ qc_doublet <- function(obj,
   if (!requireNamespace("SingleCellExperiment", quietly = TRUE)) {
     stop("Package 'SingleCellExperiment' is required for qc_doublet.")
   }
+  .sc_run_doublet_classifier_versions_verify(.sc_run_doublet_classifier_installed_versions())
 
   n_before <- .count_cells(obj)
   rate_summary <- stats::setNames(numeric(length(obj@data)), names(obj@data))

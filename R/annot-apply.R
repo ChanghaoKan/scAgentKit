@@ -34,6 +34,8 @@ annot_apply <- function(obj,
                         drop_rejected    = FALSE,
                         column_name      = "cell_type",
                         rationale        = NULL) {
+  .legacy_workflow_warn("annot_apply")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   source <- match.arg(source)

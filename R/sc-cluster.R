@@ -15,6 +15,8 @@ sc_find_neighbors <- function(obj,
                               reduction = NULL,
                               ndim      = NULL,
                               rationale = NULL) {
+  .legacy_workflow_warn("sc_find_neighbors")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (is.null(reduction)) {
@@ -71,6 +73,8 @@ sc_cluster_sweep <- function(obj,
                              resolutions = seq(0.1, 0.5, 0.1),
                              plot_dir    = "figures",
                              rationale   = NULL) {
+  .legacy_workflow_warn("sc_cluster_sweep")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (!requireNamespace("clustree", quietly = TRUE)) {
@@ -81,6 +85,7 @@ sc_cluster_sweep <- function(obj,
   seu <- Seurat::FindClusters(seu, resolution = resolutions,
                               verbose = FALSE)
   obj@data <- seu
+  obj <- .invalidate_cluster_markers(obj)
 
   # The clustree visualisation is helpful but optional. ggraph/clustree
   # versions older than the user's ggplot2 will fail with errors like
@@ -156,6 +161,8 @@ clustree::clustree(seurat_obj@meta.data, prefix = "RNA_snn_res.")',
 sc_cluster <- function(obj,
                        resolution,
                        rationale = NULL) {
+  .legacy_workflow_warn("sc_cluster")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (missing(resolution)) {
@@ -166,6 +173,7 @@ sc_cluster <- function(obj,
   seu <- Seurat::FindClusters(seu, resolution = resolution,
                               verbose = FALSE)
   obj@data <- seu
+  obj <- .invalidate_cluster_markers(obj)
   n_clusters <- length(unique(obj@data$seurat_clusters))
 
   script <- sprintf(
@@ -190,4 +198,15 @@ seurat_obj <- FindClusters(seurat_obj, resolution = %s)',
     script_snippet = script,
     new_stage      = "clustered"
   )
+}
+
+# Every clustering call may change membership even when the cluster count is
+# unchanged. Retain raw model-response audits and decision history, but require
+# fresh marker/reference calculations and annotations before applying labels.
+.invalidate_cluster_markers <- function(obj) {
+  fields <- c("all_markers", "markers_filtered", "markers_summary",
+    "cluster_cycling_score", "reference_matches", "reference_matches_all",
+    "llm_annotations", "annotation_evidence_review", "author_comparison")
+  obj@params[intersect(fields,names(obj@params))] <- NULL
+  obj
 }

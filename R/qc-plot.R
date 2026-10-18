@@ -22,6 +22,8 @@ qc_plot <- function(obj,
                     width    = 10,
                     height   = 6,
                     dpi      = 150) {
+  .legacy_workflow_warn("qc_plot")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)

@@ -93,6 +93,8 @@ annot_match_reference <- function(obj,
                                   reference,
                                   top_n_candidates = 5,
                                   rationale        = NULL) {
+  .legacy_workflow_warn("annot_match_reference")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   reference <- .validate_marker_reference(reference)

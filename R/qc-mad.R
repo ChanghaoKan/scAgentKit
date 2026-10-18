@@ -51,6 +51,8 @@ qc_mad <- function(obj,
                                    "percent.mt", "percent.ribo", "percent.hb"),
                    log_metrics = c("nCount_RNA", "nFeature_RNA"),
                    rationale   = NULL) {
+  .legacy_workflow_warn("qc_mad")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
 

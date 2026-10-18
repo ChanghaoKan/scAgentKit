@@ -35,6 +35,7 @@ make_minimal_seurat <- function(counts_per_cell, features_per_cell,
 }
 
 test_that("qc_mad in log10 space keeps more right-tail cells than linear-space MAD", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_no_seurat()
   # Realistic scRNA-seq library size distribution: log10(nCount) is
   # roughly normal with SD ~ 0.3. In linear space, this has a heavy
@@ -65,6 +66,7 @@ test_that("qc_mad in log10 space keeps more right-tail cells than linear-space M
 })
 
 test_that("qc_mad upper-only metrics (percent.mt) stay in linear space", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_no_seurat()
   set.seed(42)
   n <- 100

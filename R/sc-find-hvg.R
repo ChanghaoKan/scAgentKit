@@ -15,6 +15,8 @@ sc_find_hvg <- function(obj,
                         method     = "vst",
                         nfeatures  = 2000,
                         rationale  = NULL) {
+  .legacy_workflow_warn("sc_find_hvg")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

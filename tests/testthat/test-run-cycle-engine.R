@@ -55,6 +55,7 @@ cycle_engine_resign_scores <- function(record, s, g2m) {
 }
 
 test_that("gene sets require explicit species, provenance, and complete literal mapping", {
+  withr::local_options(lifecycle_verbosity="quiet")
   expect_error(sc_cycle_gene_set("mouse"), "Mouse.*explicit|mouse.*explicit")
   expect_error(sc_cycle_gene_set("zebrafish"), "species|human|mouse|unsupported")
   expect_error(sc_cycle_gene_set("human", letters[1:6], letters[7:12]), "source")
@@ -85,6 +86,7 @@ test_that("gene sets require explicit species, provenance, and complete literal 
 })
 
 test_that("diagnostics are opt-in with canonical matching species and declared prerequisites", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   expect_null(scAgentKit:::.sc_run_cycle_options(list(), NULL))
   expect_null(scAgentKit:::.sc_run_cycle_options(list(), FALSE))
@@ -104,6 +106,7 @@ test_that("diagnostics are opt-in with canonical matching species and declared p
 })
 
 test_that("full-input reference uses sparse counts and preserves source metadata, layers, identities, and RNG", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   snapshot <- serialize(f$object, NULL, version = 2L)
   set.seed(13); before_seed <- .Random.seed
@@ -150,6 +153,7 @@ test_that("full-input reference uses sparse counts and preserves source metadata
 })
 
 test_that("post-QC attachment reuses exact fixed scores and rejects changed sources or provenance", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   record <- scAgentKit:::.sc_run_cycle_evidence(f$object, f$config)
   retained <- colnames(f$object)[c(4, 2, 30:70)]
@@ -174,6 +178,7 @@ test_that("post-QC attachment reuses exact fixed scores and rejects changed sour
 })
 
 test_that("missing, nonexpressed, and infeasible control-bin evidence is Unknown with no filtering", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   missing_config <- f$config
   missing_config$cycle_diagnostics <- scAgentKit:::.sc_run_cycle_options(f$config$context,
@@ -214,6 +219,7 @@ test_that("missing, nonexpressed, and infeasible control-bin evidence is Unknown
 })
 
 test_that("regression validates the actual retained finite variance and design rank", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   record <- scAgentKit:::.sc_run_cycle_evidence(f$object, f$config)
   cells <- colnames(f$object)
@@ -240,6 +246,7 @@ test_that("regression validates the actual retained finite variance and design r
 })
 
 test_that("three approved methods reuse normalization and HVGs and preserve every source cell", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   cycle <- scAgentKit:::.sc_run_cycle_evidence(f$object, f$config)
   before <- serialize(f$object, NULL, version = 2L)
@@ -281,6 +288,7 @@ test_that("three approved methods reuse normalization and HVGs and preserve ever
 })
 
 test_that("legacy regression defaults to a true no-op and mouse scoring fails before unsafe matching", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- cycle_engine_fixture()
   wrapped <- AgentSeurat(f$object)
   before <- serialize(wrapped, NULL, version = 2L)

@@ -1,6 +1,6 @@
 # Documentation
 
-For a first project, follow the [README analysis walkthrough](../README.md#first-analysis).
+For a first project, follow the [README analysis walkthrough](../README.md#analysis-protocol).
 Then use the [完整中文操作指南](RESEARCHER_PROTOCOL_ZH.md) for installation,
 your own data, approvals, results, recovery and server use. The README uses the four high-level R entries; the protocol retains the
 advanced `sc_run()` workflow. The [complete previous walkthrough](COMPLETE_ANALYSIS_WALKTHROUGH.md)

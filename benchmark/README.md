@@ -216,7 +216,8 @@ authorized environment; these commands are not part of the offline harness):
 
 ```r
 remotes::install_github("ChanghaoKan/agentomicsCore", ref = "v0.1.1")
-remotes::install_github("ChanghaoKan/scAgentKit", ref = "v0.4.0")
+# Install scAgentKit from the versioned Release archive as in ../README.md.
+remotes::install_local("scAgentKit_0.5.1.tar.gz", dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 remotes::install_github("satijalab/seurat-data")
 ```
 

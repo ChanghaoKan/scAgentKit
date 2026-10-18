@@ -34,6 +34,8 @@
 #'   markers, missing citations, ambiguity, and label-specific reference scores.
 #' @export
 annot_review_evidence <- function(obj, label_map = NULL, rationale = NULL) {
+  .legacy_workflow_warn("annot_review_evidence")
+
   stopifnot(methods::is(obj, "AgentSeurat"))
   normalize <- .review_label_normalizer(label_map)
   all_candidates <- obj@params$reference_matches_all

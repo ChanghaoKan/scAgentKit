@@ -27,6 +27,8 @@ qc_remove_genes <- function(obj,
                             ribo_pattern = NULL,
                             hb_pattern   = NULL,
                             rationale    = NULL) {
+  .legacy_workflow_warn("qc_remove_genes")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (missing(species)) {
@@ -39,7 +41,7 @@ qc_remove_genes <- function(obj,
   species <- match.arg(species, c("mouse", "human"))
 
   if (is.null(mt_pattern))   mt_pattern   <- if (species == "mouse") "^mt-"   else "^MT-"
-  if (is.null(ribo_pattern)) ribo_pattern <- if (species == "mouse") "^Rp[sl]" else "^RP[SL]"
+  if (is.null(ribo_pattern)) ribo_pattern <- .sc_run_ribo_pattern(species)
   if (is.null(hb_pattern))   hb_pattern   <- if (species == "mouse") "^Hb[ab]" else "^HB[AB]"
 
   build_remove_set <- function(seu) {

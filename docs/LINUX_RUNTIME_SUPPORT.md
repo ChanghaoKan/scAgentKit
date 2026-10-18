@@ -11,7 +11,15 @@ source is accepted by an adapter.
 | --- | --- |
 | Modern doublet adapter | scDblFinder exactly 1.26.7, xgboost >= 3.1, and accepted canonical classifier function hashes |
 | Additional doublet adapter | scDblFinder exactly 1.22.0 paired with xgboost exactly 1.7.11.1, and its accepted canonical hashes |
+| Other scDblFinder versions, including 1.26.9 | Unsupported. Dependency preflight reports the actual installed version and stops before classifier execution; it never silently skips detection. |
 | Harmony | Harmony 2.0.x with the exact supported modern public method signatures and options object; runtime function identities are recorded and checked during execution |
+
+The legacy `qc_doublet()` entry also checks the supported version pair. For an
+unsupported installation, use a separately verified isolated R library with a
+supported pair and the accepted adapter sources, or explicitly disable optional
+doublet analysis in a new reviewed plan. Do not replace packages in a shared
+global environment to bypass this guard. A newer official release is not
+automatically an accepted adapter; acceptance requires independent verification.
 
 The doublet pairs are selected in `R/run-doublet.R`; the Harmony API guard is in
 `R/run-harmony.R`. A generic latest-version install is not a compatibility check.
@@ -26,21 +34,14 @@ or valid cell identities.
 
 ## Installation and environment records
 
-Use a private library for the checkout and approved dependencies. With dependencies
-already available, install the local source as follows:
+Use the versioned GitHub Release archive and `remotes::install_local()` exactly
+as shown in the [README](../README.md#installation). Do not substitute a mutable
+branch or a different tag. The pending publication plan and archive verification
+steps are in [release preparation](RELEASE_PLAN.md).
 
-```sh
-sc_checkout=/absolute/path/to/verified/scAgentKit-checkout
-sc_r_library=/absolute/path/to/private-r-library
-mkdir -p "$sc_r_library"
-cd "$sc_checkout"
-R_LIBS_USER="$sc_r_library" R CMD INSTALL --library="$sc_r_library" .
-```
-
-This command does not download or repair dependencies. For repository installation,
-use the [README](../README.md#installation). Record the source commit, R executable,
-`.libPaths()`, installed package versions and `sessionInfo()`. Preserve the project's
-original environment when resuming; changing implementation can invalidate approvals.
+Record the archive SHA256, R executable, `.libPaths()`, installed package versions
+and `sessionInfo()`. Preserve the project's original environment when resuming;
+changing implementation can invalidate approvals.
 Saved doublet evidence uses its recorded runtime provenance rather than the optional
 package currently installed in the reviewing R process.
 

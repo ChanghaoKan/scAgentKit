@@ -18,7 +18,8 @@ annot_llm_annotate(
   parallel = FALSE,
   verbose = TRUE,
   rationale = NULL,
-  reference_mode = c("guided", "independent")
+  reference_mode = c("guided", "independent"),
+  use_metadata_prior = FALSE
 )
 }
 \arguments{
@@ -37,9 +38,9 @@ schema described in the system prompt.}
 \item{expected_celltypes}{Optional character vector of cell types that
 should plausibly be present in this tissue. If supplied, the LLM is
 instructed to prefer these and to flag novel types. If NULL,
-in guided mode, `annot_llm_annotate()` attempts to auto-detect a celltype column
-in the Seurat metadata and use those values as a *prior* (see
-`strict_vocabulary`).}
+metadata is not used unless `use_metadata_prior=TRUE` explicitly opts in.}
+
+\item{use_metadata_prior}{Logical, default FALSE. Explicitly permit a metadata cell-type prior in guided mode. Do not use held-out evaluation truth. The opt-in and actual column are recorded; independent mode never uses this prior.}
 
 \item{strict_vocabulary}{Logical, default FALSE. When TRUE, the LLM is
 forced to match `expected_celltypes` *verbatim* (no sub-division, no

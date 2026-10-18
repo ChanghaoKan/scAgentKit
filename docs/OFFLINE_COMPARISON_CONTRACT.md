@@ -116,7 +116,7 @@ instead of presenting unequal tasks as a controlled comparison.
 
 ## Installed package and platform gates
 
-For each final archive, build once, SHA256 it, and install into a **new target
+For each final archive, prepare the approved Release archive once, SHA256 it, and install into a **new target
 library** using that archive. Existing dependencies may be reused; explicitly
 record `.libPaths()` and `sessionInfo()`. This is an independent target-package
 installation in the current environment, not a clean Mac. Run the following
@@ -124,7 +124,7 @@ with the existing dependency library in `R_LIBS_USER` as appropriate:
 
 ```sh
 mkdir /tmp/scagentkit-fresh-library
-R CMD INSTALL --library=/tmp/scagentkit-fresh-library scAgentKit_0.5.0.9000.tar.gz
+Rscript -e 'remotes::install_local("scAgentKit_0.5.1.tar.gz", lib="/tmp/scagentkit-fresh-library", dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)' 
 Rscript benchmark/contracts/installed_package_smoke.R \
   /tmp/scagentkit-fresh-library /tmp/installed-smoke.json
 ```

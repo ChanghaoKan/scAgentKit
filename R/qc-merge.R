@@ -12,6 +12,8 @@
 #' @return Updated AgentSeurat with `data_type == "seurat"`.
 #' @export
 qc_merge <- function(obj, join_layers = TRUE, rationale = NULL) {
+  .legacy_workflow_warn("qc_merge")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat_list") {

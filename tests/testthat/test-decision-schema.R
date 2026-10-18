@@ -9,6 +9,7 @@ decision_provider <- function(replies) {
 }
 
 test_that("PC decisions require an integer candidate and the full schema", {
+  withr::local_options(lifecycle_verbosity="quiet")
   validate <- function(raw) scAgentKit:::.validate_pcs_decision(decision_parse(raw), c(10L, 20L))
   good <- '{"chosen_ndim":20,"confidence":"medium","reasoning":"The second panel separates major groups."}'
   expect_identical(validate(good)$chosen_ndim, 20L)
@@ -34,6 +35,7 @@ test_that("PC decisions require an integer candidate and the full schema", {
 })
 
 test_that("PC retries validate schema and preserve successful and failed raw replies", {
+  withr::local_options(lifecycle_verbosity="quiet")
   bad <- '{"chosen_ndim":"20","confidence":"high","reasoning":"bad type"}'
   good <- '{"chosen_ndim":20,"confidence":"medium","reasoning":"The second panel is clearer."}'
   out <- scAgentKit:::.pcs_call_with_retry(decision_provider(list(bad, good)), "system", "user",
@@ -55,6 +57,7 @@ test_that("PC retries validate schema and preserve successful and failed raw rep
 })
 
 test_that("resolution decisions are restricted to swept and visible candidates", {
+  withr::local_options(lifecycle_verbosity="quiet")
   validate <- function(raw, panels = numeric(), vision = FALSE) {
     scAgentKit:::.validate_resolution_decision(decision_parse(raw), c(0.2, 0.4, 0.6), panels, vision)
   }
@@ -83,6 +86,7 @@ test_that("resolution decisions are restricted to swept and visible candidates",
 })
 
 test_that("invalid resolution replies fail visibly without snapping or indexing errors", {
+  withr::local_options(lifecycle_verbosity="quiet")
   bad <- '{"chosen_resolution":0.35,"confidence":"high","alternatives":[],"reasoning":"Invented resolution."}'
   expect_warning(out <- scAgentKit:::.resolution_call_with_retry(
     decision_provider(list(bad)), "system", "user", res_values = c(0.2, 0.4), max_retries = 0
@@ -102,6 +106,7 @@ test_that("invalid resolution replies fail visibly without snapping or indexing 
 })
 
 test_that("batch decisions validate all fields and refuse invented metadata columns", {
+  withr::local_options(lifecycle_verbosity="quiet")
   validate <- function(raw) scAgentKit:::.validate_batch_decision(decision_parse(raw), c("sample", "donor"))
   good <- '{"recommended":"sample","confidence":"medium","alternatives":["donor"],"warnings":[],"reasoning":"Samples capture technical variation."}'
   expect_identical(validate(good)$alternatives, "donor")
@@ -120,6 +125,7 @@ test_that("batch decisions validate all fields and refuse invented metadata colu
 })
 
 test_that("batch failure retains candidates and requires explicit integration selection", {
+  withr::local_options(lifecycle_verbosity="quiet")
   scored <- data.frame(column = c("sample", "donor"), n_levels = c(2, 2),
                        median_size = c(50, 50), smallest_size = c(50, 50),
                        name_match = c(TRUE, TRUE), looks_biological = c(FALSE, FALSE), score = c(4, 4))
@@ -134,6 +140,7 @@ test_that("batch failure retains candidates and requires explicit integration se
 })
 
 test_that("resolution and batch public workflows retain failure audits in decisions", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("SeuratObject")
   counts <- matrix(seq_len(18), nrow = 3,
                    dimnames = list(paste0("gene", 1:3), paste0("cell", 1:6)))
@@ -171,6 +178,7 @@ test_that("resolution and batch public workflows retain failure audits in decisi
 })
 
 test_that("PC candidate inputs fail before running UMAP or requesting a model", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("SeuratObject")
   counts <- matrix(seq_len(18), nrow = 3,
                    dimnames = list(paste0("gene", 1:3), paste0("cell", 1:6)))
@@ -190,6 +198,7 @@ test_that("PC candidate inputs fail before running UMAP or requesting a model", 
 })
 
 test_that("PC public workflow records a model fallback as an unsuccessful decision", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("SeuratObject")
   counts <- matrix(seq_len(18), nrow = 3,
                    dimnames = list(paste0("gene", 1:3), paste0("cell", 1:6)))

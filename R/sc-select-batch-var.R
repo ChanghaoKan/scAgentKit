@@ -56,6 +56,8 @@ sc_select_batch_var <- function(obj,
                                 max_levels  = 200,
                                 top_n       = 8,
                                 max_retries = 2) {
+  .legacy_workflow_warn("sc_select_batch_var")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

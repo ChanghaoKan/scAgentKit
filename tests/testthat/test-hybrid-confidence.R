@@ -33,9 +33,14 @@ test_that(".compute_hybrid_confidence: high hallucination drops confidence", {
 
   hc <- scAgentKit:::.compute_hybrid_confidence(parsed,
                                                 cluster_markers, ref_rows)
-  # 0.3*0.85 + 0.3*0.9 + 0.2*0 + 0.2*1 = 0.255 + 0.27 + 0 + 0.2 = 0.725
-  # Still high, but lower than no-halluc case. Adjust expectation.
-  expect_lte(hc$score, 0.75)
+  # pct differences .9/.8 have median .85:
+  # .30*.85 + .30*.85 + .20*0 + .20*1 = .710.
+  expect_equal(hc$score, 0.710, tolerance=1e-8)
+  parsed$hallucination_rate <- 0
+  without_hallucination <- scAgentKit:::.compute_hybrid_confidence(
+    parsed, cluster_markers, ref_rows)
+  expect_equal(without_hallucination$score, 0.910, tolerance=1e-8)
+  expect_equal(without_hallucination$score-hc$score, 0.200, tolerance=1e-8)
 })
 
 test_that(".compute_hybrid_confidence: weak evidence gives 'low'", {

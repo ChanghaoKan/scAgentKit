@@ -131,9 +131,14 @@ if (opt$mode == "run") {
                                   max_percent_mt = 5, min_percent_mt = 0,
                                   normalization = "LogNormalize", scale_factor = 10000,
                                   hvg_method = "vst", nfeatures = 2000L,
-                                  npcs = 30L, ndim = 10L, pca_seed = 42L,
+                                  # sc_pca retains Seurat's PCA default; record
+                                  # that installed default rather than invent
+                                  # an independent benchmark seed.
+                                  npcs = 30L, ndim = 10L,
+                                  pca_seed = as.integer(formals(getS3method("RunPCA", "default", envir=asNamespace("Seurat")))$seed.use),
                                   resolution = 0.5, clustering_algorithm = 1L,
-                                  clustering_seed = 0L, umap_seed = 42L,
+                                  clustering_seed = 0L, umap_seed = seed,
+                                  umap_reduction = "pca", umap_name = "umap",
                                   marker_only_pos = FALSE, marker_min_pct = 0.25,
                                   marker_logfc = 0, marker_summary_top_n = 30L,
                                   marker_summary_log2fc_cut = 1,
@@ -220,7 +225,8 @@ run_method <- function(method) {
     seu <- step(method, "create_input", new_input())
     seu <- step(method, "qc_add_metrics", {
       seu[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^MT-")
-      seu[["percent.ribo"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^RP[SL]")
+      seu[["percent.ribo"]] <- Seurat::PercentageFeatureSet(seu,
+        pattern = getFromNamespace(".sc_run_ribo_pattern","scAgentKit")("human"))
       seu[["percent.hb"]] <- Seurat::PercentageFeatureSet(seu, pattern = "^HB[AB]")
       seu
     })
@@ -239,9 +245,9 @@ run_method <- function(method) {
       dims = seq_len(p$ndim), verbose = FALSE))
     seu <- step(method, "cluster", Seurat::FindClusters(seu, resolution = p$resolution,
       algorithm = p$clustering_algorithm, random.seed = p$clustering_seed, verbose = FALSE))
-    set.seed(decisions$seed)
-    seu <- step(method, "umap", Seurat::RunUMAP(seu, reduction = "pca", dims = seq_len(p$ndim),
-      seed.use = p$umap_seed, verbose = FALSE))
+    set.seed(p$umap_seed)
+    seu <- step(method, "umap", Seurat::RunUMAP(seu, reduction = p$umap_reduction,
+      dims = seq_len(p$ndim), reduction.name = p$umap_name, seed.use = p$umap_seed, verbose = FALSE))
     markers <- step(method, "markers", Seurat::FindAllMarkers(seu,
       only.pos = p$marker_only_pos, min.pct = p$marker_min_pct,
       logfc.threshold = p$marker_logfc, verbose = FALSE))
@@ -278,7 +284,8 @@ run_method <- function(method) {
     obj <- step(method, "pca", scAgentKit::sc_pca(obj, npcs = p$npcs))
     obj <- step(method, "neighbors", scAgentKit::sc_find_neighbors(obj, reduction = "pca", ndim = p$ndim))
     obj <- step(method, "cluster", scAgentKit::sc_cluster(obj, resolution = p$resolution))
-    obj <- step(method, "umap", scAgentKit::sc_umap(obj, reduction = "pca", ndim = p$ndim, seed = decisions$seed))
+    obj <- step(method, "umap", scAgentKit::sc_umap(obj, reduction = p$umap_reduction,
+      ndim = p$ndim, reduction_name = p$umap_name, seed = p$umap_seed))
     obj <- step(method, "markers", scAgentKit::sc_find_markers(obj, only_pos = p$marker_only_pos,
       min_pct = p$marker_min_pct, logfc_threshold = p$marker_logfc))
     obj <- step(method, "markers_summary", scAgentKit::sc_markers_summary(obj,

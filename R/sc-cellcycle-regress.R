@@ -20,6 +20,8 @@
 #' @export
 sc_cellcycle_regress <- function(obj, mode = "none",
                                  rationale = NULL) {
+  .legacy_workflow_warn("sc_cellcycle_regress")
+
   stopifnot(methods::is(obj, "AgentSeurat"))
   mode <- match.arg(mode, c("none", "full", "difference"))
   if (identical(mode, "none")) return(obj)

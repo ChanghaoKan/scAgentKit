@@ -67,6 +67,8 @@ sc_select_pcs_visual <- function(obj,
                                  panel_dpi           = 130,
                                  max_retries         = 1,
                                  rationale           = NULL) {
+  .legacy_workflow_warn("sc_select_pcs_visual")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

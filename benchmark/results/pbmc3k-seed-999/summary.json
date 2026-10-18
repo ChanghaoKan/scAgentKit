@@ -1,0 +1,69 @@
+{
+  "purpose": "Fixed Seurat/wrapper software equivalence only; not biological accuracy or time-saving evidence",
+  "dataset": "Public 10x PBMC3k hg19 filtered Gene Expression counts",
+  "sampling": {
+    "input_cells": 800,
+    "seed": 999
+  },
+  "command": "Rscript benchmark/pbmc3k_repro.R --counts_dir <PUBLIC_PBMC3K_MEX> --out_dir <EMPTY_OUTPUT> --library_dir <ISOLATED_PACKAGE_LIBRARY> --ncells 800 --seed 999",
+  "command_local_IO_paths_redacted": true,
+  "hardware": {
+    "CPU": "Apple M5",
+    "logical_CPUs": 10,
+    "RAM_bytes": 17179869184
+  },
+  "R": "4.6.1",
+  "scAgentKit": "0.5.1",
+  "before_fix": {
+    "method_a": "seurat5_fixed",
+    "method_b": "scagentkit_fixed",
+    "n_common": "780",
+    "same_barcode_order": "TRUE",
+    "cluster_ari": "1",
+    "exact_cluster_agreement": "1",
+    "pca_max_abs_difference": "0",
+    "umap_max_abs_difference": "10.4150027313103",
+    "annotation_agreement": "NA",
+    "annotation_status": "unknown; annotation not run",
+    "check_passed": "FALSE"
+  },
+  "after_fix": {
+    "method_a": "seurat5_fixed",
+    "method_b": "scagentkit_fixed",
+    "n_common": "780",
+    "same_barcode_order": "TRUE",
+    "cluster_ari": "1",
+    "exact_cluster_agreement": "1",
+    "pca_max_abs_difference": "0",
+    "umap_max_abs_difference": "0",
+    "annotation_agreement": "NA",
+    "annotation_status": "unknown; annotation not run",
+    "check_passed": "TRUE"
+  },
+  "method_status": [
+    {
+      "method": "seurat5_fixed",
+      "status": "success",
+      "n_input": "800",
+      "n_retained": "780",
+      "n_clusters": "6",
+      "annotation_status": "not_run",
+      "llm_calls": "0"
+    },
+    {
+      "method": "scagentkit_fixed",
+      "status": "success",
+      "n_input": "800",
+      "n_retained": "780",
+      "n_clusters": "6",
+      "annotation_status": "not_run",
+      "llm_calls": "0"
+    }
+  ],
+  "external_model_calls": 0,
+  "annotation_accuracy": null,
+  "truth_labels_used": false,
+  "private_data_committed": false,
+  "sessionInfo_file": "sessionInfo.txt",
+  "harness_sha256": "1f170ea6ca0eb97a5ea1ec3cb3dd651159f0c1a04f3724df2b6a3f8fe299e1e4"
+}

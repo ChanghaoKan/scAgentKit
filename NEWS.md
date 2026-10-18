@@ -1,4 +1,23 @@
-# scAgentKit 0.5.0.9000
+# scAgentKit 0.5.1 (unreleased)
+
+## Legacy workflow migration
+
+Legacy `annot_subcluster()` replies now use the same eight-field annotation
+schema and optional cluster echo as `annot_llm_annotate()`. Old three-field
+`label` replies fail visibly. Marker citations, failed attempts and lineage
+calculation errors are retained for review; one failed lineage prevents an
+overall successful decision while preserving its previous labels and result.
+
+The legacy `qc_*` execution wrappers, basic-analysis `sc_*` wrappers and
+recommendation functions, `annot_match_reference()`, `annot_llm_annotate()`,
+`annot_apply()` and `annot_subcluster()` now emit lifecycle deprecation warnings
+with concrete reviewed `sc_run` migration paths. They remain exported and callable.
+Removal is planned for version **0.7.0**, subject to the migration notice in that
+release. Utility accessors, reference readers, comparison helpers and current
+project APIs are retained. The reviewed coordinator has explicit configuration,
+proposal and approval boundaries; these are not signature-compatible replacements.
+Manual split/merge and gene-removal helpers have no one-to-one coordinator
+equivalent. The latter does not authorize input-gene deletion in `sc_run()`.
 
 - Add independently reviewed raw-count child projects from frozen parent cluster selections, with explicit QC/batch/cycle/reference choices and no inherited parent embedding or cluster truth.
 - Apply reviewed child subtypes by literal cell ID to new parent derivatives, with stale/conflicting scope rejection, idempotent receipts, linked immutable application versions and undo; the original parent remains unchanged.

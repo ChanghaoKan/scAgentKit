@@ -32,6 +32,8 @@ qc_add_metrics <- function(obj,
                            ribo_pattern = NULL,
                            hb_pattern   = NULL,
                            rationale    = NULL) {
+  .legacy_workflow_warn("qc_add_metrics")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   species <- match.arg(species)
@@ -50,7 +52,7 @@ qc_add_metrics <- function(obj,
   }
 
   if (is.null(mt_pattern))   mt_pattern   <- if (species == "mouse") "^mt-"   else "^MT-"
-  if (is.null(ribo_pattern)) ribo_pattern <- if (species == "mouse") "^Rp[sl]" else "^RP[SL]"
+  if (is.null(ribo_pattern)) ribo_pattern <- .sc_run_ribo_pattern(species)
   if (is.null(hb_pattern))   hb_pattern   <- if (species == "mouse") "^Hb[ab]" else "^HB[AB]"
 
   add_metrics <- function(seu) {

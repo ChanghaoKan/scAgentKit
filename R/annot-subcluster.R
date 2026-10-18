@@ -75,7 +75,7 @@
 #'
 #' @export
 #' @param data_context Optional character string with extra biological context for the LLM prompt. Default NULL.
-#' @param suggest_followups Logical; if TRUE, ask the LLM to suggest follow-up analyses. Default FALSE.
+#' @param suggest_followups Logical; if TRUE, request follow-up suggestions in the validated reasoning field. Default FALSE.
 annot_subcluster <- function(obj,
                              chat_fn,
                              target                   = NULL,
@@ -90,6 +90,8 @@ annot_subcluster <- function(obj,
                              top_n_markers            = 15,
                              max_retries              = 1,
                              verbose                  = TRUE) {
+  .legacy_workflow_warn("annot_subcluster")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {
@@ -190,6 +192,7 @@ annot_subcluster <- function(obj,
 
   for (broad in target) {
     res_for_this <- res_per_target[[broad]]
+    lineage_error <- NULL
     if (verbose) {
       message(sprintf(
         "\n[annot_subcluster] >>> %s (%d cells, resolution = %s)",
@@ -216,12 +219,21 @@ annot_subcluster <- function(obj,
         verbose                  = verbose
       ),
       error = function(e) {
+        lineage_error <<- conditionMessage(e)
         warning(sprintf("[annot_subcluster] %s failed: %s",
                         broad, conditionMessage(e)))
         NULL
       }
     )
-    if (is.null(res)) next
+    if (is.null(res)) {
+      results[[broad]] <- list(status="failed",error=lineage_error,
+        resolution_used=NA_real_,
+        annotations=data.frame(subcluster=NA_character_,cell_type_fine=NA_character_,
+          annotation_status="failed",annotation_error=lineage_error,
+          annotation_attempts=0L,stringsAsFactors=FALSE),
+        previous_result=obj@params$subcluster_results[[broad]])
+      next
+    }
 
     # Merge back using INTEGER row indices (never character names --
     # character indexing on an unnamed character vector silently
@@ -271,6 +283,7 @@ annot_subcluster <- function(obj,
   summary_str <- paste(
     vapply(names(results), function(b) {
       r <- results[[b]]
+      if (identical(r$status,"failed")) return(sprintf("%s: failed: %s",b,r$error))
       sprintf("%s: %d sub-clusters at res=%s -> %s",
               b, nrow(r$annotations),
               format(r$resolution_used),
@@ -302,11 +315,14 @@ annot_subcluster <- function(obj,
       n_hvg                    = n_hvg,
       n_pcs                    = n_pcs,
       min_cells_per_broad      = min_cells_per_broad,
-      min_cells_per_subcluster = min_cells_per_subcluster
+      min_cells_per_subcluster = min_cells_per_subcluster,
+      batch_processing = "none; per-lineage processing without batch correction"
     ),
     rationale      = rationale,
     script_snippet = script,
-    new_stage      = "fine_annotated"
+    new_stage      = "fine_annotated",
+    success = all(vapply(results,function(x)
+      all(x$annotations$annotation_status %in% c("ok","not_requested")),logical(1)))
   )
   .attach_step_tokens(obj, "annot_subcluster", .tok_before)
 }
@@ -522,6 +538,14 @@ annot_subcluster <- function(obj,
     stringsAsFactors = FALSE
   )
   annotations$pct_of_broad <- annotations$n_cells / sum(annotations$n_cells)
+  annotations$annotation_status <- "not_requested"
+  annotations$annotation_error <- NA_character_
+  annotations$annotation_attempts <- 0L
+  annotations$marker_validation_status <- "not_requested"
+  annotations$hallucinated_markers <- ""
+  annotations$hallucination_rate <- NA_real_
+  annotations$recommended_action <- "flag_for_review"
+  annotations$response_audit <- rep(list(list()),nrow(annotations))
 
   for (i in seq_len(nrow(annotations))) {
     cid <- annotations$subcluster[i]
@@ -564,6 +588,11 @@ annot_subcluster <- function(obj,
     annotations$confidence[i]     <- res$confidence
     annotations$reasoning[i]      <- res$reasoning
     annotations$followup[i]       <- res$followup
+    for (field in c("annotation_status","annotation_error","annotation_attempts",
+                    "marker_validation_status","hallucination_rate","recommended_action"))
+      annotations[[field]][i] <- res[[field]]
+    annotations$hallucinated_markers[i] <- paste(res$hallucinated_markers,collapse=";")
+    annotations$response_audit[[i]] <- res$response_audit
   }
 
   # 9. Apply annotation to cells
@@ -606,7 +635,8 @@ annot_subcluster <- function(obj,
     n_hvg_used        = n_hvg_used,
     n_pcs_used        = n_pcs_used,
     n_subclusters     = length(unique_clu),
-    umap_path         = umap_path
+    umap_path         = umap_path,
+    batch_processing  = "none; per-lineage processing without batch correction"
   )
 }
 
@@ -817,10 +847,6 @@ annot_subcluster <- function(obj,
     )
   } else ""
 
-  followup_schema_field <- if (isTRUE(suggest_followups)) {
-    ',\n "followup": "<1-2 concrete sentences or empty string>"'
-  } else ""
-
   system_prompt <- paste(
     sprintf("You are an expert single-cell biologist annotating a sub-cluster within the BROAD LINEAGE: %s.",
             broad),
@@ -893,10 +919,14 @@ annot_subcluster <- function(obj,
     "Use lower-case English, standard nomenclature.",
     "Reply with ONLY a JSON object, no prose, no markdown fences:",
     paste0(
-      '{"label": "<sub-type or contaminant label>",\n',
+      '{"primary_annotation": "<sub-type or contaminant label>",\n',
       ' "confidence": "<low|medium|high>",\n',
-      ' "reasoning": "<2-3 sentences citing key markers AND, when relevant, proportion or ambient checks>"',
-      followup_schema_field, "\n}"
+      ' "supporting_markers": ["<supplied marker>"],\n',
+      ' "contradicting_markers": [],\n',
+      ' "alternative_annotations": [],\n',
+      ' "proportion_assessment": "<reasonable|suspicious|abnormal>",\n',
+      ' "recommended_action": "<accept|flag_for_review|reject|mark_unknown>",\n',
+      ' "reasoning": "<marker evidence and, if requested, follow-up suggestions>"\n}'
     ),
     sep = "\n"
   )
@@ -918,22 +948,18 @@ annot_subcluster <- function(obj,
   )
 
   parsed <- .call_with_retry(chat_fn, system_prompt, user_prompt,
-                             max_retries = max_retries)
-  # Accept only one non-empty label and a known confidence level; anything
-  # else falls back to the explicit unannotated label at low confidence.
-  scalar <- function(x) is.character(x) && length(x) == 1L && !is.na(x) && nzchar(trimws(x))
-  label <- if (scalar(parsed$label)) trimws(parsed$label) else sprintf("%s (unannotated)", broad)
-  confidence <- if (scalar(parsed$confidence) && tolower(parsed$confidence) %in% c("low", "medium", "high"))
-    tolower(parsed$confidence) else "low"
-  list(
-    label      = label,
-    confidence = confidence,
-    reasoning  = as.character(parsed$reasoning %||% "no reasoning"),
-    followup   = if (isTRUE(suggest_followups))
-      as.character(parsed$followup %||% "")
-    else
-      ""
-  )
+    max_retries = max_retries,
+    validator = function(x) .validate_annotation_response(x,expected_cluster=cluster_id))
+  grounding <- .validate_cited_markers(parsed,markers_df$gene)
+  parsed$hallucinated_markers <- grounding$hallucinated
+  parsed$hallucination_rate <- grounding$rate
+  parsed$marker_validation_status <- if (length(grounding$hallucinated)) "unsupported" else
+    if (identical(parsed$annotation_status,"ok")) "ok" else "not_validated"
+  if (length(grounding$hallucinated)) parsed$recommended_action <- "flag_for_review"
+  parsed$label <- parsed$primary_annotation
+  parsed$followup <- if (isTRUE(suggest_followups)) parsed$reasoning else ""
+  parsed$response_audit <- attr(parsed,"response_audit")
+  parsed
 }
 
 

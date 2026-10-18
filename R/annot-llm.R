@@ -38,9 +38,11 @@
 #' @param expected_celltypes Optional character vector of cell types that
 #'   should plausibly be present in this tissue. If supplied, the LLM is
 #'   instructed to prefer these and to flag novel types. If NULL,
-#'   in guided mode, `annot_llm_annotate()` attempts to auto-detect a celltype column
-#'   in the Seurat metadata and use those values as a *prior* (see
-#'   `strict_vocabulary`).
+#'   metadata is not used unless `use_metadata_prior=TRUE` explicitly opts in.
+#' @param use_metadata_prior Logical, default FALSE. Explicitly allow guided
+#'   mode to derive a prior from an existing metadata cell-type column. Never
+#'   enable this when that column is held-out evaluation truth. The used column
+#'   and opt-in are recorded; independent mode never uses this metadata prior.
 #' @param strict_vocabulary Logical, default FALSE. When TRUE, the LLM is
 #'   forced to match `expected_celltypes` *verbatim* (no sub-division, no
 #'   renaming). Useful when you want output that aligns one-to-one with
@@ -55,7 +57,7 @@
 #' @param max_retries Integer, JSON-parse and annotation-schema retries
 #'   on malformed output. Default 2, so each cluster (times `n_samples`) can
 #'   cost up to three paid calls; there is no budget guard in this legacy
-#'   function. A provider error is never retried, because the request may
+#'   function. A provider error or NULL response is never retried, because the request may
 #'   already have been delivered and billed. Use `sc_run()` for budgeted,
 #'   approval-gated requests.
 #' @param n_samples Integer, number of independent LLM calls per cluster.
@@ -142,7 +144,10 @@ annot_llm_annotate <- function(obj,
                                parallel           = FALSE,
                                verbose            = TRUE,
                                rationale          = NULL,
-                               reference_mode     = c("guided", "independent")) {
+                               reference_mode     = c("guided", "independent"),
+                               use_metadata_prior = FALSE) {
+  .legacy_workflow_warn("annot_llm_annotate")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   reference_mode <- match.arg(reference_mode)
@@ -176,7 +181,7 @@ annot_llm_annotate <- function(obj,
       is.na(strict_vocabulary)) {
     stop("`strict_vocabulary` must be TRUE or FALSE.")
   }
-  for (field in c("validate_markers", "parallel", "verbose")) {
+  for (field in c("validate_markers", "parallel", "verbose", "use_metadata_prior")) {
     value <- get(field)
     if (!is.logical(value) || length(value) != 1L || is.na(value)) {
       stop(sprintf("`%s` must be TRUE or FALSE.", field))
@@ -215,7 +220,7 @@ annot_llm_annotate <- function(obj,
   # strict constraint. To recover the v0.1.6-v0.1.23 strict-match behaviour,
   # pass `strict_vocabulary = TRUE` explicitly.
   auto_detected_col <- NA_character_
-  if (is.null(expected_celltypes) && reference_mode == "guided") {
+  if (isTRUE(use_metadata_prior) && is.null(expected_celltypes) && reference_mode == "guided") {
     auto_detected_col <- .detect_celltype_col(obj@data@meta.data)
     if (!is.na(auto_detected_col)) {
       vals <- unique(as.character(obj@data@meta.data[[auto_detected_col]]))
@@ -483,6 +488,7 @@ annot_llm_annotate <- function(obj,
       strict_vocabulary   = isTRUE(strict_vocabulary),
       reference_mode      = reference_mode,
       metadata_prior_column = auto_detected_col,
+      use_metadata_prior  = use_metadata_prior,
       max_retries         = max_retries,
       n_samples           = n_samples,
       validate_markers    = isTRUE(validate_markers),
@@ -831,7 +837,7 @@ annot_llm_annotate <- function(obj,
       attempt$error <- "Provider returned NULL."
       audit[[i]] <- attempt
       last_err <- simpleError("Provider returned NULL.")
-      next
+      break
     }
 
     parsed <- tryCatch(

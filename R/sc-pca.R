@@ -15,6 +15,8 @@ sc_pca <- function(obj,
                    npcs      = 50,
                    features  = NULL,
                    rationale = NULL) {
+  .legacy_workflow_warn("sc_pca")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {
@@ -73,6 +75,8 @@ sc_select_pcs <- function(obj,
                           plot_elbow = TRUE,
                           plot_dir   = "figures",
                           rationale  = NULL) {
+  .legacy_workflow_warn("sc_select_pcs")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   pca <- tryCatch(obj@data[["pca"]], error = function(e) NULL)

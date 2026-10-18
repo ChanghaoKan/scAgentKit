@@ -40,6 +40,8 @@ sc_scale <- function(obj,
                      all_features    = FALSE,
                      vars_to_regress = NULL,
                      rationale       = NULL) {
+  .legacy_workflow_warn("sc_scale")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

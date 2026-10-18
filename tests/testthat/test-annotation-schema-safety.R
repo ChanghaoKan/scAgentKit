@@ -33,6 +33,7 @@ make_annotation_safety_fixture <- function(cycling = FALSE) {
 }
 
 test_that("annotation validator preserves arrays and checks an optional cluster echo", {
+  withr::local_options(lifecycle_verbosity="quiet")
   parse <- function(raw, ...) scAgentKit:::.validate_annotation_response(
     jsonlite::fromJSON(raw, simplifyVector = FALSE), ...
   )
@@ -47,6 +48,7 @@ test_that("annotation validator preserves arrays and checks an optional cluster 
 })
 
 test_that("parseable JSON with wrong fields, types, or cardinality fails safely", {
+  withr::local_options(lifecycle_verbosity="quiet")
   invalid <- c(
     "null", "[]", "1", '"T cell"',
     paste0("[", annotation_safety_json(), "]"),
@@ -81,6 +83,7 @@ test_that("parseable JSON with wrong fields, types, or cardinality fails safely"
 })
 
 test_that("a two-argument provider can recover from a schema error and records both attempts", {
+  withr::local_options(lifecycle_verbosity="quiet")
   calls <- 0L
   provider <- function(system_prompt, user_prompt) {
     calls <<- calls + 1L
@@ -98,6 +101,7 @@ test_that("a two-argument provider can recover from a schema error and records b
 })
 
 test_that("provider errors and invalid return cardinality produce auditable failures", {
+  withr::local_options(lifecycle_verbosity="quiet")
   providers <- list(function(system_prompt, user_prompt) stop("mock transport error"),
                     function(system_prompt, user_prompt) rep(annotation_safety_json(), 2),
                     function(system_prompt, user_prompt) NULL)
@@ -111,6 +115,7 @@ test_that("provider errors and invalid return cardinality produce auditable fail
 })
 
 test_that("ensemble counts valid schemas and preserves failed samples for review", {
+  withr::local_options(lifecycle_verbosity="quiet")
   calls <- 0L
   provider <- function(system_prompt, user_prompt) {
     calls <<- calls + 1L
@@ -125,6 +130,7 @@ test_that("ensemble counts valid schemas and preserves failed samples for review
 })
 
 test_that("citation evidence includes only differential and displayed rescue genes", {
+  withr::local_options(lifecycle_verbosity="quiet")
   filtered <- data.frame(cluster = "0", gene = "MKI67")
   rescue <- data.frame(gene = paste0("RESCUE", 1:31), pct_exp = 0.5, mean_exp = 1)
   bundle <- scAgentKit:::.annotation_marker_evidence("0", filtered, rescue)
@@ -139,6 +145,7 @@ test_that("citation evidence includes only differential and displayed rescue gen
 })
 
 test_that("cycling rescue citations pass the same evidence used by the real prompt", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annotation_safety_fixture(cycling = TRUE)
   out <- annot_llm_annotate(obj, function(system_prompt, user_prompt) annotation_safety_json(),
                            "PBMC", max_retries = 0L, verbose = FALSE)
@@ -151,6 +158,7 @@ test_that("cycling rescue citations pass the same evidence used by the real prom
 })
 
 test_that("independent mode omits reference candidates and automatic author priors", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annotation_safety_fixture()
   seen <- NULL
   provider <- function(system_prompt, user_prompt) {
@@ -180,13 +188,15 @@ test_that("independent mode omits reference candidates and automatic author prio
   expect_identical(cached@params$llm_annotation_responses, out@params$llm_annotation_responses)
   expect_identical(cached@params$llm_annotations, out@params$llm_annotations)
 
-  guided <- annot_llm_annotate(obj, provider, "PBMC", max_retries = 0L, verbose = FALSE)
+  guided <- annot_llm_annotate(obj, provider, "PBMC", max_retries = 0L, verbose = FALSE,
+    use_metadata_prior = TRUE)
   expect_match(seen, "ACT_SECRET_LABEL", fixed = TRUE)
   expect_match(seen, "AUTHOR_ALPHA", fixed = TRUE)
   expect_identical(guided@params$llm_annotation_responses[["0"]]$reference_mode, "guided")
 })
 
 test_that("independent mode still accepts explicit caller priors", {
+  withr::local_options(lifecycle_verbosity="quiet")
   seen <- NULL
   out <- annot_llm_annotate(make_annotation_safety_fixture(),
     function(system_prompt, user_prompt) { seen <<- system_prompt; annotation_safety_json() },
@@ -198,6 +208,7 @@ test_that("independent mode still accepts explicit caller priors", {
 })
 
 test_that("a mismatched model cluster echo yields a single failed cluster row", {
+  withr::local_options(lifecycle_verbosity="quiet")
   out <- annot_llm_annotate(make_annotation_safety_fixture(),
     function(system_prompt, user_prompt) annotation_safety_response(cluster = "9"),
     "PBMC", max_retries = 0L, verbose = FALSE)
@@ -212,6 +223,7 @@ test_that("a mismatched model cluster echo yields a single failed cluster row", 
 })
 
 test_that("all-invalid public annotation calls preserve failure rows and audits", {
+  withr::local_options(lifecycle_verbosity="quiet")
   out <- annot_llm_annotate(make_annotation_safety_fixture(),
     function(system_prompt, user_prompt) "{}", "PBMC", max_retries = 0L, verbose = FALSE)
   expect_identical(out@params$llm_annotations$annotation_status, "failed")
@@ -222,6 +234,7 @@ test_that("all-invalid public annotation calls preserve failure rows and audits"
 })
 
 test_that("strict cycling vocabulary preserves literal labels while recording state", {
+  withr::local_options(lifecycle_verbosity="quiet")
   seen <- NULL
   out <- annot_llm_annotate(make_annotation_safety_fixture(cycling = TRUE),
     function(system_prompt, user_prompt) { seen <<- user_prompt; annotation_safety_json() },
@@ -236,6 +249,7 @@ test_that("strict cycling vocabulary preserves literal labels while recording st
 })
 
 test_that("exported annotation snippets replay saved outcomes without provider calls", {
+  withr::local_options(lifecycle_verbosity="quiet")
   for (raw in c(annotation_safety_json(), "{}")) {
     obj <- make_annotation_safety_fixture()
     out <- annot_llm_annotate(obj, function(system_prompt, user_prompt) raw,
@@ -265,6 +279,7 @@ test_that("exported annotation snippets replay saved outcomes without provider c
 })
 
 test_that("partial public ensembles cannot claim full step success", {
+  withr::local_options(lifecycle_verbosity="quiet")
   calls <- 0L
   out <- annot_llm_annotate(make_annotation_safety_fixture(),
     function(system_prompt, user_prompt) {
@@ -277,6 +292,7 @@ test_that("partial public ensembles cannot claim full step success", {
 })
 
 test_that("annotation replay preserves arbitrary real marker and reference doubles bitwise", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annotation_safety_fixture()
   obj@params$markers_filtered$p_val <- 1.234567891234567e-124
   obj@params$markers_filtered$p_val_adj <- 3.0451197119418794e-12
@@ -301,6 +317,7 @@ test_that("annotation replay preserves arbitrary real marker and reference doubl
 })
 
 test_that("input cardinality and missing cluster IDs fail before any provider call", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annotation_safety_fixture()
   provider <- function(system_prompt, user_prompt) stop("provider must not be called")
   for (value in list(NA_real_, Inf, 1.5, c(1, 2))) {
@@ -313,6 +330,7 @@ test_that("input cardinality and missing cluster IDs fail before any provider ca
 })
 
 test_that("a provider error is never resent automatically, while malformed output is retried", {
+  withr::local_options(lifecycle_verbosity="quiet")
   calls <- 0L
   failing <- function(system_prompt, user_prompt) { calls <<- calls + 1L; stop("mock connection reset") }
   out <- scAgentKit:::.call_with_retry(failing, "sys", "user", 2L,

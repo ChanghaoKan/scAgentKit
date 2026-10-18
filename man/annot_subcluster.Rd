@@ -59,7 +59,7 @@ this are not annotated by the LLM and labelled
 
 \item{data_context}{Optional character string with extra biological context for the LLM prompt. Default NULL.}
 
-\item{suggest_followups}{Logical; if TRUE, ask the LLM to suggest follow-up analyses. Default FALSE.}
+\item{suggest_followups}{Logical; if TRUE, request follow-up suggestions in the validated reasoning field. Default FALSE.}
 
 \item{top_n_markers}{Integer. Top markers per sub-cluster to send
 to the LLM. Default 15.}
