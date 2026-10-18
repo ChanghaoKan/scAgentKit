@@ -52,8 +52,8 @@ default was a fixed 20.}
 cells. Default 200.}
 
 \item{min_cells_per_subcluster}{Integer. Sub-clusters smaller than
-this are not annotated by the LLM and labelled
-`"<broad>: too small to annotate"`. Default 30.}
+this are not annotated by the LLM; their previous fine labels are retained.
+Default 30.}
 
 \item{tissue}{Character. Tissue context to give the LLM.}
 
