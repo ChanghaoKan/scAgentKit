@@ -54,6 +54,18 @@
   .sc_run_recommend_facts_typed(facts)
   old <- state$config$recommendation_facts
   if (is.null(old)) old <- list()
+  declared <- state$config$doublet_diagnostics
+  if (is.list(declared)) {
+    keys <- intersect(c("data_type", "technology", "input_source", "empty_droplets_removed",
+      "full_called_cohort", "capture", "rate"), names(declared))
+    old <- utils::modifyList(list(doublet = declared[keys]), old, keep.null = TRUE)
+  }
+  # A newly declared method replaces only incompatible historical fields.
+  # Contradictions explicitly supplied in the same patch remain and are rejected.
+  method <- facts$doublet$capture$method
+  if (identical(method, "column")) old$doublet$capture$id <- NULL
+  if (identical(method, "single")) old$doublet$capture$column <- NULL
+  if (identical(facts$doublet$rate$method, "10x_standard")) old$doublet$rate$value <- NULL
   merged <- utils::modifyList(old, facts, keep.null = TRUE)
   .sc_run_recommend_facts_typed(merged)
   config <- state$config
@@ -120,6 +132,9 @@
     return(list(ready = FALSE, reasons = list("Doublet output metadata columns already exist in the original input; they are preserved. Prepare a separately reviewed configuration with fresh output columns."), capture_counts = list(), scoring_executed = FALSE))
   cells <- colnames(input)
   counts <- .sc_project_layer(input, config$assay, config$counts_layer, raw_counts = TRUE)
+  if (anyDuplicated(colnames(counts)) || !setequal(colnames(counts), cells))
+    stop("Doublet prerequisite counts must cover the exact literal input cell IDs.", call. = FALSE)
+  counts <- counts[, cells, drop = FALSE]
   captures <- .sc_run_doublet_captures(input, options, cells)
   .sc_run_doublet_resolve_rates(options, captures) # Validate the literal per-capture map, without scoring.
   totals <- as.numeric(Matrix::colSums(counts))

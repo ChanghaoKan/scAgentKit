@@ -78,3 +78,64 @@ test_that("facts preflight protects existing metadata and incomplete rate maps w
   clean <- fixture$recommend_workspace_input()
   expect_error(.sc_run_recommend_facts_doublet_guard(clean, config), "cover every literal capture")
 })
+
+test_that("doublet guard aligns radix-sorted counts with literal input cells and physical captures", {
+  cells <- paste0("c", 1:240)
+  counts <- matrix(2L, 200L, 240L, dimnames = list(paste0("g", 1:200), cells))
+  low <- seq(122L, 240L, by = 2L)
+  counts[, low] <- 0L; counts[1:100, low] <- 1L
+  input <- Seurat::CreateSeuratObject(Matrix::Matrix(counts, sparse = TRUE))
+  input$physical <- rep(c("loadA", "loadB"), each = 120L)
+  context <- list(species = "human", columns = list(capture = "physical"))
+  options <- .sc_run_doublet_options(context, list(data_type = "scrna_droplet",
+    technology = "declared_droplet_other", input_source = "Author called cells", empty_droplets_removed = TRUE,
+    capture = list(method = "column", column = "physical", source = "Author loading record"),
+    rate = list(method = "manual", value = .05, source = "Sourced expected rate"), nfeatures = 200L))
+  config <- list(context = context, assay = "RNA", counts_layer = "counts", doublet_diagnostics = options,
+    prefilter = list(method = "min_counts", min_counts = 200L, source = "Explicit author software test", preapproved = TRUE))
+  prefilter <- .sc_run_prefilter_evidence(input, config)
+  guarded <- .sc_run_recommend_facts_doublet_guard(input, config)
+  expect_equal(vapply(guarded$capture_counts, `[[`, integer(1), "pre_score_cells"), c(120L, 60L))
+  expected <- vapply(c("loadA", "loadB"), function(id)
+    sum(cells[input$physical == id] %in% prefilter$keep_cells), integer(1))
+  expect_identical(vapply(guarded$capture_counts, `[[`, integer(1), "pre_score_cells"), unname(expected))
+  expect_equal(vapply(guarded$capture_counts, `[[`, numeric(1), "low_read_cells"), c(0, 0))
+  reversed <- input[, rev(cells)]
+  again <- .sc_run_recommend_facts_doublet_guard(reversed, config)
+  by_capture <- function(x) x$capture_counts[order(vapply(x$capture_counts, `[[`, character(1), "capture"))]
+  expect_identical(by_capture(guarded), by_capture(again))
+  expect_false(guarded$ready)
+})
+
+test_that("explicit method switches prune only incompatible old facts and retain other declarations", {
+  fixture <- facts_fixture_functions()
+  input <- fixture$recommend_workspace_input()
+  declaration <- list(data_type = "scrna_droplet", technology = "10x_chromium_standard",
+    input_source = "Author called cells", empty_droplets_removed = TRUE, full_called_cohort = TRUE,
+    capture = list(method = "single", id = "old_capture", source = "Author capture record"),
+    rate = list(method = "manual", value = .05, source = "Author rate record"))
+  config <- list(context = list(species = "human"), assay = "RNA", counts_layer = "counts",
+    recommendation_facts = list(doublet = declaration))
+  patch <- list(doublet = list(capture = list(method = "column", column = "capture"),
+    rate = list(method = "10x_standard", source = "Documented complete-cohort rule")))
+  changed <- .sc_run_recommend_facts_config(list(config = config), patch, input)
+  expect_null(changed$recommendation_facts$doublet$capture$id)
+  expect_null(changed$recommendation_facts$doublet$rate$value)
+  expect_identical(changed$recommendation_facts$doublet$input_source, declaration$input_source)
+  expect_identical(changed$context$columns$capture, "capture")
+  contradictory <- patch; contradictory$doublet$capture$id <- "also_a_single_capture"
+  expect_error(.sc_run_recommend_facts_config(list(config = config), contradictory, input), "single capture ID")
+  contradictory <- patch; contradictory$doublet$rate$value <- .05
+  expect_error(.sc_run_recommend_facts_config(list(config = config), contradictory, input), "manual rate value")
+  # A pre-existing canonical configuration supplies only its original author
+  # facts when the new editable facts object has not yet been saved.
+  config$recommendation_facts <- NULL
+  config$doublet_diagnostics <- .sc_run_doublet_options(config$context, declaration)
+  inherited <- .sc_run_recommend_facts_config(list(config = config),
+    list(doublet = list(input_source = "Corrected provenance")), input)
+  expect_identical(inherited$recommendation_facts$doublet$data_type, declaration$data_type)
+  expect_identical(inherited$recommendation_facts$doublet$capture, declaration$capture)
+  expect_identical(inherited$recommendation_facts$doublet$input_source, "Corrected provenance")
+  expect_null(inherited$recommendation_facts$doublet$seed)
+  expect_null(inherited$doublet_diagnostics) # The unsupported cohort never enables a new scorer.
+})
