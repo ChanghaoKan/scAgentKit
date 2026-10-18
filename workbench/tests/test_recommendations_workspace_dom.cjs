@@ -99,7 +99,7 @@ assert.equal(pre.requests.length,0);
 const afterApproval=copy(preselected);
 afterApproval.run.strategy_review.details.recommendations.fact_editable=false;
 const preserved=setup(afterApproval);
-assert.deepEqual(preserved.call("strategyDraft").qc,afterApproval.run.strategy_review.details.canonical_proposal.qc,"An already executed/approved strategy keeps its explicit QC policy");
+assert.equal(JSON.stringify(preserved.call("strategyDraft").qc),JSON.stringify(afterApproval.run.strategy_review.details.canonical_proposal.qc),"An already executed/approved strategy keeps its explicit QC policy");
 assert.equal(preserved.requests.length,0);
 assert(!/NOT SAVED, NOT APPROVED/.test(preserved.el("run-message").textContent));
 assert.equal(pre.call("strategyDraft").qc.rationale,"Keep uncertain cells");
