@@ -11,6 +11,17 @@ The published v0.6.0 tag and assets remain unchanged.
 - The main entry offers measured sample-aware QC/MAD candidates, a disclosed
   at-most-50-PC internal 80% policy and measured resolution-tree review before
   final clustering selection. These are review options, not biological optima.
+- Add local evidence-guided QC, PC, resolution and optional-path candidates.
+  QC uses measured flag combinations and exact impacts without a universal
+  preset or score. PC advice distinguishes pending rules from actual internal
+  top50 80%/85% crossings; resolution comparisons expose conflicts and equivalent
+  memberships without an optimality score. Explicit author corrections remain
+  necessary, and unsupported or missing assessments remain visible in results.
+- Saving declared facts is not scientific approval. Applying a candidate edits
+  only a local draft; saving rebuilds its R review before explicit approval.
+  The default raw scan retains initial-strategy, measured-resolution and
+  annotation approvals. Missing optional facts/dependencies affect that path,
+  without certifying that an unexecuted assessment was performed.
 - Annotation coverage, raw weighted confidence and citation checks do not
   establish calibrated probability, label semantics or independent accuracy.
   Invalid model evidence cannot promote an automatic authoritative label;

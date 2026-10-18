@@ -20,6 +20,33 @@ entry reuses its declared foundation instead of rerunning these steps.
 Exported legacy functions are documented in R help. Their presence does not make
 an automatic or fallback behavior part of the reviewed coordinator workflow.
 
+## Development: evidence-guided candidates and author corrections
+
+The local recommendations distinguish measured evidence, pending computation and
+unavailable assessment. QC comparisons follow actual marginal/joint quality flags
+and their exact effects under the original ranges and AND/OR logic. Redundant
+removal, range-failed cells re-entering, missing metrics, small groups and zero
+MAD remain visible; keep-all means comparison or deferral. No composite quality
+score or universal preset is selected. Before PCA only the requested rule is
+available; afterwards the verified internal-top50 80%/85% crossings, shortfall
+and unsupported states are shown. An author's fixed PC choice is preserved.
+Resolution candidates explain measured transitions, marker support, sample
+composition, conflicts and equivalent memberships without a combined score or
+claim of biological optimality.
+
+Correct supported study facts with their provenance, then review the rebuilt
+suggestions. Saving facts is not scientific approval. Missing optional facts or
+dependencies leave that path unassessed; other supported work may continue with
+it unexecuted, and unresolved assessments remain in the result. A selected
+operation must still satisfy its own prerequisites. Facts cannot substitute for
+missing measurements or reopen configuration outside its supported review stage.
+
+Using a candidate edits a local draft. Save the complete proposal to reconstruct
+its exact R review, inspect it and approve explicitly. The default raw scan has
+three scientific boundaries: initial complete strategy, measured resolution
+selection, then annotation. Optional model-transfer consent is separate; none of
+these local candidate or fact actions requests a model or approves itself.
+
 ## R entry and complete typed proposal
 
 Enable the concentrated strategy with `sc_run(..., strategy = TRUE)`. A supplied
