@@ -101,8 +101,29 @@ doublet_integration_begin <- function(root, object = doublet_integration_fixture
 }
 
 doublet_integration_continue <- function(root, snapshot = sc_run_inspect(root), retry = FALSE) {
-  suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
+  result <- suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
     snapshot$revision, retry = retry))
+  measured <- sc_run_inspect(root)
+  if (!identical(snapshot$status, "awaiting_review") &&
+      identical(result$status, "awaiting_review") &&
+      identical(measured$review_node$kind, "strategy") &&
+      !is.null(measured$strategy_review$details$cluster_diagnostics)) {
+    # A separate explicit author decision selects this software-control's
+    # prespecified resolution only after inspecting the measured fixed-graph
+    # evidence. This does not bypass the production review boundary.
+    scan <- measured$strategy_review$details$cluster_diagnostics
+    state <- scAgentKit:::.sc_run_load(root)
+    expect_true(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions)
+    expect_identical(scan$neighbors_artifact, state$files$strategy_neighbors)
+    expect_identical(state$pending$binding$files$cluster_scan, state$files$cluster_scan)
+    expect_null(state$files$markers)
+    doublet_integration_decide(root, snapshot = measured)
+    selected <- sc_run_inspect(root)
+    expect_identical(scAgentKit:::.sc_run_load(root)$approved$kind, "strategy")
+    result <- suppressWarnings(sc_run_continue(root, selected$project_id, selected$input_hash,
+      selected$revision, retry = retry))
+  }
+  result
 }
 
 doublet_integration_decide <- function(root, snapshot = sc_run_inspect(root), action = "approve") {
@@ -239,7 +260,17 @@ doublet_integration_child <- function(root, snapshot = sc_run_inspect(root)) {
     "options(fixture_forbid_doublet_detector=TRUE)",
     "detector <- args$bindings[['.sc_run_doublet_detect_one']]",
     "detector_before <- environment(detector)$calls$detector",
+    "initial <- sc_run_inspect(args$root)",
     "out <- suppressWarnings(sc_run_continue(args$root,args$project_id,args$input_hash,args$revision))",
+    "measured <- sc_run_inspect(args$root)",
+    "if (!identical(initial$status,'awaiting_review') && identical(out$status,'awaiting_review') && identical(measured$review_node$kind,'strategy') && !is.null(measured$strategy_review$details$cluster_diagnostics)) {",
+    "  scan <- measured$strategy_review$details$cluster_diagnostics; state <- scAgentKit:::.sc_run_load(args$root)",
+    "  stopifnot(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions, identical(scan$neighbors_artifact,state$files$strategy_neighbors), identical(state$pending$binding$files$cluster_scan,state$files$cluster_scan), is.null(state$files$markers))",
+    "  node <- measured$review_node",
+    "  sc_run_review(args$root,'approve','strategy',node$project_id,node$input_hash,node$proposal_hash,node$review_hash,node$expected_revision,reviewer='offline fresh-process software QA',reason='Explicit author selection of the prespecified software-control resolution after inspecting the measured fixed-graph scan.')",
+    "  selected <- sc_run_inspect(args$root); stopifnot(identical(scAgentKit:::.sc_run_load(args$root)$approved$kind,'strategy'))",
+    "  out <- suppressWarnings(sc_run_continue(args$root,selected$project_id,selected$input_hash,selected$revision))",
+    "}",
     "detector_calls <- environment(detector)$calls$detector-detector_before",
     "stopifnot(factory_calls==0L,http_calls==0L,detector_calls==0L)",
     "saveRDS(list(status=out,factory_calls=factory_calls,http_calls=http_calls,detector_calls=detector_calls),args$result)", "})"), script)
@@ -360,7 +391,7 @@ test_that("fixed capture predictions precede one strategy review and keep never 
   expect_true(file.exists(file.path(root, "output", "doublet_diagnostics.png")))
   completed <- scAgentKit:::.sc_run_load(root)
   decisions <- Filter(function(e) identical(e$action, "approved"), completed$history)
-  expect_identical(vapply(decisions, function(e) e$details$kind, character(1)), c("strategy", "annotation"))
+  expect_identical(vapply(decisions, function(e) e$details$kind, character(1)), c("strategy", "strategy", "annotation"))
   bytes <- doublet_integration_files(root)
   expect_identical(doublet_integration_continue(root)$status, "complete")
   expect_identical(doublet_integration_files(root), bytes)
