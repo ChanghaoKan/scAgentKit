@@ -3,6 +3,39 @@
   if (is.null(value)) return(NULL)
   value[intersect(fields, names(value))]
 }
+.sc_wb_quality_summary <- function(rows) {
+  distribution <- function(field) {
+    values <- vapply(rows,function(row) if(is.numeric(row[[field]]) && length(row[[field]])==1L &&
+      is.finite(row[[field]])) row[[field]] else NA_real_,numeric(1))
+    values <- values[is.finite(values)]
+    if(!length(values)) return(NULL)
+    as.list(stats::setNames(as.numeric(stats::quantile(values,c(0,.25,.5,.75,1),names=FALSE)),
+      c("min","q25","median","q75","max")))
+  }
+  list(measured_cells=length(rows),total_umi=distribution("total_umi"),
+    detected_features=distribution("detected_features"),
+    high_count_flags_available=sum(vapply(rows,function(row)is.logical(row$high_count_flag)&&length(row$high_count_flag)==1L&&!is.na(row$high_count_flag),logical(1))),
+    high_count_flagged=sum(vapply(rows,function(row)isTRUE(row$high_count_flag),logical(1))))
+}
+.sc_wb_expression <- function(value, cluster = NULL) {
+  out <- .sc_wb_fields(value,c("status","panels","measured_genes","missing_genes","clusters",
+    "common_marker_review","high_count_interpretation","ambient_status","interpretation"))
+  if(!is.null(cluster)) {
+    out$clusters <- Filter(function(row)identical(as.character(row$cluster),as.character(cluster)),value$clusters)
+    out$display_cluster <- cluster
+  }
+  out$cell_quality_summary <- .sc_wb_quality_summary(value$cell_quality)
+  out$mixed_lineage <- lapply(value$mixed_lineage,function(row) {
+    result <- .sc_wb_fields(row,c("panels","status","lineage_relationship","threshold"))
+    result$coexpressing_cells <- if(identical(row$status,"measured"))length(row$coexpressing_cells) else NULL
+    result$coexpressing_quality_summary <- .sc_wb_quality_summary(row$coexpressing_cell_quality)
+    result
+  })
+  out$display_boundary <- paste("Aggregate local expression display; annotation rows show their exact cluster's expression contrasts.",
+    "Full per-cell counts, flags, coexpression IDs and panel-gene counts remain unchanged in the hashed R artifacts and full R review.",
+    "Quality/coexpression summaries describe the complete saved cohort, not inferred cluster-specific totals.")
+  out
+}
 .sc_wb_qc_details <- function(value) {
   out <- .sc_wb_fields(value, c("schema", "evidence_hash", "canonical_parameters", "retention",
     "keep_cell_hash", "remove_cell_hash", "interpretation", "mad_panel"))
@@ -36,6 +69,21 @@
 .sc_wb_plain <- function(value) {
   if (!is.list(value)) return(value)
   if (is.data.frame(value) && any(grepl("(^|_)cell_(id|ids)$|^cellId(s)?$", names(value)))) return(NULL)
+  if(!is.null(value$clusterId) && is.list(value$measured_expression) &&
+      "cell_quality" %in% names(value$measured_expression))
+    value$measured_expression <- .sc_wb_expression(value$measured_expression,value$clusterId)
+  if(all(c("cell_quality","clusters","measured_genes","panels") %in% names(value)))
+    value <- .sc_wb_expression(value)
+  if(identical(value$schema,"scagentkit.scientific-diagnostics.v1")) {
+    if(!is.null(value$cells)) {
+      value$measured_cells <- length(value$cells)
+      value$cells <- NULL
+    }
+    if(!is.null(value$resampling$replicates))value$resampling$replicates <- lapply(value$resampling$replicates,function(row) {
+      row$sampled_cells <- length(row$cells);row$cells <- NULL;row
+    })
+    value$display_boundary <- "Saved aggregate diagnostics; exact per-cell scope and resampling IDs remain in the original hashed scientific diagnostic artifact."
+  }
   if (identical(value$schema, "scagentkit.qc.preview.v1")) value <- .sc_wb_qc_details(value)
   if (identical(value$schema, "scagentkit.qc.review.v1")) value <- .sc_wb_fields(value,
     c("schema", "input_hash", "config_hash", "implementation_hash", "calculation_scope_hash", "evidence_hash",
