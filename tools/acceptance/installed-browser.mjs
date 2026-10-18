@@ -65,13 +65,28 @@ async function clickResponse(id,suffix) {
   await ui(id).click();const res=await received;assert(res.status()>=200&&res.status()<300,await res.text());
   const result=await res.json();if(result.run)view=result;return result;
 }
-async function untilBoundary() {
-  const deadline=Date.now()+10*60*1000;
-  while(Date.now()<deadline){
-    const run=await fresh(true);
-    if(run && ['awaiting_review','awaiting_configuration','complete','failed'].includes(run.status))return run;
-    await wait(1000);
-  }throw new Error('Real R worker did not reach review/configuration/completion in ten minutes');
+async function untilBoundary(startRevision,jobId) {
+  // Follow the browser's native continuation poll. Repeated manual Refresh
+  // during a running worker can intentionally reject a cross-revision view.
+  await page.waitForFunction(({startRevision,jobId})=>{
+    const section=document.getElementById('run-continuation');
+    const id=document.getElementById('run-job-id')?.textContent.trim();
+    const status=document.getElementById('run-status')?.textContent.trim()||'';
+    const revision=Number((document.getElementById('run-project')?.textContent||'').match(/revision (\d+)/)?.[1]);
+    return id===jobId && ['succeeded','failed','interrupted','timed_out'].includes(section?.dataset.jobStatus) &&
+      !document.getElementById('run-refresh').disabled && revision>startRevision &&
+      /^(awaiting_review|awaiting_configuration|complete|failed) \/ /.test(status);
+  },{startRevision,jobId},{timeout:10*60*1000,polling:250});
+  const directory=path.join(output,'project','.workbench-jobs','jobs',jobId);
+  const job=JSON.parse(await fs.readFile(path.join(directory,'job.json'),'utf8'));
+  const owner=JSON.parse(await fs.readFile(path.join(directory,'owner.json'),'utf8'));
+  assert.equal(job.status,'succeeded');assert.equal(owner.r_exit_code,0);
+  assert.equal(await page.locator('#run-continuation').getAttribute('data-connection'),'verified');
+  const run=await fresh();assert(run.revision>startRevision);
+  assert(['awaiting_review','awaiting_configuration','complete','failed'].includes(run.status));
+  (report.native_poll_boundaries??=[]).push({job_id:jobId,start_revision:startRevision,revision:run.revision,
+    status:run.status,stage:run.stage,r_exit_code:owner.r_exit_code});
+  return run;
 }
 async function approvals() {
   const history=JSON.parse(await fs.readFile(path.join(output,'project','decision_history.json'),'utf8'));
@@ -126,7 +141,7 @@ async function declarePartialBatchFacts() {
   assert.equal(answer.run.status,'ready');assert(['prefilter','strategy_evidence'].includes(answer.run.stage));
   const response=await prepared;assert.equal(response.status(),202);const result=await response.json();
   report.jobs.push({job_id:result.job.job_id,purpose:'local-facts-preparation'});
-  const current=await untilBoundary();assert.equal(current.status,'awaiting_review');assert.equal(current.review_node.kind,'strategy');
+  const current=await untilBoundary(answer.run.revision,result.job.job_id);assert.equal(current.status,'awaiting_review');assert.equal(current.review_node.kind,'strategy');
   assert.equal((await approvals()).length,0,'Fact saving and local preparation record no scientific approval');
   assert.equal(current.input_hash,old.input_hash);assert.notEqual(current.config_hash,old.config_hash);
   assert.notEqual(current.strategy_review.hash,old.strategy_review.hash);
@@ -145,6 +160,7 @@ async function approveStrategy() {
   await clickResponse('strategy-approve','/api/run-review/decision');await fresh();
 }
 async function continueOnce() {
+  const startRevision=view.run.revision;
   const before=requests.filter(x=>x.path==='/api/run-review/continue').length;
   const received=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/run-review/continue' && r.request().method()==='POST');
   const box=await ui('run-continue').boundingBox();assert(box);
@@ -154,7 +170,7 @@ async function continueOnce() {
   const response=await received;assert.equal(response.status(),202);await wait(350);
   assert.equal(requests.filter(x=>x.path==='/api/run-review/continue').length-before,1,'Rapid duplicate click starts exactly one job');
   const result=await response.json();assert(result.job?.job_id);report.jobs.push({job_id:result.job.job_id});
-  return untilBoundary();
+  return untilBoundary(startRevision,result.job.job_id);
 }
 try {
   await test('matching installed archive starts the public entry without checkout or provider',async()=>{
