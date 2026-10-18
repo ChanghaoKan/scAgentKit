@@ -1,0 +1,12 @@
+test_that("sample HVGs are deterministic, equal-contribution and leave input intact", {
+  set.seed(42)
+  x <- Matrix::Matrix(matrix(rpois(120*80,3),120,80,dimnames=list(paste0("g",1:120),paste0("c",1:80))),sparse=TRUE)
+  obj <- Seurat::CreateSeuratObject(x); obj$sample <- rep(c("a","b"),each=40)
+  before <- .sc_run_hash(obj)
+  a <- .sc_run_sample_hvg(obj,"RNA","sample",30L)
+  expect_length(a$features,30L); expect_equal(length(unique(a$features)),30)
+  expect_identical(a,.sc_run_sample_hvg(obj,"RNA","sample",30L))
+  expect_true(all(a$selection_frequency %in% 1:2))
+  expect_identical(.sc_run_hash(obj),before)
+  expect_error(.sc_run_sample_hvg(subset(obj,cells=colnames(obj)[1:40]),"RNA","sample",30L),"two")
+})
