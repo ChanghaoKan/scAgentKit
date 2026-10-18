@@ -7,6 +7,7 @@ audit_subcluster_json <- function(...) {
 }
 
 test_that("subcluster replies use annotation schema, cluster binding and marker grounding", {
+  withr::local_options(lifecycle_verbosity="quiet")
   markers <- data.frame(gene="CD3D",avg_log2FC=2,pct.1=.9,pct.2=.1)
   invoke <- function(raw) scAgentKit:::.annotate_one_subcluster_with_llm("T","0",80,1,
     markers,"PBMC",chat_fn=function(...) raw,max_retries=0)
@@ -29,6 +30,7 @@ test_that("subcluster replies use annotation schema, cluster binding and marker 
 })
 
 test_that("subcluster failure states survive the actual result annotation table", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- AgentSeurat(SeuratObject::pbmc_small)
   obj@data$cell_type <- "T"
   root <- tempfile();dir.create(root);old <- getwd();on.exit(setwd(old),add=TRUE);setwd(root)

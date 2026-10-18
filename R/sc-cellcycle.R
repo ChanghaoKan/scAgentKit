@@ -35,6 +35,8 @@ sc_cellcycle_score <- function(obj, species = "human", s_genes = NULL,
                                g2m_genes = NULL, rationale = NULL,
                                source = NULL, version = NULL,
                                symbol_mapping = NULL) {
+  .legacy_workflow_warn("sc_cellcycle_score")
+
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat")
     stop("sc_cellcycle_score expects data_type == 'seurat'. Call qc_merge() first.", call. = FALSE)

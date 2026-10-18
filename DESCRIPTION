@@ -26,11 +26,13 @@ Imports:
     Matrix,
     magrittr,
     jsonlite,
+    lifecycle,
     digest
 Remotes:
     ChanghaoKan/agentomicsCore@v0.1.1,
     SeuratData=github::satijalab/seurat-data
 Suggests:
+    withr,
     harmony,
     scDblFinder,
     SingleCellExperiment,

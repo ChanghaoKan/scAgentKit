@@ -90,6 +90,8 @@ annot_subcluster <- function(obj,
                              top_n_markers            = 15,
                              max_retries              = 1,
                              verbose                  = TRUE) {
+  .legacy_workflow_warn("annot_subcluster")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

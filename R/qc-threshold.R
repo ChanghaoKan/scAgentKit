@@ -26,6 +26,8 @@ qc_threshold <- function(obj,
                          max_percent_mt = 50,
                          min_percent_mt = 0,
                          rationale      = NULL) {
+  .legacy_workflow_warn("qc_threshold")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
 

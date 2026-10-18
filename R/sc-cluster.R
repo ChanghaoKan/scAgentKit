@@ -15,6 +15,8 @@ sc_find_neighbors <- function(obj,
                               reduction = NULL,
                               ndim      = NULL,
                               rationale = NULL) {
+  .legacy_workflow_warn("sc_find_neighbors")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (is.null(reduction)) {
@@ -71,6 +73,8 @@ sc_cluster_sweep <- function(obj,
                              resolutions = seq(0.1, 0.5, 0.1),
                              plot_dir    = "figures",
                              rationale   = NULL) {
+  .legacy_workflow_warn("sc_cluster_sweep")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (!requireNamespace("clustree", quietly = TRUE)) {
@@ -157,6 +161,8 @@ clustree::clustree(seurat_obj@meta.data, prefix = "RNA_snn_res.")',
 sc_cluster <- function(obj,
                        resolution,
                        rationale = NULL) {
+  .legacy_workflow_warn("sc_cluster")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (missing(resolution)) {

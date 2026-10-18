@@ -1,4 +1,5 @@
 test_that("NULL and thrown delivery outcomes are never resent by legacy callers", {
+  withr::local_options(lifecycle_verbosity="quiet")
   markers <- data.frame(gene="CD3D", avg_log2FC=2, pct.1=.9, pct.2=.1)
   counts <- matrix(3, 2, 8, dimnames=list(c("CD3D", "CD3E"), paste0("c",1:8)))
   obj <- AgentSeurat(Seurat::CreateSeuratObject(Matrix::Matrix(counts,sparse=TRUE)))

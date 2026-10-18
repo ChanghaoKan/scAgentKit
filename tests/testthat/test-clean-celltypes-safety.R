@@ -21,6 +21,7 @@ clean_response <- function(decision, reasoning = "Review the small group.") {
 }
 
 test_that("keep is parsed from its field even when reasoning says do not remove", {
+  withr::local_options(lifecycle_verbosity="quiet")
   mock_clean_image()
   out <- annot_clean_celltypes(
     make_clean_celltypes_fixture(), min_cells = 2, action = "remove", vision = TRUE,
@@ -38,6 +39,7 @@ test_that("keep is parsed from its field even when reasoning says do not remove"
 })
 
 test_that("vision cannot escalate the caller's retaining actions", {
+  withr::local_options(lifecycle_verbosity="quiet")
   mock_clean_image()
   for (requested in c("flag", "keep")) {
     out <- annot_clean_celltypes(
@@ -57,6 +59,7 @@ test_that("vision cannot escalate the caller's retaining actions", {
 })
 
 test_that("explicit removal honors a validated remove decision", {
+  withr::local_options(lifecycle_verbosity="quiet")
   mock_clean_image()
   out <- annot_clean_celltypes(
     make_clean_celltypes_fixture(), min_cells = 2, action = "remove", vision = TRUE,
@@ -72,6 +75,7 @@ test_that("explicit removal honors a validated remove decision", {
 })
 
 test_that("the vision schema rejects invalid action objects instead of scanning prose", {
+  withr::local_options(lifecycle_verbosity="quiet")
   mock_clean_image()
   invalid <- c(
     "keep; do not remove",
@@ -105,6 +109,7 @@ test_that("the vision schema rejects invalid action objects instead of scanning 
 })
 
 test_that("provider exceptions and non-string replies keep cells and retain failures", {
+  withr::local_options(lifecycle_verbosity="quiet")
   mock_clean_image()
   providers <- list(
     function(...) stop("mock provider unavailable"),
@@ -129,6 +134,7 @@ test_that("provider exceptions and non-string replies keep cells and retain fail
 })
 
 test_that("plot failure is audited without contacting the provider or deleting cells", {
+  withr::local_options(lifecycle_verbosity="quiet")
   testthat::local_mocked_bindings(
     .clean_celltypes_vision_image = function(...) stop("mock plot failure"),
     .package = "scAgentKit"
@@ -146,6 +152,7 @@ test_that("plot failure is audited without contacting the provider or deleting c
 })
 
 test_that("no-candidate calls retain a complete audit and do not contact vision", {
+  withr::local_options(lifecycle_verbosity="quiet")
   calls <- 0L
   out <- annot_clean_celltypes(
     make_clean_celltypes_fixture(), min_cells = 1, vision = TRUE,
@@ -160,6 +167,7 @@ test_that("no-candidate calls retain a complete audit and do not contact vision"
 })
 
 test_that("manual operations preserve audit records and removal cannot empty the object", {
+  withr::local_options(lifecycle_verbosity="quiet")
   fixture <- make_clean_celltypes_fixture()
   flagged <- annot_clean_celltypes(fixture, min_cells = 2)
   expect_equal(ncol(flagged@data), 6)
@@ -183,6 +191,7 @@ test_that("manual operations preserve audit records and removal cannot empty the
 })
 
 test_that("saved cleaning scripts replay final cell IDs and labels without a model", {
+  withr::local_options(lifecycle_verbosity="quiet")
   mock_clean_image()
   fixture <- make_clean_celltypes_fixture()
   calls <- 0L
@@ -207,6 +216,7 @@ test_that("saved cleaning scripts replay final cell IDs and labels without a mod
 })
 
 test_that("real Seurat UMAP rendering preserves metadata and uses the image contract", {
+  withr::local_options(lifecycle_verbosity="quiet")
   work_dir <- tempfile("clean-celltypes-plot-")
   dir.create(work_dir)
   withr::local_dir(work_dir)
@@ -236,6 +246,7 @@ test_that("real Seurat UMAP rendering preserves metadata and uses the image cont
 })
 
 test_that("invalid configuration is rejected before making a vision call", {
+  withr::local_options(lifecycle_verbosity="quiet")
   fixture <- make_clean_celltypes_fixture()
   expect_error(annot_clean_celltypes(fixture, min_cells = 0), "positive integer")
   expect_error(annot_clean_celltypes(fixture, min_cells = 1.5), "positive integer")

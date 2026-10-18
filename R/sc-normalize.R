@@ -18,6 +18,8 @@ sc_normalize <- function(obj,
                          method       = "LogNormalize",
                          scale_factor = 10000,
                          rationale    = NULL) {
+  .legacy_workflow_warn("sc_normalize")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

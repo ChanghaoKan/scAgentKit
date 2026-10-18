@@ -10,6 +10,7 @@ audit_prior_object <- function() {
 }
 
 test_that("guided annotation metadata truth requires explicit opt-in and is recorded", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- audit_prior_object(); prompts <- character()
   fn <- function(system_prompt,user_prompt) {prompts <<- c(prompts,system_prompt,user_prompt);NULL}
   default <- annot_llm_annotate(obj,fn,tissue="PBMC",verbose=FALSE,max_retries=0)
@@ -28,6 +29,7 @@ test_that("guided annotation metadata truth requires explicit opt-in and is reco
 })
 
 test_that("resolution metadata count prior requires explicit opt-in and is recorded", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- audit_prior_object();prompts <- character()
   fn <- function(system_prompt,user_prompt) {prompts <<- c(prompts,system_prompt,user_prompt);NULL}
   default <- suppressWarnings(sc_resolution_recommend(obj,fn,"PBMC",vision=FALSE,max_retries=0))

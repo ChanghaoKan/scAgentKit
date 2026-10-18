@@ -146,6 +146,8 @@ annot_llm_annotate <- function(obj,
                                rationale          = NULL,
                                reference_mode     = c("guided", "independent"),
                                use_metadata_prior = FALSE) {
+  .legacy_workflow_warn("annot_llm_annotate")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   reference_mode <- match.arg(reference_mode)

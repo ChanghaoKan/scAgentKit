@@ -18,6 +18,7 @@ make_reference_review_fixture <- function() {
 }
 
 test_that("offline review keeps cells, inputs and independent label conflicts", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   out <- annot_review_evidence(obj)
   review <- out@params$annotation_evidence_review
@@ -39,6 +40,7 @@ test_that("offline review keeps cells, inputs and independent label conflicts", 
 })
 
 test_that("label-specific support checks all candidates rather than the highest unrelated score", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   obj@params$llm_annotations$primary_annotation[1] <- "B cell"
   obj@params$llm_annotations$supporting_markers[1] <- "G2"
@@ -52,6 +54,7 @@ test_that("label-specific support checks all candidates rather than the highest 
 })
 
 test_that("ties outside displayed top candidates stay unknown unless explicitly mapped", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   all <- obj@params$reference_matches
   all$score[2] <- 1
@@ -72,6 +75,7 @@ test_that("ties outside displayed top candidates stay unknown unless explicitly 
 })
 
 test_that("missing, failed and unsupported annotations are unknown", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   obj@params$llm_annotations$annotation_status[1] <- "failed"
   obj@params$llm_annotations$primary_annotation[2] <- NA_character_
@@ -91,6 +95,7 @@ test_that("missing, failed and unsupported annotations are unknown", {
 })
 
 test_that("saved displayed rescue evidence is admissible and missing DB evidence is preserved", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   obj@params$llm_annotations$supporting_markers[1] <- "RESCUE"
   obj@params$llm_annotation_responses <- list(
@@ -105,6 +110,7 @@ test_that("saved displayed rescue evidence is admissible and missing DB evidence
 })
 
 test_that("reference load filters tissue/species and records pinned-file provenance", {
+  withr::local_options(lifecycle_verbosity="quiet")
   path <- tempfile(fileext = ".tsv")
   on.exit(unlink(path))
   ref <- data.frame(cell_type = c("T cell", "Mouse T", "Hepatocyte"),
@@ -125,6 +131,7 @@ test_that("reference load filters tissue/species and records pinned-file provena
 })
 
 test_that("empty references and no overlap are safe typed tables and unknown review", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   empty <- data.frame(cell_type = character(), marker = character())
   out <- annot_match_reference(obj, empty)
@@ -140,6 +147,7 @@ test_that("empty references and no overlap are safe typed tables and unknown rev
 })
 
 test_that("reference matching retains all candidates beyond the prompt limit", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   ref <- data.frame(cell_type = c("T cell", "B cell", "NK cell"), marker = "G1")
   out <- annot_match_reference(obj, ref, top_n_candidates = 1)
@@ -149,6 +157,7 @@ test_that("reference matching retains all candidates beyond the prompt limit", {
 })
 
 test_that("malformed reference and review inputs fail explicitly", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   expect_error(annot_match_reference(obj, list()), "data frame")
   expect_error(annot_match_reference(obj, data.frame(cell_type = "T", marker = NA_character_)),
@@ -165,6 +174,7 @@ test_that("malformed reference and review inputs fail explicitly", {
 })
 
 test_that("serialized saved evidence replays deterministically without a provider", {
+  withr::local_options(lifecycle_verbosity="quiet")
   out <- annot_review_evidence(make_reference_review_fixture(),
                                label_map = c("B cell" = "B lineage"))
   path <- tempfile(fileext = ".rds")
@@ -183,6 +193,7 @@ test_that("serialized saved evidence replays deterministically without a provide
 })
 
 test_that("orphaned saved clusters remain unknown rather than agreeing without cells", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   obj@data$seurat_clusters <- rep("0", ncol(obj@data))
   obj@params$markers_filtered$cluster <- "9"
@@ -201,6 +212,7 @@ test_that("orphaned saved clusters remain unknown rather than agreeing without c
 })
 
 test_that("exact initial cell mappings verify both branches and ignore cell order", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   obj <- annot_match_reference(obj, data.frame(cell_type = "T cell", marker = "G1"))
   input <- data.frame(cell_id = colnames(obj@data),
@@ -219,6 +231,7 @@ test_that("exact initial cell mappings verify both branches and ignore cell orde
 })
 
 test_that("reclustering and changed cell IDs invalidate cached agreements and replay offline", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   obj <- annot_match_reference(obj, data.frame(cell_type = "T cell", marker = "G1"))
   obj@params$llm_annotation_input_cells <- obj@params$reference_match_input_cells
@@ -245,6 +258,7 @@ test_that("reclustering and changed cell IDs invalidate cached agreements and re
 })
 
 test_that("missing branch fingerprints are unverified and malformed fingerprints mismatch", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_reference_review_fixture()
   legacy <- annot_review_evidence(obj)
   expect_true(all(legacy@params$annotation_evidence_review$alignment_status == "unverified"))

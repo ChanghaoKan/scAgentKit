@@ -1,4 +1,5 @@
 test_that("legacy and saved-run QC use the same ribosomal family", {
+  withr::local_options(lifecycle_verbosity="quiet")
   genes <- c("RPS6KA1","RPS6KB1","RPS3","RPL10","MT-CO1","HBB","OTHER")
   counts <- Matrix::Matrix(matrix(10,7,4,dimnames=list(genes,paste0("c",1:4))),sparse=TRUE)
   obj <- AgentSeurat(Seurat::CreateSeuratObject(counts))

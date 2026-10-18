@@ -31,6 +31,8 @@ sc_harmony <- function(obj,
                        max_iter  = 10,
                        seed      = 999,
                        rationale = NULL) {
+  .legacy_workflow_warn("sc_harmony")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (missing(group_by_vars) || is.null(group_by_vars)) {

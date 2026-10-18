@@ -19,6 +19,8 @@ sc_umap <- function(obj,
                     reduction_name  = "umap",
                     seed            = 999,
                     rationale       = NULL) {
+  .legacy_workflow_warn("sc_umap")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
 

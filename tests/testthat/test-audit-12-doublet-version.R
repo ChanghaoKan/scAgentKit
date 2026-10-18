@@ -1,4 +1,5 @@
 test_that("unsupported installed classifier is rejected during dependency preflight with guidance", {
+  withr::local_options(lifecycle_verbosity="quiet")
   versions <- list(scDblFinder="1.26.9",xgboost="3.2.1.1")
   message <- tryCatch({scAgentKit:::.sc_run_doublet_classifier_versions_verify(versions);"no error"},error=conditionMessage)
   for (part in c("1.26.9","1.26.7","1.22.0","isolated")) expect_match(message,part,fixed=TRUE)

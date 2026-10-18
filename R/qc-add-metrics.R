@@ -32,6 +32,8 @@ qc_add_metrics <- function(obj,
                            ribo_pattern = NULL,
                            hb_pattern   = NULL,
                            rationale    = NULL) {
+  .legacy_workflow_warn("qc_add_metrics")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   species <- match.arg(species)

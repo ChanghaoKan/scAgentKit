@@ -20,6 +20,8 @@ sc_find_markers <- function(obj,
                             min_pct          = 0.25,
                             logfc_threshold  = 0,
                             rationale        = NULL) {
+  .legacy_workflow_warn("sc_find_markers")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (!"seurat_clusters" %in% colnames(obj@data@meta.data)) {
@@ -98,6 +100,8 @@ sc_markers_summary <- function(obj,
                                padj_cut     = 0.05,
                                output_path  = "markers_top_per_cluster.txt",
                                rationale    = NULL) {
+  .legacy_workflow_warn("sc_markers_summary")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   markers <- obj@params$all_markers

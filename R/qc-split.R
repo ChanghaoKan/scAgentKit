@@ -16,6 +16,8 @@
 qc_split <- function(obj,
                      split_by  = NULL,
                      rationale = NULL) {
+  .legacy_workflow_warn("qc_split")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat") {

@@ -15,6 +15,7 @@ cellmarker_symbol_fixture <- function() {
 }
 
 test_that("CellMarker gene symbols take precedence over protein aliases and retain provenance", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("readxl")
   cache <- mock_cellmarker_cache()
   on.exit(unlink(cache$path, recursive = TRUE))
@@ -40,6 +41,7 @@ test_that("CellMarker gene symbols take precedence over protein aliases and reta
 })
 
 test_that("CellMarker prefers gene_symbol fallback before marker and documents manual cache URL", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("readxl")
   cache <- mock_cellmarker_cache()
   on.exit(unlink(cache$path, recursive = TRUE))
@@ -61,6 +63,7 @@ test_that("CellMarker prefers gene_symbol fallback before marker and documents m
 })
 
 test_that("CellMarker cache detects different recorded URL without contacting the network", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("readxl")
   cache <- mock_cellmarker_cache()
   on.exit(unlink(cache$path, recursive = TRUE))

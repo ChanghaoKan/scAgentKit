@@ -27,6 +27,8 @@ qc_remove_genes <- function(obj,
                             ribo_pattern = NULL,
                             hb_pattern   = NULL,
                             rationale    = NULL) {
+  .legacy_workflow_warn("qc_remove_genes")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (missing(species)) {

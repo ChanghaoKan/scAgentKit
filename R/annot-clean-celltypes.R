@@ -42,6 +42,8 @@ annot_clean_celltypes <- function(obj,
                                   chat_fn      = NULL,
                                   tissue       = NULL,
                                   rationale    = NULL) {
+  .legacy_workflow_warn("annot_clean_celltypes")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   action <- match.arg(action)

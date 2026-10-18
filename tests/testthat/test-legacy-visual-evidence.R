@@ -21,6 +21,7 @@ legacy_mock_plots <- function(env = parent.frame()) {
 }
 
 test_that("missing compositors never masquerade as multi-panel evidence", {
+  withr::local_options(lifecycle_verbosity="quiet")
   real_require <- base::requireNamespace
   testthat::local_mocked_bindings(requireNamespace = function(package, ...) {
     if (package %in% c("magick", "png")) return(FALSE)
@@ -39,6 +40,7 @@ test_that("missing compositors never masquerade as multi-panel evidence", {
 })
 
 test_that("both rendering backends failing remove incomplete comparisons", {
+  withr::local_options(lifecycle_verbosity="quiet")
   real_require <- base::requireNamespace
   testthat::local_mocked_bindings(requireNamespace = function(package, ...) {
     if (package == "magick") return(TRUE)
@@ -57,6 +59,7 @@ test_that("both rendering backends failing remove incomplete comparisons", {
 })
 
 test_that("resolution composition failure sends only accurately described numeric evidence", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- legacy_visual_object()
   testthat::local_mocked_bindings(
     .build_resolution_vision_panel = function(...) {
@@ -77,6 +80,7 @@ test_that("resolution composition failure sends only accurately described numeri
 })
 
 test_that("latest failed PC choice invalidates historical automatic ndim", {
+  withr::local_options(lifecycle_verbosity="quiet")
   legacy_mock_plots()
   testthat::local_mocked_bindings(
     .compose_panel_grid_safe = function(paths, out_path, ...) out_path,
@@ -101,6 +105,7 @@ test_that("latest failed PC choice invalidates historical automatic ndim", {
 })
 
 test_that("PC composition failure stops before the model call", {
+  withr::local_options(lifecycle_verbosity="quiet")
   legacy_mock_plots()
   testthat::local_mocked_bindings(.compose_panel_grid_safe = function(...) {
     stop("Could not compose all PC panels")
@@ -115,6 +120,7 @@ test_that("PC composition failure stops before the model call", {
 })
 
 test_that("png fallback composes all supplied PC and resolution panels", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("png")
   real_require <- base::requireNamespace
   testthat::local_mocked_bindings(requireNamespace = function(package, ...) {

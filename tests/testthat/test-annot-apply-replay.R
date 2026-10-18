@@ -31,6 +31,7 @@ replay_annot_script <- function(input, output) {
 }
 
 test_that("LLM labels, cluster IDs, and unusual column names replay as data", {
+  withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   column <- 'cell type"; sentinel <- TRUE; #\n`label`'
   out <- annot_apply(input, column_name = column)
@@ -44,6 +45,7 @@ test_that("LLM labels, cluster IDs, and unusual column names replay as data", {
 })
 
 test_that("rejected cluster literals replay safely through cell-ID subsetting", {
+  withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   out <- annot_apply(input, drop_rejected = TRUE)
   replay <- replay_annot_script(input, out)
@@ -54,6 +56,7 @@ test_that("rejected cluster literals replay safely through cell-ID subsetting", 
 })
 
 test_that("manual mapping literals and overrides replay without executing text", {
+  withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   overrides <- stats::setNames(
     c('"; sentinel <- TRUE; #\nmanual `cell`', "Override 'rare' cells"),
@@ -71,6 +74,7 @@ test_that("manual mapping literals and overrides replay without executing text",
 })
 
 test_that("replay verifies input cell IDs before updating or subsetting", {
+  withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   out <- annot_apply(input, drop_rejected = TRUE)
   replay <- new.env(parent = globalenv())
@@ -84,6 +88,7 @@ test_that("replay verifies input cell IDs before updating or subsetting", {
 })
 
 test_that("changed per-cell clusters stop replay before any metadata change or deletion", {
+  withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   overrides <- stats::setNames(c("T cell", "Rare cell"),
                                input@params$llm_annotations$cluster)
@@ -104,6 +109,7 @@ test_that("changed per-cell clusters stop replay before any metadata change or d
 })
 
 test_that("cluster snapshots are matched by cell ID and permit input reordering", {
+  withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   out <- annot_apply(input, drop_rejected = TRUE)
   reordered <- input

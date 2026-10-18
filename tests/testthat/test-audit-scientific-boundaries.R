@@ -12,6 +12,7 @@ audit_harmony_fixture <- function() {
 }
 
 test_that("replicated nesting needs explicit embedding-only review and retains rank diagnostics", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- audit_harmony_fixture(); check <- scAgentKit:::.sc_run_harmony_choice
   default <- check(f$choice, f$evidence, f$roles)
   expect_false(default$executable)
@@ -31,6 +32,7 @@ test_that("replicated nesting needs explicit embedding-only review and retains r
 })
 
 test_that("nesting exception cannot hide aliasing, unreplicated groups or redundant biology", {
+  withr::local_options(lifecycle_verbosity="quiet")
   f <- audit_harmony_fixture(); check <- scAgentKit:::.sc_run_harmony_choice
   f$choice$nested_biology <- "reviewed_embedding_only"
   alias <- f$roles; alias$donor <- alias$condition
@@ -52,6 +54,7 @@ test_that("nesting exception cannot hide aliasing, unreplicated groups or redund
 })
 
 test_that("reference coverage exposes 1/1 versus 10/20 without assigning an identity", {
+  withr::local_options(lifecycle_verbosity="quiet")
   counts <- Matrix::Matrix(matrix(1, 20, 4,
     dimnames = list(paste0("G", 1:20), paste0("C", 1:4))), sparse = TRUE)
   obj <- AgentSeurat(Seurat::CreateSeuratObject(counts))
@@ -74,6 +77,7 @@ test_that("reference coverage exposes 1/1 versus 10/20 without assigning an iden
 })
 
 test_that("cell-cycle defaults explicitly report small pools and score a larger synthetic pool", {
+  withr::local_options(lifecycle_verbosity="quiet")
   gene_set <- sc_cycle_gene_set("human", paste0("G", 1:6), paste0("G", 7:12),
     source = "Synthetic default-capacity fixture", version = "v1")
   options <- scAgentKit:::.sc_run_cycle_options(list(species = "human"), list(gene_set = gene_set))
@@ -103,6 +107,7 @@ test_that("cell-cycle defaults explicitly report small pools and score a larger 
 })
 
 test_that("reviewed nested execution retains PCA assays and separate before-after diagnostics", {
+  withr::local_options(lifecycle_verbosity="quiet")
   skip_if_not_installed("harmony")
   f <- audit_harmony_fixture()
   f$choice$nested_biology <- "reviewed_embedding_only"

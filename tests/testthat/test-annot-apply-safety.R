@@ -17,6 +17,7 @@ make_annot_apply_fixture <- function() {
 }
 
 test_that("annot_apply keeps LLM-rejected clusters by default", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annot_apply_fixture()
   out <- annot_apply(obj)
 
@@ -27,6 +28,7 @@ test_that("annot_apply keeps LLM-rejected clusters by default", {
 })
 
 test_that("annot_apply drops rejected clusters only when explicitly requested", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annot_apply_fixture()
   out <- annot_apply(obj, drop_rejected = TRUE)
 

@@ -1,4 +1,5 @@
 test_that("same-count membership changes invalidate marker-derived caches", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- AgentSeurat(SeuratObject::pbmc_small)
   old <- as.character(SeuratObject::Idents(obj@data))
   obj@data$seurat_clusters <- old

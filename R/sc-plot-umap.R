@@ -27,6 +27,8 @@ sc_plot_umap <- function(obj,
                          height    = 5,
                          dpi       = 150,
                          rationale = NULL) {
+  .legacy_workflow_warn("sc_plot_umap")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (!"umap" %in% names(obj@data@reductions)) {

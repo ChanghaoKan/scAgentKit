@@ -1,4 +1,5 @@
 test_that("AgentSeurat constructor works on a minimal Seurat-like list input", {
+  withr::local_options(lifecycle_verbosity="quiet")
   # Use a named list to exercise the seurat_list path. We don't need a
   # real Seurat object for the constructor itself; it only checks
   # list-vs-Seurat dispatch.
@@ -14,6 +15,7 @@ test_that("AgentSeurat constructor works on a minimal Seurat-like list input", {
 })
 
 test_that(".record_step accumulates decisions, scripts, and params", {
+  withr::local_options(lifecycle_verbosity="quiet")
   fake_list <- list(s1 = "stub")
   obj <- AgentSeurat(fake_list)
 
@@ -34,6 +36,7 @@ test_that(".record_step accumulates decisions, scripts, and params", {
 })
 
 test_that(".record_step merges params instead of overwriting", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- AgentSeurat(list(s1 = "stub"))
   obj <- scAgentKit:::.record_step(
     obj,
@@ -53,6 +56,7 @@ test_that(".record_step merges params instead of overwriting", {
 })
 
 test_that(".find_in_decisions retrieves most recent value", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- AgentSeurat(list(s1 = "stub"))
   obj <- scAgentKit:::.record_step(
     obj,
@@ -76,6 +80,7 @@ test_that(".find_in_decisions retrieves most recent value", {
 })
 
 test_that("get_decisions / get_script / get_figures accessors work", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- AgentSeurat(list(s1 = "stub"), initial_script = "# load")
   obj <- scAgentKit:::.record_step(
     obj,

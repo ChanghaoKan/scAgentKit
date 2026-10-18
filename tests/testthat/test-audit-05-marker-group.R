@@ -1,4 +1,5 @@
 test_that("marker calculation follows seurat_clusters after an identity-changing sweep", {
+  withr::local_options(lifecycle_verbosity="quiet")
   obj <- AgentSeurat(SeuratObject::pbmc_small)
   obj <- suppressWarnings(sc_cluster_sweep(obj,resolutions=c(.1,1.2),plot_dir=tempfile()))
   SeuratObject::Idents(obj@data) <- "RNA_snn_res.0.1"

@@ -25,6 +25,8 @@ qc_doublet <- function(obj,
                        remove    = TRUE,
                        seed      = 999,
                        rationale = NULL) {
+  .legacy_workflow_warn("qc_doublet")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (obj@data_type != "seurat_list") {

@@ -85,6 +85,8 @@ sc_resolution_recommend <- function(obj,
                                     panel_height         = 4.5,
                                     max_retries          = 2,
                                     use_metadata_prior   = FALSE) {
+  .legacy_workflow_warn("sc_resolution_recommend")
+
 
   stopifnot(methods::is(obj, "AgentSeurat"))
   if (!is.logical(use_metadata_prior) || length(use_metadata_prior)!=1L || is.na(use_metadata_prior))
