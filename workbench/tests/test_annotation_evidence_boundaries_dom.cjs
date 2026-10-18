@@ -16,4 +16,8 @@ assert.equal(vm.runInContext('renderJointEvidence(item)', context), true);
 const rendered = JSON.stringify(nodes.get('annotation-joint-evidence'));
 for (const text of ['1/1 ranks above 10/20 by coverage only','single-marker evidence (weak)','10 / 20','qualitative, uncalibrated','label semantics not validated','lower_in_cluster','-0.8']) assert(rendered.includes(text),text);
 for (const text of ['annotation-marker-enrichment','p_adjusted','universe_size','annotation-measured-panels','mean_log_normalized','pct_detected','ABSENT','high_count_flag','missing background remains unavailable']) assert(rendered.includes(text),text);
+delete joint.database.enrichment;
+assert.equal(vm.runInContext('renderJointEvidence(item)', context), true);
+const perCandidateRendered=JSON.stringify(nodes.get('annotation-joint-evidence'));
+for(const text of ['Saved per-candidate native enrichment records','p_adjusted','universe_size'])assert(perCandidateRendered.includes(text),text);
 console.log(JSON.stringify({passed:true, actualProductionRenderer:true, actualBrowser:false, modelCalls:0, cases:['absolute support and small denominator warning','qualitative confidence','saved negative-direction contrast without semantic validation','native Fisher background and BH fields visible','measured panel means, detection, missing genes and cell flags visible']}));

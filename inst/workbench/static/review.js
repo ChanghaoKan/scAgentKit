@@ -781,7 +781,10 @@ function renderJointEvidence(item) {
   jointDetail(details, "Declared database scope", "annotation-joint-scope", evidenceRecord(database.provenance?.scope, ["method", "tissue_all_rows", "unavailable_columns", "excluded_unavailable_rows"]));
   jointDetail(details, "Canonical symbols and explicit aliases", "annotation-joint-symbols", evidenceRecord(database.marker_symbols, ["original", "canonical", "unique", "duplicate_count", "alias_resolutions"]));
   jointDetail(details, "Saved candidate details, including zero overlap", "annotation-joint-all-candidates", array(database.all_candidates).map(row => evidenceRecord(row, ["label", "score", "overlap", "referenceSize", "markers", "formula", "referenceGenes", "availableGenes", "unmeasuredGenes", "notInTopMarkers", "tiedBest", "enrichment", "source"])));
-  const enrichment = jointDetail(details, "Saved Fisher enrichment and tested-gene background", "annotation-marker-enrichment", database.enrichment);
+  const savedEnrichment = database.enrichment || (array(database.all_candidates).some(row => row?.enrichment != null)
+    ? {source: "Saved per-candidate native enrichment records", candidates: array(database.all_candidates).filter(row => row?.enrichment != null).map(row => ({label: row.label, enrichment: row.enrichment}))}
+    : null);
+  const enrichment = jointDetail(details, "Saved Fisher enrichment and tested-gene background", "annotation-marker-enrichment", savedEnrichment);
   enrichment.append(element("p", "One-sided enrichment uses the saved native eligible-gene universe and BH correction across all tested labels. It does not change coverage ranking or validate cell identity; missing background remains unavailable."));
   jointDetail(details, "Explicit name and relationship comparisons", "annotation-joint-comparison-details", evidenceRecord(comparison, ["source", "label", "label_normalized", "label_map", "reference_labels", "related_candidates", "ambiguous", "reason", "relationships"]));
   const expression = joint.expression_review;
