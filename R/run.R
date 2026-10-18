@@ -181,6 +181,23 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   ns <- environment(.sc_run_drive)
   selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE))
   selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", "sc_select_pcs", ".adjusted_rand_index", "sc_cycle_gene_set"))
+  # Coordinator wrappers call scientific helpers outside the sc_run prefix.
+  # Follow their package-local references transitively, without executing any
+  # helper/provider or fingerprinting unrelated legacy workflows. External
+  # kernels retain their version/runtime contracts below and in saved evidence.
+  pending <- selected
+  while (length(pending)) {
+    referenced <- unique(unlist(lapply(pending, function(name) {
+      fn <- get(name, envir = ns, inherits = FALSE)
+      c(all.names(body(fn)), all.names(formals(fn)))
+    }), use.names = FALSE))
+    local <- referenced[vapply(referenced, function(name)
+      exists(name, envir = ns, inherits = FALSE) &&
+        is.function(get(name, envir = ns, inherits = FALSE)), logical(1))]
+    pending <- setdiff(local, selected)
+    selected <- unique(c(selected, pending))
+  }
+  selected <- sort(selected)
   code <- lapply(selected, function(name) {
     fn <- get(name, envir = ns)
     list(name = name, formals = paste(deparse(formals(fn), width.cutoff = 500L), collapse = "\n"),
