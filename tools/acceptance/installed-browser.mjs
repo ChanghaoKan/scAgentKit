@@ -49,7 +49,12 @@ async function screenshot(name) {await page.screenshot({path:path.join(output,na
 async function fresh(allowBusy=false) {
   const received=page.waitForResponse(r=>r.request().method()==='GET' && (r.url().includes('/api/run-review/inspect') || r.url().includes('/api/run-review/scopes') && r.status()>=400));
   await ui('run-refresh').click();const res=await received;
-  if(allowBusy && res.status()===409 && res.url().includes('/scopes')) {
+  if(res.status()===409){
+    const body=await res.json(),reason=typeof body.error==='string'?body.error:'Missing coordinator error';
+    const route=new URL(res.url()).pathname;
+    const transientLock=allowBusy && ['/api/run-review/scopes','/api/run-review/inspect'].includes(route) && /Project is locked[. :]/i.test(reason);
+    (report.read_conflicts??=[]).push({path:route,status:409,error:reason,transient_lock:transientLock});
+    assert(transientLock,'Unexpected read conflict: '+reason);
     await page.waitForFunction(()=>!document.getElementById('run-refresh').disabled);return null;
   }
   assert.equal(res.status(),200);
