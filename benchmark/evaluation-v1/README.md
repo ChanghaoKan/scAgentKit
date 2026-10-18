@@ -51,3 +51,13 @@ local checks may affect wall time. A positive software test or extra evidence is
 not biological improvement. Keep optional diagnostics/correction non-default
 until their scientific/default gates are met. Negative and unavailable results
 belong in the report.
+
+After the original PBMC pair started, a short native process sample identified
+recursive printing into `capture.output`'s growing in-memory text connection.
+Future runs now preserve **all** printed review text in separate file-backed
+logs, with per-operation elapsed/user/system time and byte counts. Decisions,
+public API calls, parameters and evaluation criteria are unchanged. Original
+pair measurements remain preserved and include the old collector's overhead;
+do not compare their wall times directly with the new collection policy, or
+attribute that overhead to numerical algorithms. An operation includes API
+integrity checks, optional continuation and rendering; it is not kernel time.

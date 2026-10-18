@@ -27,8 +27,29 @@ if(variant %in% c("after","after-qc-or","after-sample-hvg"))extra$scientific_rev
  resolution_extension=TRUE,panels=if(dataset=="baron") "pancreas" else "blood",cross_sample=TRUE,mixed_lineage=TRUE)
 x<-do.call(sc_analyze,c(list(input=input_path,project_dir=project,context=context,plan=plan,provider=NULL,budget=0,reference=reference_path),extra))
 message("Initial review prepared")
-review<-function(x){out<-NULL;invisible(capture.output(out<-sc_review(x)));out}
-approve<-function(x,reason){out<-NULL;invisible(capture.output(out<-sc_review(review(x),"approve",reviewer="Preregistered offline policy",reason=reason,continue=TRUE)));out}
+review_logs<-list();review_sequence<-0L
+logged_review<-function(label,fn) {
+ review_sequence<<-review_sequence+1L;sequence<-review_sequence
+ path<-file.path(root,sprintf("review-%02d-%s.txt",sequence,label))
+ connection<-file(path,open="wt");depth<-sink.number();operation_started<-proc.time()
+ sink(connection)
+ on.exit({
+  while(sink.number()>depth)sink()
+  close(connection)
+  time<-proc.time()-operation_started
+  review_logs[[length(review_logs)+1L]]<<-list(sequence=sequence,operation=label,
+   elapsed=unname(time[["elapsed"]]),user=unname(time[["user.self"]]),system=unname(time[["sys.self"]]),
+   output_file=basename(path),output_bytes=unname(file.info(path)$size),
+   timing_scope="Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time")
+  jsonlite::write_json(review_logs,file.path(root,"review-operation-timings.json"),auto_unbox=TRUE,pretty=TRUE)
+ },add=TRUE)
+ fn()
+}
+review<-function(x)logged_review("show",function()sc_review(x))
+approve<-function(x,reason){
+ displayed<-review(x)
+ logged_review("approve",function()sc_review(displayed,"approve",reviewer="Preregistered offline policy",reason=reason,continue=TRUE))
+}
 x<-approve(x,"Execute fixed counts-only software comparison; no provider or inferred truth")
 message("Foundation and measured scan returned: ",x$view$stage)
 if(identical(x$view$stage,"strategy_propose")) {
@@ -40,7 +61,7 @@ if(identical(x$view$stage,"strategy_propose")) {
 stopifnot(identical(x$view$stage,"annotation_propose"))
 x<-review(x);labels<-x$annotations
 labels$label<-"Unknown";labels$confidence<-"low";labels$rationale<-"No human or model identity review; explicit abstention control";labels$markers<-""
-p<-NULL;invisible(capture.output(p<-sc_review(x,"revise",annotations=labels,reviewer="Offline policy",reason="Explicit abstention for every cluster")))
+p<-logged_review("revise",function()sc_review(x,"revise",annotations=labels,reviewer="Offline policy",reason="Explicit abstention for every cluster"))
 done<-approve(p,"Approve only complete Unknown control labels")
 message("Final explicit annotation approval returned: ",done$view$status)
 stopifnot(identical(done$view$status,"complete"))
@@ -65,6 +86,8 @@ jsonlite::write_json(list(status="complete",variant=variant,dataset=dataset,star
  input_sha256=digest::digest(file=input_path,algo="sha256"),input_cells=ncol(input),retained_cells=ncol(result),unknown_reviewed=ncol(result),source_library=lib,
  package_version=as.character(packageVersion("scAgentKit")),R=R.version.string,cluster_count=length(unique(membership)),cluster_column=state$config$cluster_column,
  implementation_hash=state$implementation_hash,runtime_manifest_sha256=digest::digest(file=system.file("workbench","runtime-manifest.json",package="scAgentKit"),algo="sha256"),
+ logging_policy="Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+ timing_comparability="Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
  counts_hash=get(".sc_project_sparse_hash",ns)(SeuratObject::LayerData(result,assay="RNA",layer="counts")),reference_sha256=digest::digest(file=reference_path,algo="sha256"),
  provider_calls=0L,model_cost_usd=0,human_time_seconds=NULL,human_time_saved=NULL,biological_accuracy=NULL,
  accuracy_reason="No independent truth; author-label and shared-reference agreement scored separately",
