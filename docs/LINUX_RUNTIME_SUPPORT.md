@@ -46,13 +46,13 @@ package currently installed in the reviewing R process.
 
 ## Web service and deployment
 
-The local service needs Python >= 3.9 and the checkout's `workbench/` files.
+The local service needs Python >= 3.9 and the runtime bundled in the installed R package. A matching checkout is an explicit developer option, not a normal installation requirement.
 R-backed operations also require the project's compatible R environment;
 the expression bridge uses SeuratObject, Matrix, jsonlite and digest.
 Node is needed only for DOM tests. Browser smoke tests need an existing
 Playwright/Chrome installation and their documented fixtures.
 
-The browser worker needs POSIX `flock`. Use headless R where it is unavailable.
+The browser worker needs POSIX `flock`. This installation CI targets Linux and macOS. Windows browser/background-worker support is not validated; the presence of `configure.win` is not a Windows execution claim. Use headless R where POSIX workers are unavailable and validate that platform separately.
 Run computation on a suitable machine or allocated compute node, with local
 filesystem semantics supporting locks and atomic replacement. Shared filesystems,
 scheduler integration and multiuser isolation require site-specific verification.

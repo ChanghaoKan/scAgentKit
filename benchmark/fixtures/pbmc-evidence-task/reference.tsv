@@ -1,0 +1,14 @@
+cell_type	marker	species	tissue
+B lineage	MS4A1	human	Peripheral blood
+T lineage	IL7R	human	Peripheral blood
+T lineage	CCR7	human	Peripheral blood
+T lineage	CD8A	human	Peripheral blood
+Monocyte lineage	CD14	human	Peripheral blood
+Monocyte lineage	LYZ	human	Peripheral blood
+Monocyte lineage	FCGR3A	human	Peripheral blood
+Monocyte lineage	MS4A7	human	Peripheral blood
+NK lineage	GNLY	human	Peripheral blood
+NK lineage	NKG7	human	Peripheral blood
+Dendritic lineage	FCER1A	human	Peripheral blood
+Dendritic lineage	CST3	human	Peripheral blood
+Platelet lineage	PPBP	human	Peripheral blood

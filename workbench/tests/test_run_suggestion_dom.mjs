@@ -318,6 +318,23 @@ await test("local Continue POST retains its existing 15-second response deadline
   finish(); const answer = await pending; assert.equal(answer.job.job_id, "saved-local-task"); assert.equal(h.timers.size, 0);
 });
 
+await test("first manual worksheet rejects foreign, stale and malformed evidence without creating review authority", async () => {
+  const value = science(); value.run.stage = "annotation_propose";
+  value.run.annotation_preparation = {schema: "scagentkit.annotation-preparation.v1", project_id: value.run.project_id,
+    input_hash: inputHash, expected_revision: value.run.revision, evidence_hash: evidenceHash,
+    clusters: [{clusterId: "001", cellCount: 2, markers: [{gene: "CD3D"}]}]};
+  const h = harness(); h.call("verify", value); assert.equal(value.run.review_node, null); assert.equal(h.requests.length, 0);
+  for (const mutate of [x => x.project_id = "foreign", x => x.input_hash = "0".repeat(64),
+    x => x.expected_revision++, x => x.evidence_hash = "", x => x.clusters = [],
+    x => x.clusters.push(clone(x.clusters[0])), x => x.clusters[0].cellCount = -1,
+    x => x.clusters[0].markers[0].gene = null]) {
+    const bad = clone(value); mutate(bad.run.annotation_preparation);
+    assert.throws(() => harness().call("verify", bad), /worksheet/);
+  }
+  const pending = clone(value); pending.run.pending = {kind: "external_transfer"};
+  assert.throws(() => harness().call("verify", pending), /worksheet/);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

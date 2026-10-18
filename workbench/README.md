@@ -6,32 +6,96 @@ history. **Review current step** opens `/review` for decisions and optional loca
 computation. Start a project with the [R tutorial](../README.md#first-analysis)
 first; the browser is optional.
 
-## Open saved results
+## Start from an RDS file
 
-Install the R package using the [pinned installation](../README.md#installation).
-The browser files are excluded from R package builds, so obtain the same source
-separately (Git and Python >= 3.9 are required):
+### Start from R
 
-```sh
-git clone https://github.com/ChanghaoKan/scAgentKit.git
-cd scAgentKit
-git checkout --detach 727b1afc30b532683e7bf25f85a75d4c04399780
+After installing the package, keep using R:
+
+```r
+library(scAgentKit)
+sc_start("a.rds", "analysis",
+  context = list(species = "human", tissue = "Peripheral blood",
+    research_goal = "Characterize the major immune populations."))
+# Later: reopen the saved project.
+sc_start("a.rds", "analysis")
 ```
 
-Keep this checkout path and the private R library together in your project notes.
-Use the matching source for an older project rather than upgrading its kernel
-or replacing its saved state to make it open.
+This opens a loopback review service with explicit local continuation and returns
+control to R. It passes the current R executable and library paths. On first use,
+Python ≥ 3.9 must already be available. Browser assets and Python modules are
+included in the R package. The launcher installs nothing. A matching source
+checkout can be selected explicitly with `checkout=` (or the developer option
+`scAgentKit.checkout`); it is checked against the installed R functions and
+resource manifest. Development changes require regenerating the manifest with
+`Rscript tools/build-workbench-manifest.R` and reinstalling the package.
+Repeating the call reuses a matching live service or restarts a stopped service.
+Changed RDS paths/content or explicitly changed saved context/reuse settings are
+rejected rather than replacing the existing project. For a read-only viewer use
+`sc_run_open()` instead.
+
+Supply known metadata roles through `context$columns` and experimental design
+through `context$design`; the normal coordinator validates them. The launcher
+does not infer these facts. Explicit processed reuse uses
+`reuse_processed=TRUE, processed_reason="..."`, with `cluster_column` if needed.
+It starts at annotation and does not claim a new raw strategy/QC approval.
+
+### Start from a terminal
+
+In an environment with R, Seurat, the package and Python ≥ 3.9 already installed,
+one command creates a new project and starts the local review service:
+
+```sh
+python3 workbench/start_analysis.py a.rds --project pbmc-analysis \
+  --species human --tissue "Peripheral blood" \
+  --research-goal "Characterize the major immune populations"
+# Add --r-library /path/to/private/R-library when needed.
+```
+
+Use the printed loopback URL. Review and edit the strategy, then select
+**Approve strategy and continue locally**. At the annotation boundary, select
+**Prepare annotation table**, inspect the markers and fill in the blank rows.
+Save the complete proposal, inspect it, then select **Approve annotation and
+continue locally** to produce the saved result. These are two scientific
+approvals; starting the service and preparing a table grant neither approval.
+
+To leave populations unresolved, supply one reason and explicitly select
+**Keep all unfilled populations Unknown**. Known labels require citations from
+their own supplied marker evidence. Unresolved population and cell counts remain
+visible in the result; a completed workflow does not resolve their identities.
+
+The launcher does not install software, infer species or experimental design,
+configure a provider, request a model, or replace an existing output directory.
+The selected R library must contain this checkout's workflow implementation.
+Keep the terminal open; Ctrl-C closes the local service. Existing projects can
+be reopened with `server.py --run-project PATH --local-continue`.
+
+Raw-count analysis is the default even when the input has saved reductions or
+clusters. To deliberately reuse normalized data and supplied clusters, add
+`--reuse-processed --processed-reason "Explain the reuse decision"` and, if
+needed, `--cluster-column COLUMN`. This advanced entry starts at annotation
+preparation; it does not perform or claim a new strategy/QC approval.
+
+## Open saved results
+
+Install the R package using the [R package installation](../README.md#installation).
+Projects started with `sc_start()` also configure the existing read-only viewer
+with the installed package resources. Keep the matching R environment for saved
+projects; changing their execution kernel does not grant fresh approval.
+For projects created directly with `sc_run()`, select the installed package root
+once using `checkout = system.file(package = "scAgentKit")`.
 
 With scAgentKit loaded in the project's R environment:
 
 ```r
-sc_run_open(project_dir, checkout = "/path/to/scAgentKit")
+sc_run_open(project_dir, checkout = system.file(package = "scAgentKit"))
 # Subsequent sessions reuse the saved viewer configuration:
 sc_run_open(project_dir)
 ```
 
 This read-only viewer starts or reuses a matching loopback service. It performs
-no analysis or model request. Python >= 3.9 and a source checkout are required.
+no analysis or model request. Python >= 3.9 is required. Installed resources
+are sufficient; a matching checkout remains an optional developer override.
 The [researcher guide](../docs/RESEARCHER_PROTOCOL_ZH.md#8-同一项目的可选网页与服务器运行)
 has remote-use and scheduler templates.
 
@@ -141,3 +205,41 @@ The historical frozen PBMC adapter can still be started with
 It expects the exact fixture allowlist in `evidence.py`, rather than arbitrary
 input data. Its test requirements are documented in the test plans above.
 The workbench is excluded from R package builds.
+
+## Runtime distribution
+
+`inst/workbench/` is the single canonical production source. The root
+`workbench/` entry points and assets are compatibility symlinks for development;
+they are excluded from R packages. Installation generates a manifest from the
+R function signatures and every shipped runtime asset. Startup checks both
+against the selected installed R namespace before execution. Missing, extra or
+changed runtime files fail closed. Python bytecode caches are excluded.
+
+## Evidence-assisted annotation
+
+The preparation table presents saved marker/reference facts and sources before
+any labels are selected. It lists tied reference evidence first, with details
+collapsed. Candidates retain their actual coverage numerator/denominator and
+single-marker limitations. Choose one explicitly to populate an untouched row's
+label and admissible citations; write confidence and interpretation yourself.
+Human-edited or locally kept rows cannot be overwritten by candidate/bulk actions.
+
+The complete worksheet still saves one typed proposal for separate approval.
+Local keeping is optional draft protection, not row-level scientific approval.
+Same-tab drafts restore only for exact project/input/evidence/revision bindings;
+older drafts are not silently migrated. Discard local edits explicitly to switch
+to the model path. See [the formal guide](../docs/ANNOTATION_ASSISTANCE.md).
+
+For an already configured saved provider, enable its existing preview/authorize/
+request/adopt component through the same R entry:
+
+```r
+sc_start("a.rds", "analysis", model_suggestions = "configured")
+```
+
+The default is `"off"`. Unconfigured manual projects continue locally without a
+model. Provider/model/budget remain immutable R-side configuration; no browser
+credential input is added. Explicit `"simulate"` is for saved mock projects only
+and is visibly marked as a zero-model software control.
+
+Direct R entry also accepts [10x MEX directories or a single sample/path table](../docs/TENX_INPUT.md). The browser shows the protected input receipt before reviewing basic analysis; advanced downstream modules are not run by default.

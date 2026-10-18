@@ -3,6 +3,7 @@
 ^Dockerfile$
 ^benchmark$
 ^\.github$
+^\.git$
 ^\.gitignore$
 ^workbench$
 ^docs$

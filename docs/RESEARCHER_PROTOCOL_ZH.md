@@ -59,7 +59,7 @@ R_LIBS_USER="$sc_r_library" R CMD INSTALL --library="$sc_r_library" .
 
 包的最低声明来自 [DESCRIPTION](../DESCRIPTION)：R `>= 4.2.0`、Seurat `>= 5.0.0`、agentomicsCore `>= 0.1.1`，以及 SeuratObject、Matrix、dplyr、ggplot2、magrittr、jsonlite、digest、methods。SeuratObject 在 DESCRIPTION 中没有独立数值下限；这里不补造一个。agentomicsCore 的声明安装来源为 `ChanghaoKan/agentomicsCore@v0.1.1`。
 
-基础流程不要求安装所有 Suggests。网页另需 Python 3 和此 checkout 的 `workbench` 源码；安装 R 包本身不代表网页服务已经安装到系统。Harmony、doublet、cell-cycle 等功能有各自的参数、适用性和依赖约束，见第 7 节。
+基础流程不要求安装所有 Suggests。网页另需已有的 Python 3.9+；网页资源随 R 包安装，正常 `sc_start()` 不需要另附 checkout。10x MEX 可直接使用同一入口，见 [读取与样本表](TENX_INPUT.md)。Harmony、doublet、cell-cycle 等功能有各自的参数、适用性和依赖约束，见第 7 节。
 
 可选算法接受的运行时组合见 [运行环境支持](LINUX_RUNTIME_SUPPORT.md)。包的最低声明不是所有依赖组合的测试矩阵；实际部署仍应核对指定提交的 CI 结果及自己的环境。服务器和 scheduler 命令是模板，需要你已有的受支持运行环境。
 

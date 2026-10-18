@@ -20,6 +20,7 @@ explains optional browser review and local computation.
 | Parameter edits, processed reuse and child context | [Parameter controls](PARAMETER_CONTEXT_CONTROLS.md) |
 | Whole-plan annotation and undo | [Annotation review](ANNOTATION_REVIEW.md) |
 | Local CellMarker evidence and provenance | [Reference evidence](CM2_EVIDENCE_REVIEW.md) |
+| Model-assisted workflow with the high-level R interface | [Model workflow](COMPLETE_ANALYSIS_WALKTHROUGH.md#model-assisted-workflow-with-the-r-interface) |
 | Model payload consent, requests and candidates | [Model review](UNIFIED_MODEL_REVIEW.md) |
 | Incomplete model responses and new-project recovery | [Response recovery](annotation-response-recovery.md) |
 | Child analysis, exact-ID application and undo | [Subcluster review](SUBCLUSTER_REVIEW.md) |
@@ -42,3 +43,10 @@ describe planned evaluations, not validated comparative results.
 Version history remains in [NEWS](../NEWS.md), Git history, tags and GitHub
 Releases. Development-session test receipts are not user instructions; current
 checks are defined in [.github/workflows](../.github/workflows).
+
+- [Annotation evidence assistance](ANNOTATION_ASSISTANCE.md): local facts, explicit candidates, protected drafts and complete-proposal review.
+- [Offline comparison contract](OFFLINE_COMPARISON_CONTRACT.md): public cases, synthetic controls, installation/platform gates and benchmark prerequisites.
+
+- [Direct 10x MEX input and sample tables](TENX_INPUT.md): explicit source class, unique cell IDs, feature identity and exact metadata alignment.
+
+- [R-only public PBMC3k protocol](R_ANALYSIS_PROTOCOL.md): full manual strategy, annotation and result sequence.
