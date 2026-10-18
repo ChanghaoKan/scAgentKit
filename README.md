@@ -8,6 +8,10 @@ You receive a new Seurat object with counts, sample metadata, reductions and rev
 
 Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.6.0` is experimental.
 
+Public Release downloads need no credential. GitHub dependency resolution can
+hit the unauthenticated API quota; `remotes` supports an existing `GITHUB_PAT`
+in that case. CI uses its existing read-only job token, not a new credential.
+
 Download [scAgentKit_0.6.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz) from the [v0.6.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.6.0), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release gates](docs/RELEASE_PLAN.md).
 
 ```r

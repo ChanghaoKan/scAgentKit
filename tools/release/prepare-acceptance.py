@@ -2,7 +2,9 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
 import tarfile
 import urllib.request
 
@@ -25,13 +27,15 @@ if args.mode == "public":
     base = "https://github.com/ChanghaoKan/scAgentKit/releases/download/" + tag + "/"
     for asset in [name, "SHA256SUMS"]:
         Path(asset).write_bytes(read(base + asset))
-    api = "https://api.github.com/repos/ChanghaoKan/scAgentKit/"
-    release = json.loads(read(api + "releases/tags/" + tag))
-    assert not release["draft"] and release["tag_name"] == tag
-    obj = json.loads(read(api + "git/ref/tags/" + tag))["object"]
-    while obj["type"] == "tag":
-        obj = json.loads(read(api + "git/tags/" + obj["sha"]))["object"]
-    assert obj["type"] == "commit" and obj["sha"] == args.commit
+    # Public smart HTTP avoids the unrelated anonymous REST API quota. Explicitly
+    # clear checkout's auth headers/helpers; both downloads and ref reads are public.
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_ASKPASS="/bin/false")
+    output = subprocess.check_output(["git", "-c", "http.extraheader=", "-c",
+        "http.https://github.com/.extraheader=", "-c", "credential.helper=",
+        "ls-remote", "https://github.com/ChanghaoKan/scAgentKit.git",
+        "refs/tags/" + tag, "refs/tags/" + tag + "^{}"], env=env, text=True)
+    refs = {ref: sha for sha, ref in (line.split() for line in output.splitlines())}
+    assert refs.get("refs/tags/" + tag + "^{}", refs.get("refs/tags/" + tag)) == args.commit
 
 sha = hashlib.sha256(Path(name).read_bytes()).hexdigest()
 assert sha == args.sha256, "Downloaded bytes differ from this run's accepted build"

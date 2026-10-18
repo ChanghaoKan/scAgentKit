@@ -2,7 +2,9 @@
 local({
   secret_names <- grep("API_?KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL", names(Sys.getenv()),
     value=TRUE, ignore.case=TRUE)
-  Sys.unsetenv(secret_names)
+  # The CI-managed read-only token is for remotes' public GitHub dependency API.
+  # Provider credentials remain absent; public Release download uses no token.
+  Sys.unsetenv(setdiff(secret_names,"GITHUB_PAT"))
   repositories <- readLines("container-repositories.txt", warn=FALSE)
   stopifnot(length(repositories)>0L, all(grepl("^https://",repositories)))
   options(repos=stats::setNames(repositories,
