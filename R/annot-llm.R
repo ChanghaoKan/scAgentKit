@@ -55,7 +55,7 @@
 #' @param max_retries Integer, JSON-parse and annotation-schema retries
 #'   on malformed output. Default 2, so each cluster (times `n_samples`) can
 #'   cost up to three paid calls; there is no budget guard in this legacy
-#'   function. A provider error is never retried, because the request may
+#'   function. A provider error or NULL response is never retried, because the request may
 #'   already have been delivered and billed. Use `sc_run()` for budgeted,
 #'   approval-gated requests.
 #' @param n_samples Integer, number of independent LLM calls per cluster.
@@ -831,7 +831,7 @@ annot_llm_annotate <- function(obj,
       attempt$error <- "Provider returned NULL."
       audit[[i]] <- attempt
       last_err <- simpleError("Provider returned NULL.")
-      next
+      break
     }
 
     parsed <- tryCatch(
