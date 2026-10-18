@@ -5,24 +5,24 @@
 # digest as well if exact environment reconstruction is required.
 #
 # Build (tag with the version in DESCRIPTION; the image installs this checkout):
-#   docker build --build-arg SCAGENTKIT_VERSION=0.5.0.9000 -t scagentkit:0.5.0.9000 .
+#   docker build --build-arg SCAGENTKIT_VERSION=0.5.1 -t scagentkit:0.5.1 .
 #
 # Run interactively (with your scratch dir mounted and API key passed in):
 #   docker run --rm -it \
 #     -v $(pwd):/workspace \
 #     -w /workspace \
 #     -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-#     scagentkit:0.5.0.9000 R
+#     scagentkit:0.5.1 R
 #
 # Run a script:
-#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.5.0.9000 \
+#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.5.1 \
 #     Rscript analysis.R
 
 FROM rocker/r-ver:4.4.2
 
 LABEL maintainer="Changhao Kan <kch_ynu@163.com>"
 LABEL org.opencontainers.image.source="https://github.com/ChanghaoKan/scAgentKit"
-ARG SCAGENTKIT_VERSION=0.5.0.9000
+ARG SCAGENTKIT_VERSION=0.5.1
 LABEL org.opencontainers.image.version="${SCAGENTKIT_VERSION}"
 
 # System libs needed for Seurat, hdf5, png/jpeg I/O, httr2, magick
@@ -67,10 +67,12 @@ RUN R -e "remotes::install_github('satijalab/seurat-data', upgrade = 'never')"
 ARG AGENTOMICS_CORE_REF=v0.1.1
 RUN R -e "remotes::install_github('ChanghaoKan/agentomicsCore@${AGENTOMICS_CORE_REF}', upgrade = 'never', dependencies = c('Depends', 'Imports'))"
 
-# Install scAgentKit from the local build context.
+# Maintainer source build: make the same archive type used by Release installation.
+# This does not publish a Release and is not an alternate user installation route.
 COPY . /tmp/scAgentKit
-RUN R -e "remotes::install_local('/tmp/scAgentKit', upgrade = 'never', dependencies = FALSE)" \
-    && rm -rf /tmp/scAgentKit
+RUN cd /tmp && R CMD build --no-build-vignettes /tmp/scAgentKit \
+    && R -e "remotes::install_local(list.files('/tmp', pattern='scAgentKit_.*[.]tar[.]gz$', full.names=TRUE), upgrade='never', dependencies=FALSE, build=FALSE)" \
+    && rm -rf /tmp/scAgentKit /tmp/scAgentKit_*.tar.gz
 
 # install.packages() only warns when a package fails, so the steps above can
 # succeed with missing packages. Fail the build explicitly instead.

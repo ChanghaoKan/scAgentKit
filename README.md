@@ -6,9 +6,9 @@ You receive a new Seurat object with counts, sample metadata, reductions and rev
 
 ## Installation
 
-Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.5.0.9000` is experimental.
+Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.5.1` is experimental.
 
-Install the source archive supplied with this version into your own R library:
+Download [scAgentKit_0.5.1.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.5.1/scAgentKit_0.5.1.tar.gz) from the [v0.5.1 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.5.1), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release preparation status](docs/RELEASE_PLAN.md).
 
 ```r
 lib <- path.expand("~/R/scagentkit-library")
@@ -16,7 +16,7 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.5.0.9000.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.5.1.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit)
 packageVersion("scAgentKit")
@@ -24,11 +24,10 @@ packageVersion("scAgentKit")
 
 Run from the directory containing the downloaded archive, or give its full path.
 This installs required dependencies, including the declared
-`ChanghaoKan/agentomicsCore@v0.1.1`. For a verified local checkout, replace the
-archive argument with that checkout's full path. Existing managed environments
-can instead use `R CMD INSTALL` after dependencies are available.
-
-Use the archive/checkout that supplies this README; an older installed release or remote `main` may not contain these interfaces. Optional model and analysis methods have additional configuration. See [installation and runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
+`ChanghaoKan/agentomicsCore@v0.1.1`. Record the archive SHA256, package versions
+and `sessionInfo()` for reproducibility. Do not substitute mutable `main` or an
+older tag. Optional methods have their own verified version contracts; see
+[installation and runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
 
 ## Analysis protocol
 

@@ -1,4 +1,4 @@
-# scAgentKit 0.5.0.9000
+# scAgentKit 0.5.1 (unreleased)
 
 ## Legacy workflow migration
 

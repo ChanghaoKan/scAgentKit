@@ -4,7 +4,7 @@
 
 建议先用第 3 节的公开小数据、零费用示例练习完整流程，再接入自己的数据。已有处理好的 Seurat 对象可从第 5 节进入，明确复用已有基础计算。需要网页时，按第 8 节启动一个只绑定本机的服务。
 
-当前包版本为 `0.5.0.9000`，安装入口为公开仓库的 `main` 开发分支。复现时记录实际安装的完整 commit SHA。程序运行完成、模型与数据库意见一致，都不等于阈值最优或细胞身份已经得到生物学验证。
+本轮准备版本为 `0.5.1`、tag 为 `v0.5.1`，统一安装入口为 GitHub Release 的源码归档。归档准备和 CI 通过不代表已发布；实际发布前下载链接尚不可用。复现时记录归档 SHA256 和 Release 对应提交。程序运行完成、模型与数据库意见一致，都不等于阈值最优或细胞身份已经得到生物学验证。
 
 ## 1. 先理解四个动作
 
@@ -21,37 +21,26 @@
 
 ## 2. 安装与版本确认
 
-### 2.1 安装当前开发版本
+### 2.1 安装版本化 Release 归档
 
-公开仓库地址是 [ChanghaoKan/scAgentKit](https://github.com/ChanghaoKan/scAgentKit)。本协议描述当前 `main` 开发版的协调器、网页和子群功能。安装后核对 `0.5.0.9000` 和下列 exports，而不是仅凭安装成功判断功能齐全。
-
-在将运行分析的 R 环境中使用独立 library。下面是基础安装入口，会联系 CRAN／GitHub；只安装基础 Depends/Imports，不启用可选算法：
+按照 [README 的唯一安装入口](../README.md#installation) 下载 `v0.5.1`
+Release 附件 `scAgentKit_0.5.1.tar.gz`，在自己的 R library 中安装。
+[发布准备计划](RELEASE_PLAN.md) 明确实际状态；不要将待发布链接当作已上线资产。
+在归档所在目录运行：
 
 ```r
 private_lib <- path.expand("~/R/scagentkit-library")
-dir.create(private_lib, recursive = TRUE, showWarnings = FALSE)
+dir.create(private_lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(private_lib, .libPaths()))
-if (!requireNamespace("remotes", quietly = TRUE))
-  install.packages("remotes", lib = private_lib, repos = "https://cloud.r-project.org")
-remotes::install_github("ChanghaoKan/scAgentKit@main", lib = private_lib,
-                       dependencies = c("Depends", "Imports"),
-                       upgrade = "never", build = FALSE)
-library(scAgentKit, lib.loc = private_lib)
+if (!requireNamespace("remotes", quietly=TRUE))
+  install.packages("remotes", lib=private_lib, repos="https://cloud.r-project.org")
+remotes::install_local("scAgentKit_0.5.1.tar.gz", lib=private_lib,
+  dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
+library(scAgentKit, lib.loc=private_lib)
 ```
 
-`main` 会变化，稳定复现应将 `main` 替换成自己已经核实的完整 commit SHA。此命令不是依赖锁文件，也不保证 CRAN 未来版本与所有可选方法兼容。
-
-HPC 已有维护者提供的受支持依赖环境时，可选本地 checkout 安装：
-
-```sh
-sc_checkout=/absolute/path/to/verified/scAgentKit-checkout
-sc_r_library=/absolute/path/to/new/private-r-library
-mkdir -p "$sc_r_library"
-cd "$sc_checkout"
-R_LIBS_USER="$sc_r_library" R CMD INSTALL --library="$sc_r_library" .
-```
-
-该命令不下载或修复依赖。实际版本和可选运行时 guards 仍须核对，R 自带 methods 无需另装。
+记录归档 SHA256、版本和 `sessionInfo()`。该入口会解析声明的基础依赖，
+不等于依赖锁文件，也不保证所有可选算法适配最新版。不要改用 `main` 或旧 tag。
 
 不要为安装新版本而更新其他正在运行项目的全局 library。恢复旧项目时，继续使用该项目绑定的实现和依赖环境；升级包后旧审批可能因实现指纹变化被拒绝，不能直接修改状态文件绕过检查。
 
@@ -69,7 +58,7 @@ R_LIBS_USER="$sc_r_library" R CMD INSTALL --library="$sc_r_library" .
 library(scAgentKit, lib.loc = private_lib)  # 本节上方安装所用 library
 packageVersion("scAgentKit")
 find.package("scAgentKit")
-packageDescription("scAgentKit")$RemoteSha # remotes 安装时记录；本地安装另记 git HEAD
+packageDescription("scAgentKit")$Version # 另记录 Release commit 与归档 SHA256
 .libPaths()
 sessionInfo()
 stopifnot(all(c("sc_run", "sc_run_inspect", "sc_run_review",
@@ -391,22 +380,17 @@ sc_run_open("/durable/path/to/project", checkout = "/path/to/scAgentKit")
 
 ### 8.1 只绑定 loopback
 
-在分析机器准备好同一 R library、固定 Rscript 和 Python 3。网页代码来自源码 checkout；安装 R 包不会自动给你这个目录。按第 2 节版本说明取得源码并记录实际 ref：
+在分析机器准备好同一 R library、固定 Rscript 和 Python 3.9+。网页资源随 R 包安装，
+无需另取源码 checkout。正常交互使用 README 的 `sc_start()`；需要显式命令行服务时，
+从已安装包定位 server：
 
 ```sh
-git clone https://github.com/ChanghaoKan/scAgentKit.git
-cd scAgentKit
-git rev-parse HEAD
-```
-
-R 包与该 checkout 应对应同一实现；若网页需要新的接口而 R library 中是旧包，应安装对应源码，不混用版本。从这个 checkout 启动：
-
-```sh
-cd /absolute/path/to/verified/scAgentKit-checkout
-python3 -B workbench/server.py \
+sc_r_library=/absolute/path/to/private-r-library
+sc_rscript=/absolute/path/to/Rscript
+sc_server="$(R_LIBS_USER="$sc_r_library" "$sc_rscript" -e 'cat(system.file("workbench", "server.py", package="scAgentKit"))')"
+python3 -B "$sc_server" \
   --run-project /absolute/durable/path/to/study-project \
-  --rscript /absolute/path/to/Rscript \
-  --r-library /absolute/path/to/private-r-library \
+  --rscript "$sc_rscript" --r-library "$sc_r_library" \
   --local-continue --port 8774
 ```
 

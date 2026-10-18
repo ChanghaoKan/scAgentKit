@@ -8,17 +8,16 @@ results, and continue from a saved project after closing R.
 
 This guide walks through both routes. The examples use human PBMC data; replace
 the study background and analysis choices for your experiment. The current
-development version is **0.5.0.9000**.
+planned release version is **0.5.1**.
 
 [中文完整指南](RESEARCHER_PROTOCOL_ZH.md) ·
 [All documentation](README.md) · [Changes](../NEWS.md)
 
 ## Installation
 
-Requires R >= 4.2 and Seurat >= 5. Install `remotes` if needed, then:
+Install the versioned Release archive using the [canonical installation instructions](../README.md#installation), then:
 
 ```r
-remotes::install_github("ChanghaoKan/scAgentKit")
 library(scAgentKit)
 library(Seurat)
 source(system.file("examples", "first-run.R", package = "scAgentKit"))
