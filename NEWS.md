@@ -1,5 +1,21 @@
 # Development (unreleased)
 
+## Optional scientific diagnostics (effect evaluation pending)
+
+- Add explicit per-sample HVG consensus, sample-median QC comparisons, guarded
+  unsaved/unapproved OR draft preselection, PC elbow and optional k+/-5,
+  resampling and finite resolution-extension experiments.
+- Add local panel expression/detection, broad-expression and cross-sample
+  contrasts, positive numerical citation gates, and eligible-background Fisher
+  evidence while retaining absolute hits and reference coverage.
+- Add separately returned SoupX/decontX count corrections with input guards and
+  before/after provenance. Original counts/checkpoints are never replaced.
+- Extend the public browser entry with explicit optional scientific settings;
+  unsupported pipelines or inputs remain unavailable. No biological improvement
+  or human time-saving claim is made before the registered paired evaluation.
+- Release acceptance retries transient downloads with bounded attempts and an
+  explicit1800-second timeout; permanent errors and checksum mismatches fail.
+
 ## Breaking changes
 
 The reviewed workflow and helper fingerprints change. Preserve each existing
