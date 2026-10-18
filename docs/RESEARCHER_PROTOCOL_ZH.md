@@ -4,7 +4,7 @@
 
 建议先用第 3 节的公开小数据、零费用示例练习完整流程，再接入自己的数据。已有处理好的 Seurat 对象可从第 5 节进入，明确复用已有基础计算。需要网页时，按第 8 节启动一个只绑定本机的服务。
 
-本轮准备版本为 `0.5.1`、tag 为 `v0.5.1`，统一安装入口为 GitHub Release 的源码归档。归档准备和 CI 通过不代表已发布；实际发布前下载链接尚不可用。复现时记录归档 SHA256 和 Release 对应提交。程序运行完成、模型与数据库意见一致，都不等于阈值最优或细胞身份已经得到生物学验证。
+本轮准备版本为 `0.6.0`、tag 为 `v0.6.0`，统一安装入口为 GitHub Release 的源码归档。归档准备和 CI 通过不代表已发布；实际发布前下载链接尚不可用。复现时记录归档 SHA256 和 Release 对应提交。程序运行完成、模型与数据库意见一致，都不等于阈值最优或细胞身份已经得到生物学验证。
 
 ## 1. 先理解四个动作
 
@@ -23,8 +23,8 @@
 
 ### 2.1 安装版本化 Release 归档
 
-按照 [README 的唯一安装入口](../README.md#installation) 下载 `v0.5.1`
-Release 附件 `scAgentKit_0.5.1.tar.gz`，在自己的 R library 中安装。
+按照 [README 的唯一安装入口](../README.md#installation) 下载 `v0.6.0`
+Release 附件 `scAgentKit_0.6.0.tar.gz`，在自己的 R library 中安装。
 [发布准备计划](RELEASE_PLAN.md) 明确实际状态；不要将待发布链接当作已上线资产。
 在归档所在目录运行：
 
@@ -34,7 +34,7 @@ dir.create(private_lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(private_lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", lib=private_lib, repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.5.1.tar.gz", lib=private_lib,
+remotes::install_local("scAgentKit_0.6.0.tar.gz", lib=private_lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=private_lib)
 ```

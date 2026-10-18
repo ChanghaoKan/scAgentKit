@@ -8,7 +8,7 @@ results, and continue from a saved project after closing R.
 
 This guide walks through both routes. The examples use human PBMC data; replace
 the study background and analysis choices for your experiment. The current
-planned release version is **0.5.1**.
+planned release version is **0.6.0**.
 
 [中文完整指南](RESEARCHER_PROTOCOL_ZH.md) ·
 [All documentation](README.md) · [Changes](../NEWS.md)

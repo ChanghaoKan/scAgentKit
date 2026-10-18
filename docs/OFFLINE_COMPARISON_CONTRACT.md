@@ -124,7 +124,7 @@ with the existing dependency library in `R_LIBS_USER` as appropriate:
 
 ```sh
 mkdir /tmp/scagentkit-fresh-library
-Rscript -e 'remotes::install_local("scAgentKit_0.5.1.tar.gz", lib="/tmp/scagentkit-fresh-library", dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)' 
+Rscript -e 'remotes::install_local("scAgentKit_0.6.0.tar.gz", lib="/tmp/scagentkit-fresh-library", dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)'
 Rscript benchmark/contracts/installed_package_smoke.R \
   /tmp/scagentkit-fresh-library /tmp/installed-smoke.json
 ```

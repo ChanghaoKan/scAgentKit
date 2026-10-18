@@ -5,24 +5,24 @@
 # digest as well if exact environment reconstruction is required.
 #
 # Build (tag with the version in DESCRIPTION; the image installs this checkout):
-#   docker build --build-arg SCAGENTKIT_VERSION=0.5.1 -t scagentkit:0.5.1 .
+#   docker build --build-arg SCAGENTKIT_VERSION=0.6.0 -t scagentkit:0.6.0 .
 #
 # Run interactively (with your scratch dir mounted and API key passed in):
 #   docker run --rm -it \
 #     -v $(pwd):/workspace \
 #     -w /workspace \
 #     -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-#     scagentkit:0.5.1 R
+#     scagentkit:0.6.0 R
 #
 # Run a script:
-#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.5.1 \
+#   docker run --rm -v $(pwd):/workspace -w /workspace scagentkit:0.6.0 \
 #     Rscript analysis.R
 
 FROM rocker/r-ver:4.4.2
 
 LABEL maintainer="Changhao Kan <kch_ynu@163.com>"
 LABEL org.opencontainers.image.source="https://github.com/ChanghaoKan/scAgentKit"
-ARG SCAGENTKIT_VERSION=0.5.1
+ARG SCAGENTKIT_VERSION=0.6.0
 LABEL org.opencontainers.image.version="${SCAGENTKIT_VERSION}"
 
 # System libs needed for Seurat, hdf5, png/jpeg I/O, httr2, magick

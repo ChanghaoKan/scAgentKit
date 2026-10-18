@@ -6,9 +6,13 @@ You receive a new Seurat object with counts, sample metadata, reductions and rev
 
 ## Installation
 
-Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.5.1` is experimental.
+Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.6.0` is experimental.
 
-Download [scAgentKit_0.5.1.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.5.1/scAgentKit_0.5.1.tar.gz) from the [v0.5.1 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.5.1), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release preparation status](docs/RELEASE_PLAN.md).
+Public Release downloads need no credential. GitHub dependency resolution can
+hit the unauthenticated API quota; `remotes` supports an existing `GITHUB_PAT`
+in that case. CI uses its existing read-only job token, not a new credential.
+
+Download [scAgentKit_0.6.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz) from the [v0.6.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.6.0), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release gates](docs/RELEASE_PLAN.md).
 
 ```r
 lib <- path.expand("~/R/scagentkit-library")
@@ -16,7 +20,7 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.5.1.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.6.0.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit)
 packageVersion("scAgentKit")
@@ -28,6 +32,33 @@ This installs required dependencies, including the declared
 and `sessionInfo()` for reproducibility. Do not substitute mutable `main` or an
 older tag. Optional methods have their own verified version contracts; see
 [installation and runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
+
+## Offline installation check
+
+After installing, run the bundled public-data software example in a new project:
+
+```r
+source(system.file("examples", "simple-analysis.R", package="scAgentKit"))
+result <- simple_analysis_after(tempfile("scagentkit-offline-"))
+stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
+```
+
+This example uses `pbmc_small`, explicit software-control approvals and Unknown
+labels. It makes no provider call and does not validate biological identities.
+The release acceptance job runs the installation commands above in a fresh
+`rocker/r-ver` container with empty package libraries, then runs this example;
+its complete dependency-install and example logs are retained with the CI run.
+
+### Existing saved projects
+
+Execution and approval require the saved implementation hash to match the
+running functions and fingerprinted dependency versions. An older project with
+a different hash cannot continue under this release. Preserve its original
+project, inputs, package build and dependency environment; restore that exact
+environment to continue, or create a new project from the original input and
+review it again. Never edit saved hashes, approvals or checkpoints to force a
+resume. See [compatibility and deprecation details](NEWS.md).
+Author-label metadata priors default to off; using them requires explicit opt-in.
 
 ## Analysis protocol
 
