@@ -23,7 +23,7 @@ const script=path.join(path.dirname(fileURLToPath(import.meta.url)),'installed-b
 const env={...process.env,R_LIBS_USER:path.resolve(args['r-library']),R_LIBS:args['dependency-library']||process.env.R_LIBS||'',PYTHONDONTWRITEBYTECODE:'1'};
 for (const key of Object.keys(env)) if (/API_KEY|TOKEN|SECRET|PASSWORD|SCAGENTKIT_CHECKOUT/.test(key)) delete env[key];
 const report={started_at:new Date().toISOString(),archive_sha256:crypto.createHash('sha256').update(await fs.readFile(archive)).digest('hex'),
-  actual_browser:false,actual_R_workers:false,source_checkout:null,provider_calls:0,scientific_accuracy_tested:false,
+  actual_browser:false,actual_R_workers:false,source_checkout:null,provider_calls:null,scientific_accuracy_tested:false,
   tests:[],screenshots:[],external_requests:[],page_errors:[],jobs:[]};
 let browser,context,page,launch,view;const responses=[],requests=[];
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -120,7 +120,9 @@ try {
     await ui('strategy-reason').fill('Choose this scanned resolution after inspecting measured cluster relationships; this is software acceptance, not biological optimization.');
     if(await ui('strategy-save').isEnabled())await clickResponse('strategy-save','/api/run-review/decision');
     await fresh();report.author_resolution=view.run.strategy_review.details.canonical_proposal.clustering.resolution;
-    assert.equal(report.author_resolution,chosen);await approveStrategy();
+    assert.equal(report.author_resolution,chosen);
+    await fs.writeFile(path.join(output,'author-selection.json'),JSON.stringify({resolution:chosen,scan_hash:d.hash})+'\n');
+    await approveStrategy();
     const next=await continueOnce();assert.equal(next.stage,'annotation_propose');assert.equal(next.status,'awaiting_configuration');
   });
   await test('incomplete annotation draft survives refresh and cannot create a proposal or approval',async()=>{
@@ -149,6 +151,7 @@ try {
     await clickResponse('annotation-approve','/api/run-review/decision');await fresh();
     const completed=await continueOnce();assert.equal(completed.status,'complete');await r('verify');
     report.verification=JSON.parse(await fs.readFile(path.join(output,'r-output-verification.json'),'utf8'));
+    assert.equal(report.verification.provider_calls,0);report.provider_calls=report.verification.provider_calls;
     for(const job of report.jobs){
       const directory=path.join(output,'project','.workbench-jobs','jobs',job.job_id);
       const owner=JSON.parse(await fs.readFile(path.join(directory,'owner.json'),'utf8'));

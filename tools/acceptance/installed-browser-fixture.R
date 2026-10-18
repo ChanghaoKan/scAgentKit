@@ -59,9 +59,50 @@ if (action == 'setup') {
   approved <- Filter(function(x) identical(x$action,'approved'),events)
   kinds <- vapply(approved,function(x)x$details$kind,'')
   stopifnot(sum(kinds=='annotation')==1L, sum(kinds=='strategy')>=1L)
-  ledger <- if(file.exists(file.path(project,'ledger.json'))) jsonlite::read_json(file.path(project,'ledger.json')) else NULL
+  state <- readRDS(file.path(project,'state.rds'))
+  artifact <- function(name) {
+    record <- state$files[[name]]; stopifnot(!is.null(record))
+    file <- file.path(project,record$path)
+    stopifnot(file.exists(file),identical(digest::digest(file=file,algo='sha256'),record$sha256))
+    readRDS(file)
+  }
+  ledger_path <- file.path(project,'provider','ledger.json')
+  ledger <- if(file.exists(ledger_path)) jsonlite::read_json(ledger_path) else list(entries=list())
+  stopifnot(length(ledger$entries)==0L,identical(state$config$provider$name,'manual'),
+    identical(state$config$provider$external,FALSE))
+  selection <- jsonlite::read_json(file.path(output,'author-selection.json'))
+  review <- artifact('strategy_review'); scan <- artifact('cluster_scan')
+  analysis <- artifact('analysis'); markers <- artifact('markers'); evidence <- artifact('annotation_evidence')
+  last_strategy <- tail(Filter(function(x) identical(x$details$kind,'strategy'),approved),1L)[[1L]]
+  stopifnot(identical(last_strategy$details$review_hash,review$hash),
+    identical(review$details$cluster_diagnostics$hash,scan$hash),
+    identical(selection$scan_hash,scan$hash),
+    identical(selection$resolution,review$details$canonical_proposal$clustering$resolution),
+    identical(analysis@misc$strategy_execution$cluster$resolution,selection$resolution))
+  expected <- analysis@misc$strategy_execution$cluster$diagnostic_assignments[[as.character(selection$resolution)]]
+  membership <- as.character(analysis[[]][[state$config$cluster_column]])
+  stopifnot(identical(names(expected),colnames(analysis)),identical(unname(expected),membership),
+    identical(digest::digest(expected,algo='sha256',serializeVersion=2L),
+      scan$membership_hashes[[as.character(selection$resolution)]]),
+    identical(colnames(analysis),colnames(final)),
+    identical(as.character(final[[]][[state$config$cluster_column]]),membership),
+    identical(evidence$private$input_cells$cell_id,colnames(analysis)),
+    identical(evidence$private$input_cells$cluster,membership),
+    identical(markers$cluster_column,state$config$cluster_column))
+  # Independently project actual final marker rows to the measured scan format.
+  table <- markers$marker_summary
+  marker_records <- lapply(seq_len(nrow(table)),function(i) list(
+    clusterId=as.character(table$cluster[i]),gene=as.character(table$gene[i]),
+    avgLog2FC=unname(table$avg_log2FC[i]),pct1=unname(table$pct.1[i]),
+    pct2=unname(table$pct.2[i]),pAdj=unname(table$p_val_adj[i]),source='Seurat::FindAllMarkers'))
+  stopifnot(isTRUE(all.equal(marker_records,scan$markers[[as.character(selection$resolution)]]$markers,tolerance=1e-10)),
+    identical(markers$parameters,scan$markers[[as.character(selection$resolution)]]$parameters))
+  resolution_binding <- list(resolution=selection$resolution,scan_hash=scan$hash,
+    strategy_review_hash=review$hash,membership_hash=scan$membership_hashes[[as.character(selection$resolution)]],
+    marker_rows=nrow(table),actual_final_membership_and_markers_verified=TRUE)
   write_json(list(status='passed',view=view,cells=ncol(final),labels=unique(final$sc_annotation),
     output_sha256=digest::digest(file=view$output$seurat,algo='sha256'),
-    executed_stages=executed,approval_kinds=kinds,ledger=ledger,
+    executed_stages=executed,approval_kinds=kinds,ledger=ledger,provider_calls=length(ledger$entries),
+    provider=state$config$provider,resolution_binding=resolution_binding,
     scientific_accuracy_tested=FALSE),'r-output-verification.json')
 } else stop('Unknown action')
