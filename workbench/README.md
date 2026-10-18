@@ -3,7 +3,7 @@
 The workbench opens an existing `sc_run()` project on the machine holding its
 data. `/workbench` shows saved QC, strategy, analysis, annotation, outputs and
 history. **Review current step** opens `/review` for decisions and optional local
-computation. Start a project with the [R tutorial](../README.md#first-analysis)
+computation. Start a project with the [R tutorial](../README.md#analysis-protocol)
 first; the browser is optional.
 
 ## Start from an RDS file
