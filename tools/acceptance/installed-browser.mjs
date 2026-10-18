@@ -133,7 +133,7 @@ try {
     await page.reload();await ui('prepare-recovery').waitFor();
     assert(/restored/i.test(await ui('prepare-recovery').textContent()));
     assert.equal(await page.locator('[data-testid^="prepare-label-"]').first().inputValue(),'Unknown');
-    await fresh();assert.equal(view.run.revision,revision);assert.equal(view.run.annotation_review,null);
+    await fresh();assert.equal(view.run.revision,revision);assert.equal(view.run.annotation_review??null,null);
     await screenshot('03-restored-incomplete-worksheet');
   });
   await test('complete manual Unknown proposal saves separately from approval and finishes once',async()=>{
