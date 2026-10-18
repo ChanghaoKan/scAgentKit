@@ -276,7 +276,7 @@ function doubletReviewError(details = state.view?.run.strategy_review?.details, 
     return "Doublet removal is unverified: the saved per-capture impact is unavailable or inconsistent with the exact scope. Rebuild the review in R.";
   return null;
 }
-function dirty() {return annotationDirty() || strategyDirty() || preparationDirty();}
+function dirty() {return annotationDirty() || strategyDirty() || preparationDirty() || recommendationFactsDirty();}
 function draftError() {
   for (const item of annotationRows()) {
     const row = state.drafts.get(String(item.clusterId)), base = normalizeRow(item.proposal);
@@ -494,6 +494,7 @@ async function suggestionAction(action, modify = false, requestAfterApproval = f
 }
 function buttons() {
   updateRecommendationAvailability();
+  updateRecommendationFactsAvailability();
   for (const control of $("annotation-preparation")?.querySelectorAll?.("input,textarea,select,button") || []) control.disabled = !ready();
   for (const row of state.preparationControls || []) {row.apply.disabled = !ready() || row.data.touched || row.keep.checked; row.clear.disabled = !ready() || row.keep.checked;}
   $("run-refresh").disabled = state.busy || state.suggestionChaining;
@@ -507,7 +508,7 @@ function buttons() {
   for (const id of ["annotation-label", "annotation-confidence", "annotation-rationale", "annotation-keep", "annotation-coarser", "annotation-unknown"]) $(id).disabled = !annotation || !node()?.can_revise;
   for (const input of state.citationInputs) input.disabled = !annotation || !node()?.can_revise;
   for (const id of ["annotation-reviewer", "annotation-reason", "run-undo-reviewer", "run-undo-reason"]) $(id).disabled = state.busy || activeJob() || activeSuggestion() || state.suggestionBusy;
-  const strategy = ready() && node()?.kind === "strategy";
+  const strategy = ready() && node()?.kind === "strategy" && !recommendationFactsDirty();
   $("strategy-save").disabled = !strategy || !node().can_revise || !strategyDirty() || !!strategyDraftError();
   $("strategy-approve").disabled = !strategy || !node().can_decide || strategyDirty() || !!typedStrategyError(strategyProposal()) || !!doubletReviewError() || !!madReviewError();
   $("strategy-approve-continue").hidden = !continuationEnabled();
@@ -1412,8 +1413,9 @@ function recommendationDraft(draft, stepId, candidate) {
   return next;
 }
 function applyRecommendation(stepId, candidateId, reviewHash) {
+  if (recommendationFactsDirty()) {message("Save or discard local fact edits before using a strategy candidate. Your fact edits are preserved.",true);return false;}
   const context = recommendationContext();
-  if (!ready() || node()?.kind !== "strategy" || !node()?.can_revise || !context.current || context.reviewHash !== reviewHash) {
+  if (!ready() || recommendationFactsDirty() || node()?.kind !== "strategy" || !node()?.can_revise || !context.current || context.reviewHash !== reviewHash) {
     message("Refresh the saved strategy review before using this recommendation. Your local draft is preserved.",true); return false;
   }
   const step = context.recommendations.steps.find(row => row.id === stepId), candidate = step?.candidates.find(row => row.id === candidateId);
@@ -1433,9 +1435,97 @@ function recommendationList(target, title, values) {
 function updateRecommendationAvailability() {
   const region = state.recommendationRegion; if (!region) return;
   const context = recommendationContext();
-  region.notice.textContent = context.current ? "Saved R assessment · candidates change the local draft only. Draft edits do not update these measurements." : context.reason;
+  region.notice.textContent = context.current ? "Saved R recommendations · assessment state is shown per step. Candidates change the local draft only; draft edits do not update saved measurements." : context.reason;
   region.cards.hidden = !context.current;
-  for (const control of region.controls) control.disabled = !ready() || !node()?.can_revise || !context.current || control.getAttribute("data-unavailable") === "true";
+  for (const control of region.controls) control.disabled = !ready() || recommendationFactsDirty() || !node()?.can_revise || !context.current || control.getAttribute("data-unavailable") === "true";
+}
+function recommendationFactValue(field, input) {
+  const raw = String(input.value ?? "").trim();
+  if (!raw) return null;
+  if (field.type === "checkbox") {
+    if (!["true","false"].includes(raw)) throw new Error("Choose explicitly declared Yes, No or Unknown.");
+    return raw === "true";
+  }
+  if (field.type === "number") {
+    const value = Number(raw); if (!Number.isFinite(value)) throw new Error("Enter a finite numeric fact, or leave it unknown."); return value;
+  }
+  if (field.type === "select") {
+    const option = array(field.options).find(row => String(row.value) === raw);
+    if (!option) throw new Error("Select a value from the saved input's available facts."); return option.value;
+  }
+  if (field.type !== "text") throw new Error("This fact field type is unsupported.");
+  return raw;
+}
+function recommendationFactPatch(items) {
+  const patch = {};
+  for (const {field,input} of items) {
+    const parts = typeof field.key === "string" ? field.key.split(".") : [];
+    if (!parts.length || parts.some(part => !/^[A-Za-z][A-Za-z0-9_]*$/.test(part) || ["__proto__","prototype","constructor"].includes(part))) throw new Error("Unsupported fact key.");
+    const value = recommendationFactValue(field,input);
+    if (JSON.stringify(value) === JSON.stringify(field.value ?? null)) continue;
+    let target = patch;
+    parts.forEach((part,index) => {if (index === parts.length-1) target[part]=value; else {if (!Object.hasOwn(target,part)) target[part]={}; if (!target[part] || typeof target[part]!=="object" || Array.isArray(target[part])) throw new Error("Conflicting fact keys."); target=target[part];}});
+  }
+  return patch;
+}
+function recommendationFactsDirty() {
+  const form = state.recommendationFacts; if (!form) return false;
+  try {return Object.keys(recommendationFactPatch(form.items)).length > 0;} catch (_) {return true;}
+}
+function updateRecommendationFactsAvailability() {
+  const form = state.recommendationFacts; if (!form) return;
+  const context = recommendationContext(), editable = ready() && context.current && context.reviewHash === form.reviewHash && context.recommendations.fact_editable === true && node()?.can_revise && state.view.run.stage === "strategy_propose" && !strategyDirty();
+  for (const control of [...form.items.map(row=>row.input),form.reviewer,form.reason]) control.disabled = !editable;
+  form.save.disabled = !editable || !recommendationFactsDirty(); form.discard.disabled = !ready() || !recommendationFactsDirty();
+}
+function renderRecommendationFacts(target, context) {
+  state.recommendationFacts = null;
+  const fields = context.current ? context.recommendations.fact_fields : null;
+  if (!Array.isArray(fields) || !fields.length) return;
+  const section = element("section",null,{class:"recommendation-facts","data-testid":"recommendation-facts"});
+  section.append(element("h3","Declare missing or corrected study facts"),element("p","Unknown stays unknown. Choose actual metadata columns and record the source; a sample label does not establish a physical capture. Optional missing facts can remain unassessed while supported work continues. Saving facts rebuilds local suggestions and records no scientific approval.",{class:"microcopy"}));
+  const form = element("form",null,{"data-testid":"recommendation-facts-form"}), items = [];
+  for (const field of fields) {
+    if (!field || typeof field.key !== "string" || !["select","text","number","checkbox"].includes(field.type)) continue;
+    const label = element("label",field.label || field.key), input = element(["select","checkbox"].includes(field.type)?"select":"input",null,{"data-testid":"recommendation-fact-"+field.key.replaceAll(".","-"),"aria-label":field.label || field.key});
+    if (["select","checkbox"].includes(field.type)) {
+      input.append(element("option","Unknown — not declared",{value:""}));
+      for (const option of field.type === "checkbox" ? [{value:true,label:"Yes — explicitly declared"},{value:false,label:"No — explicitly declared"}] : array(field.options)) input.append(element("option",option.label || String(option.value),{value:String(option.value)}));
+    } else {input.setAttribute("type",field.type === "number" ? "number" : "text"); if(field.type==="number")input.setAttribute("step","any");}
+    input.value = field.value == null ? "" : String(field.value); input.required = field.required === true;
+    label.append(input); form.append(label); if(field.reason)form.append(element("p",field.reason,{class:"microcopy"}));
+    items.push({field,input}); for(const event of ["input","change"])input.addEventListener(event,()=>buttons());
+  }
+  const reviewerLabel = element("label","Fact declaration reviewer"), reviewer = element("input",null,{"data-testid":"recommendation-facts-reviewer",maxlength:"200"}); reviewer.required=true; reviewerLabel.append(reviewer);
+  const reasonLabel = element("label","Source and reason for these facts"), reason = element("textarea",null,{"data-testid":"recommendation-facts-reason",maxlength:"4000",rows:"2"}); reason.required=true; reasonLabel.append(reason);
+  const save = element("button","保存事实并生成本地建议",{type:"submit",class:"button quiet","data-testid":"recommendation-facts-save"}), discard = element("button","Discard local fact edits",{type:"button",class:"button quiet","data-testid":"recommendation-facts-discard"});
+  form.append(reviewerLabel,reasonLabel,save,discard); section.append(form); target.append(section);
+  state.recommendationFacts = {form,items,reviewer,reason,save,discard,reviewHash:context.reviewHash};
+  form.addEventListener("submit",event=>{event.preventDefault();saveRecommendationFacts(context.reviewHash);});
+  discard.addEventListener("click",()=>{if(!ready())return;renderRecommendations();buttons();message("Local fact edits discarded. Saved study facts and approvals have not changed.");});
+  if (context.recommendations.fact_editable !== true) section.append(element("p","Facts are read-only at this saved stage. No configuration change is authorized here.",{class:"microcopy"}));
+  updateRecommendationFactsAvailability();
+}
+async function saveRecommendationFacts(reviewHash) {
+  const context = recommendationContext(), form = state.recommendationFacts;
+  if (!ready() || !form || !context.current || context.reviewHash !== reviewHash || form.reviewHash !== reviewHash || context.recommendations.fact_editable !== true || !node()?.can_revise || state.view.run.stage !== "strategy_propose") return false;
+  if (strategyDirty()) {message("Save or discard the complete strategy draft before saving facts. Local fact edits are preserved.",true);return false;}
+  if (!form.form.reportValidity()) return false;
+  let facts;
+  try {facts=recommendationFactPatch(form.items);if(!Object.keys(facts).length)throw new Error("Edit at least one declared fact before saving.");} catch(error){message(error.message,true);return false;}
+  const reviewer=form.reviewer.value.trim(),reason=form.reason.value.trim();if(!reviewer||!reason){message("Enter the fact reviewer and source/reason.",true);return false;}
+  const payload=basePayload("facts",reviewer,reason);payload.facts=facts;let prepare=false,saved=false;
+  state.busy=true;buttons();
+  try {
+    const answer=await request(payload);state.view=answer;state.continuation=answer.continuation||null;state.stale=false;state.connectionLost=false;state.awaitingFreshInspect=false;state.recommendationFacts=null;state.suggestion=null;state.suggestionLost=false;state.suggestionError="";stopSuggestionPolling();render();saved=true;
+    prepare=answer.run.status==="ready"&&["prefilter","strategy_evidence"].includes(answer.run.stage);
+    message(prepare ? "Facts saved without approval. Preparing local diagnostic suggestions; the worker will stop at the rebuilt strategy review." : "Facts saved without approval. Suggestions are not yet rebuilt; use local Continue preparation or resume in R, then inspect the new review.");
+  } catch(error){state.stale=true;message(error.message+" Local fact edits are retained; refresh before another submission. No automatic retry was made.",true);}
+  finally{state.busy=false;buttons();}
+  if(!saved)return false;
+  if(prepare && canContinue(false)) await continueRun(false);
+  else if(prepare) message("Facts saved without approval. Suggestions are not yet rebuilt; local Continue preparation is unavailable. Resume preparation in R, then inspect the new review.");
+  return true;
 }
 function renderRecommendations() {
   const target = $("strategy-recommendations"); if (!target) return;
@@ -1473,6 +1563,7 @@ function renderRecommendations() {
     }
     recommendationList(cards,"Limits of these recommendations",rec.limitations);
   }
+  renderRecommendationFacts(target,context);
   target.append(element("p","The existing author decisions remain: strategy and QC, measured resolution selection, and annotations. Using a candidate does not save, approve, compute or request a model.",{class:"microcopy"}));
   updateRecommendationAvailability();
 }
@@ -1586,7 +1677,7 @@ function render() {
   $("run-qc").hidden = !run.stage.startsWith("qc") || current?.kind !== "qc";
   if (!$("run-qc").hidden && !$("run-qc-frame").getAttribute("src")) $("run-qc-frame").setAttribute("src", scopedRunURL(continuationEnabled() ? "/review-qc?localContinue=1" : "/review-qc"));
   $("run-strategy").hidden = !run.strategy_review;
-  if (run.strategy_review) renderStrategy(); else state.strategyDraftText = null;
+  if (run.strategy_review) renderStrategy(); else {state.strategyDraftText = null; state.recommendationFacts = null;}
   $("run-annotation").hidden = !run.annotation_review;
   if (run.annotation_review) renderAnnotation(); else state.drafts.clear();
   renderAnnotationPreparation();
@@ -1651,6 +1742,7 @@ async function decide(action, continueAfter = false) {
   if (continueApproved) await continueRun(false);
 }
 async function decideStrategy(action, continueAfter = false) {
+  if (recommendationFactsDirty()) {message("Save or discard the local fact edits before changing a scientific strategy decision.",true);return;}
   if (!ready() || node()?.kind !== "strategy" || !["approve", "reject", "revise"].includes(action)) return;
   if (action === "revise" ? !node().can_revise : !node().can_decide) return;
   if (action === "approve" && strategyDirty()) {message("Save the complete strategy and inspect the rebuilt review before approval.", true); return;}
