@@ -100,7 +100,7 @@ Use a new `project_dir` for each new analysis. Starting from counts reruns basic
 
 ### 2. Review the strategy and run basic analysis
 
-Check the displayed study facts, measured QC distributions and projected cell retention. Edit QC, normalization, PC selection, batch handling and clustering choices for your data. Initial QC retains count-positive cells; it is not study-optimized filtering. Batch correction and doublet detection are not enabled just by supplying sample metadata.
+Check the displayed study facts, measured QC distributions and projected cell retention. The main entry shows the existing MAD candidates for declared sample/QC groups, with their measured thresholds, retention and unavailable reasons. With no declared group it shows pooled, unstratified evidence. The initial keep-all quality choice avoids deleting uncertain cells without study evidence; `nCount >= 1` only excludes all-zero input, not low-quality cells in general. High counts, ribosomal or haemoglobin expression do not authorize automatic deletion. Raw MEX import is not empty-droplet calling. Edit the candidate or ranges and inspect their impact before approval. Batch correction and doublet detection require separate explicit settings.
 
 Save the complete strategy, inspect the updated review, then choose **Approve and continue**. The local worker runs the approved steps and stops at annotation preparation. Expect saved clusters, embeddings and marker evidence. You can close the page and reopen the same project later.
 
