@@ -184,3 +184,20 @@ choice and any existing local edit take precedence. Save and approve remain
 separate; no cells change until both explicit decisions occur. Report eligibility
 and refusal reasons in the paired benchmark; no dataset result selected these
 caps. Scientific default adoption gates above remain unchanged.
+
+### Expanded-data applicability amendment (before method outcomes)
+
+Use all four author human pancreas specimen files GSM2230757..GSM2230760
+(human1..human4) for the non-blood extension, rather than only human1, to make
+per-sample HVG and cross-sample expression applicable. Sample IDs are the
+explicit GEO specimen accessions; physical capture and donor identity are not
+inferred from filenames. Apply the same frozen 5000-cell hash selection across
+the complete four-file cell universe, with exact accession-prefixed IDs; retain
+author labels in evaluator-only files. Four specimens remain below the five-group
+sample-outlier eligibility rule, which must stay unavailable. This is one study,
+not independent replication across four studies. ifnb treatment is a condition;
+unless actual specimen/donor metadata is supplied, never turn CTRL/STIM into
+independent sample replicates. HPCA does not resolve alpha/beta endocrine subtypes:
+report the reference granularity mismatch rather than claim fine accuracy.
+The fixed label mapping is benchmark/evaluation-v1/label-map.json; it is committed
+before scoring. No input labels or model outcomes motivated this extension.
