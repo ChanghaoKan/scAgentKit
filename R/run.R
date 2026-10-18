@@ -181,7 +181,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   # A replaced/mocked coordinator can have a different lexical environment;
   # its environment must never redirect discovery away from package bindings.
   ns <- asNamespace("scAgentKit")
-  selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE))
+  selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE), method = "radix")
   selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", "sc_select_pcs", ".adjusted_rand_index", "sc_cycle_gene_set"))
   # Coordinator wrappers call scientific helpers outside the sc_run prefix.
   # Follow their package-local references transitively, without executing any
@@ -199,7 +199,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     pending <- setdiff(local, selected)
     selected <- unique(c(selected, pending))
   }
-  selected <- sort(selected)
+  # Symbol helpers such as %||% sort differently under C and UTF-8 collation.
+  # Fingerprints must retain byte-stable ordering in every R worker process.
+  selected <- sort(selected, method = "radix")
   code <- lapply(selected, function(name) {
     fn <- get(name, envir = ns)
     list(name = name, formals = paste(deparse(formals(fn), width.cutoff = 500L), collapse = "\n"),

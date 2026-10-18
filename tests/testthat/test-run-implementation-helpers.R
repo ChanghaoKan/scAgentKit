@@ -85,3 +85,16 @@ test_that("mocked coordinator environments cannot redirect helper discovery", {
     expect_false(identical(.sc_run_implementation(), mocked))
   })
 })
+
+test_that("implementation fingerprint is independent of collation locale", {
+  original <- Sys.getlocale("LC_COLLATE")
+  on.exit(Sys.setlocale("LC_COLLATE", original), add = TRUE)
+  Sys.setlocale("LC_COLLATE", "C")
+  baseline <- .sc_run_implementation()
+  available <- suppressWarnings(Sys.setlocale("LC_COLLATE", "C.UTF-8"))
+  if (!nzchar(available)) skip("C.UTF-8 collation is unavailable on this platform")
+  expect_identical(.sc_run_implementation(), baseline)
+  implementation_mutation("sc_find_markers", function() {
+    expect_false(identical(.sc_run_implementation(), baseline))
+  })
+})
