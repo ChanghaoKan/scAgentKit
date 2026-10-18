@@ -22,7 +22,7 @@ sc_run(input, project_dir, context = list(), provider = NULL,
   annotation_proposal = NULL, qc_preview = list(),
   reference_review = list(), annotation_history = NULL,
   strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
-  doublet_diagnostics = NULL, qc_mad = NULL,
+  doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
   subcluster_origin = NULL, subcluster_creation = NULL,
   .subcluster_lock_owner = NULL)
 sc_run_inspect(project_dir)
@@ -47,6 +47,7 @@ sc_run_unlock(project_dir, token, reason)
 sc_run_accept(project_dir, reviewer, reason)
 }
 \arguments{
+\item{scientific_review}{Optional local PC sensitivity, resampling, resolution extension and expression diagnostics; disabled by default.}
 \item{input}{Named genuine raw counts matrix, Seurat object, or local RDS path.}
 \item{project_dir}{Server-side directory. Creation requires no existing run.}
 \item{context}{Named user facts with explicitly declared human/Homo sapiens or mouse/Mus musculus species, tissue, notes, optional research_goal and design (type, technical_batch logical, notes), and columns mapping sample, qc_group, capture, batch, group, condition and donor roles to actual metadata columns. Missing facts are disclosed, never inferred as metadata.}

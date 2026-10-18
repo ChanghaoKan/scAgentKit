@@ -33,6 +33,8 @@ Remotes:
     ChanghaoKan/agentomicsCore@v0.1.1,
     SeuratData=github::satijalab/seurat-data
 Suggests:
+    SoupX,
+    celda,
     withr,
     harmony,
     scDblFinder,
