@@ -1,4 +1,9 @@
-# Release gates: 0.6.0
+# Release gates and recorded v0.6.0 procedure
+
+v0.6.0 was published on 2026-10-18. Its tag and assets are historical; this
+document records its gates and informs a future, separately authorized release.
+Development edits do not authorize moving that tag, republishing its assets,
+deleting the older v0.5.1 draft, or merging/publishing the current branch.
 
 The target is **v0.6.0**, package **0.6.0**, and the GitHub Release asset
 **scAgentKit_0.6.0.tar.gz**. The unpublished previous draft and its historical
@@ -35,6 +40,34 @@ PR runs exercise the same clean-container installer using the PR build artifact
 before merge; that is a preflight and does not replace public-download acceptance.
 Windows, real-browser and development Docker-image support are not implied by
 this Linux release acceptance.
+
+## Breaking changes and installation receipt
+
+Future Release text must lead with a visible **Breaking changes** section:
+which saved implementations are incompatible, exact-environment restoration or
+new-project review, changed schemas and defaults, and the retained legacy API
+window. Never present a raw confidence score as calibrated probability or claim
+that citation validity proves a biological label. Use the local release-notes
+file as the reviewed text; editing it does not edit an existing public Release.
+
+The workflow already automatically writes `clean-install-receipt.json` from
+`tools/release/clean-install.R` and retains it with complete install/example logs
+in `clean-release-install-logs`, including failure logs. Public Release asset
+promotion is a separate step; artifact generation alone is not an accepted
+installation or a published asset. A future automatic receipt publisher should
+run only after successful public-mode installation, match the tag/merge commit
+and trusted archive SHA256, require initial empty libraries/no cache reuse and
+successful offline/runtime checks, and upload only a sanitized summary. Failed
+or pending runs must not publish a successful receipt; raw logs, credentials and
+personal paths must not become Release assets. No such publisher is executed by
+this development revision.
+
+CI attribution must name the actual event and commit: installed-runtime-contract
+ran on PR head `b51acbb042265713964b24716ac714df8b409d47`; its source tree equals
+merge `ad9ec2417e5fbb259d1c4cbf59313d5aa18a92ea`. Push CI on that merge ran
+R CMD check and workbench tests. The tag-dispatched release workflow separately
+built and accepted the public asset. These are different runs, not three push
+checks on the merge.
 
 ## Saved-project compatibility
 

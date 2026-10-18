@@ -6,6 +6,16 @@ grouping, derived-cache invalidation, NULL provider resend, grounded subcluster
 failure auditing, saved UMAP parameter equivalence and unsupported doublet
 version diagnostics. Confidence scoring policy is unchanged.
 
+## Breaking changes
+
+Saved projects with a different implementation hash cannot resume or approve
+under this release. Restore their exact original package/dependency environment,
+or rerun the original input in a new project with fresh review. Do not edit
+saved hashes or checkpoints. Legacy subcluster replies require the eight-field
+annotation schema; old three-field replies are rejected. Author-label priors
+default to off. The details and migration retention below apply to the already
+published v0.6.0; unreleased changes are tracked separately in NEWS.
+
 ## Compatibility and metadata priors
 
 Implementation hashes changed relative to earlier code. Projects whose saved
