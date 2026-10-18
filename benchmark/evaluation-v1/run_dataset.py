@@ -1,7 +1,7 @@
 """One frozen dataset: execute variants once, preserve failures, score original cells."""
 import argparse,csv,hashlib,json,os,subprocess,time
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('evidence');p.add_argument('baseline_library');p.add_argument('after_library');p.add_argument('dataset',choices=['pbmc3k','ifnb','baron']);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('evidence');p.add_argument('baseline_library');p.add_argument('after_library');p.add_argument('dataset',choices=['pbmc3k','ifnb','baron']);p.add_argument('--after-directory',help='Explicit verified PBMC stopped-snapshot finalization directory; changes storage only, never analysis criteria');a=p.parse_args()
 repo=Path(__file__).resolve().parents[2];scripts=Path(__file__).resolve().parent
 e=Path(a.evidence).resolve();dataset=a.dataset;out=e/'comparison'/dataset;out.mkdir(parents=True,exist_ok=True)
 input_dir=e/'prepared-v2'/dataset
@@ -41,6 +41,9 @@ for variant in variants:
  # Independently executed complete variants may be reused only on exact frozen
  # inputs/library/reference identity. Never repeat failed or incomplete work.
  name=variant+'-1';root=out/name
+ if variant=='after' and a.after_directory:
+  assert dataset=='pbmc3k'
+  root=Path(a.after_directory).resolve();assert root.parent==out.resolve();name=root.name
  lib=Path(a.baseline_library if variant=='baseline' else a.after_library).resolve()
  if root.exists():
   receipt=json.loads((root/'run.json').read_text())
