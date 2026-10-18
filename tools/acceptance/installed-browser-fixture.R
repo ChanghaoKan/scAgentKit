@@ -59,7 +59,10 @@ if (action == 'setup') {
   approved <- Filter(function(x) identical(x$action,'approved'),events)
   kinds <- vapply(approved,function(x)x$details$kind,'')
   stopifnot(sum(kinds=='annotation')==1L, sum(kinds=='strategy')>=1L)
-  state <- readRDS(file.path(project,'state.rds'))
+  envelope <- readRDS(file.path(project,'state.rds'))
+  stopifnot(identical(envelope$schema,'scagentkit.run-state.v1'),
+    identical(envelope$hash,digest::digest(envelope$state,algo='sha256',serializeVersion=2L)))
+  state <- envelope$state
   artifact <- function(name) {
     record <- state$files[[name]]; stopifnot(!is.null(record))
     file <- file.path(project,record$path)
