@@ -7,3 +7,4 @@
 ^\.gitignore$
 ^workbench$
 ^docs$
+(__pycache__|[.]pyc$)

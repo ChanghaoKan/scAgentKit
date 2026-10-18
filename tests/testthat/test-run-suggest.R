@@ -51,6 +51,22 @@ suggestion_action <- function(fixture, action, simulate = TRUE, view = NULL, ...
     reason = "Review the exact software-control scope.", simulate = simulate, ...)
 }
 
+test_that("oversized aggregate suggestions block only the optional provider path", {
+  f <- suggestion_fixture(); on.exit(unlink(f$root, recursive = TRUE))
+  f$evidence$summary$large_aggregate <- paste(rep("aggregate", 15000L), collapse = " ")
+  state <- .sc_run_put(f$root, f$state, "annotation_evidence", f$evidence)
+  before <- .sc_project_sha_file(file.path(f$root, "state.rds"))
+  view <- .sc_run_suggestion_view(f$root, state, simulate = FALSE)
+  expect_false(view$available)
+  expect_false(view$can_request)
+  expect_false(view$can_approve)
+  expect_match(view$blocked_reason, "100,000 bytes", fixed = TRUE)
+  expect_match(view$blocked_reason, "No evidence was truncated", fixed = TRUE)
+  expect_identical(.sc_run_get(f$root, state, "annotation_evidence"), f$evidence)
+  expect_identical(.sc_project_sha_file(file.path(f$root, "state.rds")), before)
+  expect_false(file.exists(file.path(f$root, "provider", "ledger.json")))
+})
+
 test_that("suggestion preview is read-only, aggregate-only and explicit about simulation", {
   f <- suggestion_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   before <- .sc_project_sha_file(file.path(f$root, "state.rds"))

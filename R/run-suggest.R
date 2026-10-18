@@ -28,7 +28,15 @@
   # Simulated responses have their own cache identity and cannot be mistaken
   # for a real or previously supplied runtime model response.
   if (simulate) request$purpose <- paste0("simulated_", kind)
-  request_hash <- .sc_run_request_hash(request, provider)
+  request_hash <- tryCatch(.sc_run_request_hash(request, provider), error = function(e) {
+    if (identical(conditionMessage(e), "Aggregate provider request exceeds 100,000 bytes."))
+      return(NULL)
+    stop(e)
+  })
+  if (is.null(request_hash)) return(list(kind = kind, provider = provider,
+    blocked_reason = paste("Aggregate provider request exceeds 100,000 bytes.",
+      "Suggestions are unavailable for this snapshot; review the complete local evidence manually.",
+      "No evidence was truncated and no provider request was sent.")))
   binding <- list(stage = state$stage, input_hash = state$input_hash,
     config_hash = state$config_hash, implementation_hash = state$implementation_hash,
     evidence = state$files[[evidence_name]], cluster_scan = state$files$cluster_scan,
