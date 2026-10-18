@@ -196,7 +196,7 @@ try {
     const draft=JSON.parse(await ui('strategy-json').inputValue());
     assert.equal(draft.qc.rules.find(rule=>rule.op==='mad_preset').preset_id,'any_quality3');
     assert.equal(await ui('strategy-approve').isDisabled(),true);
-    assert.match(await ui('run-message').innerText(),/NOT SAVED, NOT APPROVED/);
+    assert.match(await ui('strategy-recommendations').innerText(),/unsaved and unapproved/i);
     assert.equal(requests.length,posts,'Preselection cannot POST');
     assert.deepEqual(await fs.readFile(statePath),before,'Preselection cannot mutate authority');
     report.qc_preselection={actual_browser:true,local_draft_only:true,no_post:true,authority_unchanged:true};
