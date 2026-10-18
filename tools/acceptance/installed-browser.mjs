@@ -192,6 +192,8 @@ try {
     const statePath=path.join(output,'preselection-project','state.rds');
     const before=await fs.readFile(statePath),posts=requests.length;
     await page.goto(launch.preselection_launch.url);await ui('run-refresh').waitFor();
+    assert.equal(await ui('qc-draft-preselection-opt-in').isChecked(),false);
+    await ui('qc-draft-preselection-opt-in').check();
     await page.waitForFunction(()=>document.getElementById('strategy-json').value.includes('any_quality3'));
     const draft=JSON.parse(await ui('strategy-json').inputValue());
     assert.equal(draft.qc.rules.find(rule=>rule.op==='mad_preset').preset_id,'any_quality3');

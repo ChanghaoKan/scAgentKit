@@ -1558,6 +1558,7 @@ async function saveRecommendationFacts(reviewHash) {
 function preselectRecommendationDraft(context) {
   if (!context.current || state.view?.effective_readonly === true || !node()?.can_revise || activeJob() || strategyDirty()) return false;
   if (context.recommendations.fact_editable !== true) return false;
+  if ($("qc-draft-preselection-opt-in")?.checked !== true) return false;
   if (!(state.preselectedRecommendationReviews instanceof Set)) state.preselectedRecommendationReviews = new Set();
   const key = state.view.run.project_id + ":" + context.reviewHash;
   if (state.preselectedRecommendationReviews.has(key)) return false;
@@ -1844,4 +1845,5 @@ window.addEventListener("message", event => {
 });
 window.addEventListener("pagehide", () => {stopPolling(); stopSuggestionPolling();});
 window.addEventListener("pageshow", event => {if (event.persisted && state.view && !state.busy) {if (dirty()) {state.stale = true; state.awaitingFreshInspect = true; renderContinuation(); buttons();} else load();}});
+$("qc-draft-preselection-opt-in").addEventListener("change", () => renderRecommendations());
 load();

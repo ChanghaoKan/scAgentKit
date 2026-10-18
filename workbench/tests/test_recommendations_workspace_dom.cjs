@@ -95,6 +95,8 @@ const preselected=copy(value);
 preselected.run.strategy_review.details.recommendations.fact_editable=true;
 preselected.run.strategy_review.details.recommendations.steps[0].draft_preselection={candidate_id:"keep",automatic:true,draft_only:true,reason:"Synthetic transport eligibility"};
 const pre=setup(preselected);
+assert.equal(JSON.stringify(pre.call("strategyDraft").qc),JSON.stringify(preselected.run.strategy_review.details.canonical_proposal.qc),"Default automatic QC prefill is off");
+pre.el("qc-draft-preselection-opt-in").checked=true;pre.call("renderRecommendations");
 assert.equal(pre.requests.length,0);
 const afterApproval=copy(preselected);
 afterApproval.run.strategy_review.details.recommendations.fact_editable=false;
