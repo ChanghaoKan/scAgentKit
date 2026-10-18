@@ -46,3 +46,8 @@
 
 查看[方法及限制](SCIENTIFIC_METHODS_APPENDIX.md)和[冻结评估协议](EVALUATION_PROTOCOL_V1.md)。
 上述操作示例是软件路径，尚不能据此声称准确率或人工时间改善；统一效果基准和平台验收另报。
+
+开发评估后的默认边界：自动 QC 草稿预填默认关闭。仅在用户主动勾选
+“Enable experimental automatic QC draft comparison”后，才会按原有风险上限加载
+未保存、未批准的比较草稿；手动候选比较始终可用。PBMC 评估未提供独立细胞质量
+真值，不能把 OR 作为普遍更优的默认策略。保存与审批仍然分开。

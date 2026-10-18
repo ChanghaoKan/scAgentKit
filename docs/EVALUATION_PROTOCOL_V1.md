@@ -201,3 +201,16 @@ independent sample replicates. HPCA does not resolve alpha/beta endocrine subtyp
 report the reference granularity mismatch rather than claim fine accuracy.
 The fixed label mapping is benchmark/evaluation-v1/label-map.json; it is committed
 before scoring. No input labels or model outcomes motivated this extension.
+
+### Post-outcome UI default decision (criteria unchanged)
+
+The PBMC QC-OR contrast retained2526/2700 cells. On those same retained cells,
+baseline candidate/reference agreement was2422/2526 and QC-OR2427/2526;
+original-denominator matches changed2557/2700 to2427/2700 because135 baseline
+matches were excluded. These are reference comparisons, not accuracy or quality
+truth. All/retained/deleted denominators, Unknown, per-reference-class retention
+and quality distributions are retained together. No endpoint or threshold changes.
+Because superiority is unestablished, automatic draft prefill is OFF by default.
+An explicit experimental UI checkbox enables the existing guarded unsaved-draft
+comparison; manual candidate loading remains available. This changes the product
+default in response to evidence, not the frozen analysis or evaluation criteria.
