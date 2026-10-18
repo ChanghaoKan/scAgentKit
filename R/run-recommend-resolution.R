@@ -90,8 +90,9 @@
   step$assessment <- "assessed"
   step$reasons <- list("Retain measured alternatives for author comparison; no composite score, ranking or default-0.5 preference is used.")
   step$completed <- list("Fixed-cell, fixed-PC/neighbor-graph resolution scan and recorded cluster transitions are available.")
-  step$conflicts <- list("Sample concentration can reflect biology or technical structure; more sample mixing and more marker hits are not automatic optimization targets.")
-  step$uncertainty <- list("ARI and shared-cell transitions describe resolution sensitivity, not resampling stability, lineage or biological correctness.",
+  step$conflicts <- list()
+  step$uncertainty <- list("Sample concentration can reflect biology or technical structure; more sample mixing and more marker hits are not automatic optimization targets.",
+    "ARI and shared-cell transitions describe resolution sensitivity, not resampling stability, lineage or biological correctness.",
     "Same-data differential markers do not independently validate identities; missing passing markers do not establish that a population is absent.",
     "No externally validated optimum, biological accuracy or sample/donor replication is established by this scan.")
   for (i in seq_along(resolutions)) {

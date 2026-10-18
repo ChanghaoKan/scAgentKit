@@ -76,3 +76,20 @@ test_that("partition equivalence survives label permutations but not crossing re
   expect_identical(invalid$status,"insufficient_information")
   expect_length(invalid$candidates,0)
 })
+
+
+test_that("general cautions do not make clean measured choices unresolved forever", {
+  scan <- recommend_resolution_fixture()
+  membership <- list(`0.2`=c(a="0",b="0",c="1",d="1"),
+    `0.5`=c(a="0",b="0",c="1",d="1"))
+  scan$resolutions <- c(.2,.5)
+  scan$tree <- .sc_run_cluster_tree(membership,c("S1","S2","S1","S2"))
+  scan$membership_hashes <- lapply(membership,.sc_run_hash)
+  scan$markers <- list(`0.2`=scan$markers[["0.2"]],`0.5`=scan$markers[["0.2"]])
+  result <- .sc_run_recommend_resolution(scan,list(proposal=list(clustering=list(resolution=.5))))
+  expect_identical(result$assessment,"assessed")
+  expect_length(result$conflicts,0)
+  expect_true(all(vapply(result$candidates,function(candidate) length(candidate$conflicts)==0L,logical(1))))
+  expect_match(paste(result$uncertainty,collapse=" "),"mixing")
+  expect_match(paste(result$uncertainty,collapse=" "),"biolog")
+})
