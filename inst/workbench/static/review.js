@@ -1557,6 +1557,7 @@ async function saveRecommendationFacts(reviewHash) {
 }
 function preselectRecommendationDraft(context) {
   if (!context.current || state.view?.effective_readonly === true || !node()?.can_revise || activeJob() || strategyDirty()) return false;
+  if (context.recommendations.fact_editable !== true) return false;
   if (!(state.preselectedRecommendationReviews instanceof Set)) state.preselectedRecommendationReviews = new Set();
   const key = state.view.run.project_id + ":" + context.reviewHash;
   if (state.preselectedRecommendationReviews.has(key)) return false;

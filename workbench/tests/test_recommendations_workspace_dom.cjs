@@ -92,9 +92,16 @@ console.log(JSON.stringify({passed:true,actualProductionRenderer:true,actualBrow
 
 // A bound preselection may fill memory, never write/approve or overwrite edits.
 const preselected=copy(value);
+preselected.run.strategy_review.details.recommendations.fact_editable=true;
 preselected.run.strategy_review.details.recommendations.steps[0].draft_preselection={candidate_id:"keep",automatic:true,draft_only:true,reason:"Synthetic transport eligibility"};
 const pre=setup(preselected);
 assert.equal(pre.requests.length,0);
+const afterApproval=copy(preselected);
+afterApproval.run.strategy_review.details.recommendations.fact_editable=false;
+const preserved=setup(afterApproval);
+assert.deepEqual(preserved.call("strategyDraft").qc,afterApproval.run.strategy_review.details.canonical_proposal.qc,"An already executed/approved strategy keeps its explicit QC policy");
+assert.equal(preserved.requests.length,0);
+assert(!/NOT SAVED, NOT APPROVED/.test(preserved.el("run-message").textContent));
 assert.equal(pre.call("strategyDraft").qc.rationale,"Keep uncertain cells");
 assert.equal(pre.el("strategy-approve").disabled,true);
 assert.match(pre.el("run-message").textContent,/NOT SAVED, NOT APPROVED/);
