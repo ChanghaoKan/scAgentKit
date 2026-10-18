@@ -141,12 +141,19 @@
     which(vapply(seq_along(candidates), function(j) j != i && !is.null(selections[[i]]) && identical(selections[[i]], selections[[j]]), logical(1))),
     function(j) candidates[[j]]$id, character(1)))
   step$candidates <- candidates
-  conservative <- Filter(function(item) identical(item$id, "conservative_and3") && isTRUE(item$available) &&
-    isTRUE(item$impact$new_removed_within_range_keep > 0), candidates)
-  step$draft_preselection <- if (length(conservative) == 1L && !length(step$conflicts) && !length(step$missing))
-    list(candidate_id = "conservative_and3", automatic = FALSE,
-      reason = "Optional comparison with joint low-count/low-feature/high-MT flags; load into a draft only after inspection. It is not a validated best policy.") else
-    list(candidate_id = NULL, automatic = FALSE, reason = "No unconflicted joint-flag comparison is available; no preselection is justified.")
+  current_preset <- if(identical(qc$schema,"scagentkit.qc.mad.v1")) qc$preset_id else {
+    selector <- Filter(function(rule) identical(rule$op,"mad_preset"),qc$rules)
+    if(length(selector)==1L) selector[[1L]]$preset_id else NULL
+  }
+  eligible <- Filter(function(item) identical(item$id,"any_quality3") && isTRUE(item$available) &&
+    isTRUE(item$impact$new_removed_within_range_keep>0) && isTRUE(item$impact$removed<=.1*baseline$retention$before) &&
+    all(vapply(item$impact$groups,function(group) isTRUE(group$retained>=.8*group$before),logical(1))),candidates)
+  # A bounded draft comparison is not a scientific default or approved deletion.
+  step$draft_preselection <- if(length(eligible)==1L && identical(current_preset,"keep_all") && !length(step$conflicts) && !length(step$missing))
+    list(candidate_id="any_quality3",automatic=TRUE,draft_only=TRUE,
+      reason="Measured joint evidence is complete and this OR comparison removes <=10% overall and <=20% of each group. These are UI risk caps, not biological optimality. Preselected draft is unsaved and unapproved.") else
+    list(candidate_id=NULL,automatic=FALSE,draft_only=TRUE,
+      reason="No preselection: preserve an explicit saved policy, incomplete/conflicting evidence, or an unavailable/nonredundant OR comparison outside the 10% total/20% group draft caps.")
   step$completed <- c(step$completed, list("Computed exact candidate impacts under the unchanged range and outer-combination policy."))
   executable <- any(vapply(candidates, function(item) item$id != "keep_all" && item$available, logical(1)))
   if (!length(step$missing) && !length(step$conflicts) && executable) step$status <- "recommend_execute"

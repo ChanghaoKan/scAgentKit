@@ -1546,12 +1546,29 @@ async function saveRecommendationFacts(reviewHash) {
   else if(prepare) message("Facts saved without approval. Suggestions are not yet rebuilt; local Continue preparation is unavailable. Resume preparation in R, then inspect the new review.");
   return true;
 }
+function preselectRecommendationDraft(context) {
+  if (!context.current || state.view?.effective_readonly === true || !node()?.can_revise || activeJob() || strategyDirty()) return false;
+  if (!(state.preselectedRecommendationReviews instanceof Set)) state.preselectedRecommendationReviews = new Set();
+  const key = state.view.run.project_id + ":" + context.reviewHash;
+  if (state.preselectedRecommendationReviews.has(key)) return false;
+  state.preselectedRecommendationReviews.add(key);
+  const step = context.recommendations.steps.find(step => step.id === "qc"), selection = step?.draft_preselection;
+  if (selection?.automatic !== true || selection?.draft_only !== true || !selection.candidate_id) return false;
+  const candidate = step.candidates.find(candidate => candidate.id === selection.candidate_id && candidate.available === true);
+  if (!candidate) return false;
+  try {
+    setStrategyDraft(recommendationDraft(strategyDraft(),"qc",candidate),true);
+    message("QC comparison preselected in the local draft — NOT SAVED, NOT APPROVED. Review, change or discard it; saving and explicit approval remain separate.");
+    return true;
+  } catch (_) { return false; }
+}
 function renderRecommendations() {
   const target = $("strategy-recommendations"); if (!target) return;
   target.replaceChildren(element("h2","Recommendations and your next decision"));
   const notice = element("p",null,{class:"recommendation-notice",role:"status","data-testid":"recommendations-status"}), cards = element("div",null,{class:"recommendation-grid","data-testid":"recommendations-steps"});
   target.append(notice,cards); const controls = []; state.recommendationRegion = {notice,cards,controls};
   const context = recommendationContext();
+  preselectRecommendationDraft(context);
   if (context.current) {
     const rec = context.recommendations;
     recommendationList(cards,"Completed work recorded by R",rec.completed);
@@ -1568,7 +1585,7 @@ function renderRecommendations() {
       if (step.sample_comparison && typeof step.sample_comparison === "object") {
         const samples = element("details"); samples.append(element("summary","Per-sample medians and cross-sample diagnostics (separate from cell MAD)"),raw(step.sample_comparison)); card.append(samples);
       }
-      if (step.draft_preselection?.candidate_id) card.append(element("p","Optional draft comparison: " + step.draft_preselection.candidate_id + ". " + step.draft_preselection.reason,{class:"microcopy"}));
+      if (step.draft_preselection?.candidate_id) card.append(element("p","Draft comparison (unsaved and unapproved): " + step.draft_preselection.candidate_id + ". " + step.draft_preselection.reason,{class:"microcopy"}));
       for (const candidate of step.candidates) {
         const item = element("section",null,{class:"recommendation-candidate","data-testid":"recommendation-candidate-"+step.id+"-"+candidate.id});
         item.append(element("h4",candidate.label || candidate.id)); recommendationList(item,"Candidate reasons",candidate.reasons); recommendationList(item,"Candidate conflicts",candidate.conflicts);

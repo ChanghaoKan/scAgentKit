@@ -172,3 +172,15 @@ is deferred until the final comparison. During implementation run only necessary
 focused regressions and quick checks. The original PR-triggered baseline CI is
 already running and is retained; no local benchmark has started. The first
 PBMC3k comparison is still executed before expanded-dataset outcome inspection.
+
+### Draft-preselection guard amendment (before outcome measurement)
+
+Eligible initial keep_all reviews may prefill the any_quality3 OR comparison in
+local browser memory only, once per bound review revision, if all required
+metrics are available, no conflicts exist, total deletion is <=10% and each
+sample/group loses <=20%. These are conservative UI guard caps, not learned
+quality thresholds or a biological preference. A previously saved non-keep_all
+choice and any existing local edit take precedence. Save and approve remain
+separate; no cells change until both explicit decisions occur. Report eligibility
+and refusal reasons in the paired benchmark; no dataset result selected these
+caps. Scientific default adoption gates above remain unchanged.

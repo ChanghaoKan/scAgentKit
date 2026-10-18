@@ -89,3 +89,18 @@ const foreignBinding=copy(value);foreignBinding.run.strategy_review.details.reco
 const malformed=copy(value);malformed.run.strategy_review.details.recommendations.steps[0].candidates=[null];assert.match(setup(malformed).el("strategy-recommendations").textContent,/unavailable/i);
 const invalid=copy(value);invalid.run.strategy_review.details.recommendations.policy_version="unsupported";assert.match(setup(invalid).el("strategy-recommendations").textContent,/unavailable|unsupported/i);
 console.log(JSON.stringify({passed:true,actualProductionRenderer:true,actualBrowser:false,modelCalls:0,apiCalls:h.requests.length,cases:["saved measured and missing evidence","candidate only changes local draft","approval blocked until save","resolution preserves diagnostic grid","unknown and cross-step fields rejected","stale/absent recommendations fail closed"]}));
+
+// A bound preselection may fill memory, never write/approve or overwrite edits.
+const preselected=copy(value);
+preselected.run.strategy_review.details.recommendations.steps[0].draft_preselection={candidate_id:"keep",automatic:true,draft_only:true,reason:"Synthetic transport eligibility"};
+const pre=setup(preselected);
+assert.equal(pre.requests.length,0);
+assert.equal(pre.call("strategyDraft").qc.rationale,"Keep uncertain cells");
+assert.equal(pre.el("strategy-approve").disabled,true);
+assert.match(pre.el("run-message").textContent,/NOT SAVED, NOT APPROVED/);
+assert.equal(JSON.stringify(pre.state.view),JSON.stringify(preselected));
+const altered=copy(pre.call("strategyDraft"));altered.qc.rationale="Own unsaved edit";
+pre.call("setStrategyDraft",altered,true);
+pre.call("renderRecommendations");
+assert.equal(pre.call("strategyDraft").qc.rationale,"Own unsaved edit");
+assert.equal(pre.requests.length,0);

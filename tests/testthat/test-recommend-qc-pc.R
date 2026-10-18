@@ -208,3 +208,18 @@ test_that("a valid fixed PC policy does not inherit conflicts from unsupported e
   expect_length(step$conflicts, 0L)
   expect_true(all(!vapply(step$candidates, `[[`, logical(1), "available")))
 })
+test_that("QC draft preselection is bound, guarded and never replaces an explicit policy", {
+  fixture <- recommend_qc_fixture()
+  step <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
+  expect_true(isTRUE(step$draft_preselection$draft_only))
+  if(isTRUE(step$draft_preselection$automatic)) {
+    expect_identical(step$draft_preselection$candidate_id,"any_quality3")
+    candidate <- Filter(function(x) x$id=="any_quality3",step$candidates)[[1L]]
+    expect_lte(candidate$impact$removed,.1*fixture$validated$qc_validated$retention$before)
+    expect_true(all(vapply(candidate$impact$groups,function(group) group$retained>=.8*group$before,logical(1))))
+  }
+  fixture$validated$proposal$qc$rules[[2]]$preset_id <- "conservative_and3"
+  changed <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
+  expect_false(changed$draft_preselection$automatic)
+  expect_null(changed$draft_preselection$candidate_id)
+})
