@@ -61,7 +61,7 @@ jobs:
               for m in t.getmembers():
                   if m.isfile():
                       data=t.extractfile(m).read()
-                      assert b'/Users/kan/' not in data and b'/home/kan/' not in data,m.name
+                      assert b'/Users/' not in data and b'/home/' not in data,m.name
           receipt=dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
               source_tree=subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip(),
               tag=os.environ.get('RELEASE_TAG') or None,build='R CMD build',archive_modified=False,
