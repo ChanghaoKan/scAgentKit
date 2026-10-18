@@ -247,6 +247,12 @@ try {
   await test('author approval runs the real worker once and stops at measured cluster-tree review',async()=>{
     await approveStrategy();const run=await continueOnce();assert.equal(run.status,'awaiting_review');assert.equal(run.review_node.kind,'strategy');
     const d=run.strategy_review.details.cluster_diagnostics;assert(d?.tree?.nodes&&d.tree.edges);assert(d.resolutions.length>1);
+    const optional=ui('recommendation-step-resolution').locator('details').filter({has:page.locator('summary',{hasText:'Optional local sensitivity, resampling and expression evidence'})}).first();
+    await reveal(optional.locator(':scope > summary'));
+    await optional.locator(':scope > summary').click();
+    const optionalText=await optional.innerText();
+    for(const field of ['pc_sensitivity','resampling','best_jaccard','resolution_extension'])assert(optionalText.includes(field),field+' must be visible at the measured strategy decision');
+    report.optional_science_visible_at_measured_review=true;
     const tree=page.locator('.cluster-tree-evidence');await reveal(tree);
     const treeSVG=tree.locator('svg[aria-label="Shared cell transitions between scanned clustering resolutions"]');
     assert.equal(await treeSVG.isVisible(),true,'Measured cluster SVG must actually be visible');
