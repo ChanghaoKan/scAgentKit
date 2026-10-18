@@ -452,6 +452,27 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         proposed <- .sc_run_get_proposal(root, state, "strategy", evidence$summary, provider, chat_fn, retry, local_only)
         state <- proposed$state
         if (is.null(proposed$proposal)) return(.sc_run_public(state))
+        if (!is.null(state$recommendation_rebuild)) {
+          # The former draft is preserved in the facts archive. Only binding
+          # fields change here; newly prepared predictions never inherit a
+          # previous removal instruction without a fresh complete review.
+          proposal <- proposed$proposal
+          mad <- evidence$private$mad_record
+          if (!is.null(mad)) {
+            if (identical(proposal$qc$schema, "scagentkit.qc.mad.v1")) proposal$qc$panel_hash <- mad$panel_hash
+            if (identical(proposal$qc$schema, "scagentkit.qc.rules.v1"))
+              proposal$qc$rules <- lapply(proposal$qc$rules, function(rule) {
+                if (identical(rule$op, "mad_preset")) rule$panel_hash <- mad$panel_hash
+                rule
+              })
+          }
+          if (!is.null(evidence$private$doublet_record)) proposal$doublet <- list(method = "keep",
+            reason = "Fresh fixed predictions require review; facts preparation authorizes no cell removal.")
+          else proposal$doublet <- NULL
+          state <- .sc_run_put(root, state, "manual_strategy", proposal)
+          proposed$proposal <- proposal
+          state$recommendation_rebuild <- NULL
+        }
         validated <- .sc_run_strategy_validate(proposed$proposal, evidence)
         state <- .sc_run_strategy_review_publish(root, state, validated, evidence)
         state <- .sc_run_strategy_pending(root, state, validated, evidence)
@@ -624,6 +645,10 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         seu@misc$strategy_execution,
       limitations = strategy_record$details$limitations,
       scientific_acceptance = "Execution verified; biological conclusions remain analyst-reviewed.")
+    strategy_summary$recommendations <- strategy_record$details$recommendations
+    strategy_summary$scientific_assessment <- .sc_run_scientific_assessment(root, state)
+    strategy_summary$scientific_assessment$workflow_status <- "complete"
+    .sc_run_atomic(strategy_summary$scientific_assessment, file.path(root, "output", "scientific_assessment.json"), json = TRUE)
     if (!is.null(state$config$cycle_diagnostics)) strategy_summary$cycle_diagnostics <- strategy_record$details$cycle_diagnostics
     if (!is.null(state$config$doublet_diagnostics)) strategy_summary$doublet_diagnostics <- strategy_record$details$doublet_diagnostics
     if (!is.null(state$config$qc_mad)) strategy_summary$qc_mad <- strategy_record$details$qc_mad
@@ -749,6 +774,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   report <- c("# scAgentKit server-side analysis", paste("Project:", state$project_id), paste("Input SHA256:", state$input_hash), paste("Config SHA256:", state$config_hash), paste("Implementation SHA256:", state$implementation_hash),
               paste("Cells:", ncol(seu), "Features:", nrow(seu)), "QC and annotation approvals are recorded in decision_history.json.",
               "Computed artifacts are EXECUTED; overall scientific conclusions require separate analyst acceptance.",
+              if (isTRUE(state$config$strategy)) strategy_summary$scientific_assessment$message,
               if (isTRUE(state$config$strategy)) paste("Supported strategy settings and reused authorization/checkpoints are in strategy_summary.json.",
                 if (!is.null(state$config$cycle_diagnostics)) "The approved cycle choice, fixed pre-QC diagnostic reference and actual scaling regressors are in cycle_summary.json; no cycling cells were deleted." else "Cycle diagnostics were not enabled.",
                 if (!is.null(state$config$doublet_diagnostics))

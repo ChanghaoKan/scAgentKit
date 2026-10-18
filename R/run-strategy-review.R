@@ -14,6 +14,8 @@
   if (!is.null(config$cycle_diagnostics)) fields <- c(fields, "cycle_diagnostics")
   if (!is.null(config$doublet_diagnostics)) fields <- c(fields, "doublet_diagnostics")
   if (!is.null(config$prefilter)) fields <- c(fields, "prefilter")
+  if (!is.null(config$recommendation_facts)) fields <- c(fields, "recommendation_facts")
+  if (!is.null(config$recommendation_doublet_preparation)) fields <- c(fields, "recommendation_doublet_preparation")
   if (!is.null(config$qc_mad)) fields <- c(fields, "qc_mad")
   if (!is.null(config$subcluster_origin)) fields <- c(fields, "subcluster_origin", "subcluster_creation")
   .sc_run_hash(config[fields])
@@ -185,6 +187,8 @@
       "Use the fixed full-input scDblFinder predictions by declared capture/loading unit. Keep is the default. After approved QC, only the exact reviewed remove_predicted intersection may be removed in a separate derived selection checkpoint; scores are predictions, not calibrated probabilities or truth."),
       record$details$execution_plan)
   }
+  record$details$recommendations <- .sc_run_recommendations(root, state, validated, evidence,
+    record$details$pc_diagnostics, record$details$cluster_diagnostics)
   record$hash <- .sc_run_strategy_review_hash(record)
   .sc_run_put(root, state, "strategy_review", record)
 }
@@ -269,6 +273,7 @@
       !identical(record$details$canonical_proposal, saved$proposal) ||
       !identical(record$details$dependency_hashes, saved$dependency_hashes))
     stop("Strategy evidence, parameters or review fingerprint changed; inspect and approve a fresh proposal.", call. = FALSE)
+  .sc_run_recommendations_verify(record)
   if (!is.null(saved$qc_validated)) .sc_run_qc_preview_verify(root, state)
   record
 }

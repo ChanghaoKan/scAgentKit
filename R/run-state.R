@@ -254,6 +254,7 @@ sc_run_inspect <- function(project_dir) {
   if (is.null(result$computed_diagnostics)) result$computed_diagnostics <- list()
   result$computed_diagnostics$stage_counts <- .sc_run_stage_counts(root, state)
   if (state$stage %in% c("strategy_propose", "strategy_apply")) result$evidence <- .sc_run_get(root, state, "strategy_evidence")$summary
+  result$scientific_assessment <- .sc_run_scientific_assessment(root, state)
   result$review_node <- .sc_run_review_node(root, state)
   result$annotation_preparation <- .sc_run_annotation_preparation(root, state)
   # Completed/legacy projects retain their existing inspection contract. The
