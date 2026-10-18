@@ -45,8 +45,8 @@
 #' @param min_cells_per_broad Integer. Skip broad types with fewer
 #'   cells. Default 200.
 #' @param min_cells_per_subcluster Integer. Sub-clusters smaller than
-#'   this are not annotated by the LLM and labelled
-#'   `"<broad>: too small to annotate"`. Default 30.
+#'   this are not annotated by the LLM; their previous fine labels are retained.
+#'   Default 30.
 #' @param tissue Character. Tissue context to give the LLM.
 #' @param top_n_markers Integer. Top markers per sub-cluster to send
 #'   to the LLM. Default 15.
@@ -56,7 +56,11 @@
 #' @return Updated AgentSeurat. New columns in `obj@data@meta.data`:
 #' \itemize{
 #'   \item `cell_type_fine`: equal to `cell_type` for cells whose
-#'     broad type was not sub-clustered, otherwise the sub-type label.
+#'     broad type was not sub-clustered, otherwise a usable sub-type proposal.
+#'     Existing per-cell fine labels are retained for proposals needing review;
+#'     if the column did not exist, it starts from the original broad label.
+#'     Raw proposed labels, qualitative self-reports and response audit remain
+#'     in the result table; citation usability does not establish semantic truth.
 #'   \item `subcluster_id`: e.g. `"T_NK_sub3"` or NA for cells in
 #'     untouched broad types.
 #' }

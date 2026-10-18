@@ -48,5 +48,5 @@ clusters whose LLM-produced `recommended_action` is `"reject"`.
 }
 \details{
 Manual overrides always win: a cluster listed in `manual_overrides` will
-get the supplied label even if the LLM gave a different one.
+get the supplied label even if the LLM gave a different one. Model proposals requiring review retain existing per-cell labels, or Unannotated when the column did not exist. Evidence usability is checked against saved markers for the same cluster. Manual override sources are recorded separately and do not establish model success.
 }

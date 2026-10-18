@@ -1,12 +1,13 @@
 test_that(".compute_hybrid_confidence: strong evidence gives 'high'", {
   parsed <- list(
     primary_annotation    = "T cell",
+    annotation_status = "ok", supporting_markers = "REAL", contradicting_markers = character(), recommended_action = "accept",
     confidence            = "high",
     hallucination_rate    = 0,
     proportion_assessment = "reasonable"
   )
   cluster_markers <- data.frame(
-    pct.1 = c(0.95, 0.90, 0.88),
+    gene = "REAL", pct.1 = c(0.95, 0.90, 0.88),
     pct.2 = c(0.05, 0.10, 0.08)
   )
   ref_rows <- data.frame(cell_type = "T cell", score = c(0.85))
@@ -21,12 +22,13 @@ test_that(".compute_hybrid_confidence: strong evidence gives 'high'", {
 test_that(".compute_hybrid_confidence: high hallucination drops confidence", {
   parsed <- list(
     primary_annotation    = "T cell",
+    annotation_status = "ok", supporting_markers = "REAL", contradicting_markers = character(), recommended_action = "accept",
     confidence            = "high",
     hallucination_rate    = 1,
     proportion_assessment = "reasonable"
   )
   cluster_markers <- data.frame(
-    pct.1 = c(0.95, 0.90),
+    gene = "REAL", pct.1 = c(0.95, 0.90),
     pct.2 = c(0.05, 0.10)
   )
   ref_rows <- data.frame(cell_type = "T cell", score = c(0.85))
@@ -36,6 +38,9 @@ test_that(".compute_hybrid_confidence: high hallucination drops confidence", {
   # pct differences .9/.8 have median .85:
   # .30*.85 + .30*.85 + .20*0 + .20*1 = .710.
   expect_equal(hc$score, 0.710, tolerance=1e-8)
+  expect_identical(hc$raw_confidence_label, "high")
+  expect_identical(hc$label, "low")
+  expect_false(hc$label_usable)
   parsed$hallucination_rate <- 0
   without_hallucination <- scAgentKit:::.compute_hybrid_confidence(
     parsed, cluster_markers, ref_rows)
@@ -46,12 +51,13 @@ test_that(".compute_hybrid_confidence: high hallucination drops confidence", {
 test_that(".compute_hybrid_confidence: weak evidence gives 'low'", {
   parsed <- list(
     primary_annotation    = "T cell",
+    annotation_status = "ok", supporting_markers = "REAL", contradicting_markers = character(), recommended_action = "accept",
     confidence            = "high",
     hallucination_rate    = 0.8,
     proportion_assessment = "abnormal"
   )
   cluster_markers <- data.frame(
-    pct.1 = c(0.30, 0.28),
+    gene = "REAL", pct.1 = c(0.30, 0.28),
     pct.2 = c(0.20, 0.18)
   )
   ref_rows <- data.frame(cell_type = "T cell", score = c(0.10))
@@ -66,12 +72,13 @@ test_that(".compute_hybrid_confidence: weak evidence gives 'low'", {
 test_that(".compute_hybrid_confidence: missing reference is OK", {
   parsed <- list(
     primary_annotation    = "T cell",
+    annotation_status = "ok", supporting_markers = "REAL", contradicting_markers = character(), recommended_action = "accept",
     confidence            = "medium",
     hallucination_rate    = 0,
     proportion_assessment = "reasonable"
   )
   cluster_markers <- data.frame(
-    pct.1 = c(0.60),
+    gene = "REAL", pct.1 = c(0.60),
     pct.2 = c(0.10)
   )
 
@@ -85,11 +92,12 @@ test_that(".compute_hybrid_confidence: disagreement only on opposite bands", {
   # LLM=high, hybrid=medium → NOT a disagreement (adjacent)
   parsed <- list(
     primary_annotation    = "T cell",
+    annotation_status = "ok", supporting_markers = "REAL", contradicting_markers = character(), recommended_action = "accept",
     confidence            = "high",
-    hallucination_rate    = 0.3,
+    hallucination_rate    = 0,
     proportion_assessment = "suspicious"
   )
-  cluster_markers <- data.frame(pct.1 = c(0.6), pct.2 = c(0.2))
+  cluster_markers <- data.frame(gene = "REAL", pct.1 = c(0.6), pct.2 = c(0.2))
   ref_rows <- data.frame(cell_type = "T cell", score = c(0.5))
 
   hc <- scAgentKit:::.compute_hybrid_confidence(parsed,

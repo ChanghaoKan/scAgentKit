@@ -11,18 +11,20 @@ make_annot_apply_fixture <- function() {
     cluster = c("0", "1"),
     primary_annotation = c("T cell", "Ambiguous"),
     recommended_action = c("accept", "reject"),
+    annotation_status = "ok", confidence = "high", supporting_markers = c("G1", "G2"), contradicting_markers = "",
     stringsAsFactors = FALSE
   )
+  obj@params$markers_filtered <- data.frame(cluster = obj@params$llm_annotations$cluster, gene = c("G1", "G2"))
   obj
 }
 
 test_that("annot_apply keeps LLM-rejected clusters by default", {
   withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annot_apply_fixture()
-  out <- annot_apply(obj)
+  expect_warning(out <- annot_apply(obj), "needs review")
 
   expect_equal(ncol(out@data), 4)
-  expect_setequal(unique(out@data$cell_type), c("T cell", "Ambiguous"))
+  expect_setequal(unique(out@data$cell_type), c("T cell", "Unannotated"))
   expect_false(tail(out@decisions, 1)[[1]]$params$drop_rejected)
   expect_length(tail(out@decisions, 1)[[1]]$params$rejected_clusters, 0)
 })
@@ -30,7 +32,7 @@ test_that("annot_apply keeps LLM-rejected clusters by default", {
 test_that("annot_apply drops rejected clusters only when explicitly requested", {
   withr::local_options(lifecycle_verbosity="quiet")
   obj <- make_annot_apply_fixture()
-  out <- annot_apply(obj, drop_rejected = TRUE)
+  expect_warning(out <- annot_apply(obj, drop_rejected = TRUE), "needs review")
 
   expect_equal(ncol(out@data), 2)
   expect_true(all(out@data$seurat_clusters == "0"))

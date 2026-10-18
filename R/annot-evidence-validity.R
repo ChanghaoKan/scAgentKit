@@ -20,6 +20,9 @@
     reasons <- c(reasons, "unresolved_label")
   if (!length(valid_support)) reasons <- c(reasons, "no_valid_same_cluster_support")
   if (length(unsupported)) reasons <- c(reasons, "unsupported_citations")
+  rate <- parsed$hallucination_rate
+  if (is.numeric(rate) && length(rate) == 1L && is.finite(rate) && rate > 0)
+    reasons <- c(reasons, "recorded_unsupported_support")
   if (length(valid_contradict)) reasons <- c(reasons, "declared_counterevidence_requires_review")
   if (!identical(parsed$recommended_action, "accept")) reasons <- c(reasons, "action_requires_review")
   list(status = if (identical(parsed$annotation_status, "failed")) "failed" else

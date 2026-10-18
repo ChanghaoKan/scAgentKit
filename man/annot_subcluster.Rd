@@ -72,7 +72,7 @@ to the LLM. Default 15.}
 Updated AgentSeurat. New columns in `obj@data@meta.data`:
 \itemize{
   \item `cell_type_fine`: equal to `cell_type` for cells whose
-    broad type was not sub-clustered, otherwise the sub-type label.
+    broad type was not sub-clustered, otherwise a usable sub-type proposal. Existing per-cell fine labels are retained for proposals needing review; a new fine column starts from the original broad labels. Raw proposed labels, self-reports and audit remain available. Citation usability does not establish semantic truth.
   \item `subcluster_id`: e.g. `"T_NK_sub3"` or NA for cells in
     untouched broad types.
 }
