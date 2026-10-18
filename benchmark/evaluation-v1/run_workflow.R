@@ -7,6 +7,7 @@ stopifnot(!dir.exists(root),variant %in% c("baseline","after","after-no-diagnost
 stopifnot(identical(normalizePath(find.package("scAgentKit")),file.path(lib,"scAgentKit")))
 dir.create(root,recursive=TRUE);root<-normalizePath(root);project<-file.path(root,"project")
 started<-proc.time();started_utc<-format(Sys.time(),tz="UTC",usetz=TRUE)
+message("START ",dataset," / ",variant," / ",started_utc)
 input<-readRDS(input_path);metadata<-input[[]]
 context<-list(species="human",tissue=if(dataset=="baron") "Pancreas" else "Blood",
  research_goal="Frozen public offline development comparison; Unknown reviewed labels; no truth claim",columns=list())
@@ -25,19 +26,23 @@ extra<-list()
 if(variant %in% c("after","after-qc-or","after-sample-hvg"))extra$scientific_review<-list(pc_sensitivity=TRUE,resampling=TRUE,
  resolution_extension=TRUE,panels=if(dataset=="baron") "pancreas" else "blood",cross_sample=TRUE,mixed_lineage=TRUE)
 x<-do.call(sc_analyze,c(list(input=input_path,project_dir=project,context=context,plan=plan,provider=NULL,budget=0,reference=reference_path),extra))
+message("Initial review prepared")
 review<-function(x){out<-NULL;invisible(capture.output(out<-sc_review(x)));out}
 approve<-function(x,reason){out<-NULL;invisible(capture.output(out<-sc_review(review(x),"approve",reviewer="Preregistered offline policy",reason=reason,continue=TRUE)));out}
 x<-approve(x,"Execute fixed counts-only software comparison; no provider or inferred truth")
+message("Foundation and measured scan returned: ",x$view$stage)
 if(identical(x$view$stage,"strategy_propose")) {
  scan<-x$view$strategy_review$details$cluster_diagnostics
  stopifnot(!is.null(scan),.6 %in% scan$resolutions)
  x<-approve(x,"Review actual measured grid; retain predeclared resolution0.6")
+ message("Measured selection explicitly approved: ",x$view$stage)
 }
 stopifnot(identical(x$view$stage,"annotation_propose"))
 x<-review(x);labels<-x$annotations
 labels$label<-"Unknown";labels$confidence<-"low";labels$rationale<-"No human or model identity review; explicit abstention control";labels$markers<-""
 p<-NULL;invisible(capture.output(p<-sc_review(x,"revise",annotations=labels,reviewer="Offline policy",reason="Explicit abstention for every cluster")))
 done<-approve(p,"Approve only complete Unknown control labels")
+message("Final explicit annotation approval returned: ",done$view$status)
 stopifnot(identical(done$view$status,"complete"))
 result<-sc_result(project);saveRDS(result,file.path(root,"analysis.rds"),version=2L)
 ns<-asNamespace("scAgentKit");state<-get(".sc_run_load",ns)(project)
@@ -59,6 +64,7 @@ jsonlite::write_json(list(status="complete",variant=variant,dataset=dataset,star
  elapsed=unname((proc.time()-started)[["elapsed"]]),user=unname((proc.time()-started)[["user.self"]]),system=unname((proc.time()-started)[["sys.self"]]),
  input_sha256=digest::digest(file=input_path,algo="sha256"),input_cells=ncol(input),retained_cells=ncol(result),unknown_reviewed=ncol(result),source_library=lib,
  package_version=as.character(packageVersion("scAgentKit")),R=R.version.string,cluster_count=length(unique(membership)),cluster_column=state$config$cluster_column,
+ implementation_hash=state$implementation_hash,runtime_manifest_sha256=digest::digest(file=system.file("workbench","runtime-manifest.json",package="scAgentKit"),algo="sha256"),
  counts_hash=get(".sc_project_sparse_hash",ns)(SeuratObject::LayerData(result,assay="RNA",layer="counts")),reference_sha256=digest::digest(file=reference_path,algo="sha256"),
  provider_calls=0L,model_cost_usd=0,human_time_seconds=NULL,human_time_saved=NULL,biological_accuracy=NULL,
  accuracy_reason="No independent truth; author-label and shared-reference agreement scored separately",

@@ -51,10 +51,25 @@ def score(universe,predictions,truth=None,prediction_map=None,truth_map=None):
     return out
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('cells');p.add_argument('predictions');p.add_argument('mapping');p.add_argument('dataset');p.add_argument('output');p.add_argument('--truth');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('cells');p.add_argument('predictions');p.add_argument('mapping');p.add_argument('dataset');p.add_argument('output')
+    target=p.add_mutually_exclusive_group();target.add_argument('--truth');target.add_argument('--reference');a=p.parse_args()
     mapping=json.loads(Path(a.mapping).read_text()); universe=Path(a.cells).read_text().splitlines()
     pred_map=mapping['pancreas_reference' if a.dataset=='baron' else 'blood_reference']
-    truth_map=mapping['pancreas_author' if a.dataset=='baron' else 'ifnb_author']
-    result=score(universe,rows(a.predictions),rows(a.truth) if a.truth else None,pred_map,truth_map)
+    truth_map=pred_map if a.reference else mapping['pancreas_author' if a.dataset=='baron' else 'ifnb_author']
+    target_path=a.reference or a.truth
+    result=score(universe,rows(a.predictions),rows(target_path) if target_path else None,pred_map,truth_map)
+    if a.reference:
+        result['agreement_status']='external_reference_agreement_only'
+        result['external_reference_match_fraction']=result.pop('end_to_end_correct_yield')
+        result['conditional_reference_agreement']=result.pop('conditional_agreement')
+        result['macro_f1']=None
+        result['limitation']='External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.'
+        for row in result['per_type']:row['f1']=None
+        for row in result['confusion']:row['reference']=row.pop('author')
     result['label_map_sha256']=__import__('hashlib').sha256(Path(a.mapping).read_bytes()).hexdigest()
+    if a.dataset=='baron':
+        result['agreement_status']='reference_granularity_mismatch'
+        result['fine_subtype_agreement']=None
+        result['limitation']=mapping['pancreas_limit']
+        result['mapped_label_match_interpretation']='Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes.'
     Path(a.output).write_text(json.dumps(result,indent=2)+'\n')
