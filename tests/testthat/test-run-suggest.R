@@ -67,6 +67,25 @@ test_that("oversized aggregate suggestions block only the optional provider path
   expect_false(file.exists(file.path(f$root, "provider", "ledger.json")))
 })
 
+test_that("scientific suggestion previews exclude local per-cell diagnostic evidence", {
+  private <- "private-literal-cell-19"
+  scan <- list(hash = "saved-scan-hash", scientific_diagnostics = list(hash = "saved-science-hash",
+    cells = private, resampling = list(status = "measured", replicates = list(
+      list(seed = 42L, cells = private, shared_cells = 1L, ari = 1))),
+    expression = list(status = "measured", cell_quality = list(list(cell_id = private)),
+      mixed_lineage = list(list(status = "measured", panels = c("A", "B"),
+        detected_gene_counts = list(first = stats::setNames(1L, private)),
+        coexpressing_cells = private, coexpressing_cell_quality = list(list(cell_id = private)))))))
+  before <- serialize(scan, NULL)
+  aggregate <- .sc_run_suggestion_scan(scan)
+  expect_false(grepl(private, jsonlite::toJSON(aggregate), fixed = TRUE))
+  expect_identical(aggregate$hash, scan$hash)
+  expect_identical(aggregate$scientific_diagnostics$hash, scan$scientific_diagnostics$hash)
+  expect_equal(aggregate$scientific_diagnostics$resampling$replicates[[1]]$shared_cells, 1L)
+  expect_equal(aggregate$scientific_diagnostics$expression$mixed_lineage[[1]]$coexpressing_cell_count, 1L)
+  expect_identical(serialize(scan, NULL), before)
+})
+
 test_that("suggestion preview is read-only, aggregate-only and explicit about simulation", {
   f <- suggestion_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   before <- .sc_project_sha_file(file.path(f$root, "state.rds"))

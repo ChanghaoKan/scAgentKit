@@ -1,5 +1,33 @@
 # Stage-only model suggestions. This channel never changes a scientific approval
 # or executes analysis. Its exact transfer authority is separate from pending.
+.sc_run_suggestion_scan <- function(scan) {
+  science <- scan$scientific_diagnostics
+  if (!is.null(science)) {
+    # The saved diagnostic artifact includes literal per-cell evidence. Only
+    # explicitly selected aggregate fields belong in a provider preview.
+    aggregate <- science[intersect(names(science), c("schema", "status", "reason", "hash",
+      "approved_pc_count", "approved_resolution", "default_changed", "provider_calls",
+      "pc_sensitivity", "resolution_extension"))]
+    if (!is.null(science$resampling)) {
+      resampling <- science$resampling
+      resampling$replicates <- lapply(resampling$replicates, function(row)
+        row[intersect(names(row), c("seed", "shared_cells", "ari", "clusters", "per_cluster", "interpretation"))])
+      aggregate$resampling <- resampling
+    }
+    if (!is.null(science$expression)) {
+      expression <- science$expression
+      aggregate$expression <- expression[intersect(names(expression), c("status", "panels",
+        "measured_genes", "missing_genes", "clusters", "common_marker_review", "ambient_status", "interpretation"))]
+      aggregate$expression$mixed_lineage <- lapply(expression$mixed_lineage, function(row)
+        list(panels = row$panels, status = row$status,
+          coexpressing_cell_count = if (identical(row$status, "measured")) length(row$coexpressing_cells) else NULL,
+          lineage_relationship = row$lineage_relationship, threshold = row$threshold))
+    }
+    scan$scientific_diagnostics <- aggregate
+  }
+  scan
+}
+
 .sc_run_suggestion_context <- function(root, state, simulate = FALSE) {
   if (!identical(simulate, TRUE) && !identical(simulate, FALSE))
     stop("simulate must be TRUE or FALSE.", call. = FALSE)
@@ -23,7 +51,7 @@
   evidence <- .sc_run_get(root, state, evidence_name)
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
   summary <- evidence$summary
-  if (!is.null(scan)) summary$cluster_diagnostics <- scan
+  if (!is.null(scan)) summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan)
   request <- .sc_run_request(kind, summary, state$config)
   # Simulated responses have their own cache identity and cannot be mistaken
   # for a real or previously supplied runtime model response.
