@@ -59,6 +59,10 @@ environment to continue, or create a new project from the original input and
 review it again. Never edit saved hashes, approvals or checkpoints to force a
 resume. See [compatibility and deprecation details](NEWS.md).
 Author-label metadata priors default to off; using them requires explicit opt-in.
+The [v0.6.0 source recipe and restoration limits](docs/ENVIRONMENT_RESTORE.md)
+pin the release's R environment and package sources. Match the original archive
+and implementation, not just its version number; this is not an automatic
+cross-version project migration.
 
 ## Analysis protocol
 
