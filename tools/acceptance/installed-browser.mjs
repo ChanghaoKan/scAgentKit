@@ -68,6 +68,72 @@ async function untilBoundary() {
     await wait(1000);
   }throw new Error('Real R worker did not reach review/configuration/completion in ten minutes');
 }
+async function approvals() {
+  const history=JSON.parse(await fs.readFile(path.join(output,'project','decision_history.json'),'utf8'));
+  return history.events.filter(event=>event.action==='approved');
+}
+function recommendationStep(id){const step=view.run.strategy_review.details.recommendations.steps.find(row=>row.id===id);assert(step,`Missing saved recommendation step ${id}`);return step;}
+async function adoptAndSave(stepId,candidate) {
+  assert.equal(candidate.available,true);
+  const run=structuredClone(view.run), saved=run.strategy_review.details.canonical_proposal;
+  const stateBytes=await fs.readFile(path.join(output,'project','state.rds'));
+  const historyBytes=await fs.readFile(path.join(output,'project','decision_history.json'));
+  const requestCount=requests.length,approvalCount=(await approvals()).length;
+  await ui('recommendation-use-'+stepId+'-'+candidate.id).click();await wait(100);
+  assert.equal(requests.length,requestCount,'Candidate adoption must make no POST request');
+  assert.deepEqual(await fs.readFile(path.join(output,'project','state.rds')),stateBytes,'Local candidate must not change saved authority');
+  assert.deepEqual(await fs.readFile(path.join(output,'project','decision_history.json')),historyBytes);
+  const expected=structuredClone(saved), key={qc:'qc',pcs:'pcs',batch:'batch',resolution:'clustering'}[stepId];assert(key);
+  if(stepId==='resolution')expected.clustering={...expected.clustering,...candidate.changes.clustering};else expected[key]=candidate.changes[key];
+  assert.deepEqual(JSON.parse(await ui('strategy-json').inputValue()),expected);
+  assert.notDeepEqual(expected,saved,'Fixture must exercise an actual local draft change');
+  assert.equal(await ui('strategy-approve').isDisabled(),true);
+  await screenshot('candidate-'+stepId+'-local-only');
+  await ui('strategy-reviewer').fill('Offline real-browser acceptance author');
+  await ui('strategy-reason').fill('Save the explicitly chosen local recommendation as a complete plan; this saving is not scientific approval.');
+  await clickResponse('strategy-save','/api/run-review/decision');await fresh();
+  assert.equal((await approvals()).length,approvalCount);
+  assert.equal(view.run.input_hash,run.input_hash);
+  assert.notEqual(view.run.review_node.proposal_hash,run.review_node.proposal_hash);
+  assert.notEqual(view.run.strategy_review.hash,run.strategy_review.hash);
+  assert.deepEqual(view.run.strategy_review.details.canonical_proposal,expected);
+  (report.candidate_adoptions??=[]).push({step:stepId,candidate:candidate.id,no_post_on_adoption:true,
+    saved_authority_unchanged_on_adoption:true,approval_count_before_save:approvalCount,
+    old_review_hash:run.strategy_review.hash,new_review_hash:view.run.strategy_review.hash,
+    old_proposal_hash:run.review_node.proposal_hash,new_proposal_hash:view.run.review_node.proposal_hash});
+}
+async function declarePartialBatchFacts() {
+  const old=structuredClone(view.run),beforeApproved=(await approvals()).length;
+  assert.equal(beforeApproved,0);
+  const bool=ui('recommendation-fact-batch-technical_batch'),unknown=ui('recommendation-fact-doublet-empty_droplets_removed');
+  assert.deepEqual(await bool.locator('option').evaluateAll(nodes=>nodes.map(node=>node.value)),['','true','false']);
+  assert.equal(await bool.inputValue(),'');assert.equal(await unknown.inputValue(),'');
+  assert.equal(await unknown.getAttribute('required'),null,'Optional incomplete paths must not prevent partial fact saving');
+  const beforePosts=requests.length;
+  await bool.selectOption('false');await ui('recommendation-fact-batch-source').fill('Synthetic software fixture: the alternating sample labels are not declared technical batch units.');
+  assert.equal(requests.length,beforePosts,'Fact editing itself must remain local');
+  assert.equal(await ui('strategy-approve').isDisabled(),true);
+  await ui('recommendation-facts-reviewer').fill('Offline real-browser acceptance author');
+  await ui('recommendation-facts-reason').fill('Declare only known synthetic batch provenance. Keep all assay/capture/doublet facts Unknown; no model or diagnostic deletion requested.');
+  await screenshot('01-partial-batch-facts');
+  const prepared=page.waitForResponse(res=>new URL(res.url()).pathname==='/api/run-review/continue'&&res.request().method()==='POST');
+  const answer=await clickResponse('recommendation-facts-save','/api/run-review/decision');
+  assert.equal(answer.run.status,'ready');assert(['prefilter','strategy_evidence'].includes(answer.run.stage));
+  const response=await prepared;assert.equal(response.status(),202);const result=await response.json();
+  report.jobs.push({job_id:result.job.job_id,purpose:'local-facts-preparation'});
+  const current=await untilBoundary();assert.equal(current.status,'awaiting_review');assert.equal(current.review_node.kind,'strategy');
+  assert.equal((await approvals()).length,0,'Fact saving and local preparation record no scientific approval');
+  assert.equal(current.input_hash,old.input_hash);assert.notEqual(current.config_hash,old.config_hash);
+  assert.notEqual(current.strategy_review.hash,old.strategy_review.hash);
+  const rec=current.strategy_review.details.recommendations;
+  assert.equal(rec.fact_values.batch.technical_batch,false);assert.equal(rec.fact_values.doublet?.empty_droplets_removed??null,null);
+  assert.equal(await ui('recommendation-fact-doublet-empty_droplets_removed').inputValue(),'');
+  const doublet=recommendationStep('doublet');assert.equal(doublet.assessment,'unavailable');assert(doublet.missing.length>0);
+  assert.equal(recommendationStep('batch').status,'recommend_skip');
+  report.partial_facts={no_approval:true,retained_unknown_doublet:true,batch_technical:false,
+    old_config_hash:old.config_hash,new_config_hash:current.config_hash};
+  await screenshot('01-facts-regenerated-unassessed-doublet');
+}
 async function approveStrategy() {
   await ui('strategy-reviewer').fill('Offline real-browser acceptance author');
   await ui('strategy-reason').fill('Inspect saved sample QC and actual PC/resolution evidence; approve only the displayed software fixture policy.');
@@ -104,6 +170,8 @@ try {
   await page.goto(launch.launch.url);await ui('run-refresh').waitFor();await fresh();
   await test('main entry exposes sample-aware QC, top-50 empirical PC policy and editable strategy',async()=>{
     const d=view.run.strategy_review?.details,p=d?.canonical_proposal;assert(d&&p);
+    assert.equal(d.recommendations?.schema,'scagentkit.recommendations.v1','Main entry must expose the saved deterministic recommendation layer');
+    assert.equal(await ui('strategy-recommendations').isVisible(),true);
     assert(d.mad_panel,'Main entry must attach the saved sample-aware MAD/QC panel');
     assert.equal(p.pcs.method,'computed_top50');assert.equal(p.pcs.threshold,.8);assert(p.analysis.npcs<=50);
     assert(Array.isArray(p.clustering.diagnostic_resolutions)&&p.clustering.diagnostic_resolutions.length>1,'Main entry must request several resolutions');
@@ -112,6 +180,16 @@ try {
     const qc=page.locator('#strategy-group-qc');
     if(await qc.count() && !await qc.getAttribute('open').then(x=>x!==null))await qc.locator(':scope > summary').click();
     report.initial_policy=p;await screenshot('01-main-strategy');
+    const rec=d.recommendations;assert.equal(rec.binding.input_hash,view.run.input_hash);
+    assert.equal(recommendationStep('qc').assessment,'assessed');
+    assert(recommendationStep('qc').candidates.length>0);
+    assert.equal(await ui('recommendations-next-decision').isVisible(),true);
+    assert((await ui('recommendations-next-decision').innerText()).length>30);
+    assert.equal(recommendationStep('doublet').assessment,'unavailable');
+    assert.equal(await ui('recommendation-assessment-doublet').isVisible(),true);
+    assert.equal(await ui('recommendation-step-qc').isVisible(),true);
+    await declarePartialBatchFacts();
+    await adoptAndSave('batch',recommendationStep('batch').candidates.find(candidate=>candidate.id==='none'&&candidate.available));
   });
   await test('author approval runs the real worker once and stops at measured cluster-tree review',async()=>{
     await approveStrategy();const run=await continueOnce();assert.equal(run.status,'awaiting_review');assert.equal(run.review_node.kind,'strategy');
@@ -132,14 +210,12 @@ try {
     assert(/Computed PCs: \d+; reference PCs: \d+; shortfall: \d+/.test(await ui('pc-candidates').innerText()));
     assert(/not total expressed-gene variance/.test(await ui('pc-policy-note').innerText()));
     report.visible_pc_evidence=await ui('pc-candidates').innerText();await screenshot('02-computed-PC-evidence-visible');
-    const chosen=d.resolutions.find(x=>x!==d.provisional_resolution)??d.resolutions[0];
-    const control=page.locator('#clustering-resolution');
-    await reveal(control);
-    await control.fill(String(chosen));
-    await ui('strategy-reviewer').fill('Offline real-browser acceptance author');
-    await ui('strategy-reason').fill('Choose this scanned resolution after inspecting measured cluster relationships; this is software acceptance, not biological optimization.');
-    if(await ui('strategy-save').isEnabled())await clickResponse('strategy-save','/api/run-review/decision');
-    await fresh();report.author_resolution=view.run.strategy_review.details.canonical_proposal.clustering.resolution;
+    const candidates=recommendationStep('resolution').candidates;
+    const selected=candidates.find(candidate=>candidate.available&&candidate.changes?.clustering?.resolution!==d.provisional_resolution);
+    assert(selected,'An available measured alternative is required for this software fixture');
+    const chosen=selected.changes.clustering.resolution;assert(d.resolutions.includes(chosen));
+    await adoptAndSave('resolution',selected);
+    report.author_resolution=view.run.strategy_review.details.canonical_proposal.clustering.resolution;
     assert.equal(report.author_resolution,chosen);
     await fs.writeFile(path.join(output,'author-selection.json'),JSON.stringify({resolution:chosen,scan_hash:d.hash})+'\n');
     await approveStrategy();
@@ -179,7 +255,15 @@ try {
       assert(owner.worker_pid>0&&owner.r_pid>0&&owner.worker_pid!==owner.r_pid);assert.equal(owner.r_exit_code,0);
       assert(config.bridge.startsWith(launch.runtime+path.sep));job.owner=owner;job.bridge=config.bridge;
     }
-    report.actual_R_workers=true;await screenshot('05-completed');
+    report.actual_R_workers=true;
+    assert.equal(report.verification.approval_kinds.filter(kind=>kind==='strategy').length,2);
+    assert.equal(report.verification.approval_kinds.filter(kind=>kind==='annotation').length,1);
+    assert.equal(await ui('run-scientific-assessment').isVisible(),true);
+    assert.equal(await ui('scientific-unassessed-steps').isVisible(),true);
+    assert((await ui('scientific-unassessed-steps').innerText()).includes('doublet'));
+    assert.equal(await ui('scientific-unresolved-steps').isVisible(),true);
+    report.final_scientific_banner=await ui('run-scientific-assessment').innerText();
+    await screenshot('05-completed');
   });
   await test('installed public entry reopens completed project without another run or mutation',async()=>{
     const before=report.verification;await r('reopen');const reopened=JSON.parse(await fs.readFile(path.join(output,'reopen.json'),'utf8'));

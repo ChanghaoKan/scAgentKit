@@ -48,3 +48,15 @@ request bindings remain in the private output directory. No CSRF headers or
 credentials are saved. The service PID created for this private project is
 terminated on exit. A red run is not a passed acceptance; inspect its report and
 preserve it before fixing the harness or product and rerunning in a fresh folder.
+
+The recommendation-layer extension keeps those six core cases and exactly three
+scientific approvals (two strategy decisions and one annotation decision). It
+also saves only an explicit synthetic batch declaration while doublet facts stay
+Unknown, then observes the actual automatic R preparation worker regenerate a
+new review without approval. This adds a fourth local worker job. Boolean fact
+controls must offer Unknown/Yes/No and optional missing fields must not prevent
+partial saving. Saved R recommendation candidates are copied through the UI to
+a local draft with no POST or saved-authority change; explicit Save must rebuild
+proposal/review hashes before author approval. The completion banner must remain
+visible about unassessed doublets and unresolved decisions. This banner is not
+replaced by software completion or a biological/QC certification claim.

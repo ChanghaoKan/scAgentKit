@@ -58,7 +58,7 @@ if (action == 'setup') {
   stopifnot(sum(executed=='finalize')==1L, sum(executed=='annotation_apply')==1L)
   approved <- Filter(function(x) identical(x$action,'approved'),events)
   kinds <- vapply(approved,function(x)x$details$kind,'')
-  stopifnot(sum(kinds=='annotation')==1L, sum(kinds=='strategy')>=1L)
+  stopifnot(sum(kinds=='annotation')==1L, sum(kinds=='strategy')==2L, length(kinds)==3L)
   envelope <- readRDS(file.path(project,'state.rds'))
   stopifnot(identical(envelope$schema,'scagentkit.run-state.v1'),
     identical(envelope$hash,digest::digest(envelope$state,algo='sha256',serializeVersion=2L)))
@@ -105,6 +105,11 @@ if (action == 'setup') {
   resolution_binding <- list(resolution=selection$resolution,scan_hash=scan$hash,
     strategy_review_hash=review$hash,membership_hash=scan$membership_hashes[[as.character(selection$resolution)]],
     marker_rows=nrow(table),actual_final_membership_and_markers_verified=TRUE)
+  stopifnot(identical(state$config$recommendation_facts$batch$technical_batch,FALSE),
+    is.null(state$config$recommendation_facts$doublet$empty_droplets_removed),
+    identical(view$scientific_assessment$certified_qc,FALSE),
+    'doublet' %in% unlist(view$scientific_assessment$unassessed_steps),
+    length(view$scientific_assessment$unresolved_steps)>0L)
   write_json(list(status='passed',view=view,cells=ncol(final),labels=unique(final$sc_annotation),
     output_sha256=digest::digest(file=view$output$seurat,algo='sha256'),
     executed_stages=executed,approval_kinds=kinds,ledger=ledger,ledger_file_exists=ledger_exists,provider_calls=length(ledger$entries),
