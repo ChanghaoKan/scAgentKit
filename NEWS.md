@@ -1,5 +1,9 @@
 # Development (unreleased)
 
+- Reopening a project retains its saved doublet mode when the argument is
+  omitted. Record omission before normalizing the argument; explicit attempts
+  to change the saved mode remain rejected.
+
 - ACT is the user-selected default marker reference, independent of CellMarker;
   CL remains the exact ontology dictionary. Add explicit local ACT CSV/TSV/XLSX
   import with source-header mapping, species/tissue filtering, observed SHA256,

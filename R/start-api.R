@@ -37,6 +37,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
   scientific_review <- .sc_run_science_options(scientific_review)
   model_suggestions <- match.arg(model_suggestions)
+  doublet_supplied <- !missing(doublet)
   doublet <- match.arg(doublet)
   .sc_project_string(project_dir, "project_dir")
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
@@ -56,7 +57,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
       length(get(flag)) != 1L || is.na(get(flag))) stop(flag, " must be TRUE or FALSE.", call. = FALSE)
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
   if (!existing && reuse_processed) {
-    if (!missing(doublet) && doublet != "off") stop("Processed reuse does not run new doublet diagnostics; use doublet='off' or start a raw project.", call. = FALSE)
+    if (doublet_supplied && doublet != "off") stop("Processed reuse does not run new doublet diagnostics; use doublet='off' or start a raw project.", call. = FALSE)
     doublet <- "off"
   }
   if (!existing && !reuse_processed && !missing(cluster_column) && !identical(cluster_column,"sc_strategy_clusters"))
@@ -72,7 +73,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
         (!is.null(processed_reason) && !identical(processed_reason,state$config$processed_reason)))
       stop("Reopening cannot replace saved entry, reuse reason or cluster column.", call. = FALSE)
     context <- state$config$context
-    if (!missing(doublet) && !identical(doublet, state$config$input_policy$doublet_mode))
+    if (doublet_supplied && !identical(doublet, state$config$input_policy$doublet_mode))
       stop("Reopening uses the saved doublet mode; omit doublet or create a new project.", call. = FALSE)
     if (!is.null(scientific_review) && !identical(scientific_review,state$config$scientific_review))
       stop("Reopening cannot replace saved scientific diagnostics; use the original configuration or a new project.",call.=FALSE)
