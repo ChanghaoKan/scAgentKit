@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "read_only": true,
+  "posts": [],
+  "external": [],
+  "checks": [
+    "Actual completed Baron 5000-cell/14-cluster read-only result loads with full saved history under 16 MiB",
+    "Saved Baron strategy scientific evidence visible: PC sensitivity, resampling, cross-sample diagnostics and pancreas panel",
+    "Actual complete per-cluster measured expression, detection, missing genes and cross-sample evidence opened",
+    "Actual saved Baron candidate Fisher/BH/background visible in read-only annotation evidence; reviewed labels remain Unknown",
+    "All 40 original event headers and final event hash links reachable in actual history UI"
+  ],
+  "limits": [
+    "Existing completed Baron after-1 results only. No new analysis, editable review, HVG5000 browser workflow, accuracy or human-time validation."
+  ],
+  "screenshots": [
+    "baron-complete-overview.png",
+    "baron-saved-scientific-evidence.png",
+    "baron-annotation-joint-evidence.png",
+    "baron-expression-cross-sample.png",
+    "baron-complete-history.png"
+  ],
+  "transport_evidence": "Actual HTTP status/content-length and parsed production UI state; no request mocking or extra fetch",
+  "aggregate": {
+    "status": 200,
+    "bytes": 12342881,
+    "total_events": 40,
+    "provided_events": 40,
+    "truncated": false
+  },
+  "saved_expression": {
+    "status": "measured",
+    "missing_genes": []
+  },
+  "authority_unchanged": true,
+  "authority_hashes": {
+    "state.rds": "572b866454dc25b2734e5825e9d0fdf234a987ca11657911dd33ee70d8bbe94e",
+    "decision_history.json": "ab41401be9fd1c0a3ce47f3cf5aafd2021e33fbbcdd0d7df01f77d81fad25133",
+    "output/seurat.rds": "5d4805fb05014b66c0cb92b1cf6cb7bde595f9c2c0716261b56b06511b4601e6"
+  },
+  "chrome": "155.0.8059.82"
+}

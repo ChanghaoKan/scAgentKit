@@ -322,6 +322,16 @@ await check("absent flags do not imply a valid identity, and a stale refresh cle
   h.wire("parent", value); await h.call("wbLoad"); assert.match(h.el("wb-questions").textContent, /does not establish cell identity or approve/); assert(h.el("wb-composition").children.length);
   const changed = clone(value); changed.binding.revision++; h.wire("parent", changed); await h.call("wbLoad"); for (const id of ["wb-composition", "wb-composition-note", "wb-questions", "wb-questions-note"]) assert.equal(h.el(id).textContent, "");
 });
+await check("saved cluster expression and cross-sample evidence is reachable without mutation", async () => {
+  const h = harness(), value = view();
+  value.annotation.review.details.annotations[0].measured_expression = {
+    status: "measured", missing_genes: ["TRAC"], clusters: [{cluster: "01", genes: [{gene: "CD3D", mean_log_normalized: 2, pct_detected: .7}]}],
+    cross_sample_consistency: {status: "descriptive"}};
+  const before = JSON.stringify(value); h.wire("parent", value); await h.call("wbLoad");
+  assert.match(h.el("wb-annotation-content").textContent, /Saved measured expression and cross-sample evidence/);
+  for (const field of ["TRAC", "mean_log_normalized", "pct_detected", "cross_sample_consistency"]) assert(h.el("wb-annotation-content").textContent.includes(field));
+  assert.equal(JSON.stringify(value), before); assert(h.requests.every(request => !request.options?.method || request.options.method === "GET"));
+});
 const files = ["workbench.html", "workbench.js", "workbench.css", "ortholog-map.js", "gene-links.js", "evidence-display.js"], report = {schema: "scagentkit.unified-workbench.dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualR: false, actualNetwork: false, paidAPICalls: 0, sourceHashes: Object.fromEntries(files.map(file => [file, sha(fs.readFileSync(path.join(root, "static", file)))])), driverSHA256: sha(fs.readFileSync(fileURLToPath(import.meta.url))), checks: results.length, passed: results.filter(result => result.passed).length, failed: results.filter(result => !result.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 console.log(JSON.stringify(report, null, 2)); if (report.failed) process.exitCode = 1;

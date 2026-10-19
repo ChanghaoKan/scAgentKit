@@ -280,12 +280,29 @@ class RunWorkbenchRuntime(QCRuntime):
             qc_status = "processed_reused" if reused else "saved" if summary or preview else "not_recorded"
             annotation = run.get("annotation_review")
             strategy = run.get("strategy_review")
+            # This is a display envelope, not the public R inspector. Keep each
+            # complete review exactly once in its named section. JSON does not
+            # preserve Python's shared references and otherwise duplicates MBs
+            # of the same verified expression/marker records on the wire.
+            sections = {"qc_preview": "qc.preview", "strategy_review": "strategy.review",
+                        "annotation_review": "annotation.review", "computed_diagnostics": "analysis.computed_diagnostics"}
+            shared = {key: path for key, path in sections.items() if run.get(key) is not None}
+            header = {key: value for key, value in run.items() if key not in shared}
+            header["display_sections"] = shared
+            if evidence is not None and evidence.get("sourceAnnotation") is not None:
+                for cluster in evidence["clusters"]:
+                    # ProjectLoader has already validated the exact complete
+                    # label table and bundle hashes. Only identical copies are
+                    # shared; cluster counts/labels and all literal IDs remain.
+                    if cluster.get("sourceAnnotation") == evidence["sourceAnnotation"]:
+                        del cluster["sourceAnnotation"]
+                        cluster["sourceAnnotation_ref"] = "evidence.sourceAnnotation"
             cell_scope = (annotation or {}).get("cell_scope_hash")
             completed = run.get("completed") or []
             if isinstance(completed, str): completed = [completed]
             return {"schema": "scagentkit.workbench.v1", "readonly": True,
                 "project": {key: run.get(key) for key in ("project_id", "input_hash", "revision", "history_head")},
-                "run": run, "source": source, "provider": saved.get("provider"), "history": history,
+                "run": header, "source": source, "provider": saved.get("provider"), "history": history,
                 "integration_history": integration,
                 "qc": {"status": qc_status, "reason": source.get("processed_reason") if reused else
                        "No saved QC evidence exists for this run." if qc_status == "not_recorded" else None,
@@ -303,7 +320,10 @@ class RunWorkbenchRuntime(QCRuntime):
                 "evidence_kind": evidence_kind,
                 "evidence_error": evidence_error,
                 "evidence_complete": evidence is not None,
-                "detail_projection": saved.get("detail_projection"),
+                "detail_projection": {"description": saved.get("detail_projection"),
+                    "shared_review_sections": shared,
+                    "shared_label_table": "evidence.sourceAnnotation",
+                    "notice": "Complete saved reviews and the complete cohort label table are transmitted once at the declared paths; no history events or evidence rows are truncated. Original hashed artifacts remain unchanged."},
                 "binding": {"project_id": run["project_id"], "state_sha256": before, "input_hash": run["input_hash"], "revision": run["revision"],
                     "history_head": run.get("history_head"), "bundle_digest": evidence["bundleDigest"] if evidence else None,
                     "source_fingerprint": evidence["sourceFingerprint"] if evidence else None,

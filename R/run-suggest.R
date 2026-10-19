@@ -1,5 +1,33 @@
 # Stage-only model suggestions. This channel never changes a scientific approval
 # or executes analysis. Its exact transfer authority is separate from pending.
+.sc_run_suggestion_scan <- function(scan) {
+  science <- scan$scientific_diagnostics
+  if (!is.null(science)) {
+    # The saved diagnostic artifact includes literal per-cell evidence. Only
+    # explicitly selected aggregate fields belong in a provider preview.
+    aggregate <- science[intersect(names(science), c("schema", "status", "reason", "hash",
+      "approved_pc_count", "approved_resolution", "default_changed", "provider_calls",
+      "pc_sensitivity", "resolution_extension"))]
+    if (!is.null(science$resampling)) {
+      resampling <- science$resampling
+      resampling$replicates <- lapply(resampling$replicates, function(row)
+        row[intersect(names(row), c("seed", "shared_cells", "ari", "clusters", "per_cluster", "interpretation"))])
+      aggregate$resampling <- resampling
+    }
+    if (!is.null(science$expression)) {
+      expression <- science$expression
+      aggregate$expression <- expression[intersect(names(expression), c("status", "panels",
+        "measured_genes", "missing_genes", "clusters", "common_marker_review", "ambient_status", "interpretation"))]
+      aggregate$expression$mixed_lineage <- lapply(expression$mixed_lineage, function(row)
+        list(panels = row$panels, status = row$status,
+          coexpressing_cell_count = if (identical(row$status, "measured")) length(row$coexpressing_cells) else NULL,
+          lineage_relationship = row$lineage_relationship, threshold = row$threshold))
+    }
+    scan$scientific_diagnostics <- aggregate
+  }
+  scan
+}
+
 .sc_run_suggestion_context <- function(root, state, simulate = FALSE) {
   if (!identical(simulate, TRUE) && !identical(simulate, FALSE))
     stop("simulate must be TRUE or FALSE.", call. = FALSE)
@@ -21,19 +49,30 @@
   if (is.null(state$files[[evidence_name]]))
     stop("Saved aggregate suggestion evidence is missing.", call. = FALSE)
   evidence <- .sc_run_get(root, state, evidence_name)
-  request <- .sc_run_request(kind, evidence$summary, state$config)
+  scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
+  summary <- evidence$summary
+  if (!is.null(scan)) summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan)
+  request <- .sc_run_request(kind, summary, state$config)
   # Simulated responses have their own cache identity and cannot be mistaken
   # for a real or previously supplied runtime model response.
   if (simulate) request$purpose <- paste0("simulated_", kind)
-  request_hash <- .sc_run_request_hash(request, provider)
+  request_hash <- tryCatch(.sc_run_request_hash(request, provider), error = function(e) {
+    if (identical(conditionMessage(e), "Aggregate provider request exceeds 100,000 bytes."))
+      return(NULL)
+    stop(e)
+  })
+  if (is.null(request_hash)) return(list(kind = kind, provider = provider,
+    blocked_reason = paste("Aggregate provider request exceeds 100,000 bytes.",
+      "Suggestions are unavailable for this snapshot; review the complete local evidence manually.",
+      "No evidence was truncated and no provider request was sent.")))
   binding <- list(stage = state$stage, input_hash = state$input_hash,
     config_hash = state$config_hash, implementation_hash = state$implementation_hash,
-    evidence = state$files[[evidence_name]],
+    evidence = state$files[[evidence_name]], cluster_scan = state$files$cluster_scan,
     scientific_proposal_hash = state$pending$hash,
     manual_proposal = state$files[[paste0("manual_", kind)]],
     scope_hash = state$config$subcluster_origin$scope_hash,
     parent_scope_hash = state$config$subcluster_origin$parent_scope_hash)
-  list(kind = kind, provider = provider, evidence = evidence, request = request,
+  list(kind = kind, provider = provider, evidence = evidence, cluster_scan = scan, request = request,
     request_hash = request_hash, binding = binding, simulated = simulate,
     suggestion_hash = .sc_run_hash(list(schema = "scagentkit.suggestion-binding.v1",
       kind = kind, binding = binding, request_hash = request_hash, simulated = simulate)),
@@ -98,11 +137,12 @@
   result
 }
 
-.sc_run_suggestion_validator <- function(kind, evidence, state) {
+.sc_run_suggestion_validator <- function(kind, evidence, state, cluster_scan = NULL) {
   if (kind == "qc") return(function(value) .sc_run_qc_validate(value, evidence)$proposal)
   if (kind == "strategy") return(function(value) {
     validated <- .sc_run_strategy_validate(value, evidence)
     .sc_run_subcluster_strategy(state, validated, evidence)
+    if (!is.null(cluster_scan)) .sc_run_cluster_selection(validated$proposal$clustering$resolution, cluster_scan)
     validated$proposal
   })
   function(value) {
@@ -130,7 +170,7 @@
     proposal$risks <- unique(c(proposal$risks, list("SIMULATED; requires independent scientific review.")))
   }
   # Fail before dispatch if a simulated template is not supported on this scope.
-  .sc_run_suggestion_validator(kind, context$evidence, state)(proposal)
+  .sc_run_suggestion_validator(kind, context$evidence, state, context$cluster_scan)(proposal)
   raw <- .sc_project_json(proposal)
   function(system_prompt, user_prompt) list(content = raw, cost_usd = 0,
     model = "SIMULATED-software-control", response_metadata = list(finish_reason = "stop"))
@@ -230,7 +270,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     if (simulate) chat_fn <- .sc_run_suggestion_mock(root, state, context)
     request <- context$request
     request$approved_payload_hash <- context$request_hash
-    request$validator <- .sc_run_suggestion_validator(context$kind, context$evidence, state)
+    request$validator <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)
     state$suggestion <- list(schema = "scagentkit.suggestion.v1", suggestion_hash = suggestion_hash,
       request_hash = context$request_hash, binding = context$binding, kind = context$kind,
       status = "requesting", simulated = simulate, candidate = NULL, response = NULL)
@@ -261,7 +301,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
   } else {
     if (!current || !identical(saved$status, "candidate") || is.null(saved$candidate))
       stop("No current validated suggestion candidate can be adopted.", call. = FALSE)
-    proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state)(saved$candidate)
+    proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)(saved$candidate)
     # Preserve the response as scientific evidence of its actual provenance.
     # Ordinary manual edits can subsequently override it via the normal API.
     state <- .sc_run_put(root, state, paste0(context$kind, "_suggestion_response"), saved$response)

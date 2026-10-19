@@ -99,16 +99,16 @@ reference candidates separately for later comparison. Explicit
 \value{
 Updated AgentSeurat. A data frame of annotations is stored at
   `obj@params$llm_annotations` with columns: cluster,
-  primary_annotation, confidence (LLM self-reported),
+  primary_annotation (raw proposal), confidence (effective qualitative confidence), raw_confidence (model self-report), evidence_status, label_usable, evidence_reasons, marker_validation_enabled,
   hybrid_confidence (uncalibrated heuristic score; see Details),
-  hybrid_confidence_label, confidence_disagreement,
+  hybrid_confidence_label (effective), hybrid_confidence_raw_label, confidence_disagreement,
   supporting_markers, contradicting_markers, hallucinated_markers,
   alternative_annotations, recommended_action, ensemble_agreement,
   ensemble_n, annotation_status, annotation_error, annotation_attempts,
   reasoning. Prompts, marker evidence, and each raw response attempt are
   stored in `obj@params$llm_annotation_responses` for offline review,
   with the cell/cluster snapshot in `llm_annotation_input_cells`.
-  The step records success only when all requested responses validate.
+  The step records success only when all requested responses pass the local evidence-usability gate. Citation validity is not semantic truth.
   Exported script snippets restore saved decisions without provider
   calls and require identical cell order and per-cell cluster IDs.
 }
@@ -163,8 +163,7 @@ heuristic signals from marker/reference evidence and model output, each in
     reported `reasonable`, 0.5 for `suspicious`, 0 for `abnormal`
     and 0.5 when missing.
 }
-The resulting score is mapped to a label: `high` (>= 0.7),
-`medium` (0.4-0.7), `low` (< 0.4). `confidence_disagreement` is
+The unchanged score maps to `hybrid_confidence_raw_label`: high (>= 0.7), medium (0.4-0.7), low (< 0.4). Effective confidence and the hybrid label become low for unusable evidence: missing same-cluster support, unsupported citations, declared counterevidence, unresolved label, disabled validation, incomplete response or action requiring review. Raw proposals, self-reports, scores and response audits remain available. One supplied marker is a software prerequisite, not sufficient biological evidence. `confidence_disagreement` is
 TRUE when the LLM's self-reported confidence and the hybrid label
 fall in non-adjacent bands.
 }

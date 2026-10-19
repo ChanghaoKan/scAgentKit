@@ -54,7 +54,36 @@ function answer(enabled = true, preset = "keep_all") {
 function setup(value = answer()) {const h = ui(); h.state.view = h.call("verify", copy(value)); h.state.continuation = value.continuation || null; h.call("render"); return h;}
 async function check(name, action) {try {await action(); results.push({name, passed: true});} catch (error) {results.push({name, passed: false, error: error.message});}}
 async function main() {
+  await check("sample medians preserve original denominators zero missing and descriptive flags", () => {
+    const h=ui(), value={status:"measured",groups:[{sample:"S1",cells:60,medians:{nCount:200,nFeature:100,percent_mt:0}},{sample:"S2",cells:80,medians:{nCount:400,nFeature:200,percent_mt:null}}],cross_sample:[{metric:"nCount",status:"descriptive_flags",samples:[{sample:"S1",median:200,robust_z:0,flagged:false},{sample:"S2",median:400,robust_z:4,flagged:true}]},{metric:"percent_mt",status:"unavailable",reason:"Complete metrics required",samples:[{sample:"S2",median:null,robust_z:null,flagged:null}]}]};
+    const before=JSON.stringify(value), rendered=h.call("renderSampleQCComparison",value);
+    assert.match(rendered.textContent,/Original input cells.*S1602001000S280400200Unavailable/s);
+    assert.match(rendered.textContent,/between samples.*Not flagged; not quality certification.*Flagged; inspect study context.*Complete metrics required.*Unavailable/s);
+    assert.equal(JSON.stringify(value),before);assert.equal(h.requests.length,0);
+  });
+  await check("missing sample role does not substitute condition capture or QC group", () => {
+    const h=ui(), rendered=h.call("renderSampleQCComparison",{status:"unavailable",reason:"No explicitly declared sample column; capture/condition are not substituted."});
+    assert.match(rendered.textContent,/No explicitly declared sample.*not substituted/);
+    assert.equal(descendants(rendered).some(node=>node.tagName==="TABLE"),false);assert.equal(h.requests.length,0);
+  });
+  await check("unknown overlap counts remain unavailable instead of measured zero", () => {
+    const value=answer(), group=value.run.strategy_review.details.mad_panel.groups[0];
+    group.flag_summary={available:false,denominator:3,known_cells:2,unknown_cells:1,patterns:{none:null,low_count_only:null,low_feature_only:null,high_mt_only:null},multiple_quality_flags:null};
+    const h=setup(value), rows=descendants(h.mad("mad-flag-summary")).filter(node=>node.tagName==="TR");
+    assert.match(rows[1].textContent,/sample A3UnavailableUnavailableUnavailableUnavailableUnavailable1/);
+    assert.equal(h.state.view.run.strategy_review.details.canonical_proposal.qc.preset_id,"keep_all");
+  });
   await check("legacy range UI retains six original operation cards", () => {const h = setup(answer(false)); assert.equal(h.el("strategy-operations").children.length, 6); assert.equal(h.mad("mad-card"), undefined); assert.equal(h.call("madReviewError"), null); assert.equal(h.requests.length, 0);});
+  await check("quality flag overlaps and tiny absolute mt margins are readable without changing decisions", () => {
+    const value=answer(), panel=value.run.strategy_review.details.mad_panel;
+    panel.groups[0].flag_summary={available:true,denominator:100,known_cells:100,unknown_cells:0,any_quality_flag:12,multiple_quality_flags:3,patterns:{none:88,low_count_only:4,low_feature_only:3,high_mt_only:2,count_feature_only:1,count_mt_only:1,feature_mt_only:0,all_three:1}};
+    panel.groups[0].metrics.percent_mt={available:true,exact:{median:.04,upper_raw:.0400003,scaled_mad:1e-7}};
+    const h=setup(value);
+    assert.match(h.mad("mad-flag-summary").textContent,/Low counts only.*Low features only.*High mt only.*2\+ flags.*Unknown/s);
+    assert.match(h.mad("mad-mt-absolute-margins").textContent,/percentage points.*positive MAD.*tiny absolute.*no.*minimum.*normality/is);
+    assert.match(h.mad("mad-choice").textContent,/saved proposal.*keep_all.*default.*not.*QC assessment/is);
+    assert.equal(h.state.view.run.strategy_review.details.canonical_proposal.qc.preset_id,"keep_all");assert.equal(h.requests.length,0);
+  });
   await check("optional MAD panel adds one concentrated review with default keep_all", () => {const h = setup(); assert.equal(h.el("strategy-operations").children.length, 7); assert.equal(h.mad("mad-choice").dataset.preset, "keep_all"); assert.match(h.mad("mad-choice").textContent, /default/); assert.equal(h.el("strategy-approve").disabled, false); assert.equal(descendants(h.mad("mad-card")).filter(node => node.tagName === "SELECT").length, 1); assert.equal(descendants(h.mad("mad-card")).filter(node => node.tagName === "BUTTON").length, 0);});
   await check("QC group role differs from capture with no donor inference", () => {const h = setup(); assert.match(h.mad("mad-grouping").textContent, /qc_pool.*sample.*Capture\/loading unit: Unknown.*distinct declarations.*no relationship is inferred/);});
   await check("MAD formula and original-scale mitochondrial tail are explicit", () => {const h = setup(); assert.match(h.mad("mad-method").textContent, /log10\(x\+1\).*3.*1.4826.*upper tail.*original scale.*exact thresholds.*rounded display.*never control execution/);});

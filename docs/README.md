@@ -31,7 +31,7 @@ explains optional browser review and local computation.
 
 Installed function documentation is available through `help(package = "scAgentKit")`.
 [Installed examples](../inst/examples) include the PBMC tutorial and focused
-R/CLI workflows. The [package vignette](../vignettes/scAgentKit-pbmc3k.Rmd)
+R/CLI workflows. The [package vignette](../vignettes/scAgentKit-pbmc_small.Rmd)
 uses the same offline tutorial.
 
 [Workbench technical references](../workbench/README.md#technical-reference)
@@ -50,3 +50,6 @@ checks are defined in [.github/workflows](../.github/workflows).
 - [Direct 10x MEX input and sample tables](TENX_INPUT.md): explicit source class, unique cell IDs, feature identity and exact metadata alignment.
 
 - [R-only public PBMC3k protocol](R_ANALYSIS_PROTOCOL.md): full manual strategy, annotation and result sequence.
+
+- [科学诊断一页指南](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md) and [method appendix](SCIENTIFIC_METHODS_APPENDIX.md): optional development capabilities and limitations.
+- [Prospective evaluation v1](EVALUATION_PROTOCOL_V1.md): frozen baseline, mappings, metrics and no-help/regression gates.

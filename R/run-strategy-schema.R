@@ -507,14 +507,24 @@
     expressed <- sum(Matrix::rowSums(evidence$private$feature_detection[, indices, drop = FALSE]) > 0)
     if (expressed < 3L) stop("Fewer than three genes are actually expressed after the proposed cell selection; standard strategy analysis is not applicable.", call. = FALSE)
     analysis <- .sc_run_strategy_fields(proposal$analysis,
-      c("normalization_method", "scale_factor", "nfeatures", "npcs", "seed"), name = "strategy$analysis")
+      c("normalization_method", "scale_factor", "nfeatures", "npcs", "seed"), c("hvg_method", "hvg_column"), name = "strategy$analysis")
     if (!identical(analysis$normalization_method, "LogNormalize"))
       stop("Coordinated strategy supports normalization_method='LogNormalize' only; other methods require explicit external preparation.", call. = FALSE)
+    hvg_request <- analysis[c(intersect(c("hvg_method", "hvg_column"), names(analysis)))]
     analysis <- list(normalization_method = "LogNormalize",
       scale_factor = .sc_run_strategy_number(analysis$scale_factor, "analysis$scale_factor", 0, open_min = TRUE),
       nfeatures = .sc_run_strategy_number(analysis$nfeatures, "analysis$nfeatures", 3, min(evidence$summary$input$features, expressed), integer = TRUE),
       npcs = .sc_run_strategy_number(analysis$npcs, "analysis$npcs", 2, integer = TRUE),
       seed = .sc_run_strategy_number(analysis$seed, "analysis$seed", 0, .Machine$integer.max, integer = TRUE))
+    if (length(hvg_request)) {
+      if (!identical(hvg_request$hvg_method, "sample_consensus") ||
+          !identical(hvg_request$hvg_column, evidence$summary$declared_roles$sample) ||
+          is.null(hvg_request$hvg_column)) stop("Sample HVG requires method sample_consensus and the explicitly declared sample column.", call. = FALSE)
+      samples <- evidence$private$roles$sample[indices]
+      if (is.null(samples) || anyNA(samples) || length(unique(samples)) < 2L || any(table(samples) < 30L))
+        stop("Sample HVG requires two declared samples with at least 30 retained cells each.", call. = FALSE)
+      analysis <- c(analysis, hvg_request)
+    }
     if (analysis$npcs >= min(analysis$nfeatures, retained))
       stop("Requested npcs must be smaller than both requested HVGs and projected retained cells; implicit clipping is not supported.", call. = FALSE)
     pcs <- .sc_run_strategy_fields(proposal$pcs, "method", c("ndim", "threshold"), "strategy$pcs")

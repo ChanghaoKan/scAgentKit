@@ -1,0 +1,11 @@
+{
+  "original_cells": 5000,
+  "retained_cells": 5000,
+  "excluded": 0,
+  "raw_candidate_label_changes": 305,
+  "baseline_candidate_unknown": 574,
+  "hvg_candidate_unknown": 567,
+  "singler_label_changes": 0,
+  "biological_accuracy": null,
+  "fine_subtype_agreement": null
+}

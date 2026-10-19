@@ -12,8 +12,10 @@ make_annot_replay_fixture <- function() {
     primary_annotation = c('T"; sentinel <- TRUE; #\n`cell`\\tail',
                            "Rare 'cells'\nwith `backticks`"),
     recommended_action = c("accept", "reject"),
+    annotation_status = "ok", confidence = "high", supporting_markers = c("G1", "G2"), contradicting_markers = "",
     stringsAsFactors = FALSE
   )
+  obj@params$markers_filtered <- data.frame(cluster = obj@params$llm_annotations$cluster, gene = c("G1", "G2"))
   obj
 }
 
@@ -34,20 +36,20 @@ test_that("LLM labels, cluster IDs, and unusual column names replay as data", {
   withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
   column <- 'cell type"; sentinel <- TRUE; #\n`label`'
-  out <- annot_apply(input, column_name = column)
+  expect_warning(out <- annot_apply(input, column_name = column), "needs review")
   replay <- replay_annot_script(input, out)
   expect_identical(colnames(replay$seurat_obj), colnames(out@data))
   expect_identical(replay$seurat_obj@meta.data[[column]], out@data@meta.data[[column]])
   expect_identical(out@data@meta.data[[column]][4], "Unannotated")
   expect_identical(out@decisions[[1]]$params$annotation_mapping,
-                   stats::setNames(input@params$llm_annotations$primary_annotation,
-                                   input@params$llm_annotations$cluster))
+                   stats::setNames(input@params$llm_annotations$primary_annotation[1],
+                                   input@params$llm_annotations$cluster[1]))
 })
 
 test_that("rejected cluster literals replay safely through cell-ID subsetting", {
   withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
-  out <- annot_apply(input, drop_rejected = TRUE)
+  expect_warning(out <- annot_apply(input, drop_rejected = TRUE), "needs review")
   replay <- replay_annot_script(input, out)
   expect_identical(colnames(out@data), c("C1", "C2", "C4"))
   expect_identical(colnames(replay$seurat_obj), colnames(out@data))
@@ -76,7 +78,7 @@ test_that("manual mapping literals and overrides replay without executing text",
 test_that("replay verifies input cell IDs before updating or subsetting", {
   withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
-  out <- annot_apply(input, drop_rejected = TRUE)
+  expect_warning(out <- annot_apply(input, drop_rejected = TRUE), "needs review")
   replay <- new.env(parent = globalenv())
   replay$sentinel <- FALSE
   replay$seurat_obj <- input@data[, 1:3]
@@ -93,9 +95,10 @@ test_that("changed per-cell clusters stop replay before any metadata change or d
   overrides <- stats::setNames(c("T cell", "Rare cell"),
                                input@params$llm_annotations$cluster)
   for (source in c("llm", "manual")) {
-    out <- annot_apply(input, source = source,
-                       manual_overrides = if (source == "manual") overrides else NULL,
-                       drop_rejected = TRUE)
+    out <- if (source == "llm") {
+      expect_warning(value <- annot_apply(input, source = source, drop_rejected = TRUE), "needs review")
+      value
+    } else annot_apply(input, source = source, manual_overrides = overrides, drop_rejected = TRUE)
     replay <- new.env(parent = globalenv())
     replay$seurat_obj <- input@data
     clusters <- as.character(input@data$seurat_clusters)
@@ -111,7 +114,7 @@ test_that("changed per-cell clusters stop replay before any metadata change or d
 test_that("cluster snapshots are matched by cell ID and permit input reordering", {
   withr::local_options(lifecycle_verbosity="quiet")
   input <- make_annot_replay_fixture()
-  out <- annot_apply(input, drop_rejected = TRUE)
+  expect_warning(out <- annot_apply(input, drop_rejected = TRUE), "needs review")
   reordered <- input
   cell_order <- c("C4", "C2", "C1", "C3")
   reordered@data <- Seurat::CreateSeuratObject(

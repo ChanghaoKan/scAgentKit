@@ -1,0 +1,27 @@
+{
+  "protocol": "evaluation-v1",
+  "truth_policy": "Author labels are evaluator-only agreement targets, not independently verified truth. No PBMC3k tutorial labels. Unknown/excluded/failure stay in denominators. Unmapped truth becomes a distinct nonmatching token, never dropped.",
+  "blood_reference": {
+    "B-cells":"B", "T-cells":"T", "CD4+ T-cells":"T", "CD8+ T-cells":"T",
+    "NK cells":"NK", "Monocytes":"Monocyte", "DC":"Dendritic", "pDC":"Dendritic",
+    "Neutrophils":"Granulocyte", "Eosinophils":"Granulocyte", "Basophils":"Granulocyte"
+  },
+  "ifnb_author": {
+    "CD4 Naive T":"T", "CD4 Memory T":"T", "CD8 T":"T", "T activated":"T", "T reg":"T",
+    "B":"B", "B Activated":"B", "NK":"NK", "CD14 Mono":"Monocyte", "CD16 Mono":"Monocyte",
+    "DC":"Dendritic", "pDC":"Dendritic", "Mk":"Other", "Eryth":"Other"
+  },
+  "pancreas_author": {
+    "alpha":"alpha", "beta":"beta", "delta":"delta", "gamma":"PP", "acinar":"acinar", "ductal":"ductal",
+    "endothelial":"endothelial", "activated_stellate":"stellate", "quiescent_stellate":"stellate",
+    "macrophage":"immune", "mast":"immune", "t_cell":"immune", "b_cell":"immune", "epsilon":"Other", "schwann":"Other"
+  },
+  "pancreas_reference": {
+    "Pancreatic_islet":"islet_unspecified", "Epithelial_cells":"epithelial_unspecified", "Endothelial_cells":"endothelial",
+    "Fibroblasts":"stellate_candidate_unspecified", "Monocyte":"immune", "Macrophage":"immune", "B_cell":"immune", "T_cells":"immune",
+    "B-cells":"immune", "T-cells":"immune", "Monocytes":"immune", "Macrophages":"immune"
+  },
+  "unmapped_prediction": "Other",
+  "unmapped_truth_prefix": "UNMAPPED:",
+  "pancreas_limit": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels."
+}

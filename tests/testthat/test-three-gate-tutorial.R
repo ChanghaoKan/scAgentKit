@@ -1,0 +1,13 @@
+test_that("public offline tutorial executes all three review gates without disabling scan", {
+  script<-system.file("examples","three-gate-analysis.R",package="scAgentKit")
+  if (!nzchar(script)) script<-testthat::test_path("..","..","inst","examples","three-gate-analysis.R")
+  env<-new.env();sys.source(script,envir=env)
+  result<-suppressWarnings(env$three_gate_analysis(tempfile("tutorial-")))
+  expect_identical(result$receipt$gates,3L)
+  expect_identical(result$receipt$approval_kinds,c("strategy","strategy","annotation"))
+  expect_length(result$receipt$diagnostic_resolutions,5L)
+  expect_identical(result$receipt$cells,80L)
+  expect_identical(result$receipt$provider_calls,0L)
+  expect_true(result$receipt$input_unchanged)
+  expect_s4_class(result$result,"Seurat")
+})

@@ -418,6 +418,7 @@ function wbRenderAnnotation() {
     card.append(wbNode("h3", "Cluster " + row.clusterId + " · " + wbText(row.cell_count) + " cells"), wbNode("p", proposal.label || "Label unavailable", {class: "wb-annotation-label"}), wbNode("p", (proposal.confidence || "Unavailable") + " qualitative confidence · uncalibrated"), wbNode("p", proposal.rationale || "No rationale supplied"), wbGeneLine("Cited genes: ", proposal.markers));
     const joint = row.joint_evidence;
     if (joint) card.append(wbRecord("Saved database / model joint evidence", joint)); else if (row.local_reference) card.append(wbRecord("Saved local reference evidence", row.local_reference));
+    if (row.measured_expression) card.append(wbRecord("Saved measured expression and cross-sample evidence", row.measured_expression));
     card.append(wbRecord("Supplied marker statistics and scope facts", {supplied_marker_stats: row.supplied_marker_stats, cited_marker_stats: row.cited_marker_stats, cell_ids: row.cell_ids})); target.append(card);
   }
   if (review) target.append(wbCard("Annotation provenance and decision lifecycle", wbRecord("Saved annotation review", {source: review.details?.source, limitations: review.details?.limitations, lifecycle: review.lifecycle, output_columns: review.details?.output_columns})));

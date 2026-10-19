@@ -22,7 +22,7 @@ sc_run(input, project_dir, context = list(), provider = NULL,
   annotation_proposal = NULL, qc_preview = list(),
   reference_review = list(), annotation_history = NULL,
   strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
-  doublet_diagnostics = NULL, qc_mad = NULL,
+  doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
   subcluster_origin = NULL, subcluster_creation = NULL,
   .subcluster_lock_owner = NULL)
 sc_run_inspect(project_dir)
@@ -39,7 +39,7 @@ sc_run_qc_review(project_dir, action, proposal_hash, preview_hash,
 sc_run_review(project_dir, action, kind, project_id, input_hash,
   proposal_hash, review_hash, expected_revision, reviewer, reason,
   proposal = NULL, sensitivity = NULL, gene_panels = NULL,
-  decision_id = NULL)
+  decision_id = NULL, facts = NULL)
 sc_run_resume(project_dir, provider = NULL, chat_fn = NULL, retry = FALSE)
 sc_run_propose(project_dir, proposal, reviewer, reason)
 sc_run_undo(project_dir, decision_id, reviewer, reason)
@@ -47,6 +47,7 @@ sc_run_unlock(project_dir, token, reason)
 sc_run_accept(project_dir, reviewer, reason)
 }
 \arguments{
+\item{scientific_review}{Optional local PC sensitivity, resampling, extra resolution extension and extended expression diagnostics; disabled by default. New raw strategy projects retain applicable declared-human blood/PBMC or pancreas classic panels, with missing/unsupported inputs explicitly recorded.}
 \item{input}{Named genuine raw counts matrix, Seurat object, or local RDS path.}
 \item{project_dir}{Server-side directory. Creation requires no existing run.}
 \item{context}{Named user facts with explicitly declared human/Homo sapiens or mouse/Mus musculus species, tissue, notes, optional research_goal and design (type, technical_batch logical, notes), and columns mapping sample, qc_group, capture, batch, group, condition and donor roles to actual metadata columns. Missing facts are disclosed, never inferred as metadata.}
@@ -75,13 +76,14 @@ sc_run_accept(project_dir, reviewer, reason)
 \item{gene_panels}{Named character gene vectors for exact availability disclosure only; no expression or quality scoring is performed.}
 \item{preview_hash}{Exact saved QC preview fingerprint. Optional in headless decisions because proposal_hash already binds the preview; mandatory in atomic workbench actions.}
 \item{expected_revision}{Optional expected state revision for headless actions; mandatory for the workbench.}
-\item{action}{approve, reject, revise, QC preview, or executed annotation undo. No review action resumes analysis or contacts a provider.}
+\item{action}{approve, reject, revise, initial strategy facts, QC preview, or executed annotation undo. No review action resumes analysis or contacts a provider.}
 \item{kind}{The inspected review kind: qc, strategy or annotation.}
 \item{project_id, input_hash}{Exact project identity and original input fingerprint from the inspected review_node.}
 \item{review_hash}{Exact immutable QC, strategy or annotation review fingerprint from review_node.}
 \item{reviewer, reason}{Analyst identity and rationale recorded in history.}
 \item{retry}{Explicitly retry an incomplete/failed stage. Unknown external delivery is never automatically resent.}
 \item{decision_id}{Executed annotation approval ID to undo.}
+\item{facts}{Partial typed author declarations for action="facts" only: columns mapping explicit sample/qc_group/capture/batch/donor/condition/group/treatment roles to actual metadata; batch with logical technical_batch and source; doublet with assay, technology, called-cell provenance, boolean cell-calling/completeness facts, explicit capture and sourced rate objects. Available only at the initial unapproved raw strategy. Old configuration, proposals and artifact references are archived; input and immutable files remain. Saving sets ready for explicit evidence rebuilding and grants no scientific approval or computation.}
 \item{token}{Exact stopped lock owner's token. Remote owner termination must be independently verified.}
 }
 \description{Diagnoses raw inputs, persists aggregate QC evidence, obtains a typed proposal and returns at review before filtering or basic analysis. Exact approval permits copy-based QC, standard analysis, markers, independent local-reference and model annotation suggestions, then reviewed new metadata and local outputs. No browser or manual archive transfer is required.}

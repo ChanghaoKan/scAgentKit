@@ -14,7 +14,7 @@
 
 .sc_run_strategy_runtime_settings <- function(plan) {
   if (!is.list(plan)) .sc_project_fail("Strategy runtime requires a validated typed plan.")
-  permitted <- list(analysis = c("normalization_method", "scale_factor", "nfeatures", "npcs", "seed"),
+  permitted <- list(analysis = c("normalization_method", "scale_factor", "nfeatures", "npcs", "seed", "hvg_method", "hvg_column"),
                     pcs = c("method", "ndim", "threshold"),
                     batch = c("method", "reason", "group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "nested_biology"),
                     clustering = c("resolution", "diagnostic_resolutions"),
@@ -33,6 +33,10 @@
   analysis$nfeatures <- .sc_run_strategy_runtime_number(analysis$nfeatures, "nfeatures", 3, .Machine$integer.max, TRUE)
   analysis$npcs <- .sc_run_strategy_runtime_number(analysis$npcs, "npcs", 2, .Machine$integer.max, TRUE)
   analysis$seed <- .sc_run_strategy_runtime_number(analysis$seed, "seed", 0, .Machine$integer.max, TRUE)
+  if (!is.null(analysis$hvg_method) || !is.null(analysis$hvg_column)) {
+    if (!identical(analysis$hvg_method, "sample_consensus")) .sc_project_fail("Unsupported explicit HVG method.")
+    .sc_project_string(analysis$hvg_column, "analysis hvg_column")
+  }
   pcs <- plan$pcs
   if (identical(pcs$method, "fixed")) {
     pcs$ndim <- .sc_run_strategy_runtime_number(pcs$ndim, "pcs$ndim", 2, .Machine$integer.max, TRUE)
@@ -118,9 +122,14 @@
       length(deviation) != settings$analysis$npcs || any(!is.finite(deviation)) ||
       any(deviation <= 0) || !is.finite(sum(deviation^2)) || sum(deviation^2) <= 0)
     .sc_project_fail("Strategy PCA must contain the exact requested, finite, positive-variance components and exact cell order.")
+  rank_tolerance <- max(deviation) * max(nrow(embeddings), settings$analysis$nfeatures, 1L) * .Machine$double.eps
+  if (any(deviation <= rank_tolerance))
+    .sc_project_fail("Strategy PCA has insufficient numerical rank for the approved component request; revise the visible request and obtain fresh approval, with no clipping or variance repair.")
   fractions <- deviation^2 / sum(deviation^2)
   cumulative <- cumsum(fractions)
   evidence <- list(available_pcs = ncol(embeddings),
+                   numerical_rank_check = list(tolerance = rank_tolerance,
+                     rule = "max(stdev) * max(selected cells, requested HVGs, 1) * .Machine$double.eps; every approved component must exceed this threshold; floating-point rank check, not a biological or noise signal threshold; no clipping"),
                    fraction_per_pc = as.numeric(fractions),
                    cumulative_fraction = as.numeric(cumulative),
                    denominator = "sum of variances of computed PCs only; not total expressed-gene variance",
@@ -177,6 +186,13 @@
                                       selection.method = "vst",
                                       nfeatures = settings$analysis$nfeatures,
                                       verbose = FALSE)
+  if (identical(settings$analysis$hvg_method, "sample_consensus")) {
+    if (!identical(settings$analysis$hvg_column, config$context$columns$sample))
+      .sc_project_fail("Sample HVG must use the declared sample role, never a guessed condition.")
+    consensus <- .sc_run_sample_hvg(seu, config$assay, settings$analysis$hvg_column, settings$analysis$nfeatures)
+    SeuratObject::VariableFeatures(seu[[config$assay]]) <- consensus$features
+    seu@misc$scagentkit_sample_hvg <- consensus
+  }
   hvg <- SeuratObject::VariableFeatures(seu[[config$assay]])
   if (length(hvg) != settings$analysis$nfeatures || anyDuplicated(hvg) ||
       any(!hvg %in% features))
@@ -234,7 +250,7 @@
                  .sc_project_sparse_hash(counts)))
     .sc_project_fail("Strategy preprocessing changed source counts, metadata, or literal IDs.")
   .sc_run_strategy_record(seu, "preprocess", list(
-    parameters = settings$analysis[c("normalization_method", "scale_factor", "nfeatures")],
+    parameters = settings$analysis[intersect(c("normalization_method", "scale_factor", "nfeatures", "hvg_method", "hvg_column"), names(settings$analysis))],
     assay = config$assay, counts_layer = config$counts_layer, normalized_layer = "data",
     cell_ids = cells, feature_ids = features,
     counts_hash = .sc_project_sparse_hash(counts), normalized_hash = .sc_project_sparse_hash(normalized),
@@ -287,7 +303,7 @@
     normalized <- .sc_project_layer(seu, config$assay, "data")
     hvg <- SeuratObject::VariableFeatures(seu[[config$assay]])
     if (!is.list(previous) ||
-        !identical(previous$parameters, settings$analysis[c("normalization_method", "scale_factor", "nfeatures")]) ||
+        !identical(previous$parameters, settings$analysis[intersect(c("normalization_method", "scale_factor", "nfeatures", "hvg_method", "hvg_column"), names(settings$analysis))]) ||
         !identical(previous$assay, config$assay) ||
         !identical(previous$cell_ids, cells) || !identical(previous$feature_ids, features) ||
         !identical(previous$counts_hash, .sc_project_sparse_hash(counts)) ||

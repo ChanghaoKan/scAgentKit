@@ -44,25 +44,28 @@
     stop("Configuration or implementation changed; restore the pinned environment or start a new project.", call. = FALSE)
   invisible(state)
 }
-.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL) {
+.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL, pc_limits = NULL) {
   if (!is.list(edits) || (length(edits) && (is.null(names(edits)) ||
       anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list.", call. = FALSE)
-  allowed <- c("rationale", "risks", "qc", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap")
+  allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap")
   if (length(setdiff(names(edits), allowed))) stop("Unknown plan fields: ", paste(setdiff(names(edits), allowed), collapse = ", "), call. = FALSE)
-  if (is.null(base)) {
-    npcs <- min(30L, dimensions[[1]] - 1L, dimensions[[2]] - 1L)
+  new_draft <- is.null(base)
+  if (new_draft) {
+    nfeatures <- as.integer(min(2000L, dimensions[[1]], if (is.null(pc_limits)) Inf else pc_limits$nonconstant_normalized_features))
+    npcs <- min(50L, nfeatures - 1L, dimensions[[2]] - 1L)
     base <- list(schema = "scagentkit.strategy.v1",
       rationale = "Editable software starting draft. Review input QC and study facts before approval.",
-      risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices."),
+      risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices.",
+        "Resolution 0.5 is a provisional scan starting value, not a recommendation. Review the measured cluster tree before final author selection."),
       inferences = list(), qc = list(schema = "scagentkit.qc.v1",
-        rationale = "Starting draft retains count-positive cells; analyst must review measured QC distributions.",
-        risks = list("No study-specific quality threshold has been established."),
+        rationale = "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
+        risks = list("No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
         filters = list(list(op = "range", metric = "nCount", min = 1))),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
-        nfeatures = min(2000L, dimensions[[1]]), npcs = npcs, seed = 17L),
-      pcs = list(method = "fixed", ndim = min(10L, npcs)),
+        nfeatures = nfeatures, npcs = npcs, seed = 17L),
+      pcs = list(method = "computed_top50", threshold = .80),
       batch = list(method = "none", reason = "No batch correction selected; technical provenance requires explicit review."),
-      clustering = list(resolution = .5, diagnostic_resolutions = NULL),
+      clustering = list(resolution = .5, diagnostic_resolutions = c(.2, .4, .6, .8, 1)),
       umap = list(run = TRUE, n_neighbors = min(30L, dimensions[[2]] - 1L)))
   }
   for (name in intersect(names(edits), c("rationale", "batch", "umap"))) {
@@ -72,13 +75,33 @@
   if ("risks" %in% names(edits)) base$risks <- as.list(edits$risks)
   if ("analysis" %in% names(edits)) {
     if (!is.list(edits$analysis) || is.null(names(edits$analysis)) ||
-        length(setdiff(names(edits$analysis), names(base$analysis)))) stop("Unknown analysis settings.", call. = FALSE)
+        length(setdiff(names(edits$analysis), c(names(base$analysis),"hvg_method","hvg_column")))) stop("Unknown analysis settings.", call. = FALSE)
     base$analysis[names(edits$analysis)] <- edits$analysis
+  }
+  if (new_draft) {
+    if (!"npcs" %in% names(edits$analysis))
+      base$analysis$npcs <- as.integer(min(50L, base$analysis$nfeatures - 1L, dimensions[[2]] - 1L))
+    base$risks <- c(base$risks, list(paste0("PCA request: ", base$analysis$npcs,
+      " components (target at most 50; requested HVGs ", base$analysis$nfeatures,
+      "; selected cells ", dimensions[[2]], "). This is a dimension/nonconstant-feature upper bound, not a numerical rank proof. Zero-variance selected HVGs or PCs remain blocking errors; execution never clips the approved request.",
+      if (!is.null(pc_limits)) paste0(" LogNormalize(scale.factor=", pc_limits$scale_factor,
+        ") found ", pc_limits$nonconstant_normalized_features, " nonconstant of ", pc_limits$total_features,
+        " genes; normalized variance must exceed 128 * .Machine$double.eps * pmax(1, mean(normalized_value^2)).") else ""),
+      "The 80% PC candidate divides cumulative variance by the sum for the first at most 50 actually computed PCs, not total expression or HVG variance. Fewer computed PCs are explicitly a truncated reference, not proof that total variance reached 80%; this is an empirical review option, not an optimal PC count."))
   }
   if ("pcs" %in% names(edits)) base$pcs <- if (is.numeric(edits$pcs))
     list(method = "fixed", ndim = edits$pcs) else edits$pcs
   if ("resolution" %in% names(edits)) base$clustering$resolution <- edits$resolution
   if ("diagnostic_resolutions" %in% names(edits)) base$clustering["diagnostic_resolutions"] <- list(edits$diagnostic_resolutions)
+  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = "keep_all", panel_hash = mad$panel_hash) else {
+    existing <- Filter(function(rule) identical(rule$op, "mad_preset"), base$qc$rules)
+    if (length(existing)) existing[[1L]] else NULL
+  }
+  if ("qc_preset" %in% names(edits)) {
+    if (is.null(mad_rule)) stop("qc_preset requires the saved MAD candidate panel.", call. = FALSE)
+    .sc_project_string(edits$qc_preset, "qc_preset")
+    mad_rule$preset_id <- edits$qc_preset
+  }
   if ("qc" %in% names(edits)) {
     qc <- edits$qc
     if (!is.list(qc) || is.null(names(qc)) || !length(qc) || anyDuplicated(names(qc)) ||
@@ -96,7 +119,44 @@
     base$qc <- list(schema = "scagentkit.qc.v1", rationale = base$rationale,
       risks = base$risks, filters = filters)
   }
+  if (!is.null(mad_rule)) {
+    ranges <- if (identical(base$qc$schema, "scagentkit.qc.v1")) base$qc$filters else
+      Filter(function(rule) !identical(rule$op, "mad_preset"), base$qc$rules)
+    base$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = base$qc$rationale,
+      risks = base$qc$risks, remove_if = "any", rules = c(ranges, list(mad_rule)))
+  }
   base
+}
+.sc_ui_mad_setup <- function(context) {
+  columns <- context$columns
+  if (is.character(columns)) columns <- as.list(columns)
+  role <- if (!is.null(columns$qc_group)) "qc_group" else if (!is.null(columns$sample)) "sample" else NULL
+  grouping <- if (is.null(role)) list(method = "single", id = "unstratified_input",
+    source = "No sample/QC-group role was declared. Pooled unstratified diagnostics, not a declared single sample; per-sample conclusions are unavailable.") else
+    list(method = "column", column = columns[[role]], declared_role = role,
+      source = paste0("Explicit context$columns$", role, " declaration; no donor or capture role inferred."))
+  list(grouping = grouping)
+}
+.sc_ui_pc_limits <- function(seu, config, scale_factor) {
+  scale_factor <- .sc_run_strategy_number(scale_factor, "analysis$scale_factor", 0, open_min = TRUE)
+  normalized <- Seurat::NormalizeData(seu, assay = config$assay,
+    normalization.method = "LogNormalize", scale.factor = scale_factor, verbose = FALSE)
+  values <- .sc_project_layer(normalized, config$assay, "data")
+  n <- ncol(values)
+  if (n < 2L) stop("PCA diagnostics require at least two selected cells.", call. = FALSE)
+  # Sparse moments avoid a dense all-gene/cell matrix and a large QR. A
+  # conservative cancellation tolerance makes near-constant values explicit.
+  second <- as.numeric(Matrix::rowSums(values * values)) / n
+  means <- as.numeric(Matrix::rowSums(values)) / n
+  variance <- second - means * means
+  tolerance <- 128 * .Machine$double.eps * pmax(1, second)
+  nonconstant <- is.finite(variance) & variance > tolerance
+  if (sum(nonconstant) < 3L)
+    stop("Fewer than three finite nonconstant LogNormalize features remain after proposed QC; revise input or QC before approval.", call. = FALSE)
+  list(total_features = as.integer(nrow(values)), selected_cells = as.integer(n),
+    nonconstant_normalized_features = as.integer(sum(nonconstant)), scale_factor = scale_factor,
+    variance_tolerance = "128 * .Machine$double.eps * pmax(1, mean(normalized_value^2))",
+    interpretation = "A nonconstant LogNormalize feature/dimension bound, not a numerical rank proof of the scaled-HVG PCA matrix; exact execution still rejects constant selected HVGs or nonpositive PCs.")
 }
 .sc_ui_annotation <- function(table) {
   if (is.character(table) && length(table) == 1L) table <- utils::read.delim(table,
@@ -146,16 +206,48 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   extra <- list(...)
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)
+  if (!"qc_mad" %in% names(extra)) extra$qc_mad <- .sc_ui_mad_setup(context)
   proposal <- NULL
   if (is.null(provider) || !is.null(plan)) {
     object <- if (is.character(input) && length(input) == 1L) readRDS(input) else input
     dimensions <- dim(object)
     if (length(dimensions) != 2L) stop("input must be a counts matrix, Seurat object or its RDS path.", call. = FALSE)
-    proposal <- .sc_ui_plan(if (is.null(plan)) list() else plan, dimensions = dimensions)
+    panel <- NULL
+    if (!is.null(extra$qc_mad) && !identical(extra$qc_mad, FALSE)) {
+      # Construct the ordinary immutable panel on a copy so the first draft can
+      # bind its exact hash. sc_run independently recreates and verifies it.
+      config <- list(context = context, assay = if (is.null(extra$assay)) "RNA" else extra$assay,
+        counts_layer = if (is.null(extra$counts_layer)) "counts" else extra$counts_layer,
+        qc_mad = extra$qc_mad, doublet_diagnostics = extra$doublet_diagnostics,
+        prefilter = .sc_run_prefilter_options(extra$qc_mad$prefilter))
+      checked <- .sc_run_input(object, context, config$assay, config$counts_layer)
+      config$context <- checked$context
+      config$qc_mad <- .sc_run_mad_options(config$context, extra$qc_mad[setdiff(names(extra$qc_mad), "prefilter")])
+      qc <- .sc_run_qc_evidence(checked$seu, config$context, config$assay, config$counts_layer)
+      prefilter <- .sc_run_prefilter_evidence(checked$seu, config)
+      panel <- .sc_run_mad_evidence(checked$seu, config, qc, prefilter_record = prefilter)
+    }
+    edits <- if (is.null(plan)) list() else plan
+    proposal <- .sc_ui_plan(edits, dimensions = dimensions, mad = panel)
+    if (!is.null(panel)) {
+      qc$mad_record <- panel; qc$summary$mad <- panel$summary
+      qc$evidence_hash <- .sc_run_qc_hash(qc)
+      selected <- .sc_run_qc_validate(proposal$qc, qc)$keep_cells
+      selected_object <- checked$seu[, selected]
+    } else {
+      config <- list(assay = if (is.null(extra$assay)) "RNA" else extra$assay,
+        counts_layer = if (is.null(extra$counts_layer)) "counts" else extra$counts_layer)
+      checked <- .sc_run_input(object, context, config$assay, config$counts_layer)
+      qc <- .sc_run_qc_evidence(checked$seu, checked$context, config$assay, config$counts_layer)
+      selected <- .sc_run_qc_validate(proposal$qc, qc)$keep_cells
+      selected_object <- checked$seu[, selected]
+    }
+    limits <- .sc_ui_pc_limits(selected_object, config, proposal$analysis$scale_factor)
+    proposal <- .sc_ui_plan(edits, dimensions = dim(selected_object), mad = panel, pc_limits = limits)
   }
-  sc_run(input, project_dir, context = context, strategy = TRUE,
+  do.call(sc_run, c(list(input = input, project_dir = project_dir, context = context, strategy = TRUE,
     strategy_proposal = proposal, provider = provider, chat_fn = chat_fn,
-    budget = budget, review = review, ...)
+    budget = budget, review = review), extra))
   sc_open(project_dir)
 }
 
@@ -264,22 +356,39 @@ print.sc_analysis <- function(x, ...) {
   invisible(x)
 }
 
+# Bounded presentation only: the sealed snapshot and saved records stay complete.
+.sc_ui_print_summary <- function(value) {
+  text <- utils::capture.output(utils::str(value, max.level = 2L, list.len = 6L,
+    vec.len = 4L, give.attr = FALSE, width = 100L, strict.width = "cut"))
+  cat(paste(substr(head(text, 40L), 1L, 160L), collapse = "\n"), "\n", sep = "")
+  if (length(text) > 40L) cat("[Summary limited to 40 lines; inspect the full snapshot field.]\n")
+}
+
 #' @export
 print.sc_review_snapshot <- function(x, ...) {
   .sc_ui_intact(x, TRUE)
-  previous <- options(max.print = .Machine$integer.max)
-  on.exit(options(previous), add = TRUE)
   cat("Review:", x$project_dir, "\nStatus:", x$view$status, "Stage:", x$view$stage,
-    "\nDeclared study facts:\n")
-  print(x$view$context)
-  cat("Measured evidence:\n"); print(x$view$evidence)
-  if (!is.null(x$view$computed_diagnostics)) {cat("Saved computed diagnostics:\n"); print(x$view$computed_diagnostics)}
-  if (!is.null(x$view$strategy_review)) {cat("Complete strategy and local impact:\n"); print(x$view$strategy_review$details)}
-  if (!is.null(x$view$annotation_review)) {cat("Complete annotation and supplied marker evidence:\n"); print(x$view$annotation_review$details)}
-  if (identical(x$view$pending$kind, "external_transfer")) {cat("Exact external transfer preview (consent is separate from scientific review):\n"); print(x$view$pending)}
-  if (!is.null(x$view$failure)) print(x$view$failure)
-  if (!is.null(x$view$output)) print(x$view$output)
-  if (!is.null(x$annotations)) {cat("Editable annotation table (blank labels require analyst input):\n"); print(x$annotations)}
+    "\nBounded summary; complete evidence is available as snapshot$view and snapshot$annotations.\n",
+    "Use the object returned by sc_review() as snapshot; inspect details before approving.\n",
+    "Declared study facts:\n")
+  .sc_ui_print_summary(x$view$context)
+  fields <- c(evidence = "Measured evidence", computed_diagnostics = "Saved computed diagnostics",
+    strategy_review = "Strategy and local impact", annotation_review = "Annotation and supplied marker evidence",
+    failure = "Failure", output = "Output")
+  for (field in names(fields)) if (!is.null(x$view[[field]])) {
+    cat(fields[[field]], " [snapshot$view$", field, "]:\n", sep = "")
+    value <- x$view[[field]]
+    if (field %in% c("strategy_review", "annotation_review")) value <- value$details
+    .sc_ui_print_summary(value)
+  }
+  if (identical(x$view$pending$kind, "external_transfer")) {
+    cat("External transfer summary; exact payload in snapshot$view$pending (separate consent):\n")
+    .sc_ui_print_summary(x$view$pending)
+  }
+  if (!is.null(x$annotations)) {
+    cat("Editable annotation table [snapshot$annotations; blank labels require analyst input]:\n")
+    .sc_ui_print_summary(x$annotations)
+  }
   cat("Confirm only this snapshot. revise saves a new draft; approve saves a decision.\n",
     "continue=TRUE on scientific approval runs local work only. request is separate; no automatic retry.\n", sep = "")
   invisible(x)

@@ -95,8 +95,29 @@ cycle_integration_begin <- function(root, object = cycle_integration_fixture(),
 }
 
 cycle_integration_continue <- function(root, snapshot = sc_run_inspect(root)) {
-  suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
+  result <- suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
     snapshot$revision))
+  measured <- sc_run_inspect(root)
+  if (!identical(snapshot$status, "awaiting_review") &&
+      identical(result$status, "awaiting_review") &&
+      identical(measured$review_node$kind, "strategy") &&
+      !is.null(measured$strategy_review$details$cluster_diagnostics)) {
+    # A separate explicit author decision selects this software-control's
+    # prespecified resolution only after inspecting the measured fixed-graph
+    # evidence. This does not bypass the production review boundary.
+    scan <- measured$strategy_review$details$cluster_diagnostics
+    state <- scAgentKit:::.sc_run_load(root)
+    expect_true(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions)
+    expect_identical(scan$neighbors_artifact, state$files$strategy_neighbors)
+    expect_identical(state$pending$binding$files$cluster_scan, state$files$cluster_scan)
+    expect_null(state$files$markers)
+    cycle_integration_decide(root, snapshot = measured)
+    selected <- sc_run_inspect(root)
+    expect_identical(scAgentKit:::.sc_run_load(root)$approved$kind, "strategy")
+    result <- suppressWarnings(sc_run_continue(root, selected$project_id, selected$input_hash,
+      selected$revision))
+  }
+  result
 }
 
 cycle_integration_decide <- function(root, snapshot = sc_run_inspect(root), action = "approve") {
@@ -173,7 +194,17 @@ cycle_integration_child <- function(root, snapshot = sc_run_inspect(root)) {
     "factory <- function(...) { factory_calls <<- factory_calls+1L; stop('No remote cycle factory permitted') }",
     "testthat::local_mocked_bindings(chat_deepseek=factory,chat_grok=factory,.package='agentomicsCore',.env=environment())",
     "testthat::local_mocked_bindings(req_perform=function(...) { http_calls <<- http_calls+1L; stop('No cycle HTTP permitted') },.package='httr2',.env=environment())",
+    "initial <- sc_run_inspect(args$root)",
     "out <- suppressWarnings(sc_run_continue(args$root,args$project_id,args$input_hash,args$revision))",
+    "measured <- sc_run_inspect(args$root)",
+    "if (!identical(initial$status,'awaiting_review') && identical(out$status,'awaiting_review') && identical(measured$review_node$kind,'strategy') && !is.null(measured$strategy_review$details$cluster_diagnostics)) {",
+    "  scan <- measured$strategy_review$details$cluster_diagnostics; state <- scAgentKit:::.sc_run_load(args$root)",
+    "  stopifnot(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions, identical(scan$neighbors_artifact,state$files$strategy_neighbors), identical(state$pending$binding$files$cluster_scan,state$files$cluster_scan), is.null(state$files$markers))",
+    "  node <- measured$review_node",
+    "  sc_run_review(args$root,'approve','strategy',node$project_id,node$input_hash,node$proposal_hash,node$review_hash,node$expected_revision,reviewer='offline fresh-process software QA',reason='Explicit author selection of the prespecified software-control resolution after inspecting the measured fixed-graph scan.')",
+    "  selected <- sc_run_inspect(args$root); stopifnot(identical(scAgentKit:::.sc_run_load(args$root)$approved$kind,'strategy'))",
+    "  out <- suppressWarnings(sc_run_continue(args$root,selected$project_id,selected$input_hash,selected$revision))",
+    "}",
     "stopifnot(factory_calls==0L,http_calls==0L)",
     "saveRDS(list(status=out,factory_calls=factory_calls,http_calls=http_calls),args$result)", "})"), script)
   code <- system2(file.path(R.home("bin"), "Rscript"),
@@ -291,7 +322,7 @@ test_that("full-input diagnostics precede one whole strategy review and none att
   decisions <- Filter(function(event) identical(event$action, "approved"),
     scAgentKit:::.sc_run_load(root)$history)
   expect_identical(vapply(decisions, function(event) event$details$kind, character(1)),
-    c("strategy", "annotation"))
+    c("strategy", "strategy", "annotation"))
   complete_bytes <- cycle_integration_files(root)
   expect_identical(cycle_integration_continue(root)$status, "complete")
   expect_identical(cycle_integration_files(root), complete_bytes)

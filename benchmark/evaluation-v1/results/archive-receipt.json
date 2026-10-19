@@ -1,0 +1,9 @@
+{
+  "archive_sha256": "215b7184c632658af832338de04edca25654e1c34ff9897e6986d15a1de48a5d",
+  "all_archive_installed_source_assets_identical": true,
+  "assets_checked": 46,
+  "scientific_R_function_hashes_unchanged": true,
+  "ordinary_build_vignettes": "passed",
+  "install": "passed",
+  "new_dependencies_installed": false
+}

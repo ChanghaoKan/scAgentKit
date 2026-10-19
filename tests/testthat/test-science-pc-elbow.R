@@ -1,0 +1,10 @@
+test_that("elbow is measured from the saved curve and unavailable for flat or linear curves", {
+  x <- .sc_run_pc_elbow(c(100,30,10,9,8,7))
+  expect_identical(x$status,"measured")
+  expect_identical(x$ndim,3L)
+  expect_identical(.sc_run_pc_elbow(rep(1,10))$status,"unavailable")
+  expect_identical(.sc_run_pc_elbow(10:1)$status,"unavailable")
+  record <- .sc_run_pc_candidates(sqrt(c(100,30,10,9,8,7)))
+  expect_identical(record$elbow,x)
+  expect_silent(.sc_run_pc_verify(record))
+})

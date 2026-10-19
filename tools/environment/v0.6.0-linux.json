@@ -1,0 +1,1758 @@
+{
+  "schema": "scagentkit.environment.sources.v1",
+  "R": "4.5.2",
+  "platform": "linux/amd64",
+  "container": "rocker/r-ver:4.5.2@sha256:fd4ccdd3a4a6f7ef805e2daeee2a0fe3bf126bc231f36351223baecf5a595a4c",
+  "ci_python_version": null,
+  "ci_python_limitation": "Original acceptance did not retain the exact Python executable version. This is an R source lock, not a complete OS/Python lock.",
+  "local_validation_python": "3.9.6",
+  "bioconductor_packages": [],
+  "github_commit": "ea530576beecbac58d48f3882efaadd1aab43514",
+  "evidence": {
+    "run": "https://github.com/ChanghaoKan/scAgentKit/actions/runs/39138017297",
+    "artifact": "https://github.com/ChanghaoKan/scAgentKit/actions/runs/39138017297/artifacts/12140822683",
+    "receipt_sha256": "4d03e2de8f9698edb6ebd2ac063d2bea875ffdbe41733bda8335ae69be158123",
+    "source": "Actual successful public empty-library installation versions and logged repository URLs; source bytes independently fetched and hashed later."
+  },
+  "packages": [
+    {
+      "package": "abind",
+      "version": "1.4-8",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/abind_1.4-8.tar.gz",
+      "file": "abind_1.4-8.tar.gz",
+      "sha256": "aa184bb3856aee9106b8bf5dceb0ff8ffd4565cf73cbdc621a5f2b428b7a0c83",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/abind_1.4-8.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "agentomicsCore",
+      "version": "0.1.1",
+      "url": "https://codeload.github.com/ChanghaoKan/agentomicsCore/tar.gz/ea530576beecbac58d48f3882efaadd1aab43514",
+      "file": "agentomicsCore_0.1.1.tar.gz",
+      "sha256": "283307e8326365f31b02fb7526fbb7988f6361c614c7d40ab54843ca68c9fe97",
+      "description_verified": true,
+      "original_ci_url": "https://codeload.github.com/ChanghaoKan/agentomicsCore/tar.gz/ea530576beecbac58d48f3882efaadd1aab43514",
+      "fallback_reason": null,
+      "source_kind": "GitHub"
+    },
+    {
+      "package": "askpass",
+      "version": "1.2.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/askpass_1.2.1.tar.gz",
+      "file": "askpass_1.2.1.tar.gz",
+      "sha256": "310ca256386f1297fb3bc40b2ac88d00fe42d941e42ad2a0761117bdac03601d",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/askpass_1.2.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "base64enc",
+      "version": "0.1-6",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/base64enc_0.1-6.tar.gz",
+      "file": "base64enc_0.1-6.tar.gz",
+      "sha256": "fcf9e148f85d39690493c158cf966f88f223d26e7a546487026c7c8372c34dcc",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/base64enc_0.1-6.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "BH",
+      "version": "1.90.0-1",
+      "url": "https://cran.r-project.org/src/contrib/BH_1.90.0-1.tar.gz",
+      "file": "BH_1.90.0-1.tar.gz",
+      "sha256": "2e1fafb05938e81073561ae4892dc543ef15807e375e0ea8fa75e3ab79f0281b",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/BH_1.90.0-1.tar.gz",
+      "fallback_reason": "Snapshot download stalled; terminated original process before downloading exact-version official CRAN archive.",
+      "source_kind": "CRAN"
+    },
+    {
+      "package": "bitops",
+      "version": "1.0-9",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/bitops_1.0-9.tar.gz",
+      "file": "bitops_1.0-9.tar.gz",
+      "sha256": "221238ecb90829112ad895f661649710e4396b8be404704fc87cbe3521df4e88",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/bitops_1.0-9.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "bslib",
+      "version": "0.10.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/bslib_0.10.0.tar.gz",
+      "file": "bslib_0.10.0.tar.gz",
+      "sha256": "91b0dd4d12f94fa5b4d200e2a35c541e15fb85e1f66f325bdeef62c1944b849a",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/bslib_0.10.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "cachem",
+      "version": "1.1.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cachem_1.1.0.tar.gz",
+      "file": "cachem_1.1.0.tar.gz",
+      "sha256": "b6aad32383658fb598616355d512c89527aa21512fc7fb53e586d134b06a17b6",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cachem_1.1.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "caTools",
+      "version": "1.18.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/caTools_1.18.3.tar.gz",
+      "file": "caTools_1.18.3.tar.gz",
+      "sha256": "115d1369bc6ae6b91afea2d7087e6b3ee26664522c8c7a1a2bbbf3d2b0d923ac",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/caTools_1.18.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "cli",
+      "version": "3.6.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cli_3.6.5.tar.gz",
+      "file": "cli_3.6.5.tar.gz",
+      "sha256": "cb00c5c8f27da52a7aa832c82103c149097258e2370585e27356d5ad5f452fb1",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cli_3.6.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "commonmark",
+      "version": "2.0.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/commonmark_2.0.0.tar.gz",
+      "file": "commonmark_2.0.0.tar.gz",
+      "sha256": "c3a033013ee002920472a42e2ee11b7fc1507f39624c7f5a92fd10f0ee710932",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/commonmark_2.0.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "cowplot",
+      "version": "1.2.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cowplot_1.2.0.tar.gz",
+      "file": "cowplot_1.2.0.tar.gz",
+      "sha256": "999cce72f858aabe5abc77f9e6294109957de7c0f07771884985761c6891a9b1",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cowplot_1.2.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "cpp11",
+      "version": "0.5.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cpp11_0.5.3.tar.gz",
+      "file": "cpp11_0.5.3.tar.gz",
+      "sha256": "c1f3edd31ae5915b9c8b8d1ca4e3f59ae07ac65d7ca3a276cb11633c1c5b2408",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/cpp11_0.5.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "crosstalk",
+      "version": "1.2.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/crosstalk_1.2.2.tar.gz",
+      "file": "crosstalk_1.2.2.tar.gz",
+      "sha256": "a746df85a62cf02f93b0c7bf71cf669d725e0ccaad673e7b54da28bd1bac3980",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/crosstalk_1.2.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "curl",
+      "version": "7.0.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/curl_7.0.0.tar.gz",
+      "file": "curl_7.0.0.tar.gz",
+      "sha256": "97a7429a9e7ba6959ab324cbe66c82e338d8cb9389cb0b1af14dd9bc505208bc",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/curl_7.0.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "data.table",
+      "version": "1.18.2.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/data.table_1.18.2.1.tar.gz",
+      "file": "data.table_1.18.2.1.tar.gz",
+      "sha256": "c98db6db4f582edc94fcd699ae243a1ab294dd01ab3a50e5d0a1d1e7a083ef29",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/data.table_1.18.2.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "deldir",
+      "version": "2.0-4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/deldir_2.0-4.tar.gz",
+      "file": "deldir_2.0-4.tar.gz",
+      "sha256": "8bde352fa3b6d0d301febe7f293d4df8aff6e6c8722a6450619b613ba7ff6dd4",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/deldir_2.0-4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "digest",
+      "version": "0.6.39",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/digest_0.6.39.tar.gz",
+      "file": "digest_0.6.39.tar.gz",
+      "sha256": "9376a3a438097e11048c37c71a14b633ac6c0a286bca068f32c86769f434d5ab",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/digest_0.6.39.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "dotCall64",
+      "version": "1.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/dotCall64_1.2.tar.gz",
+      "file": "dotCall64_1.2.tar.gz",
+      "sha256": "73247da195c6106b5b4ee22d659c719487109282ff4e8a74fe36f4f9a21e9609",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/dotCall64_1.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "dplyr",
+      "version": "1.2.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/dplyr_1.2.0.tar.gz",
+      "file": "dplyr_1.2.0.tar.gz",
+      "sha256": "f43bd1b3112a9c8c00b9052ada68204aa152966bb681cf5abe5ce6d683ff91ee",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/dplyr_1.2.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "dqrng",
+      "version": "0.4.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/dqrng_0.4.1.tar.gz",
+      "file": "dqrng_0.4.1.tar.gz",
+      "sha256": "0fb2879e3f150510b90d6f6dcaab8bd487ddf129a9721c02ab6540d94cce099e",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/dqrng_0.4.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "evaluate",
+      "version": "1.0.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/evaluate_1.0.5.tar.gz",
+      "file": "evaluate_1.0.5.tar.gz",
+      "sha256": "63b1bfa40e1c35066354d2eb93ac93decc0845b4150fd8867d0d40b775851b46",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/evaluate_1.0.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "farver",
+      "version": "2.1.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/farver_2.1.2.tar.gz",
+      "file": "farver_2.1.2.tar.gz",
+      "sha256": "f13b9f6c87e5ad6fc1805596239a073ea7e0983d56b9148d2d1745b3f5f42b1f",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/farver_2.1.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "fastDummies",
+      "version": "1.7.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fastDummies_1.7.5.tar.gz",
+      "file": "fastDummies_1.7.5.tar.gz",
+      "sha256": "01140364a0cb31800d662f20b7fb84f560ef93bc8b114f1abcbec8af08dd1204",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fastDummies_1.7.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "fastmap",
+      "version": "1.2.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fastmap_1.2.0.tar.gz",
+      "file": "fastmap_1.2.0.tar.gz",
+      "sha256": "460e2a3c423df89851f98f43de95827fd7c6b767366fb6cc23492834cf7171a2",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fastmap_1.2.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "fitdistrplus",
+      "version": "1.2-6",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fitdistrplus_1.2-6.tar.gz",
+      "file": "fitdistrplus_1.2-6.tar.gz",
+      "sha256": "47df34d2969ff04df8ca03347a94e3ba08172a972b1bb0cca09c95e0bd141c5f",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fitdistrplus_1.2-6.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "FNN",
+      "version": "1.1.4.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/FNN_1.1.4.1.tar.gz",
+      "file": "FNN_1.1.4.1.tar.gz",
+      "sha256": "c78f7910a896d768cacc8f9c8b3b14573e927c7108735eafda3bec0a088655d2",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/FNN_1.1.4.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "fontawesome",
+      "version": "0.5.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fontawesome_0.5.3.tar.gz",
+      "file": "fontawesome_0.5.3.tar.gz",
+      "sha256": "e7bf55a0db08b3cbec7c1140a77ee454650d07a0673d2c38d35add847e4f8c26",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fontawesome_0.5.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "fs",
+      "version": "1.6.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fs_1.6.7.tar.gz",
+      "file": "fs_1.6.7.tar.gz",
+      "sha256": "107baa043bdf12147d1486ddcb47ccd611d887aa1e3f47ab2658d8ee003f4788",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/fs_1.6.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "future",
+      "version": "1.69.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/future_1.69.0.tar.gz",
+      "file": "future_1.69.0.tar.gz",
+      "sha256": "a7d2ccddf6aa4ccc94dd825099034eac06c416ffb00d610fd1ce2f1944ed122b",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/future_1.69.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "future.apply",
+      "version": "1.20.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/future.apply_1.20.2.tar.gz",
+      "file": "future.apply_1.20.2.tar.gz",
+      "sha256": "5a74865e7336440f28d8d2c3375ed877fb8984c8b01d05e7b36160b488323075",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/future.apply_1.20.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "generics",
+      "version": "0.1.4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/generics_0.1.4.tar.gz",
+      "file": "generics_0.1.4.tar.gz",
+      "sha256": "ef76e2bd0721831bc0d4c9af41efcc367489d5cab13a3a91194baa04876e2110",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/generics_0.1.4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "ggplot2",
+      "version": "4.0.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ggplot2_4.0.2.tar.gz",
+      "file": "ggplot2_4.0.2.tar.gz",
+      "sha256": "d98815a722e5e8b48c2fcee3f30ebb66586d32cb94d481a58742e56f7745a357",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ggplot2_4.0.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "ggrepel",
+      "version": "0.9.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ggrepel_0.9.7.tar.gz",
+      "file": "ggrepel_0.9.7.tar.gz",
+      "sha256": "b328967c34ac659fd761d509234cfc579af21f6083a703307f91bb4bbad1e6c1",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ggrepel_0.9.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "ggridges",
+      "version": "0.5.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ggridges_0.5.7.tar.gz",
+      "file": "ggridges_0.5.7.tar.gz",
+      "sha256": "4d055259c4b5a7ab167081dcc792993258e3b1c71d93738cad5e6e7528994ad5",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ggridges_0.5.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "globals",
+      "version": "0.19.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/globals_0.19.0.tar.gz",
+      "file": "globals_0.19.0.tar.gz",
+      "sha256": "13bd9f911a2fd37f82ccab49482eaad9a6d16f57fc3235d288d1d577c0907055",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/globals_0.19.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "glue",
+      "version": "1.8.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/glue_1.8.0.tar.gz",
+      "file": "glue_1.8.0.tar.gz",
+      "sha256": "ae611639812740ce2dcea47f1e25a65802fce60e994a7d6e8518f7820c157897",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/glue_1.8.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "goftest",
+      "version": "1.2-3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/goftest_1.2-3.tar.gz",
+      "file": "goftest_1.2-3.tar.gz",
+      "sha256": "5340510853aebcb6e40f8e95ec1857ed1e135dfe728c11a7ee47428a96718373",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/goftest_1.2-3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "gplots",
+      "version": "3.3.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gplots_3.3.0.tar.gz",
+      "file": "gplots_3.3.0.tar.gz",
+      "sha256": "d95bc0c50f698600b72c4e4a1e42215313b718d73b00eed21a758628e6a9f789",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gplots_3.3.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "gridExtra",
+      "version": "2.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gridExtra_2.3.tar.gz",
+      "file": "gridExtra_2.3.tar.gz",
+      "sha256": "51403f032e0d6d7fca6a5dc310883f0b7d39cd8da92629fa5377df456889a594",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gridExtra_2.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "gtable",
+      "version": "0.3.6",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gtable_0.3.6.tar.gz",
+      "file": "gtable_0.3.6.tar.gz",
+      "sha256": "4e96a8888995f7c535c696c5ccf5da1839aaea5368b7f03b798e0453adba8087",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gtable_0.3.6.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "gtools",
+      "version": "3.9.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gtools_3.9.5.tar.gz",
+      "file": "gtools_3.9.5.tar.gz",
+      "sha256": "db5791c332119df08df05942945e568f7e70011ac14a7923a8cda1c859b110ff",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/gtools_3.9.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "here",
+      "version": "1.0.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/here_1.0.2.tar.gz",
+      "file": "here_1.0.2.tar.gz",
+      "sha256": "0924f781be362379085a93e9a26cd58c9534d8ce7637cfa9b19c4fb57d7ae569",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/here_1.0.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "highr",
+      "version": "0.12",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/highr_0.12.tar.gz",
+      "file": "highr_0.12.tar.gz",
+      "sha256": "7923399501ecabb4dcec52861c3c431fcdc245d9ed5e0927468cdc85a3511e1b",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/highr_0.12.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "htmltools",
+      "version": "0.5.9",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/htmltools_0.5.9.tar.gz",
+      "file": "htmltools_0.5.9.tar.gz",
+      "sha256": "b2f92a5a12ab4f5920cc09d3b56e83891017dc401f803df0f394285c6bbd8739",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/htmltools_0.5.9.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "htmlwidgets",
+      "version": "1.6.4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/htmlwidgets_1.6.4.tar.gz",
+      "file": "htmlwidgets_1.6.4.tar.gz",
+      "sha256": "f2262e7d89c838027e6346c80868ce9c63d52a2f0ce5aa8a8a9bba4216ee689a",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/htmlwidgets_1.6.4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "httpuv",
+      "version": "1.6.16",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/httpuv_1.6.16.tar.gz",
+      "file": "httpuv_1.6.16.tar.gz",
+      "sha256": "405b30adda37bf2825974c4d632bfa7a19592aa221a46470a134a81dfa04d28d",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/httpuv_1.6.16.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "httr",
+      "version": "1.4.8",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/httr_1.4.8.tar.gz",
+      "file": "httr_1.4.8.tar.gz",
+      "sha256": "c1ae464d3519db8b3cfeec59d1e53c9132efece2cd642f93bfe6a9c6c6f6d8e0",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/httr_1.4.8.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "ica",
+      "version": "1.0-3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ica_1.0-3.tar.gz",
+      "file": "ica_1.0-3.tar.gz",
+      "sha256": "4b3f8bcc57bc8456369041727abb3fc49d2e5bf009623d794b4979f44c5751e6",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ica_1.0-3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "igraph",
+      "version": "2.2.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/igraph_2.2.2.tar.gz",
+      "file": "igraph_2.2.2.tar.gz",
+      "sha256": "068b4e1ad4acb74c8aa834bcde869cfc633d31ba870b63f646e36fc3d59323e6",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/igraph_2.2.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "irlba",
+      "version": "2.3.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/irlba_2.3.7.tar.gz",
+      "file": "irlba_2.3.7.tar.gz",
+      "sha256": "183f009ae1250e30b83cbb3e5100b05a3208675b051d2184d8f9d8915a849f4a",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/irlba_2.3.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "isoband",
+      "version": "0.3.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/isoband_0.3.0.tar.gz",
+      "file": "isoband_0.3.0.tar.gz",
+      "sha256": "13d6ac1bc8055d4892f7fecc3c955197fd9e0dbfa6e72f06028c62928d3db441",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/isoband_0.3.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "jquerylib",
+      "version": "0.1.4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/jquerylib_0.1.4.tar.gz",
+      "file": "jquerylib_0.1.4.tar.gz",
+      "sha256": "6573a4632c5d5317526eeab896b810284bab55d82deeadea70c9256203bb8f77",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/jquerylib_0.1.4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "jsonlite",
+      "version": "2.0.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/jsonlite_2.0.0.tar.gz",
+      "file": "jsonlite_2.0.0.tar.gz",
+      "sha256": "887344a4c87300b3756614a2c403f6e00b0ad95ddd3b671dcbe0e8e9a1103841",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/jsonlite_2.0.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "knitr",
+      "version": "1.51",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/knitr_1.51.tar.gz",
+      "file": "knitr_1.51.tar.gz",
+      "sha256": "042409b925838e66e9124692ce0d1383870cd962fc2fe2c0493097a45256138e",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/knitr_1.51.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "labeling",
+      "version": "0.4.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/labeling_0.4.3.tar.gz",
+      "file": "labeling_0.4.3.tar.gz",
+      "sha256": "9b56821964d7fcfe09d47b0d489a7f988db8f7878fb4bf001e6ac7aed989f3e1",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/labeling_0.4.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "later",
+      "version": "1.4.8",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/later_1.4.8.tar.gz",
+      "file": "later_1.4.8.tar.gz",
+      "sha256": "d055d622f1cabff601a4dee2df94af5c43528aa0f3d3f22054906a088112a10c",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/later_1.4.8.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "lazyeval",
+      "version": "0.2.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/lazyeval_0.2.2.tar.gz",
+      "file": "lazyeval_0.2.2.tar.gz",
+      "sha256": "82cc70fae5e6aa0462ef5221f4b31e2b34c1d58f1f9615fb97d622c3c368680a",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/lazyeval_0.2.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "lifecycle",
+      "version": "1.0.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/lifecycle_1.0.5.tar.gz",
+      "file": "lifecycle_1.0.5.tar.gz",
+      "sha256": "3ca2451dc1a4957832cb8d8dc9823b23378b5a1d9bb0c9cbc212d14849d83ab7",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/lifecycle_1.0.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "listenv",
+      "version": "0.10.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/listenv_0.10.0.tar.gz",
+      "file": "listenv_0.10.0.tar.gz",
+      "sha256": "c9bfaf11626cbcb98a75f957087c72ad01a807184ce619606fc4b78caafd9524",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/listenv_0.10.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "lmtest",
+      "version": "0.9-40",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/lmtest_0.9-40.tar.gz",
+      "file": "lmtest_0.9-40.tar.gz",
+      "sha256": "82a3a1c68bf25c7de11946de75da8fc943aa1212fce6aa675b03ea158f403a27",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/lmtest_0.9-40.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "magrittr",
+      "version": "2.0.4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/magrittr_2.0.4.tar.gz",
+      "file": "magrittr_2.0.4.tar.gz",
+      "sha256": "a34c94c5475f42a5e69ab53a649479753c0c0f2699e42a6b603bf4c875eb3b1d",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/magrittr_2.0.4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "matrixStats",
+      "version": "1.5.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/matrixStats_1.5.0.tar.gz",
+      "file": "matrixStats_1.5.0.tar.gz",
+      "sha256": "7876519ee0627fe4b0a95afa340b381b2d69ed333120c3708acf553f0eece079",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/matrixStats_1.5.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "memoise",
+      "version": "2.0.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/memoise_2.0.1.tar.gz",
+      "file": "memoise_2.0.1.tar.gz",
+      "sha256": "d2c1018e70a8548bbf959cf82e5f054588c9cb63a9ecfb21028931cf0061a48b",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/memoise_2.0.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "mime",
+      "version": "0.13",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/mime_0.13.tar.gz",
+      "file": "mime_0.13.tar.gz",
+      "sha256": "f25183fe5cd8caf179024aff19d86ccc6cb725a9e24f769606e215925976d8b6",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/mime_0.13.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "miniUI",
+      "version": "0.1.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/miniUI_0.1.2.tar.gz",
+      "file": "miniUI_0.1.2.tar.gz",
+      "sha256": "5f898b416032414749bd4d2f8f462fe17a664d576ff3d20a0102bc9a5d1cba23",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/miniUI_0.1.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "openssl",
+      "version": "2.3.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/openssl_2.3.5.tar.gz",
+      "file": "openssl_2.3.5.tar.gz",
+      "sha256": "42e7453b5f72cd5b1daa5e579add4a3790fce23bb01eba5f7055616d58dd1e56",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/openssl_2.3.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "otel",
+      "version": "0.2.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/otel_0.2.0.tar.gz",
+      "file": "otel_0.2.0.tar.gz",
+      "sha256": "53a6c5b4d583b8604a097571445f1e99496e246b4a68dcc43a74ca7995873f49",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/otel_0.2.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "parallelly",
+      "version": "1.46.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/parallelly_1.46.1.tar.gz",
+      "file": "parallelly_1.46.1.tar.gz",
+      "sha256": "03ea7d26180de37638abb523b0a1c8839387c42356e5fc23c1f15168dd8f1234",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/parallelly_1.46.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "patchwork",
+      "version": "1.3.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/patchwork_1.3.2.tar.gz",
+      "file": "patchwork_1.3.2.tar.gz",
+      "sha256": "b8e4771b94d1a360afa9243875c17f08e19e13c6537fd7a27c7df7a11326aed3",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/patchwork_1.3.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "pbapply",
+      "version": "1.7-4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/pbapply_1.7-4.tar.gz",
+      "file": "pbapply_1.7-4.tar.gz",
+      "sha256": "d3b7cf96e3a8048854352039926bda707e981fcdb5fc0bc052ab7f7473dd43e4",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/pbapply_1.7-4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "pillar",
+      "version": "1.11.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/pillar_1.11.1.tar.gz",
+      "file": "pillar_1.11.1.tar.gz",
+      "sha256": "d67a3746698206b56c2f8e5457e48343ade87e86cbbf77d564931aa4f9cc0e4e",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/pillar_1.11.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "pkgconfig",
+      "version": "2.0.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/pkgconfig_2.0.3.tar.gz",
+      "file": "pkgconfig_2.0.3.tar.gz",
+      "sha256": "fffe5625fb6912f3c4bb068561ec3025b15645fc0e4007b8e43ab78f87e4f8af",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/pkgconfig_2.0.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "plotly",
+      "version": "4.12.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/plotly_4.12.0.tar.gz",
+      "file": "plotly_4.12.0.tar.gz",
+      "sha256": "4eff77acf8343e8ee4ba9f6424f4afefcf742d60ec90911b766d41d75ed1be80",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/plotly_4.12.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "plyr",
+      "version": "1.8.9",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/plyr_1.8.9.tar.gz",
+      "file": "plyr_1.8.9.tar.gz",
+      "sha256": "100dc0a36552a955d2c706b23542220bc5cffd74479b06584591a0498f60dd0b",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/plyr_1.8.9.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "png",
+      "version": "0.1-8",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/png_0.1-8.tar.gz",
+      "file": "png_0.1-8.tar.gz",
+      "sha256": "2a2cf8b566ab08ad8bbbea3f1e1339291f1c671186cfa470a330c8fac0e96810",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/png_0.1-8.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "polyclip",
+      "version": "1.10-7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/polyclip_1.10-7.tar.gz",
+      "file": "polyclip_1.10-7.tar.gz",
+      "sha256": "cb94e8ef819f79a93c5250b96c6510c502ec5610c2470570c50138faa7d1fe09",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/polyclip_1.10-7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "progressr",
+      "version": "0.18.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/progressr_0.18.0.tar.gz",
+      "file": "progressr_0.18.0.tar.gz",
+      "sha256": "59d995d5ab198b0d930ba421b69583cec094de69ab82706edb201c9dfcdf5947",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/progressr_0.18.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "promises",
+      "version": "1.5.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/promises_1.5.0.tar.gz",
+      "file": "promises_1.5.0.tar.gz",
+      "sha256": "33e43b02e792619175b13bf62d155c67f28ffeddcc0710e63b184254628f8234",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/promises_1.5.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "purrr",
+      "version": "1.2.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/purrr_1.2.1.tar.gz",
+      "file": "purrr_1.2.1.tar.gz",
+      "sha256": "6865949fd83dcfe732709f20afb3712ecc2f765fcd630743c413b7d3a8c15cf5",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/purrr_1.2.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "qs2",
+      "version": "0.1.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/qs2_0.1.7.tar.gz",
+      "file": "qs2_0.1.7.tar.gz",
+      "sha256": "2d1e8727e4e7504be8bfbf95654af0d37795e6099fad5a9ae6b5aef037ed2031",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/qs2_0.1.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "R6",
+      "version": "2.6.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/R6_2.6.1.tar.gz",
+      "file": "R6_2.6.1.tar.gz",
+      "sha256": "586ac3b49cf53294a57935a150793a994db5229509feab7c51c7d1b2073df910",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/R6_2.6.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RANN",
+      "version": "2.6.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RANN_2.6.2.tar.gz",
+      "file": "RANN_2.6.2.tar.gz",
+      "sha256": "46811fc5d73f130b0b711cb85bad46cffcb5ca226b5263e1db327c4459456a50",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RANN_2.6.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "rappdirs",
+      "version": "0.3.4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rappdirs_0.3.4.tar.gz",
+      "file": "rappdirs_0.3.4.tar.gz",
+      "sha256": "4bce5bc6793efc13668c91908c47b90f58e6851a1b06b0bf490f0c401a76526f",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rappdirs_0.3.4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RColorBrewer",
+      "version": "1.1-3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RColorBrewer_1.1-3.tar.gz",
+      "file": "RColorBrewer_1.1-3.tar.gz",
+      "sha256": "87da4805036a319f2b1ab79804134d99e72bc24ebe43bd9bef1cc6982359f767",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RColorBrewer_1.1-3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "Rcpp",
+      "version": "1.1.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/Rcpp_1.1.1.tar.gz",
+      "file": "Rcpp_1.1.1.tar.gz",
+      "sha256": "e81aa2cd79c60e2cbc808bd28916b0d52d895177eebcf9cfb7be3127c2594dd8",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/Rcpp_1.1.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppAnnoy",
+      "version": "0.0.23",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppAnnoy_0.0.23.tar.gz",
+      "file": "RcppAnnoy_0.0.23.tar.gz",
+      "sha256": "c47ee4abb63b2619e12f9d6c1aaa0026725490bb3e3a7a6a65fae204545e6c64",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppAnnoy_0.0.23.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppArmadillo",
+      "version": "15.2.3-1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppArmadillo_15.2.3-1.tar.gz",
+      "file": "RcppArmadillo_15.2.3-1.tar.gz",
+      "sha256": "840751985f9e67c24ac1ff4f8f59a008610600636b59b80d20d59d54a4ad06e0",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppArmadillo_15.2.3-1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppEigen",
+      "version": "0.3.4.0.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppEigen_0.3.4.0.2.tar.gz",
+      "file": "RcppEigen_0.3.4.0.2.tar.gz",
+      "sha256": "f4f1ef38d4b60b890cb61f1defbbb2ec04b89542f89a690ec737a6e1530a8757",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppEigen_0.3.4.0.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppHNSW",
+      "version": "0.6.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppHNSW_0.6.0.tar.gz",
+      "file": "RcppHNSW_0.6.0.tar.gz",
+      "sha256": "e1d7f4ee76c87d430712c1abb98525c3747bf75126f9e1572e85ad59e320d924",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppHNSW_0.6.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppParallel",
+      "version": "5.1.11-2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppParallel_5.1.11-2.tar.gz",
+      "file": "RcppParallel_5.1.11-2.tar.gz",
+      "sha256": "ac8fd21778b29e1f6135550fd70d9d0c43c52a7f158d6d6a217f47f660f00d33",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppParallel_5.1.11-2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppProgress",
+      "version": "0.4.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppProgress_0.4.2.tar.gz",
+      "file": "RcppProgress_0.4.2.tar.gz",
+      "sha256": "9a7403f8befa78c585ae9a94c23b24b1c31ab2b13d641c6cfd75ca0e0cc758ca",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppProgress_0.4.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RcppTOML",
+      "version": "0.2.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppTOML_0.2.3.tar.gz",
+      "file": "RcppTOML_0.2.3.tar.gz",
+      "sha256": "1ebbd85b2695ebc7686095068f097131d9a236c7b3317782702cc38e31b9bf8e",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RcppTOML_0.2.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "remotes",
+      "version": "2.5.0",
+      "url": "https://cloud.r-project.org/src/contrib/remotes_2.5.0.tar.gz",
+      "file": "remotes_2.5.0.tar.gz",
+      "sha256": "4d663f1426cd88d42f4070f23d969305c575e0499ed1397be6607b0770d2850c",
+      "description_verified": true,
+      "original_ci_url": "https://cloud.r-project.org/src/contrib/remotes_2.5.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN"
+    },
+    {
+      "package": "reshape2",
+      "version": "1.4.5",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/reshape2_1.4.5.tar.gz",
+      "file": "reshape2_1.4.5.tar.gz",
+      "sha256": "86f73cbae917c02747b052cb9d76e8b0401fa6e840ea05c07972151e55ac8386",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/reshape2_1.4.5.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "reticulate",
+      "version": "1.45.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/reticulate_1.45.0.tar.gz",
+      "file": "reticulate_1.45.0.tar.gz",
+      "sha256": "80251d369ae9b7bff481e38a7b9e26eb41ba51fa88aca83a9aca941540277af8",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/reticulate_1.45.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "rlang",
+      "version": "1.1.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rlang_1.1.7.tar.gz",
+      "file": "rlang_1.1.7.tar.gz",
+      "sha256": "7bdb4e4b20294fd6db4e29a11cc4952b36824a65febffcd422b9197309bf15b4",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rlang_1.1.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "rmarkdown",
+      "version": "2.30",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rmarkdown_2.30.tar.gz",
+      "file": "rmarkdown_2.30.tar.gz",
+      "sha256": "4e20c9732a10e5a701051b489613d438a4b26415d6ea5f90b0689929364e50ed",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rmarkdown_2.30.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "ROCR",
+      "version": "1.0-12",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ROCR_1.0-12.tar.gz",
+      "file": "ROCR_1.0-12.tar.gz",
+      "sha256": "24681ec31ea24838f72dd2debb382fc50327927b364c5f014d80b12c7ebc7f13",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/ROCR_1.0-12.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "rprojroot",
+      "version": "2.1.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rprojroot_2.1.1.tar.gz",
+      "file": "rprojroot_2.1.1.tar.gz",
+      "sha256": "f5b19fa9eb1590bbcf99459fa347c8a790e89466479d237f1535390d8cd8c5b8",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/rprojroot_2.1.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "RSpectra",
+      "version": "0.16-2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RSpectra_0.16-2.tar.gz",
+      "file": "RSpectra_0.16-2.tar.gz",
+      "sha256": "03c2ae5378e70503aa8eab30ca264dab3def7514d4904f1c46441be8b7746c02",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/RSpectra_0.16-2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "Rtsne",
+      "version": "0.17",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/Rtsne_0.17.tar.gz",
+      "file": "Rtsne_0.17.tar.gz",
+      "sha256": "d4f41836339ae14c1d63191fd73f1e573c4213dae3eced8a4527579959305260",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/Rtsne_0.17.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "S7",
+      "version": "0.2.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/S7_0.2.1.tar.gz",
+      "file": "S7_0.2.1.tar.gz",
+      "sha256": "4723b6652db6ade15eb094ce37481c1bcffa9ec7ca3be9716b0900253430cff3",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/S7_0.2.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "sass",
+      "version": "0.4.10",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sass_0.4.10.tar.gz",
+      "file": "sass_0.4.10.tar.gz",
+      "sha256": "5f986adaf29a5565fbc28771b5961cd3427d317f0a3e8607ce93caf49f6b9cce",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sass_0.4.10.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "scAgentKit",
+      "version": "0.6.0",
+      "url": "https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz",
+      "file": "scAgentKit_0.6.0.tar.gz",
+      "sha256": "1179159de2992ffea595ec983bc972f6209cac156787ca7b56e01c57a0de0ac3",
+      "description_verified": true,
+      "original_ci_url": "https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "release"
+    },
+    {
+      "package": "scales",
+      "version": "1.4.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/scales_1.4.0.tar.gz",
+      "file": "scales_1.4.0.tar.gz",
+      "sha256": "8e2c3c8976c4b3c305f11e69088695868c84f834fb26b15b434d06279ae91a90",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/scales_1.4.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "scattermore",
+      "version": "1.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/scattermore_1.2.tar.gz",
+      "file": "scattermore_1.2.tar.gz",
+      "sha256": "74611673a9825bbfa52c7fd6cdf56e651a60aa624a335ee9d454c8ce46598616",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/scattermore_1.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "sctransform",
+      "version": "0.4.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sctransform_0.4.3.tar.gz",
+      "file": "sctransform_0.4.3.tar.gz",
+      "sha256": "05e76fe4df5d1a1babc68de2341b4678a5e5b422b8da09668d764d5d8c997b21",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sctransform_0.4.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "Seurat",
+      "version": "5.4.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/Seurat_5.4.0.tar.gz",
+      "file": "Seurat_5.4.0.tar.gz",
+      "sha256": "8aa08cbd704f376248d226723a8990d9bba8fb468d618efbfd1591e3a6effb78",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/Seurat_5.4.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "SeuratObject",
+      "version": "5.3.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/SeuratObject_5.3.0.tar.gz",
+      "file": "SeuratObject_5.3.0.tar.gz",
+      "sha256": "35d1e3dad0945519876c94d2b1f771b0925775078a167d44e1aa73947c5c0da9",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/SeuratObject_5.3.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "shiny",
+      "version": "1.13.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/shiny_1.13.0.tar.gz",
+      "file": "shiny_1.13.0.tar.gz",
+      "sha256": "7be3e502b5ce02190be69cabf2b593ea45cc87f5eda83836b85f14bb8ecb3894",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/shiny_1.13.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "sitmo",
+      "version": "2.0.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sitmo_2.0.2.tar.gz",
+      "file": "sitmo_2.0.2.tar.gz",
+      "sha256": "2b0d3b05a037b6872b3a8abfa7eff8e227edd6045ab7fa54d7dfaac4eec660f3",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sitmo_2.0.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "sourcetools",
+      "version": "0.1.7-1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sourcetools_0.1.7-1.tar.gz",
+      "file": "sourcetools_0.1.7-1.tar.gz",
+      "sha256": "de7daad306a9a4b8a0ae2237fee538f42672186ead0b2254bfbdee3347185375",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sourcetools_0.1.7-1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "sp",
+      "version": "2.2-1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sp_2.2-1.tar.gz",
+      "file": "sp_2.2-1.tar.gz",
+      "sha256": "2b08f4812f423ee67f8a4cad404697ac4079d6f42a874384abbab0ef141342d9",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sp_2.2-1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spam",
+      "version": "2.11-3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spam_2.11-3.tar.gz",
+      "file": "spam_2.11-3.tar.gz",
+      "sha256": "d192e98604b9abbcf421e3ce1a3b1d6a806a4ab870eaf87a59946c4475269eec",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spam_2.11-3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.data",
+      "version": "3.1-9",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.data_3.1-9.tar.gz",
+      "file": "spatstat.data_3.1-9.tar.gz",
+      "sha256": "90eb5f5cf7b5420f6e415d6871e2e8d3a10335c8cc73d8617d6778b9cdc305ea",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.data_3.1-9.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.explore",
+      "version": "3.7-0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.explore_3.7-0.tar.gz",
+      "file": "spatstat.explore_3.7-0.tar.gz",
+      "sha256": "322f4b7421583d79e460078e70a90d2a60c2e7a606bfb6fdf9218b562edfe86b",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.explore_3.7-0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.geom",
+      "version": "3.7-0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.geom_3.7-0.tar.gz",
+      "file": "spatstat.geom_3.7-0.tar.gz",
+      "sha256": "8d807a4b7695b9d721312f7553cf68565dc34db677025e28bf50571e8a45a437",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.geom_3.7-0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.random",
+      "version": "3.4-4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.random_3.4-4.tar.gz",
+      "file": "spatstat.random_3.4-4.tar.gz",
+      "sha256": "083c19127971eaf81c35c5b795e9af24205dbb6ed65715f1308d8a430dfcf458",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.random_3.4-4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.sparse",
+      "version": "3.1-0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.sparse_3.1-0.tar.gz",
+      "file": "spatstat.sparse_3.1-0.tar.gz",
+      "sha256": "4661d3dc5cb36f2dee64a0f94d4d0123f8e9b82fd56fddc500e722e2b04fbf7e",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.sparse_3.1-0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.univar",
+      "version": "3.1-6",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.univar_3.1-6.tar.gz",
+      "file": "spatstat.univar_3.1-6.tar.gz",
+      "sha256": "91ba12d27539d454fdfa132c47ebe926ce99c932e9e759646476214d3a0a1cb9",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.univar_3.1-6.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "spatstat.utils",
+      "version": "3.2-1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.utils_3.2-1.tar.gz",
+      "file": "spatstat.utils_3.2-1.tar.gz",
+      "sha256": "13621f3c2b27114ff53f2c6230a616ac088ab63fc4a9606ba09d86d6853ad288",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/spatstat.utils_3.2-1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "stringfish",
+      "version": "0.18.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/stringfish_0.18.0.tar.gz",
+      "file": "stringfish_0.18.0.tar.gz",
+      "sha256": "0c1f0f9ff32a78b82c7622194177b5d04f05defcab25d6d260c64961ba0db411",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/stringfish_0.18.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "stringi",
+      "version": "1.8.7",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/stringi_1.8.7.tar.gz",
+      "file": "stringi_1.8.7.tar.gz",
+      "sha256": "908e75c09846cb1bdbec2b080a7c311eb3c7f3faeb038be501ab42d5e03f6f8e",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/stringi_1.8.7.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "stringr",
+      "version": "1.6.0",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/stringr_1.6.0.tar.gz",
+      "file": "stringr_1.6.0.tar.gz",
+      "sha256": "c66051b1f2a81ec733c301ff7d3ff7b57c97f73d2b86e329b037b863f4c2010d",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/stringr_1.6.0.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "sys",
+      "version": "3.4.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sys_3.4.3.tar.gz",
+      "file": "sys_3.4.3.tar.gz",
+      "sha256": "aea9770a412bd0c2f9600449238cd69b8f16104b0525b36d4bf4f0231156c9bb",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/sys_3.4.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "tensor",
+      "version": "1.5.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tensor_1.5.1.tar.gz",
+      "file": "tensor_1.5.1.tar.gz",
+      "sha256": "99f0d0b6f5dcc5bbb05d6210fa6b186deedd175fd0037b0d6883390e13002fb6",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tensor_1.5.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "tibble",
+      "version": "3.3.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tibble_3.3.1.tar.gz",
+      "file": "tibble_3.3.1.tar.gz",
+      "sha256": "ec7db482744b3f37ec31d4533417173a43a37d2da15f3c72b6aa286d27d97164",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tibble_3.3.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "tidyr",
+      "version": "1.3.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tidyr_1.3.2.tar.gz",
+      "file": "tidyr_1.3.2.tar.gz",
+      "sha256": "98d9f0ad269651df90403773169f6ff64de40c6c17444551a33e765a66f398e6",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tidyr_1.3.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "tidyselect",
+      "version": "1.2.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tidyselect_1.2.1.tar.gz",
+      "file": "tidyselect_1.2.1.tar.gz",
+      "sha256": "9f58032a71c50d329d9c51397e8579acbcaf57241550c98beec9bda5a9497c63",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tidyselect_1.2.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "tinytex",
+      "version": "0.58",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tinytex_0.58.tar.gz",
+      "file": "tinytex_0.58.tar.gz",
+      "sha256": "2b2cad9ee3446f5471efac5ff4eaa1be689a9e9a0421b51df7e021deb6493e03",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/tinytex_0.58.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "utf8",
+      "version": "1.2.6",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/utf8_1.2.6.tar.gz",
+      "file": "utf8_1.2.6.tar.gz",
+      "sha256": "564a322d61db9dcd1fa7ee13434297f971665ab5177f716bcac34405aa55037c",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/utf8_1.2.6.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "uwot",
+      "version": "0.2.4",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/uwot_0.2.4.tar.gz",
+      "file": "uwot_0.2.4.tar.gz",
+      "sha256": "a4bfd2ad726ce3a4e987dc93757cf596ba946f60b5ca6ae11fafb001c2b61e58",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/uwot_0.2.4.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "vctrs",
+      "version": "0.7.1",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/vctrs_0.7.1.tar.gz",
+      "file": "vctrs_0.7.1.tar.gz",
+      "sha256": "8e11b01c437d239671377dff78373c46df873bf7a11af5038a46ba35ac803206",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/vctrs_0.7.1.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "viridisLite",
+      "version": "0.4.3",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/viridisLite_0.4.3.tar.gz",
+      "file": "viridisLite_0.4.3.tar.gz",
+      "sha256": "cdbd790964a56d9b3ddde7f7b52d45a6a60fe130ef3db58ce52b3bc67ccdd5ad",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/viridisLite_0.4.3.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "withr",
+      "version": "3.0.2",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/withr_3.0.2.tar.gz",
+      "file": "withr_3.0.2.tar.gz",
+      "sha256": "f5847779dbc86ffadc3e525cf71b4169dc10281987f2839c67d9564c31b027b8",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/withr_3.0.2.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "xfun",
+      "version": "0.56",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/xfun_0.56.tar.gz",
+      "file": "xfun_0.56.tar.gz",
+      "sha256": "5e8527069ba46057d912f2705419aa49021db0e3e7f571c6ba456ef881628e1f",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/xfun_0.56.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "xtable",
+      "version": "1.8-8",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/xtable_1.8-8.tar.gz",
+      "file": "xtable_1.8-8.tar.gz",
+      "sha256": "14b0e84726581de68bbe836945b10d7580557d66daa2b629e7fadd65ec1f4084",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/xtable_1.8-8.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "yaml",
+      "version": "2.3.12",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/yaml_2.3.12.tar.gz",
+      "file": "yaml_2.3.12.tar.gz",
+      "sha256": "7f562a45c6ffc9a28647aaa04aab416fca8d905c6469441e3030248b411986f1",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/yaml_2.3.12.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    },
+    {
+      "package": "zoo",
+      "version": "1.8-15",
+      "url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/zoo_1.8-15.tar.gz",
+      "file": "zoo_1.8-15.tar.gz",
+      "sha256": "9e48da61b75cf4c6831f5e48e263d45459fb1d81f0a62305c1cc0410fe24e110",
+      "description_verified": true,
+      "original_ci_url": "https://p3m.dev/cran/__linux__/noble/2026-03-10/src/contrib/zoo_1.8-15.tar.gz",
+      "fallback_reason": null,
+      "source_kind": "CRAN snapshot"
+    }
+  ],
+  "runtime_sources": [
+    {
+      "runtime": "Python",
+      "version": "3.9.6",
+      "url": "https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz",
+      "file": "Python-3.9.6.tgz",
+      "sha256": "d0a35182e19e416fc8eae25a3dcd4d02d4997333e4ad1f2eee6010aadc3fe866",
+      "version_file": "Python-3.9.6/Include/patchlevel.h",
+      "identity_verified": true,
+      "installed_by_this_revision": false
+    },
+    {
+      "runtime": "R",
+      "version": "4.5.2",
+      "url": "https://cran.r-project.org/src/base/R-4/R-4.5.2.tar.gz",
+      "file": "R-4.5.2.tar.gz",
+      "sha256": "0d71ff7106ec69cd7c67e1e95ed1a3cee355880931f2eb78c530014a9e379f20",
+      "version_file": "R-4.5.2/VERSION",
+      "identity_verified": true,
+      "installed_by_this_revision": false
+    }
+  ],
+  "base_recommended": [
+    {
+      "package": "base",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "boot",
+      "version": "1.3-32",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "class",
+      "version": "7.3-23",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "cluster",
+      "version": "2.1.8.1",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "codetools",
+      "version": "0.2-20",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "compiler",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "datasets",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "foreign",
+      "version": "0.8-90",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "graphics",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "grDevices",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "grid",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "KernSmooth",
+      "version": "2.23-26",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "lattice",
+      "version": "0.22-7",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "MASS",
+      "version": "7.3-65",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "Matrix",
+      "version": "1.7-4",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "methods",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "mgcv",
+      "version": "1.9-3",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "nlme",
+      "version": "3.1-168",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "nnet",
+      "version": "7.3-20",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "parallel",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "rpart",
+      "version": "4.1.24",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "spatial",
+      "version": "7.3-18",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "splines",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "stats",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "stats4",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "survival",
+      "version": "3.8-3",
+      "priority": "recommended",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "tcltk",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "tools",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    },
+    {
+      "package": "utils",
+      "version": "4.5.2",
+      "priority": "base",
+      "source": "digest-pinned official Rocker R library; exact version printed in original CI"
+    }
+  ],
+  "validation_scope": "All 140 source archives and official runtime sources fetched/hash/identity verified in this revision; dependency order audited. Full new Linux restore was not run. Historical CI validates installed versions, not an identity proof of dependency archive bytes."
+}

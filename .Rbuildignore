@@ -7,3 +7,6 @@
 ^\.gitignore$
 ^workbench$
 ^docs$
+(__pycache__|[.]pyc$)
+
+^README\.zh-CN\.md$

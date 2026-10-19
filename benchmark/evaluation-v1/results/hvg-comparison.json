@@ -1,0 +1,201 @@
+{
+  "source_sha256": {
+    "baseline": "62d541334d26d1dee9e13a49587c74c209990f7cf9c0995eb90f409b5d15e5c1",
+    "sample_hvg": "24188964bbdc50fc892bd3a5064d2ad0709c96dceff9d411b410755e9f752236"
+  },
+  "counts_hash": "1e6482e81ac2c1f0f5941f15371108f1e019492aad52d4b4fa2dcba3969bf157",
+  "actual_selected_features_identical_to_record": true,
+  "baseline_features": 2000,
+  "consensus_features": 2000,
+  "intersection": 1565,
+  "union": 2435,
+  "jaccard": 0.6427104722792608,
+  "selection_frequency_distribution": {
+    "2": 686,
+    "3": 472,
+    "4": 842
+  },
+  "median_rank_quantiles": {
+    "0%": 3,
+    "25%": 594.75,
+    "50%": 1191.25,
+    "75%": 1685.75,
+    "100%": 1976.5
+  },
+  "sample_contributions": [
+    {
+      "sample": "GSM2230757",
+      "cells": 1131,
+      "within_sample_hvgs": 2000,
+      "selected_overlap": 1549,
+      "baseline_overlap": 1382,
+      "selected_unique_to_this_sample": 0
+    },
+    {
+      "sample": "GSM2230758",
+      "cells": 1014,
+      "within_sample_hvgs": 2000,
+      "selected_overlap": 1524,
+      "baseline_overlap": 1374,
+      "selected_unique_to_this_sample": 0
+    },
+    {
+      "sample": "GSM2230759",
+      "cells": 2092,
+      "within_sample_hvgs": 2000,
+      "selected_overlap": 1541,
+      "baseline_overlap": 1404,
+      "selected_unique_to_this_sample": 0
+    },
+    {
+      "sample": "GSM2230760",
+      "cells": 763,
+      "within_sample_hvgs": 2000,
+      "selected_overlap": 1542,
+      "baseline_overlap": 1385,
+      "selected_unique_to_this_sample": 0
+    }
+  ],
+  "variance_scope": "Unbiased across-cell variance on the same saved baseline LogNormalize(10000) data; no normalization or fit rerun. Per-sample distributions are descriptive, not biological replication.",
+  "selected_gene_variance": {
+    "all": {
+      "baseline_hvg": {
+        "cells": 5000,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0.00021197201877007495,
+          "25%": 0.013840429780949869,
+          "50%": 0.07937916648930013,
+          "75%": 0.2522615467126596,
+          "100%": 5.0577282538206285
+        },
+        "zero_variance": 0
+      },
+      "consensus_hvg": {
+        "cells": 5000,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0.001002676820416285,
+          "25%": 0.029255271422157447,
+          "50%": 0.10453326362049287,
+          "75%": 0.28018205863940676,
+          "100%": 7.232876785781457
+        },
+        "zero_variance": 0
+      }
+    },
+    "GSM2230757": {
+      "baseline_hvg": {
+        "cells": 1131,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.01132848926647746,
+          "50%": 0.07183610860749587,
+          "75%": 0.24309886034649578,
+          "100%": 4.199235652177429
+        },
+        "zero_variance": 108
+      },
+      "consensus_hvg": {
+        "cells": 1131,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.02720251345361808,
+          "50%": 0.09552625387574651,
+          "75%": 0.26397123567138364,
+          "100%": 4.199235652177429
+        },
+        "zero_variance": 20
+      }
+    },
+    "GSM2230758": {
+      "baseline_hvg": {
+        "cells": 1014,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.01393992162240433,
+          "50%": 0.07830232289508116,
+          "75%": 0.2532054476988159,
+          "100%": 4.628728655896842
+        },
+        "zero_variance": 95
+      },
+      "consensus_hvg": {
+        "cells": 1014,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.03038811496410624,
+          "50%": 0.1025049922039061,
+          "75%": 0.2913945914678885,
+          "100%": 6.754845111073918
+        },
+        "zero_variance": 19
+      }
+    },
+    "GSM2230759": {
+      "baseline_hvg": {
+        "cells": 2092,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.00820059710598492,
+          "50%": 0.06181861251393371,
+          "75%": 0.22627449743332506,
+          "100%": 6.048512682794199
+        },
+        "zero_variance": 107
+      },
+      "consensus_hvg": {
+        "cells": 2092,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.019763950741907295,
+          "50%": 0.08644147882978434,
+          "75%": 0.2567477434812123,
+          "100%": 8.103105091409127
+        },
+        "zero_variance": 15
+      }
+    },
+    "GSM2230760": {
+      "baseline_hvg": {
+        "cells": 763,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.010497828363677037,
+          "50%": 0.06524129584097726,
+          "75%": 0.2541648971023688,
+          "100%": 4.078074764900138
+        },
+        "zero_variance": 135
+      },
+      "consensus_hvg": {
+        "cells": 763,
+        "genes": 2000,
+        "quantiles": {
+          "0%": 0,
+          "25%": 0.022262548777110716,
+          "50%": 0.09388260837948614,
+          "75%": 0.277876394169332,
+          "100%": 6.495603985912658
+        },
+        "zero_variance": 28
+      }
+    }
+  },
+  "shared_cells": 5000,
+  "partition_ari": 0.8981043818462717,
+  "baseline_clusters": 14,
+  "consensus_clusters": 14,
+  "interpretation": "Equal sample contributions; empirical consensus can lose sample-specific biology. No automatic quality or batch inference.",
+  "biological_accuracy": null,
+  "fine_subtype_agreement": null,
+  "independent_fine_reference_available": false,
+  "normalization_or_fitting_rerun": false
+}

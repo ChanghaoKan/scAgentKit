@@ -270,6 +270,17 @@ test_that("headless rule review rejects stale decisions and restarts without rep
   expect_true(all(c("qc_apply", "strategy_basis") %in% state$completed))
   options(scAgentKit.continue_crash = NULL)
   resumed <- qc_rules_continue_process(root, retry = TRUE)
+  expect_identical(resumed$status, "awaiting_review")
+  measured <- sc_run_inspect(root)
+  expect_identical(measured$review_node$kind, "strategy")
+  scan <- measured$strategy_review$details$cluster_diagnostics
+  expect_true(plan$clustering$resolution %in% scan$resolutions)
+  expect_identical(scan$neighbors_artifact, scAgentKit:::.sc_run_load(root)$files$strategy_neighbors)
+  expect_null(scAgentKit:::.sc_run_load(root)$files$markers)
+  # Explicitly inspect and approve this software control's measured resolution;
+  # retrying a computation never supplies the author's scientific decision.
+  decide(measured)
+  resumed <- qc_rules_continue_process(root)
   expect_identical(resumed$status, "awaiting_configuration")
   expect_identical(resumed$stage, "annotation_propose")
   state <- scAgentKit:::.sc_run_load(root)

@@ -144,3 +144,30 @@ body.compact-review :is(#annotation-draft-status, #strategy-draft-status, #strat
 .preparation-row>label {display:block;margin:10px 0;}
 .preparation-row textarea {min-height:64px;}
 .preparation-row details {margin:12px 0;}
+
+.recommendation-workspace {margin-bottom:16px;padding:20px;}
+.recommendation-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;}
+.recommendation-grid[hidden] {display:none;}
+.recommendation-grid > :is(h4,ul,p) {grid-column:1 / -1;}
+.recommendation-step {border:1px solid #dbe3e8;border-radius:10px;padding:16px;background:#fafcfc;min-width:0;}
+.recommendation-step h3 {margin:0 0 8px;}
+.recommendation-step h4 {font-size:13px;margin:12px 0 4px;}
+.recommendation-step .pill {display:inline-block;margin:0 0 6px;}
+.recommendation-list {padding-left:18px;font-size:13px;line-height:1.55;margin:4px 0 10px;}
+.recommendation-notice,.recommendation-next {font-size:14px;line-height:1.55;}
+.recommendation-next {font-weight:600;}
+.recommendation-candidate {border-top:1px solid #dbe3e8;padding-top:8px;margin-top:12px;}
+.recommendation-candidate .button {margin-top:8px;white-space:normal;}
+.recommendation-candidate pre {max-height:220px;overflow:auto;}
+@media(max-width:600px){.recommendation-workspace{padding:16px;}.recommendation-grid{grid-template-columns:1fr;}}
+
+.recommendation-facts {border-top:1px solid #dbe3e8;margin-top:20px;padding-top:16px;}
+.recommendation-facts form {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:8px 16px;}
+.recommendation-facts form label {display:flex;flex-direction:column;gap:5px;}
+.recommendation-facts form > p {grid-column:1/-1;margin-top:0;}
+.recommendation-facts form > button {align-self:end;}
+
+.scientific-assessment {border:1px solid #d6a84b;border-left:4px solid #b88019;background:#fff9ea;padding:16px 20px;margin:16px 0;}
+.scientific-assessment h2 {font-size:18px;margin-top:0;}
+.scientific-assessment p {font-size:14px;line-height:1.55;}
+.scientific-assessment-deferred {font-weight:600;}

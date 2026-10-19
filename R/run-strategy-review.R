@@ -14,7 +14,12 @@
   if (!is.null(config$cycle_diagnostics)) fields <- c(fields, "cycle_diagnostics")
   if (!is.null(config$doublet_diagnostics)) fields <- c(fields, "doublet_diagnostics")
   if (!is.null(config$prefilter)) fields <- c(fields, "prefilter")
+  if (!is.null(config$recommendation_facts)) fields <- c(fields, "recommendation_facts")
+  if (!is.null(config$recommendation_doublet_preparation)) fields <- c(fields, "recommendation_doublet_preparation")
+  if (!is.null(config$recommendation_doublet_settings)) fields <- c(fields, "recommendation_doublet_settings")
   if (!is.null(config$qc_mad)) fields <- c(fields, "qc_mad")
+  if (!is.null(config$scientific_review)) fields <- c(fields,"scientific_review")
+  if (!is.null(config$basic_expression_review)) fields <- c(fields,"basic_expression_review")
   if (!is.null(config$subcluster_origin)) fields <- c(fields, "subcluster_origin", "subcluster_creation")
   .sc_run_hash(config[fields])
 }
@@ -107,7 +112,7 @@
       dependency_hashes = validated$dependency_hashes,
       execution_plan = if (state$config$start_stage == "processed") list("Reuse the supplied QC and processed analysis; compute current markers after approval.") else
         list("Apply the exact projected QC once under this strategy approval.", "LogNormalize, VST HVGs, HVG scaling and PCA.",
-          "Select reviewed PCs; explicit PCA neighbors and optional UMAP.", "Explicit Louvain resolution and optional local numeric diagnostics.",
+          "Select reviewed PCs; explicit PCA neighbors and optional UMAP.", "Compare explicitly requested Louvain resolutions on one fixed graph; review the measured cluster tree, markers and sample composition before selecting the final resolution.",
           "Compute markers and stop for the separate annotation review."),
       source = list(kind = if (!is.null(state$files$manual_strategy)) "manual_typed_strategy" else "saved_provider_response",
         provider = state$config$provider, facts = "User declarations and measured local aggregates; proposal inferences are not facts."),
@@ -118,6 +123,7 @@
     else record$details$source$previous_suggestion <- adopted
   }
   record$details$pc_diagnostics <- .sc_run_strategy_pc_review(root, state, validated, evidence)
+  record$details$cluster_diagnostics <- .sc_run_cluster_scan_get(root, state)
   if (state$config$start_stage != "processed")
     record$details$capabilities$qc_rules <- list(schema = "scagentkit.qc.rules.v1",
       remove_if = c("any", "all"), max_rules = 32L, max_mad_predicates = 1L,
@@ -184,6 +190,8 @@
       "Use the fixed full-input scDblFinder predictions by declared capture/loading unit. Keep is the default. After approved QC, only the exact reviewed remove_predicted intersection may be removed in a separate derived selection checkpoint; scores are predictions, not calibrated probabilities or truth."),
       record$details$execution_plan)
   }
+  record$details$recommendations <- .sc_run_recommendations(root, state, validated, evidence,
+    record$details$pc_diagnostics, record$details$cluster_diagnostics)
   record$hash <- .sc_run_strategy_review_hash(record)
   .sc_run_put(root, state, "strategy_review", record)
 }
@@ -204,6 +212,9 @@
   if (!is.null(record$details$batch_runtime_source) &&
       !identical(record$details$batch_runtime_source, .sc_run_strategy_batch_source(saved$proposal)))
     stop("Harmony runtime source changed; this strategy approval is stale. Explicitly revise the saved strategy to review the current source and rebuild only its derived correction.", call. = FALSE)
+  if (!is.null(record$details$cluster_diagnostics) &&
+      !identical(record$details$cluster_diagnostics, .sc_run_cluster_scan_get(root, state)))
+    stop("Resolution scan changed; strategy review is stale.", call. = FALSE)
   pc_review <- record$details$pc_diagnostics
   # Initial approval remains a rule approval when its PCA is subsequently
   # computed. A revised review with cached diagnostics binds that exact cache.
@@ -265,6 +276,7 @@
       !identical(record$details$canonical_proposal, saved$proposal) ||
       !identical(record$details$dependency_hashes, saved$dependency_hashes))
     stop("Strategy evidence, parameters or review fingerprint changed; inspect and approve a fresh proposal.", call. = FALSE)
+  .sc_run_recommendations_verify(record)
   if (!is.null(saved$qc_validated)) .sc_run_qc_preview_verify(root, state)
   record
 }
@@ -272,7 +284,7 @@
   state$stage <- "strategy_propose"
   record <- .sc_run_strategy_review_verify(root, state)
   files <- intersect(c("input", "prefilter", "qc_mad", "qc_evidence", "strategy_evidence", "cycle_diagnostics", "doublet_diagnostics", "manual_strategy",
-    "strategy_validated", "strategy_review", "qc_validated", "qc_preview", "qc_preview_plot", "strategy_basis", "strategy_batch"), names(state$files))
+    "strategy_validated", "strategy_review", "qc_validated", "qc_preview", "qc_preview_plot", "strategy_basis", "strategy_batch", "strategy_neighbors", "cluster_scan"), names(state$files))
   .sc_run_pending(state, "strategy", list(plan = validated$proposal, review_hash = record$hash),
     evidence$evidence_hash, "strategy_apply", file_names = files)
 }
@@ -365,6 +377,13 @@
       stop("Cached Harmony requires its runtime dependency. Install it explicitly before revising; the correction cannot be silently reused or skipped.", call. = FALSE)
     cached_runtime_changed <- !identical(old_source, new_source)
     if (cached_runtime_changed) changed <- unique(c(changed, "batch", "neighbors", "clustering", "umap"))
+  }
+  scan <- .sc_run_cluster_scan_get(root, state)
+  if (!is.null(scan)) {
+    grid_same <- identical(validated$proposal$clustering$diagnostic_resolutions, scan$diagnostic_resolutions)
+    graph_same <- !length(setdiff(changed, "clustering"))
+    if (grid_same && graph_same) .sc_run_cluster_selection(validated$proposal$clustering$resolution, scan)
+    else state$files$cluster_scan <- NULL
   }
   all_downstream <- c("markers", "annotation_evidence", "annotation_request", "annotation_response", "annotation_validated", "annotation_review", "manual_annotation", "annotated")
   drop <- character()

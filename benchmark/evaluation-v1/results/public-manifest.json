@@ -1,0 +1,101 @@
+{
+  "schema": "scagentkit.public-evaluation-bundle.v1",
+  "policy": "Public benchmark aggregate statistics and engineering receipts only. No per-cell data, raw matrices, RDS, raw logs, absolute local paths or credentials.",
+  "files": [
+    {
+      "name": "archive-receipt.json",
+      "bytes": 324,
+      "sha256": "6c5892b0ea2c50b9dc432d45ca7d4293fd78a2d2631cb684f6e572d070e612c3"
+    },
+    {
+      "name": "baron-browser.json",
+      "bytes": 1769,
+      "sha256": "03537fcfbaa1683fbcda32339d9ff03de6db806edc4d9db1c9b142faf6442e10"
+    },
+    {
+      "name": "baron-visible-fields.json",
+      "bytes": 968,
+      "sha256": "d5a5e414f521b4b717c7c5d3ab8eab96f68d38e2d13f918bb7ac0d96384a8171"
+    },
+    {
+      "name": "coverage.json",
+      "bytes": 11081,
+      "sha256": "3f5b6c99bb2b71fd5e3e22adcaed2052be57f34ddc21261cf69278d7d43bd6a1"
+    },
+    {
+      "name": "display-lossless-proof.json",
+      "bytes": 497,
+      "sha256": "db1c892d213b1967134592ae1945a59a696eb528c748191680cf8c376d6e9c68"
+    },
+    {
+      "name": "engineering-log-summary.md",
+      "bytes": 6710,
+      "sha256": "47f30e4be3ddebab04100e5be8494758cb830a997ec27cf2f5de06d27fb6b2f4"
+    },
+    {
+      "name": "freeze-integrity.json",
+      "bytes": 16438,
+      "sha256": "fe0cbd698e89b6f1e8f1517f298bdb90043e55dc6cc8ca63963ceb9c9826c5d8"
+    },
+    {
+      "name": "hvg-candidate-changes.json",
+      "bytes": 274,
+      "sha256": "d5560fb694e5024c1c938b6f5af2461544a6c0474cac1eec4ddcf2479c7b5062"
+    },
+    {
+      "name": "hvg-comparison.json",
+      "bytes": 5457,
+      "sha256": "42f742db15fca424a2506fed10eac20e5d17346615afb6553f249c3f124d8b15"
+    },
+    {
+      "name": "metrics.json",
+      "bytes": 190135,
+      "sha256": "990bd5b832c9c7a7e1fdd0c60c1931da454a1d4da6238fd809b509350bbb4d87"
+    },
+    {
+      "name": "pbmc-denominators.json",
+      "bytes": 13089,
+      "sha256": "db72273475e03c0133cc81af078b210480efb9551cac3e94e857d52a8a17cf53"
+    },
+    {
+      "name": "posthoc-common-class.json",
+      "bytes": 75154,
+      "sha256": "d8c6b477fe54707340ea513e29f152211ce929bd25ada616076e36b8fc73b8b7"
+    },
+    {
+      "name": "prediction-status-audit.json",
+      "bytes": 46510,
+      "sha256": "1ad687baa446ab11873fce41eb621557ddf2c7a50406fcfd7ac30b5e1af96e26"
+    },
+    {
+      "name": "provenance.json",
+      "bytes": 1685,
+      "sha256": "e961e3e87838770788d340ac11c3628cfda9c51d7e38d8836489c902e47b672a"
+    },
+    {
+      "name": "reference-feasibility-v2.md",
+      "bytes": 4650,
+      "sha256": "0ae400bff7c5aeefdc5eb70560485fe34ad2fd00d9f19def021dd5b3531c803f"
+    },
+    {
+      "name": "report-corrections.md",
+      "bytes": 5272,
+      "sha256": "21343539a2718ce414a6f0a276b2372f3be20ce54f06f6a373f0650118029d2d"
+    },
+    {
+      "name": "report-original-v1.md",
+      "bytes": 29160,
+      "sha256": "2e621e096258de798e96cbb8e2f9cb5bce3ffde2af22ab5522a21b78ca42a2e8"
+    },
+    {
+      "name": "report.md",
+      "bytes": 23497,
+      "sha256": "48413fce17867d99aa8fb747727fc07e07c86e38cb1c7bf2eea8d1b734c53d2f"
+    },
+    {
+      "name": "test-results.json",
+      "bytes": 1108,
+      "sha256": "9329836a3cfe07d807ec2958b2cb804e920b307efec52055fcce80ddc9b915e4"
+    }
+  ]
+}

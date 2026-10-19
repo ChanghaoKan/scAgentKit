@@ -39,8 +39,10 @@ class RStartTests(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr.decode())
                 value=json.loads(result.stdout.decode().splitlines()[-1]);pids.add(value["pid"]);return value
             try:
-                first=start(',context=list(species="human",tissue="Public PBMC",research_goal="Offline entry validation",columns=list(sample="orig.ident"))')
+                first=start(',context=list(species="human",tissue="Blood",research_goal="Offline entry validation",columns=list(sample="orig.ident"))')
                 self.assertFalse(first["reused"])
+                policy=run('library(scAgentKit);s<-getFromNamespace(".sc_run_load","scAgentKit")(commandArgs(TRUE)[1]);stopifnot(is.null(s$config$scientific_review),identical(s$config$basic_expression_review$panel_set,"blood"))',project)
+                self.assertEqual(policy.returncode,0,policy.stderr.decode())
                 protected=[project/"state.rds",*sorted((project/"checkpoints").glob("*.rds"))]
                 hashes=lambda:{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in protected}
                 before=hashes()

@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "posts": [],
+  "external": [],
+  "fields": [
+    {
+      "field": "p_adjusted",
+      "position": {
+        "top": 700.125,
+        "bottom": 713.125,
+        "container_top": 640.4375,
+        "container_bottom": 1080.4375,
+        "visible": true
+      },
+      "screenshot": "baron-fisher-values-visible.png"
+    },
+    {
+      "field": "mean_log_normalized",
+      "position": {
+        "top": 700.78125,
+        "bottom": 713.78125,
+        "container_top": 640.4375,
+        "container_bottom": 1080.4375,
+        "visible": true
+      },
+      "screenshot": "baron-expression-values-visible.png"
+    },
+    {
+      "field": "cross_sample_consistency",
+      "position": {
+        "top": 700.28125,
+        "bottom": 713.28125,
+        "container_top": 640.4375,
+        "container_bottom": 1080.4375,
+        "visible": true
+      },
+      "screenshot": "baron-cross-sample-values-visible.png"
+    }
+  ],
+  "chrome": "155.0.8059.82"
+}

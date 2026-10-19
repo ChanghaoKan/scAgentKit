@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 
 try:
     from .evidence import canonical
@@ -19,6 +20,56 @@ class RunReviewRuntime(QCRuntime):
         super().__init__(project_dir, library, rscript, timeout)
         self.bridge = ROOT / "run_review_bridge.R"
         self.bridge_hash = hashlib.sha256(self.bridge.read_bytes()).hexdigest()
+
+    @staticmethod
+    def validate_facts(facts):
+        def obj(value, allowed, label):
+            if not isinstance(value, dict) or not value or set(value) - set(allowed):
+                raise StoreError(label + " requires a nonempty object with supported fields")
+
+        def text(value, label, limit=4000):
+            if not isinstance(value, str) or not value.strip() or len(value) > limit or "\x00" in value:
+                raise StoreError(label + " requires bounded nonempty text")
+
+        def boolean(value, label):
+            if not isinstance(value, bool):
+                raise StoreError(label + " requires a boolean")
+
+        def number(value, label, upper, positive=False):
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0 or value > upper or positive and (value == 0 or value == upper):
+                raise StoreError(label + " requires a finite supported numeric value")
+
+        obj(facts, {"columns", "batch", "doublet"}, "Facts")
+        if "columns" in facts:
+            obj(facts["columns"], {"sample", "qc_group", "capture", "batch", "donor", "condition", "group", "treatment"}, "Facts columns")
+            for role, value in facts["columns"].items(): text(value, "columns." + role, 200)
+        if "batch" in facts:
+            obj(facts["batch"], {"technical_batch", "source"}, "Batch facts")
+            if "technical_batch" in facts["batch"]: boolean(facts["batch"]["technical_batch"], "batch.technical_batch")
+            if "source" in facts["batch"]: text(facts["batch"]["source"], "batch.source")
+        if "doublet" in facts:
+            d = facts["doublet"]
+            obj(d, {"data_type", "technology", "input_source", "empty_droplets_removed", "full_called_cohort", "capture", "rate"}, "Doublet facts")
+            for key in {"data_type", "technology", "input_source"} & set(d): text(d[key], "doublet." + key)
+            for key in {"empty_droplets_removed", "full_called_cohort"} & set(d): boolean(d[key], "doublet." + key)
+            if "capture" in d:
+                obj(d["capture"], {"method", "column", "id", "source"}, "Capture facts")
+                for key, value in d["capture"].items(): text(value, "doublet.capture." + key)
+                if "method" in d["capture"] and d["capture"]["method"] not in {"column", "single"}:
+                    raise StoreError("Unsupported capture method")
+            if "rate" in d:
+                rate = d["rate"]
+                obj(rate, {"method", "value", "source", "sd"}, "Rate facts")
+                for key in {"method", "source"} & set(rate): text(rate[key], "doublet.rate." + key)
+                if "method" in rate and rate["method"] not in {"manual", "10x_standard"}:
+                    raise StoreError("Unsupported rate method")
+                if "sd" in rate: number(rate["sd"], "doublet.rate.sd", .5)
+                if "value" in rate:
+                    if isinstance(rate["value"], dict):
+                        if not rate["value"]: raise StoreError("Expected-rate map cannot be empty")
+                        for key, value in rate["value"].items():
+                            text(key, "Capture ID", 200); number(value, "Expected rate", .5, True)
+                    else: number(rate["value"], "Expected rate", .5, True)
 
     @staticmethod
     def validate(payload):
@@ -47,13 +98,16 @@ class RunReviewRuntime(QCRuntime):
         if not isinstance(payload, dict) or not common <= set(payload):
             raise StoreError("Run review requires its exact project, input, proposal and review snapshot")
         action, kind = payload["action"], payload["kind"]
-        if not isinstance(kind, str) or not isinstance(action, str) or kind not in {"qc", "strategy", "annotation"} or action not in {"approve", "reject", "revise", "preview", "undo"}:
+        if not isinstance(kind, str) or not isinstance(action, str) or kind not in {"qc", "strategy", "annotation"} or action not in {"approve", "reject", "revise", "preview", "undo", "facts"}:
             raise StoreError("Unsupported run review kind or action")
         if action == "preview" and kind != "qc" or action == "undo" and kind != "annotation":
             raise StoreError("Preview applies to QC; undo applies to executed annotation only")
-        optional = {"proposal"} if action == "revise" else {"decision_id"} if action == "undo" else set()
+        optional = {"proposal"} if action == "revise" else {"decision_id"} if action == "undo" else {"facts"} if action == "facts" else set()
         if kind == "qc" and action in {"revise", "preview"}: optional |= {"sensitivity", "gene_panels"}
         if set(payload) - (common | optional): raise StoreError("Run review has unsupported fields")
+        if action == "facts":
+            if kind != "strategy": raise StoreError("Facts apply only to the initial strategy review")
+            RunReviewRuntime.validate_facts(payload.get("facts"))
         if action == "revise" and ("proposal" not in payload or not isinstance(payload["proposal"], dict)):
             raise StoreError("Revision requires a supported typed proposal object")
         if action == "undo" and (not isinstance(payload.get("decision_id"), str) or not payload["decision_id"].strip() or len(payload["decision_id"]) > 200 or "\x00" in payload["decision_id"]):

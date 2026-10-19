@@ -39,6 +39,7 @@ def main(argv=None):
     parser.add_argument("--reopen", action="store_true", help="Open an existing project after verifying its original RDS binding")
     parser.add_argument("--tenx-import", action="store_true", help="Internal R adapter: input RDS contains an exact 10x import receipt")
     parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
+    parser.add_argument("--scientific-review-file", help="Explicit local optional diagnostic settings for a new raw project")
     parser.add_argument("--source-checkout", help="Explicit matching developer source tree")
     model = parser.add_mutually_exclusive_group()
     model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
@@ -82,6 +83,14 @@ def main(argv=None):
             parser.error("Context file must match the declared species, tissue and research goal")
         if context.get("notes") == "": context.pop("notes")
         request["context"] = context
+    if args.scientific_review_file:
+        science_path = Path(args.scientific_review_file)
+        if science_path.stat().st_size > 1024 * 1024:
+            parser.error("Scientific review settings exceed 1 MB")
+        science = strict_json(science_path.read_text(encoding="utf-8"))
+        if not isinstance(science, dict) or args.reuse_processed:
+            parser.error("Scientific review settings require a JSON object and raw entry")
+        request["scientific_review"] = science
     env = scrub_secrets(dict(os.environ))
     library = args.r_library or env.get("R_LIBS_USER")
     if library:

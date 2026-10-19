@@ -95,16 +95,20 @@
 #'
 #' @return Updated AgentSeurat. A data frame of annotations is stored at
 #'   `obj@@params$llm_annotations` with columns: cluster,
-#'   primary_annotation, confidence (LLM self-reported),
+#'   primary_annotation (raw proposal), confidence (effective qualitative
+#'   confidence), raw_confidence (model self-report), evidence_status,
+#'   label_usable, evidence_reasons, marker_validation_enabled,
 #'   hybrid_confidence (uncalibrated heuristic score; see Details),
-#'   hybrid_confidence_label, confidence_disagreement,
+#'   hybrid_confidence_label (effective), hybrid_confidence_raw_label,
+#'   confidence_disagreement,
 #'   supporting_markers, contradicting_markers, hallucinated_markers,
 #'   alternative_annotations, recommended_action, ensemble_agreement,
 #'   ensemble_n, annotation_status, annotation_error, annotation_attempts,
 #'   reasoning. Prompts, marker evidence, and each raw response attempt are
 #'   stored in `obj@@params$llm_annotation_responses` for offline review,
 #'   with the cell/cluster snapshot in `llm_annotation_input_cells`.
-#'   The step records success only when all requested responses validate.
+#'   The step records success only when all requested responses pass the
+#'   local evidence-usability gate. Citation validity is not semantic truth.
 #'   Exported script snippets restore saved decisions without provider
 #'   calls and require identical cell order and per-cell cluster IDs.
 #'
@@ -126,8 +130,14 @@
 #'     reported `reasonable`, 0.5 for `suspicious`, 0 for `abnormal`
 #'     and 0.5 when missing.
 #' }
-#' The resulting score is mapped to a label: `high` (>= 0.7),
-#' `medium` (0.4-0.7), `low` (< 0.4). `confidence_disagreement` is
+#' The unchanged raw score maps to `hybrid_confidence_raw_label`: `high`
+#' (>= 0.7), `medium` (0.4-0.7), `low` (< 0.4). The effective label and
+#' confidence become low when evidence is unusable: missing same-cluster
+#' support, unsupported citations, declared counterevidence, unresolved label,
+#' disabled validation, incomplete response or action requiring review.
+#' Raw proposals, self-reports, scores and response audits remain available.
+#' A single supplied marker is only a software prerequisite, not sufficient
+#' biological evidence. `confidence_disagreement` is
 #' TRUE when the LLM's self-reported confidence and the hybrid label
 #' fall in non-adjacent bands.
 #' @export
@@ -363,12 +373,29 @@ annot_llm_annotate <- function(obj,
       matches[as.character(matches$cluster) == as.character(cid), ,
               drop = FALSE]
     } else NULL
+    validity <- .annotation_evidence_validity(parsed, marker_evidence$citation_genes,
+      validation_enabled = isTRUE(validate_markers))
     hc <- if (parsed$annotation_status == "failed") {
-      list(score = NA_real_, label = "low", disagreement = FALSE)
+      list(score = NA_real_, raw_confidence_label = NA_character_, label = "low", disagreement = FALSE)
     } else .compute_hybrid_confidence(
-      parsed = parsed, cluster_markers = cluster_rows, reference_rows = ref_rows
+      parsed = parsed, cluster_markers = cluster_rows, reference_rows = ref_rows,
+      citation_genes = marker_evidence$citation_genes, validation_enabled = isTRUE(validate_markers)
     )
+    parsed$raw_confidence <- parsed$confidence
+    parsed$raw_recommended_action <- parsed$recommended_action
+    parsed$marker_validation_enabled <- isTRUE(validate_markers)
+    parsed$evidence_status <- validity$status
+    parsed$citation_status <- validity$citation_status
+    parsed$review_required <- validity$review_required
+    parsed$review_reasons <- validity$review_reasons
+    parsed$label_usable <- validity$label_usable
+    parsed$evidence_reasons <- validity$reasons
+    if (!validity$label_usable) {
+      parsed$confidence <- "low"
+      if (identical(parsed$recommended_action, "accept")) parsed$recommended_action <- "flag_for_review"
+    }
     parsed$hybrid_confidence       <- hc$score
+    parsed$hybrid_confidence_raw_label <- hc$raw_confidence_label
     parsed$hybrid_confidence_label <- hc$label
     parsed$confidence_disagreement <- hc$disagreement
 
@@ -427,12 +454,14 @@ annot_llm_annotate <- function(obj,
   # Collapse into a data frame
   ann_df <- .annotations_to_df(annotations)
   response_audit <- lapply(results, `[[`, "response_audit")
-  step_success <- all(ann_df$annotation_status == "ok")
+  step_success <- all(ann_df$label_usable)
   status_summary <- list(
     status = if (step_success) "ok" else if (all(ann_df$annotation_status == "failed")) "failed" else "partial",
-    ok_clusters = ann_df$cluster[ann_df$annotation_status == "ok"],
+    ok_clusters = ann_df$cluster[ann_df$label_usable],
+    schema_ok_clusters = ann_df$cluster[ann_df$annotation_status == "ok"],
     partial_clusters = ann_df$cluster[ann_df$annotation_status == "partial"],
     failed_clusters = ann_df$cluster[ann_df$annotation_status == "failed"],
+    needs_review_clusters = ann_df$cluster[!ann_df$label_usable],
     reference_mode = reference_mode
   )
   next_stage <- if (step_success) "llm_annotated" else if (status_summary$status == "failed")
@@ -913,6 +942,16 @@ annot_llm_annotate <- function(obj,
       cluster                 = a$cluster,
       primary_annotation      = as.character(a$primary_annotation %||% NA),
       confidence              = as.character(a$confidence %||% NA),
+      raw_confidence          = as.character(a$raw_confidence %||% a$confidence %||% NA),
+      evidence_status         = as.character(a$evidence_status %||% "not_assessed"),
+      citation_status         = as.character(a$citation_status %||% "not_assessed"),
+      review_required         = isTRUE(a$review_required),
+      review_reasons          = collapse(a$review_reasons),
+      label_usable            = isTRUE(a$label_usable),
+      evidence_reasons        = collapse(a$evidence_reasons),
+      marker_validation_enabled = isTRUE(a$marker_validation_enabled),
+      raw_recommended_action  = as.character(a$raw_recommended_action %||% a$recommended_action %||% NA),
+      hybrid_confidence_raw_label = as.character(a$hybrid_confidence_raw_label %||% NA),
       hybrid_confidence       = as.numeric(a$hybrid_confidence %||% NA),
       hybrid_confidence_label = as.character(a$hybrid_confidence_label %||% NA),
       confidence_disagreement = as.logical(a$confidence_disagreement %||% NA),
@@ -985,12 +1024,15 @@ annot_llm_annotate <- function(obj,
 #
 # Returns list(score, label, disagreement):
 #   score        : numeric in [0, 1]
-#   label        : "high" (>=0.7), "medium" (0.4-0.7), "low" (<0.4)
+#   raw_confidence_label: raw numeric bucket, without evidence validity
+#   label        : effective qualitative bucket; unusable evidence is low
+#   label_usable : minimum local citation/schema/action gate, not semantic truth
 #   disagreement : TRUE when LLM-reported label and hybrid label fall in
 #                  non-adjacent bands (high<->low)
 .compute_hybrid_confidence <- function(parsed,
                                        cluster_markers,
-                                       reference_rows) {
+                                       reference_rows, citation_genes = cluster_markers$gene,
+                                       validation_enabled = TRUE) {
   # Signal 1: overlap for the same lexical label as the model's annotation.
   # An unrelated high-scoring candidate cannot increase its confidence.
   label <- parsed$primary_annotation
@@ -1035,9 +1077,11 @@ annot_llm_annotate <- function(obj,
            0.20 * proportion
   score <- max(0, min(1, score))
 
-  label <- if (score >= 0.7) "high"
+  raw_confidence_label <- if (score >= 0.7) "high"
            else if (score >= 0.4) "medium"
            else "low"
+  validity <- .annotation_evidence_validity(parsed, citation_genes, validation_enabled)
+  label <- if (validity$label_usable) raw_confidence_label else "low"
 
   llm_label <- tolower(as.character(parsed$confidence))
   disagreement <- if (length(llm_label) == 1L && llm_label %in% c("high", "low") &&
@@ -1045,8 +1089,9 @@ annot_llm_annotate <- function(obj,
     llm_label != label   # only flag opposite bands; high vs medium OK
   } else FALSE
 
-  list(score = round(score, 3), label = label,
-       disagreement = disagreement)
+  list(score = round(score, 3), raw_confidence_label = raw_confidence_label,
+       label = label, label_usable = validity$label_usable, evidence_status = validity$status,
+       evidence_reasons = validity$reasons, disagreement = disagreement)
 }
 
 

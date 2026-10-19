@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1628" viewBox="0 0 1200 1628" xml:lang="en" role="img" aria-labelledby="title desc">
+<title id="title">A saved workflow with three scientific decisions</title>
+<desc id="desc">Counts and declared facts enter automatic local analyses. Three separate scientific approvals cover the initial strategy, measured clustering and annotation. Optional methods need explicit selection; ambient correction is a separate R-only API.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7c93a9"/></marker></defs>
+<style>text{font-family:Arial,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#23384b}.title{font-size:32px;font-weight:700}.subtitle{font-size:20px;fill:#51697e}.node-title{font-size:26px;font-weight:650}.node-detail{font-size:20px;fill:#425f75}.small{font-size:18px;fill:#4c667b}.side-title{font-size:21px;font-weight:650;fill:#286c67}.side-detail{font-size:17px;fill:#3d6664}</style>
+<rect width="1200" height="1628" rx="20" fill="#fbfcfe"/>
+<text x="48" y="54" class="title" text-anchor="start">A saved workflow with three scientific decisions</text>
+<text x="48" y="89" class="subtitle" text-anchor="start">Development raw-count path · automatic local steps pause for your review</text>
+<rect x="48" y="119" width="20" height="20" rx="4" fill="#edf4fc" stroke="#8ea5b7"/>
+<text x="78" y="136" class="small" text-anchor="start">Automatic local work</text>
+<rect x="398" y="119" width="20" height="20" rx="4" fill="#fff2d8" stroke="#8ea5b7"/>
+<text x="428" y="136" class="small" text-anchor="start">You inspect and confirm</text>
+<rect x="776" y="119" width="20" height="20" rx="4" fill="#edf8f5" stroke="#8ea5b7"/>
+<text x="806" y="136" class="small" text-anchor="start">Optional / explicit selection</text>
+<g id="input" data-box="input" data-kind="input">
+<rect x="48" y="176" width="752" height="124" rx="13" fill="#f0f4fa" stroke="#899eb6" stroke-width="1.8"/>
+<text x="424.0" y="210" class="node-title" text-anchor="middle">Counts + study facts</text>
+<text x="424.0" y="246" class="node-detail" text-anchor="middle">10x MEX / sample table / RDS file with counts or Seurat</text>
+<text x="424.0" y="277" class="node-detail" text-anchor="middle">Declare sample roles, species, tissue and research goal</text>
+</g>
+<path d="M424.0 302 L424.0 319" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="qc-evidence" data-box="qc-evidence" data-kind="auto">
+<rect x="48" y="324" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="358" class="node-title" text-anchor="middle">Validate import + measure QC</text>
+<text x="424.0" y="394" class="node-detail" text-anchor="middle">Check counts, feature identity and metadata alignment</text>
+<text x="424.0" y="425" class="node-detail" text-anchor="middle">Prepare QC plots and candidate retention impacts</text>
+</g>
+<path d="M424.0 450 L424.0 467" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-strategy" data-box="gate-strategy" data-kind="author">
+<rect x="48" y="472" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="506" class="node-title" text-anchor="middle">1 · Confirm the initial strategy</text>
+<text x="424.0" y="542" class="node-detail" text-anchor="middle">Inspect QC plots, retention and planned PC / method rules</text>
+<text x="424.0" y="573" class="node-detail" text-anchor="middle">Choose QC + analysis plan; save it, then approve</text>
+</g>
+<path d="M424.0 598 L424.0 615" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="foundation" data-box="foundation" data-kind="auto">
+<rect x="48" y="620" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="654" class="node-title" text-anchor="middle">Run the approved foundation</text>
+<text x="424.0" y="690" class="node-detail" text-anchor="middle">QC → normalize / global HVG → scale / PCA</text>
+<text x="424.0" y="721" class="node-detail" text-anchor="middle">Apply approved PCs → neighbors; UMAP when selected</text>
+</g>
+<path d="M424.0 746 L424.0 763" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="ordinary-scan" data-box="ordinary-scan" data-kind="auto">
+<rect x="48" y="768" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="802" class="node-title" text-anchor="middle">Scan resolutions + build the cluster tree</text>
+<text x="424.0" y="838" class="node-detail" text-anchor="middle">Same cells, PCs, neighbor graph and seed</text>
+<text x="424.0" y="869" class="node-detail" text-anchor="middle">Prepare marker contrasts and sample composition</text>
+</g>
+<path d="M424.0 894 L424.0 911" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-clusters" data-box="gate-clusters" data-kind="author">
+<rect x="48" y="916" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="950" class="node-title" text-anchor="middle">2 · Confirm measured clustering</text>
+<text x="424.0" y="986" class="node-detail" text-anchor="middle">Inspect PC evidence, tree, marker contrasts and samples</text>
+<text x="424.0" y="1017" class="node-detail" text-anchor="middle">Select a scanned resolution; save edits, then approve</text>
+</g>
+<path d="M424.0 1042 L424.0 1059" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="annotation-evidence" data-box="annotation-evidence" data-kind="auto">
+<rect x="48" y="1064" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="1098" class="node-title" text-anchor="middle">Prepare annotation evidence</text>
+<text x="424.0" y="1134" class="node-detail" text-anchor="middle">Markers + applicable panels / references / Fisher evidence</text>
+<text x="424.0" y="1165" class="node-detail" text-anchor="middle">Configured references: candidates only; you supply labels / confidence</text>
+</g>
+<path d="M424.0 1190 L424.0 1207" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-annotation" data-box="gate-annotation" data-kind="author">
+<rect x="48" y="1212" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="1246" class="node-title" text-anchor="middle">3 · Confirm the annotation proposal</text>
+<text x="424.0" y="1282" class="node-detail" text-anchor="middle">Inspect markers, expression, reference support and limits</text>
+<text x="424.0" y="1313" class="node-detail" text-anchor="middle">Choose labels or Unknown + reasons; save all, then approve</text>
+</g>
+<path d="M424.0 1338 L424.0 1355" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="export" data-box="export" data-kind="output">
+<rect x="48" y="1360" width="752" height="124" rx="13" fill="#eaf5ee" stroke="#719d83" stroke-width="1.8"/>
+<text x="424.0" y="1394" class="node-title" text-anchor="middle">Export + reopen the saved result</text>
+<text x="424.0" y="1430" class="node-detail" text-anchor="middle">New Seurat, markers, metadata, figures and decisions</text>
+<text x="424.0" y="1461" class="node-detail" text-anchor="middle">Reopening inspects saved work; it does not rerun analysis</text>
+</g>
+<g id="optional" data-box="optional" data-kind="optional">
+<rect x="848" y="620" width="304" height="356" rx="13" fill="#edf8f5" stroke="#68a09a" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="1000.0" y="654" class="side-title" text-anchor="middle">Optional · explicit opt-in</text>
+<text x="1000.0" y="685" class="side-detail" text-anchor="middle">Requires suitable inputs/design</text>
+<text x="1000.0" y="716" class="side-detail" text-anchor="middle">PC k±5 · 80% resampling</text>
+<text x="1000.0" y="747" class="side-detail" text-anchor="middle">Extra resolution / sample-HVG</text>
+<text x="1000.0" y="778" class="side-detail" text-anchor="middle">Experimental QC draft prefill</text>
+<text x="1000.0" y="809" class="side-detail" text-anchor="middle">Harmony / cycle correction</text>
+<text x="1000.0" y="840" class="side-detail" text-anchor="middle">Declared doublet methods</text>
+<text x="1000.0" y="871" class="side-detail" text-anchor="middle">LLM request: separate consent</text>
+<text x="1000.0" y="902" class="side-detail" text-anchor="middle">Ordinary scan/tree stays on</text>
+<text x="1000.0" y="933" class="side-detail" text-anchor="middle">Missing inputs → unavailable</text>
+</g>
+<path d="M803 682.0 L841 682.0" fill="none" stroke="#7c93a9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<g id="ambient" data-box="ambient" data-kind="optional">
+<rect x="848" y="1064" width="304" height="226" rx="13" fill="#edf8f5" stroke="#68a09a" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="1000.0" y="1098" class="side-title" text-anchor="middle">R-only ambient correction</text>
+<text x="1000.0" y="1129" class="side-detail" text-anchor="middle">SoupX / decontX: separate API</text>
+<text x="1000.0" y="1160" class="side-detail" text-anchor="middle">Separate corrected counts + receipt</text>
+<text x="1000.0" y="1191" class="side-detail" text-anchor="middle">Use them in a new project</text>
+<text x="1000.0" y="1222" class="side-detail" text-anchor="middle">Original counts/checkpoints kept</text>
+<text x="1000.0" y="1253" class="side-detail" text-anchor="middle">No browser correction action</text>
+</g>
+<path d="M803 1126.0 L841 1126.0" fill="none" stroke="#7c93a9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="48" y="1530" class="small" text-anchor="start">The three gates apply to this standard raw-count scan; processed reuse has its own entry.</text>
+<text x="48" y="1565" class="small" text-anchor="start">Optional model requests need separate exact transfer consent. Evidence is not a guarantee of accuracy.</text>
+</svg>

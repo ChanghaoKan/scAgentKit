@@ -69,3 +69,28 @@ stopifnot(is.null(qc$metrics), is.null(qc$mad_flags), is.null(qc$remove_cells),
   identical(projected$stage_counts, native$stage_counts),
   is.null(projected$unsafe$input_cells), is.null(projected$unsafe$selected_cells))
 cat("Production QC schema projection, duplicated strategy impact, MAD privacy and scalar cohort counts: PASS\n")
+
+expression <- list(status="measured",panels=list(T="CD3D"),measured_genes="CD3D",missing_genes="TRAC",
+ clusters=list(list(cluster="0",genes=list(list(gene="CD3D",mean_log_normalized=2,pct_detected=.7))),
+   list(cluster="1",genes=list(list(gene="CD3D",mean_log_normalized=1,pct_detected=.2)))),
+ cell_quality=list(list(cell_id=private,total_umi=100,detected_features=20,high_count_flag=FALSE),
+   list(cell_id=paste0(private,"B"),total_umi=200,detected_features=40,high_count_flag=TRUE)),
+ mixed_lineage=list(list(status="measured",panels=c("T","NK"),coexpressing_cells=private,
+   detected_gene_counts=list(first=stats::setNames(c(1L,2L),c(private,paste0(private,"B")))),
+   coexpressing_cell_quality=list(list(cell_id=private,total_umi=100,detected_features=20,high_count_flag=FALSE)))))
+science <- list(schema="scagentkit.scientific-diagnostics.v1",cells=c(private,paste0(private,"B")),hash=strrep("a",64),
+ resampling=list(status="measured",replicates=list(list(seed=42L,cells=private,ari=.8))),expression=expression)
+value <- list(science=science,annotation=list(clusterId="0",measured_expression=expression),
+ history=list(events=lapply(1:250,function(i)list(sequence=i,hash=strrep("b",64))),truncated=FALSE))
+original <- serialize(value,NULL);display <- .sc_wb_plain(value)
+stopifnot(identical(original,serialize(value,NULL)),!grepl(private,jsonlite::toJSON(display),fixed=TRUE),
+ identical(display$history,value$history),identical(display$science$hash,science$hash),
+ identical(display$science$measured_cells,2L),identical(display$science$resampling$replicates[[1]]$sampled_cells,1L),
+ length(display$annotation$measured_expression$clusters)==1L,
+ identical(display$annotation$measured_expression$clusters[[1]],expression$clusters[[1]]),
+ identical(display$science$expression$cell_quality_summary$measured_cells,2L),
+ identical(display$science$expression$cell_quality_summary$high_count_flagged,1L),
+ display$science$expression$cell_quality_summary$total_umi$median==150,
+ identical(display$science$expression$mixed_lineage[[1]]$coexpressing_cells,1L),
+ is.null(display$science$expression[["cell_quality",exact=TRUE]]),is.null(display$science$expression$mixed_lineage[[1]]$detected_gene_counts))
+cat("Scientific display aggregates, exact cluster expression, complete history and immutable input: PASS\n")

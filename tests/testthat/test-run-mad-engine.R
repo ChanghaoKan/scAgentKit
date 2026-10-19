@@ -169,7 +169,7 @@ test_that("MAD record preserves original sparse input and typed metadata while q
   expect_identical(record$summary$method$high_rna_action, "flag only; no high-count/high-feature deletion")
   expect_true(record$summary$diagnostics$percent_ribo$available)
   expect_true(record$summary$diagnostics$percent_hb$available)
-  expect_identical(record$summary$diagnostics$percent_ribo$pattern, "^RP[SL][0-9]+[AXY]?[0-9]*$")
+  expect_identical(record$summary$diagnostics$percent_ribo$pattern, "^(RP[SL][0-9]+[ALXY]?[0-9]*|RPSA|RPLP[012]|RPL36AL)$")
   expect_false(grepl(record$summary$diagnostics$percent_hb$pattern, "HBEGF"))
   expect_false(grepl(record$summary$diagnostics$percent_ribo$pattern, "RPS6KA1"))
   aggregate_json <- jsonlite::toJSON(record$summary, auto_unbox = TRUE, null = "null", na = "null")

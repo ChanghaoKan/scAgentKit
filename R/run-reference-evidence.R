@@ -113,7 +113,32 @@
 
 .sc_run_reference_scoring <- function() list(
   formula = "unique hits / unique reference genes", quantity = "reference-marker coverage",
-  denominator = "unique canonical reference genes", calibrated_probability = FALSE)
+  denominator = "unique canonical reference genes", calibrated_probability = FALSE,
+  ranking_interpretation = "descriptive_coverage_only", semantic_validation = FALSE,
+  small_reference_warning = paste0("1/1 has higher coverage than 10/20 solely because of its smaller denominator; ",
+    "it is not stronger biological support. Inspect absolute hits, reference size and expression contrasts."))
+
+# Describe only the saved differential-expression contrasts. In particular pct2
+# is the other cells in this test, not a curated negative-lineage panel.
+.sc_run_saved_expression_review <- function(markers) {
+  finite <- function(value, fraction = FALSE) is.numeric(value) && length(value) == 1L &&
+    is.finite(value) && (!fraction || (value >= 0 && value <= 1))
+  records <- lapply(markers, function(row) {
+    fc <- row$avgLog2FC; inside <- row$pct1; outside <- row$pct2
+    complete <- finite(fc) && finite(inside, TRUE) && finite(outside, TRUE)
+    delta <- if (finite(inside, TRUE) && finite(outside, TRUE)) inside - outside else NULL
+    direction <- if (!complete) "incomplete" else if (fc > 0 && delta > 0)
+      "higher_in_cluster" else if (fc < 0 && delta < 0) "lower_in_cluster" else if
+      (fc * delta < 0) "discordant_contrasts" else "no_direction"
+    list(gene = row$gene, direction = direction, detection_difference = delta,
+         statistics = row)
+  })
+  list(status = if (length(records)) "saved_contrasts_only" else "not_supplied",
+    records = records, negative_lineage_panel = "not_assessed", semantic_validation = FALSE,
+    interpretation = paste0("Directions describe saved avgLog2FC and pct1 - pct2 only; no significance or ",
+      "label-specific support is inferred. pct2 is detection among other cells, not a systematic negative-lineage panel. ",
+      "Missing top markers and unmeasured genes are not negative expression evidence; retain Unknown when unresolved."))
+}
 
 .sc_run_reference_evidence <- function(seu, table, context, reference = NULL,
                                        cluster_column = "seurat_clusters", options = NULL) {
@@ -135,6 +160,8 @@
       any(!nzchar(trimws(as.character(table$gene)))) ||
       any(!as.character(table$cluster) %in% ids))
     stop("Reference marker table requires current cluster IDs and nonempty genes.", call. = FALSE)
+  tested_background <- attr(table,"tested_background")
+  if(!is.null(tested_background)) tested_background <- lapply(tested_background,function(genes) unique(.sc_run_reference_resolve(genes,options$symbol_aliases)))
   table <- table[, c("cluster", "gene"), drop = FALSE]
   table$cluster <- as.character(table$cluster); table$gene <- trimws(as.character(table$gene))
   marker_original <- table
@@ -243,6 +270,7 @@
     positive <- all[all$overlap_count > 0L, , drop = FALSE]
     best <- if (nrow(positive)) max(positive$score) else NA_real_
     genes <- table$gene[table$cluster == id]
+    enrichment <- .sc_run_marker_enrichment(genes,by_type,if(is.null(tested_background)) NULL else tested_background[[id]])
     candidates <- lapply(seq_len(nrow(all)), function(i) {
       row <- all[i, , drop = FALSE]; ref_genes <- unique(by_type[[row$cell_type]])
       list(clusterId = id, label = row$cell_type, score = unname(row$score),
@@ -254,6 +282,7 @@
         notInTopMarkers = .sc_project_array(setdiff(intersect(ref_genes, features), genes)),
         formula = .sc_run_reference_scoring()$formula,
         tiedBest = is.finite(best) && abs(row$score - best) <= 1e-12,
+        enrichment = if(identical(enrichment$status,"measured")) Filter(function(x) identical(x$label,row$cell_type),enrichment$records) else enrichment,
         source = "local_marker_reference")
     })
     shown <- head(Filter(function(x) x$overlap > 0L, candidates), options$top_n)
@@ -261,7 +290,7 @@
     if (status %in% c("matched", "no_overlap")) status <- if (!length(genes))
       "missing_marker_information" else if (length(shown)) "matched" else "no_overlap"
     list(clusterId = id, cellCount = sum(membership == id), status = status,
-      candidates = shown, all_candidates = candidates,
+      candidates = shown, all_candidates = candidates, enrichment = enrichment,
       marker_symbols = .sc_run_reference_symbols(marker_original$gene[marker_original$cluster == id],
                                                 options$symbol_aliases))
   })
@@ -424,7 +453,7 @@
       ". Guided requests depend on saved database candidates; prompt separation is not biological confirmation."))
   list(schema = "scagentkit.joint-annotation-evidence.v1", clusterId = row$clusterId,
     database = database, current = current, historical = history,
-    dependency = dependency,
+    dependency = dependency, expression_review = .sc_run_saved_expression_review(supplied$markers),
     comparison = list(status = status, source = comparison_source, label = comparison_row$label,
       label_normalized = .sc_run_reference_resolve(comparison_row$label, options$label_map, TRUE),
       reference_labels = .sc_project_array(raw_best), related_candidates = related,
@@ -433,6 +462,9 @@
     counterevidence = list(status = if (length(counter)) "supplied" else "not_supplied", records = counter),
     limitations = .sc_project_array(c(
       "Coverage scores are descriptive, not calibrated probabilities or biological quality scores.",
+      .sc_run_reference_scoring()$small_reference_warning,
+      "Marker presence verifies a supplied citation, not whether that gene supports a label or that label is biologically correct.",
+      "Saved expression contrasts are not a systematic negative-lineage assessment; label semantic validation and independent accuracy are not established.",
       "Unmeasured genes, zero overlap and absence from top markers do not establish negative expression.",
       "Confidence is a qualitative supplied label, not a calibrated probability.",
       "Label equivalence, ancestry and lineage differences require the displayed explicit declarations.",

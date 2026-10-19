@@ -192,6 +192,7 @@
                                        feature_count = length(mt_genes), pattern = pattern,
                                        unavailable_reason = mt_reason),
                   groups = groups,
+                  sample_comparison = .sc_run_sample_qc_comparison(metrics),
                   interpretation = c("Quantiles summarize the supplied raw counts, before any filtering.",
                                      "Sample and capture are used only when their actual metadata columns were explicitly declared.",
                                      "Batch/condition/donor are not inferred or used as filtering groups; batch integration is a separate reviewed operation.",

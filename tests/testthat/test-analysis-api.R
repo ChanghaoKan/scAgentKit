@@ -5,7 +5,7 @@ ui_input <- function() {
 ui_context <- function() list(species = "human", tissue = "Public PBMC software fixture",
   notes = "No donor/capture metadata or established identity is inferred.")
 ui_plan <- function() list(rationale = "Reviewed software-control settings; not study recommendations.",
-  analysis = list(nfeatures = 100L, npcs = 6L), pcs = 4L, umap = FALSE)
+  analysis = list(nfeatures = 100L, npcs = 6L), pcs = 4L, diagnostic_resolutions = NULL, umap = FALSE)
 ui_review <- function(...) {
   text <- capture.output(out <- sc_review(...))
   attr(out, "display") <- text
@@ -30,7 +30,7 @@ test_that("high-level manual review binds drafts and preserves source and author
   expect_identical(x$view$status, "awaiting_review")
   expect_error(sc_review(root, "approve", reviewer = "test", reason = "No displayed snapshot"), "snapshot")
   shown <- ui_review(x)
-  expect_true(any(grepl("Complete strategy", attr(shown, "display"))))
+  expect_true(any(grepl("Strategy and local impact", attr(shown, "display"))))
   statefile <- file.path(root, "state.rds"); original <- .sc_project_sha_file(statefile)
   sc_open(root); sc_result_error <- try(sc_result(root), silent = TRUE)
   expect_s3_class(sc_result_error, "try-error")
@@ -84,7 +84,7 @@ test_that("offline external callbacks preserve separate exact transfer consent a
     calls <<- calls + 1L
     payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
     proposal <- if (grepl("strategy.v1", system_prompt, fixed = TRUE))
-      .sc_ui_plan(ui_plan(), dimensions = dim(input)) else
+      .sc_ui_plan(ui_plan(), dimensions = dim(input), mad = payload$evidence$qc_mad) else
       list(schema = "scagentkit.annotation.v1", annotations = lapply(payload$evidence$clusters,
         function(cl) list(clusterId = cl$clusterId, label = "Unknown", confidence = "low",
           rationale = "Offline fixture abstention; no scientific identity claim.", markers = list())))

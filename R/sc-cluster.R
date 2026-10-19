@@ -204,9 +204,20 @@ seurat_obj <- FindClusters(seurat_obj, resolution = %s)',
 # unchanged. Retain raw model-response audits and decision history, but require
 # fresh marker/reference calculations and annotations before applying labels.
 .invalidate_cluster_markers <- function(obj) {
+  # Subcluster summaries can embed raw response audits. Remove their active
+  # status without destroying the old scientific record or earlier archives.
+  summaries <- intersect(c("subcluster_results", "llm_annotation_summary",
+    "reference_match_interpretation"), names(obj@params))
+  if (length(summaries)) {
+    history <- obj@params$invalidated_cluster_annotations
+    if (is.null(history)) history <- list()
+    obj@params$invalidated_cluster_annotations <- append(history, list(list(
+      reason = "Reclustering invalidated these membership-dependent summaries; historical evidence only.",
+      fields = obj@params[summaries])))
+  }
   fields <- c("all_markers", "markers_filtered", "markers_summary",
     "cluster_cycling_score", "reference_matches", "reference_matches_all",
-    "llm_annotations", "annotation_evidence_review", "author_comparison")
+    "llm_annotations", "annotation_evidence_review", "author_comparison", summaries)
   obj@params[intersect(fields,names(obj@params))] <- NULL
   obj
 }

@@ -37,6 +37,12 @@ researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
 run <- researcher_pbmc_resume(project_dir, mock)
 
 view <- researcher_pbmc_inspect(project_dir)
+view$strategy_review$details$cluster_diagnostics
+researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
+  reason = "Reviewed the measured resolution comparison; retain this software control's 0.4, without claiming an optimal resolution.")
+run <- researcher_pbmc_resume(project_dir, mock)
+
+view <- researcher_pbmc_inspect(project_dir)
 view$annotation_review$details
 researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
   reason = "Reviewed markers; keep tutorial identities unresolved as Unknown.")
@@ -58,8 +64,8 @@ changing a proposal. The tutorial helpers wrap the same `sc_run()`,
 view <- sc_run_inspect(project_dir)
 view$status
 view$output
-# Optional, from a source checkout with Python >= 3.9 available:
-sc_run_open(project_dir, checkout = "/path/to/scAgentKit")
+# Optional, using installed resources with an existing Python >= 3.9:
+sc_open(project_dir)
 ```
 
 The viewer reads saved results without continuing analysis. Keep the same R

@@ -73,7 +73,29 @@ child_context_integration_decide <- function(root, action = "approve", node = sc
 
 child_context_integration_continue <- function(root) {
   snapshot <- sc_run_inspect(root)
-  suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash, snapshot$revision))
+  result <- suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
+    snapshot$revision))
+  measured <- sc_run_inspect(root)
+  if (!identical(snapshot$status, "awaiting_review") &&
+      identical(result$status, "awaiting_review") &&
+      identical(measured$review_node$kind, "strategy") &&
+      !is.null(measured$strategy_review$details$cluster_diagnostics)) {
+    # A separate explicit author decision selects this software-control's
+    # prespecified resolution only after inspecting the measured fixed-graph
+    # evidence. This does not bypass the production review boundary.
+    scan <- measured$strategy_review$details$cluster_diagnostics
+    state <- scAgentKit:::.sc_run_load(root)
+    expect_true(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions)
+    expect_identical(scan$neighbors_artifact, state$files$strategy_neighbors)
+    expect_identical(state$pending$binding$files$cluster_scan, state$files$cluster_scan)
+    expect_null(state$files$markers)
+    child_context_integration_decide(root, node = measured$review_node)
+    selected <- sc_run_inspect(root)
+    expect_identical(scAgentKit:::.sc_run_load(root)$approved$kind, "strategy")
+    result <- suppressWarnings(sc_run_continue(root, selected$project_id, selected$input_hash,
+      selected$revision))
+  }
+  result
 }
 
 child_context_integration_proposal <- function(evidence, labels = NULL) {

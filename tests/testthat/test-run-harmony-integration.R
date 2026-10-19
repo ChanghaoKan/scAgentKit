@@ -81,8 +81,29 @@ harmony_integration_record <- function(root, name) {
   scAgentKit:::.sc_run_get(root, scAgentKit:::.sc_run_load(root), name)
 }
 harmony_integration_continue <- function(root, snapshot = sc_run_inspect(root), retry = FALSE) {
-  suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
+  result <- suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
     snapshot$revision, retry = retry))
+  measured <- sc_run_inspect(root)
+  if (!identical(snapshot$status, "awaiting_review") &&
+      identical(result$status, "awaiting_review") &&
+      identical(measured$review_node$kind, "strategy") &&
+      !is.null(measured$strategy_review$details$cluster_diagnostics)) {
+    # A separate explicit author decision selects this software-control's
+    # prespecified resolution only after inspecting the measured fixed-graph
+    # evidence. This does not bypass the production review boundary.
+    scan <- measured$strategy_review$details$cluster_diagnostics
+    state <- scAgentKit:::.sc_run_load(root)
+    expect_true(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions)
+    expect_identical(scan$neighbors_artifact, state$files$strategy_neighbors)
+    expect_identical(state$pending$binding$files$cluster_scan, state$files$cluster_scan)
+    expect_null(state$files$markers)
+    harmony_integration_decide(root, snapshot = measured)
+    selected <- sc_run_inspect(root)
+    expect_identical(scAgentKit:::.sc_run_load(root)$approved$kind, "strategy")
+    result <- suppressWarnings(sc_run_continue(root, selected$project_id, selected$input_hash,
+      selected$revision, retry = retry))
+  }
+  result
 }
 harmony_integration_decide <- function(root, snapshot = sc_run_inspect(root), action = "approve") {
   node <- snapshot$review_node
@@ -176,7 +197,17 @@ harmony_integration_child <- function(root, snapshot = sc_run_inspect(root)) {
     "testthat::local_mocked_bindings(RunHarmony=args$upstream,.package='harmony',.env=environment())",
     "options(harmony_fixture_forbid_call=TRUE)",
     "before <- environment(args$upstream)$calls$count",
+    "initial <- sc_run_inspect(args$root)",
     "out <- suppressWarnings(sc_run_continue(args$root,args$project_id,args$input_hash,args$revision))",
+    "measured <- sc_run_inspect(args$root)",
+    "if (!identical(initial$status,'awaiting_review') && identical(out$status,'awaiting_review') && identical(measured$review_node$kind,'strategy') && !is.null(measured$strategy_review$details$cluster_diagnostics)) {",
+    "  scan <- measured$strategy_review$details$cluster_diagnostics; state <- scAgentKit:::.sc_run_load(args$root)",
+    "  stopifnot(measured$strategy_review$details$canonical_proposal$clustering$resolution %in% scan$resolutions, identical(scan$neighbors_artifact,state$files$strategy_neighbors), identical(state$pending$binding$files$cluster_scan,state$files$cluster_scan), is.null(state$files$markers))",
+    "  node <- measured$review_node",
+    "  sc_run_review(args$root,'approve','strategy',node$project_id,node$input_hash,node$proposal_hash,node$review_hash,node$expected_revision,reviewer='offline fresh-process software QA',reason='Explicit author selection of the prespecified software-control resolution after inspecting the measured fixed-graph scan.')",
+    "  selected <- sc_run_inspect(args$root); stopifnot(identical(scAgentKit:::.sc_run_load(args$root)$approved$kind,'strategy'))",
+    "  out <- suppressWarnings(sc_run_continue(args$root,selected$project_id,selected$input_hash,selected$revision))",
+    "}",
     "upstream_calls <- environment(args$upstream)$calls$count-before",
     "stopifnot(factory_calls==0L,http_calls==0L,upstream_calls==0L)",
     "saveRDS(list(status=out,factory_calls=factory_calls,http_calls=http_calls,upstream_calls=upstream_calls),args$result)", "})"), script)
@@ -265,7 +296,7 @@ test_that("explicit Harmony uses only approved PCs and technical factors under o
   expect_true(all(output$reviewed_type == "Unknown"))
   expect_true(all(c("001", "1", "NA", "cell space") %in% colnames(output)))
   approvals <- Filter(function(event) identical(event$action, "approved"), scAgentKit:::.sc_run_load(root)$history)
-  expect_identical(vapply(approvals, function(event) event$details$kind, character(1)), c("strategy", "annotation"))
+  expect_identical(vapply(approvals, function(event) event$details$kind, character(1)), c("strategy", "strategy", "annotation"))
   expect_identical(upstream$count, 1L)
   expect_identical(serialize(object, NULL, version = 2L), original)
   expect_false(dir.exists(file.path(root, "provider")))

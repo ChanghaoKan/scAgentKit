@@ -1,6 +1,17 @@
 # R analysis protocol
 
-The R-only route uses the same saved strategy, scientific review and result interface as `sc_start()`. Install the exact source version described in the [README](../README.md).
+This is the **fixed-commit developer preview** protocol linked from the
+[README](../README.md#developer-preview). Its ordinary raw-count scan has three
+scientific approvals. The published v0.6.0 default has two; use the matching
+[release protocol](RELEASE_060_PROTOCOL.md) with that archive. Do not mix versions
+when reopening projects.
+
+Choose manual or model-assisted initialization before creating the project.
+This example uses the manual default (`provider=NULL`, zero budget); you supply
+annotation labels and confidence. For a model project, initialize the immutable
+provider/model/settings/budget with `sc_analyze()` or `sc_run()` first, following
+[model configuration](UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call).
+Enabling a browser component later cannot add a provider to a manual project.
 
 ## First analysis
 
@@ -53,16 +64,36 @@ clustering in the displayed plan. To change a choice, save a revision with
 and inspect the returned plan. For example, `plan = list(pcs = 12)` changes PC
 selection while preserving the other displayed settings.
 
-Approve the reviewed strategy to run the local analysis through clustering and
-marker detection:
+Approve the initial strategy to run the foundation and ordinary resolution scan:
 
 ```r
-annotation <- sc_review(strategy, "approve", reviewer = "researcher",
+measured <- sc_review(strategy, "approve", reviewer = "researcher",
   reason = "Reviewed QC retention and the analysis strategy for this PBMC library.",
   continue = TRUE)
 ```
 
-### 3. Review and submit cluster annotations
+### 3. Review measured clustering before annotation
+
+The returned object is a second strategy review, not yet the annotation worksheet.
+Inspect computed PC evidence, scanned resolutions, tree, marker contrasts and
+sample composition in the full saved review:
+
+```r
+measured <- sc_review(measured)
+measured$view$strategy_review$details$cluster_diagnostics
+# If changing resolution, choose an actually scanned value, then inspect the revision:
+# measured <- sc_review(measured, "revise", plan=list(resolution=0.4),
+#   reviewer="researcher", reason="Explain the measured comparison supporting this choice.")
+annotation <- sc_review(measured, "approve", reviewer="researcher",
+  reason="Reviewed actual PC evidence and resolution scan; retain the displayed resolution.",
+  continue=TRUE)
+```
+
+The second approval binds the measured selection. A tree edge is shared-cell
+overlap, not lineage or proof of an optimal resolution. Keep a fresh returned
+snapshot for every subsequent action.
+
+### 4. Review and submit cluster annotations
 
 The returned review contains the cluster markers and an annotation worksheet.
 Inspect expression and the embedding alongside the supplied marker evidence:
@@ -103,7 +134,7 @@ completed <- sc_review(proposal, "approve", reviewer = "researcher",
   continue = TRUE)
 ```
 
-### 4. Retrieve results and reopen the project
+### 5. Retrieve results and reopen the project
 
 ```r
 result <- sc_result(completed)

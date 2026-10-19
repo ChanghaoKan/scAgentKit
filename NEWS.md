@@ -1,4 +1,83 @@
-# scAgentKit 0.6.0 (unreleased)
+# Development (unreleased)
+
+## Optional scientific diagnostics (effect evaluation pending)
+
+- New raw strategy projects keep applicable classic mean/detection evidence for
+  explicitly declared human blood/PBMC or pancreas, separate from opt-in
+  rebuilding diagnostics. Unknown tissue/species and absent panel genes are
+  recorded as unavailable/missing. PC sensitivity, resampling, extra resolution
+  extension, sample-consensus HVGs and automatic QC draft preselection stay off
+  by default. Ordinary PCA/80% selection, resolution scan/tree and applicable
+  QC/citation/Fisher evidence remain; SoupX/decontX stay optional R-only calls.
+
+- Add explicit per-sample HVG consensus, sample-median QC comparisons, guarded
+  unsaved/unapproved OR draft preselection, PC elbow and optional k+/-5,
+  resampling and finite resolution-extension experiments.
+- Add local panel expression/detection, broad-expression and cross-sample
+  contrasts, positive numerical citation gates, and eligible-background Fisher
+  evidence while retaining absolute hits and reference coverage.
+- Add separately returned SoupX/decontX count corrections with input guards and
+  before/after provenance. Original counts/checkpoints are never replaced.
+- Extend the public browser entry with explicit optional scientific settings;
+  unsupported pipelines or inputs remain unavailable. No biological improvement
+  or human time-saving claim is made before the registered paired evaluation.
+- Release acceptance retries transient downloads with bounded attempts and an
+  explicit1800-second timeout; permanent errors and checksum mismatches fail.
+
+## Review presentation and legacy label migration
+
+- R review printing now gives bounded summaries with explicit access to the full
+  sealed `snapshot$view` and `snapshot$annotations`; it does not remove evidence,
+  audit records or weaken hashes. This is separate from the HTTP display repair.
+- Grounded declared counterevidence is a review hint and no longer alone makes
+  an accepted, grounded legacy proposal unusable. Citation validity, review hints,
+  label usability and explicit reviewed-workflow approval are separate. Invalid
+  citations, absent support and unresolved/action-blocked proposals remain blocked.
+- `annot_apply()` retains existing per-cell labels for blocked **and unmapped**
+  clusters; only eligible mapped cells or explicit manual overrides are replaced.
+  If the target column is absent, unreplaced cells start as `Unannotated`.
+  Manual overrides are audited separately and do not establish model success.
+- `hybrid_confidence` remains the raw weighted numeric heuristic; it is neither
+  calibrated probability nor writeback permission. Its raw band is saved as
+  `hybrid_confidence_raw_label`; effective `hybrid_confidence_label`/`confidence`
+  and `label_usable` can be low/false despite a high raw score. For example a raw
+  0.710 can coexist with blocked fabricated support. Preserve raw response audits.
+- Before upgrading, preserve the original object/project and exact environment.
+  Review retained labels and new usability/review fields rather than assuming a
+  nonempty label was newly accepted. Use explicit manual overrides for a deliberate
+  legacy label change; use a new project with independent approval for the reviewed
+  workflow. Never rewrite old project hashes/approvals/checkpoints to force resume.
+
+## Breaking changes
+
+The reviewed workflow and helper fingerprints change. Preserve each existing
+project and its exact original package/dependencies; restore that environment
+to continue, or start a new project from the original input and review it again.
+Never edit saved hashes, approvals or authoritative checkpoints to force resume.
+The published v0.6.0 tag and assets remain unchanged.
+
+- The main entry offers measured sample-aware QC/MAD candidates, a disclosed
+  at-most-50-PC internal 80% policy and measured resolution-tree review before
+  final clustering selection. These are review options, not biological optima.
+- Add local evidence-guided QC, PC, resolution and optional-path candidates.
+  QC uses measured flag combinations and exact impacts without a universal
+  preset or score. PC advice distinguishes pending rules from actual internal
+  top50 80%/85% crossings; resolution comparisons expose conflicts and equivalent
+  memberships without an optimality score. Explicit author corrections remain
+  necessary, and unsupported or missing assessments remain visible in results.
+- Saving declared facts is not scientific approval. Applying a candidate edits
+  only a local draft; saving rebuilds its R review before explicit approval.
+  The default raw scan retains initial-strategy, measured-resolution and
+  annotation approvals. Missing optional facts/dependencies affect that path,
+  without certifying that an unexecuted assessment was performed.
+- Annotation coverage, raw weighted confidence and citation checks do not
+  establish calibrated probability, label semantics or independent accuracy.
+  Invalid model evidence cannot promote an automatic authoritative label;
+  original proposals and failed audits remain available for review.
+- An evidence-backed source lock and installed-archive real-browser acceptance
+  supplement environment records; full OS reconstruction is not promised.
+
+# scAgentKit 0.6.0 (2026-10-18)
 
 ## Saved-project compatibility and metadata priors
 

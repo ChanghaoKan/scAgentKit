@@ -276,7 +276,7 @@ function doubletReviewError(details = state.view?.run.strategy_review?.details, 
     return "Doublet removal is unverified: the saved per-capture impact is unavailable or inconsistent with the exact scope. Rebuild the review in R.";
   return null;
 }
-function dirty() {return annotationDirty() || strategyDirty() || preparationDirty();}
+function dirty() {return annotationDirty() || strategyDirty() || preparationDirty() || recommendationFactsDirty();}
 function draftError() {
   for (const item of annotationRows()) {
     const row = state.drafts.get(String(item.clusterId)), base = normalizeRow(item.proposal);
@@ -493,6 +493,9 @@ async function suggestionAction(action, modify = false, requestAfterApproval = f
   finally {state.busy = false; state.suggestionChaining = false; renderSuggestion(); buttons(); if (activeSuggestion() && !state.suggestionLost) scheduleSuggestionPoll();}
 }
 function buttons() {
+  updateRecommendationAvailability();
+  updateRecommendationFactsAvailability();
+  renderScientificAssessment();
   for (const control of $("annotation-preparation")?.querySelectorAll?.("input,textarea,select,button") || []) control.disabled = !ready();
   for (const row of state.preparationControls || []) {row.apply.disabled = !ready() || row.data.touched || row.keep.checked; row.clear.disabled = !ready() || row.keep.checked;}
   $("run-refresh").disabled = state.busy || state.suggestionChaining;
@@ -506,7 +509,7 @@ function buttons() {
   for (const id of ["annotation-label", "annotation-confidence", "annotation-rationale", "annotation-keep", "annotation-coarser", "annotation-unknown"]) $(id).disabled = !annotation || !node()?.can_revise;
   for (const input of state.citationInputs) input.disabled = !annotation || !node()?.can_revise;
   for (const id of ["annotation-reviewer", "annotation-reason", "run-undo-reviewer", "run-undo-reason"]) $(id).disabled = state.busy || activeJob() || activeSuggestion() || state.suggestionBusy;
-  const strategy = ready() && node()?.kind === "strategy";
+  const strategy = ready() && node()?.kind === "strategy" && !recommendationFactsDirty();
   $("strategy-save").disabled = !strategy || !node().can_revise || !strategyDirty() || !!strategyDraftError();
   $("strategy-approve").disabled = !strategy || !node().can_decide || strategyDirty() || !!typedStrategyError(strategyProposal()) || !!doubletReviewError() || !!madReviewError();
   $("strategy-approve-continue").hidden = !continuationEnabled();
@@ -761,7 +764,7 @@ function renderJointEvidence(item) {
   const candidateTarget = element("div", null, {id: "annotation-joint-candidates", "data-testid": "annotation-joint-candidates"});
   if (candidates.length) candidateTarget.append(table(["Candidate", "Coverage", "Unique hits / reference genes"], candidates.map(row => [typeof row.label === "string" ? row.label + (row.tiedBest === true ? " · tied best" : "") + (row.overlap === 1 ? " · single-marker evidence (weak)" : "") : "Unavailable label", evidenceNumber(row.score), evidenceNumber(row.overlap) + " / " + evidenceNumber(row.referenceSize)])));
   else empty(candidateTarget, "No positive candidate is available. This does not establish a biological exclusion.");
-  dbCard.append(candidateTarget, element("p", "Coverage is descriptive reference-marker overlap, not a probability. A single matching marker is weak evidence, even at 100% coverage. Candidate order does not establish a cell identity.", {class: "annotation-confidence-note"}));
+  dbCard.append(candidateTarget, element("p", "Coverage is descriptive reference-marker overlap, not a probability. 1/1 ranks above 10/20 by coverage only, not by biological support. Inspect absolute hits and reference size together. A single matching marker is weak evidence, even at 100% coverage. Candidate order does not establish a cell identity; marker presence does not establish label semantics.", {class: "annotation-confidence-note"}));
   const currentCard = element("section", null, {id: "annotation-joint-current", "data-testid": "annotation-joint-current", class: "joint-evidence-card"});
   const source = current.source || state.view?.run.annotation_review?.details?.source;
   currentCard.append(element("h3", "Current annotation proposal"), element("p", "Saved source: " + (typeof source?.kind === "string" ? source.kind : "unavailable"), {class: "annotation-reference-status"}), element("p", item.proposal.label, {class: "annotation-saved-label"}), element("p", item.proposal.confidence + " confidence · qualitative, uncalibrated", {class: "annotation-confidence-note"}), element("p", item.proposal.rationale, {class: "annotation-saved-rationale"}), geneParagraph("Cited genes: ", array(item.proposal.markers), {class: "annotation-confidence-note"}));
@@ -773,12 +776,28 @@ function renderJointEvidence(item) {
   const actualText = actualMode === "not_dispatched" ? "No model request is recorded for the current proposal." : actualMode === "guided" ? "Recorded current response: its prompt included database candidates, so it depends on that evidence." : actualMode === "independent" ? "Recorded current response: database candidates were excluded from its prompt." : "The current response's actual prompt dependency was not recorded.";
   target.append(element("p", modeText + " " + actualText + (typeof dependency.declaration === "string" && dependency.declaration ? " " + dependency.declaration : "") + " Prompt separation does not establish independent biological confirmation.", {id: "annotation-joint-dependency", "data-testid": "annotation-joint-dependency", "data-mode": mode, "data-actual-mode": actualMode, class: "joint-evidence-dependency"}));
   const details = element("details", null, {id: "annotation-joint-details", "data-testid": "annotation-joint-details", class: "joint-evidence-details"}); details.append(element("summary", "Evidence details: formula, sources, aliases, comparison and historical response"));
-  jointDetail(details, "Saved scoring formula", "annotation-joint-scoring", evidenceRecord(database.scoring, ["formula", "quantity", "denominator", "calibrated_probability"]));
+  jointDetail(details, "Saved scoring formula", "annotation-joint-scoring", evidenceRecord(database.scoring, ["formula", "quantity", "denominator", "calibrated_probability", "ranking_interpretation", "small_reference_warning", "semantic_validation"]));
   const sources = jointDetail(details, "Saved database and current proposal sources", "annotation-joint-source", {database: evidenceSource(database.provenance), current: evidenceSource(source)}); sources.append(element("p", "A missing dataset license is unknown; an article's license does not establish a database redistribution license."));
   jointDetail(details, "Declared database scope", "annotation-joint-scope", evidenceRecord(database.provenance?.scope, ["method", "tissue_all_rows", "unavailable_columns", "excluded_unavailable_rows"]));
   jointDetail(details, "Canonical symbols and explicit aliases", "annotation-joint-symbols", evidenceRecord(database.marker_symbols, ["original", "canonical", "unique", "duplicate_count", "alias_resolutions"]));
-  jointDetail(details, "Saved candidate details, including zero overlap", "annotation-joint-all-candidates", array(database.all_candidates).map(row => evidenceRecord(row, ["label", "score", "overlap", "referenceSize", "markers", "formula", "referenceGenes", "availableGenes", "unmeasuredGenes", "notInTopMarkers", "tiedBest", "source"])));
+  jointDetail(details, "Saved candidate details, including zero overlap", "annotation-joint-all-candidates", array(database.all_candidates).map(row => evidenceRecord(row, ["label", "score", "overlap", "referenceSize", "markers", "formula", "referenceGenes", "availableGenes", "unmeasuredGenes", "notInTopMarkers", "tiedBest", "enrichment", "source"])));
+  const savedEnrichment = database.enrichment || (array(database.all_candidates).some(row => row?.enrichment != null)
+    ? {source: "Saved per-candidate native enrichment records", candidates: array(database.all_candidates).filter(row => row?.enrichment != null).map(row => ({label: row.label, enrichment: row.enrichment}))}
+    : null);
+  const enrichment = jointDetail(details, "Saved Fisher enrichment and tested-gene background", "annotation-marker-enrichment", savedEnrichment);
+  enrichment.append(element("p", "One-sided enrichment uses the saved native eligible-gene universe and BH correction across all tested labels. It does not change coverage ranking or validate cell identity; missing background remains unavailable."));
   jointDetail(details, "Explicit name and relationship comparisons", "annotation-joint-comparison-details", evidenceRecord(comparison, ["source", "label", "label_normalized", "label_map", "reference_labels", "related_candidates", "ambiguous", "reason", "relationships"]));
+  const expression = joint.expression_review;
+  if (expression) {
+    const contrasts = element("section", null, {"data-testid": "annotation-expression-contrasts"});
+    contrasts.append(element("h3", "Saved expression contrasts; label semantics not validated"), element("p", expression.interpretation || "Only saved contrasts are available; no systematic negative-lineage panel was assessed."));
+    contrasts.append(table(["Gene", "Saved contrast direction", "pct1 - pct2"], array(expression.records).map(row => [row.gene, row.direction, evidenceNumber(row.detection_difference)]), (value, index) => index === 0 ? geneNode(value) : null));
+    details.append(contrasts);
+  }
+  if (item.measured_expression) {
+    const panels = jointDetail(details, "Saved panel expression, cross-sample contrasts and local coexpression", "annotation-measured-panels", item.measured_expression);
+    panels.append(element("p", "These saved local measurements include missing genes and per-cell count flags. Coexpression is not a doublet or ambient diagnosis, and cells are not donor replicates."));
+  }
   const currentCitations = jointDetail(details, "Current proposal citations", "annotation-joint-citations", array(current.citations).map(row => ({gene: row?.gene, status: row?.status, statistics: evidenceRecord(row?.statistics, ["gene", "avgLog2FC", "pct1", "pct2", "pAdj", "source"])})));
   currentCitations.append(geneParagraph("Supplied citation genes: ", array(current.citations).map(row => row?.gene).filter(gene => typeof gene === "string")));
   const historical = joint.historical || {}, history = jointDetail(details, "Historical model response · read-only import", "annotation-joint-history", null);
@@ -801,6 +820,7 @@ function renderCluster() {
   const joint = renderJointEvidence(item); suggestion.hidden = joint; $("annotation-reference-section").hidden = joint;
   $("annotation-cell-ids").textContent = array(item.cell_ids).join("\n"); renderMarkers(item);
   const reference = $("annotation-reference"); reference.replaceChildren(element("p", "Saved reference status: " + (item.local_reference?.status || "unavailable"), {class: "annotation-reference-status"}), raw(item.local_reference || {status: "unavailable", interpretation: "No local-reference evidence was supplied."}));
+  if (item.measured_expression) reference.append(raw(item.measured_expression));
   const row = state.drafts.get(item.clusterId); $("annotation-label").value = row.label; $("annotation-confidence").value = row.confidence; $("annotation-rationale").value = row.rationale;
   const citations = $("annotation-citations"), genes = admissibleGenes(item); citations.replaceChildren(); state.citationInputs = [];
   for (const gene of genes) {
@@ -924,6 +944,7 @@ function renderAnnotationPreparation() {
       const facts=preparationFacts(cluster),card=element('section',null,{class:'panel preparation-row','data-cluster-id':cluster.clusterId});
       const status=element('span','Needs judgement',{class:'pill muted','data-testid':'prepare-status-'+cluster.clusterId});card.append(element('h3','Cluster '+cluster.clusterId+' · '+cluster.cellCount+' cells'),status);
       const markers=array(cluster.markers);card.append(geneParagraph('Supplied markers: ',markers.slice(0,5).map(marker=>marker.gene)),element('p','Reference: '+(facts.reference.status||'not supplied')+' · '+(facts.provenance?.source_url||facts.provenance?.mode||'source not recorded')+' · '+(facts.provenance?.source_version||'version not recorded'),{class:'microcopy'}));
+      card.append(element('p','Coverage order is descriptive, not confidence: 1/1 exceeds 10/20 by its denominator only. Inspect absolute hits and saved avgLog2FC / pct1 / pct2. pct2 is other cells, not a negative-lineage panel; marker presence does not validate label semantics. Retain Unknown if unresolved.',{class:'microcopy'}));
       const candidates=preparationCandidates(cluster),select=field(card,'Inspect a saved reference candidate','select','prepare-candidate-'+cluster.clusterId);
       select.append(element('option','Choose explicitly; none selected',{value:''}),...candidates.map((candidate,index)=>element('option',candidate.label+' · '+candidate.overlap+'/'+candidate.referenceSize+' reference genes'+(candidate.overlap===1?' · single-marker evidence (weak)':'')+(candidate.tiedBest?' · best coverage (not certainty)':''),{value:String(index)})));
       const apply=element('button','Use selected candidate and its supplied citations',{type:'button',class:'button quiet','data-testid':'prepare-candidate-use-'+cluster.clusterId});card.append(apply);
@@ -1084,6 +1105,19 @@ function renderQCControls(details, proposal) {
   card.append(cycleNode("p", "Fields update the complete JSON draft only. Save once, inspect the rebuilt exact impact, then approve the whole strategy. Blank bounds are unbounded; at least one real bound is required. Unknown measurements are not zero or an automatic failure.", "qc-draft-note", {class: "microcopy"}));
   const record = element("details"); record.append(element("summary", "Saved QC parameters and dynamic panel provenance"), raw({saved_qc: details.canonical_proposal?.qc, mad_panel: details.mad_panel ?? null})); card.append(record); return card;
 }
+function renderSampleQCComparison(comparison) {
+  const details=element("details"); details.append(element("summary","Per-sample medians and cross-sample diagnostics (separate from cell MAD)"));
+  if(comparison?.status!=="measured") {empty(details,comparison?.reason||"No explicitly declared sample comparison is recorded; condition/capture are not substituted.");return details;}
+  details.append(element("p",comparison.interpretation||"Saved sample-level evidence; no sample is automatically removed."),
+    table(["Declared sample","Original input cells","Median counts","Median features","Median mt %"],array(comparison.groups).map(row=>[row.sample,evidenceNumber(row.cells),evidenceNumber(row.medians?.nCount),evidenceNumber(row.medians?.nFeature),evidenceNumber(row.medians?.percent_mt)])));
+  for(const contrast of array(comparison.cross_sample)) {
+    details.append(element("h5",contrast.metric||"Unknown metric"));
+    if(contrast.status!=="descriptive_flags") details.append(element("p",contrast.reason||"Between-sample flags unavailable."));
+    details.append(table(["Declared sample","Saved median","Robust z (between samples)","Descriptive flag"],array(contrast.samples).map(row=>[row.sample,evidenceNumber(row.median),evidenceNumber(row.robust_z),typeof row.flagged==="boolean"?(row.flagged?"Flagged; inspect study context":"Not flagged; not quality certification"):"Unavailable"])));
+  }
+  return details;
+}
+
 function renderQCImpact(details) {
   const preview = details.qc_impact, card = cycleNode("section", null, "qc-readable-impact", {class: "qc-readable-impact"}); card.append(element("h3", "Saved QC impact"));
   if (preview?.schema !== "scagentkit.qc.preview.v1") {
@@ -1095,7 +1129,7 @@ function renderQCImpact(details) {
   const retention = preview.retention || {}, stage = details.qc_stage_counts || details.qc_mad?.impact?.stage_counts || {}, logic = preview.rule_logic || {};
   const original = stage.original_cells ?? retention.before, preScore = stage.pre_score_cells;
   const percent = value => typeof value === "number" && Number.isFinite(value) && typeof original === "number" && original > 0 ? (100 * value / original).toFixed(2) + "%" : "Unavailable";
-  card.append(cycleNode("p", "Original input: " + evidenceNumber(original) + "; pre-score: " + evidenceNumber(preScore) + "; after QC: " + evidenceNumber(retention.retained) + "; after separate doublet choice: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? stage.final_selected_cells) + ".", "qc-stage-counts", {class: "parameter-impact-summary"}));
+  card.append(cycleNode("p", "Original input: " + evidenceNumber(original) + "; pre-score: " + evidenceNumber(preScore) + "; after QC: " + evidenceNumber(retention.retained) + "; total QC removals from original: " + evidenceNumber(retention.removed) + "; after separate doublet choice: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? stage.final_selected_cells) + ".", "qc-stage-counts", {class: "parameter-impact-summary"}));
   card.append(cycleNode("p", "Saved preview only. New draft values have not been evaluated; Save rebuilds this evidence in R. All percentages below use original input as denominator. Independent failures overlap and must not be added. Exclusive means actually removed while failing only that rule. Any/all applies to failed rules; Unknown is disclosed separately.", "qc-impact-note", {class: "microcopy"}));
   card.append(cycleNode("p", "Explicit minimal prefilter exclusions cannot be restored by any later fixed range, MAD preset or any/all choice. Saved prefilter removed: " + evidenceNumber(logic.prefilter_removed) + "; quality removed among eligible cells: " + evidenceNumber(logic.quality_removed) + ". Doublet predictions and keep/remove_predicted remain a separate later choice; cells already excluded by QC are not removed twice.", "qc-prefilter-boundary", {class: "microcopy"}));
   const rows = array(preview.filter_impacts);
@@ -1116,6 +1150,27 @@ function chooseClusteringDraft() {
     draft.clustering = {resolution: numericDraft(controls.resolution.value), diagnostic_resolutions: text ? text.split(",").map(numericDraft) : null}; setStrategyDraft(draft);
   } catch (_) {message("Correct the complete JSON draft before changing clustering settings.", true);}
 }
+function renderClusterTree(scan) {
+  const section = element("section", null, {class: "cluster-tree-evidence"});
+  section.append(element("h4", "Measured resolution cluster tree"), element("p", scan.interpretation), element("p", scan.tree?.interpretation));
+  const nodes = array(scan.tree?.nodes), edges = array(scan.tree?.edges), resolutions = array(scan.resolutions);
+  if (!nodes.length) {empty(section, "No measured cluster nodes."); return section;}
+  const width = Math.max(500, resolutions.length * 150), perLevel = resolutions.map(r => nodes.filter(n => n.resolution === r));
+  const height = Math.max(220, ...perLevel.map(level => 70 + 60 * level.length)), positions = new Map();
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", String(width)); svg.setAttribute("height", String(height)); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Shared cell transitions between scanned clustering resolutions");
+  function shape(tag, attrs, text) {const n = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const [k,v] of Object.entries(attrs)) n.setAttribute(k, String(v)); if (text != null) n.textContent = text; svg.append(n); return n;}
+  perLevel.forEach((level, i) => {const x = 70 + i * (width - 140) / Math.max(1, resolutions.length - 1); shape("text", {x, y: 20, "text-anchor": "middle", fill: "currentColor"}, `r = ${resolutions[i]}`); level.forEach((n,j) => positions.set(n.id, {x, y: 60 + j * 60}));});
+  edges.forEach(edge => {const a = positions.get(edge.source), b = positions.get(edge.target); if (!a || !b) return; const line = shape("line", {x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"#64748b","stroke-opacity":.55,"stroke-width":Math.max(1, 8 * edge.source_fraction)}); const title = document.createElementNS("http://www.w3.org/2000/svg", "title"); title.textContent = `${edge.cells} shared cells; source fraction ${edge.source_fraction}; target fraction ${edge.target_fraction}`; line.append(title);});
+  nodes.forEach(n => {const p = positions.get(n.id); shape("circle", {cx:p.x,cy:p.y,r:Math.min(18,6+Math.sqrt(n.cells)),fill:"#0f766e"}); shape("text", {x:p.x+23,y:p.y+4,fill:"currentColor","font-size":11}, `${n.cluster} (${n.cells})`);});
+  const scroll = element("div"); scroll.style.overflowX = "auto"; scroll.append(svg); section.append(scroll);
+  section.append(table(["From", "To", "Shared cells", "Source fraction", "Target fraction"], edges.map(e => [e.source,e.target,e.cells,evidenceNumber(e.source_fraction),evidenceNumber(e.target_fraction)])));
+  section.append(element("h4", "Cluster sample composition"), table(["Resolution", "Cluster", "Sample", "Cells"], nodes.flatMap(n => array(n.sample_counts).map(row => [n.resolution,n.cluster,row.value,row.cells]))));
+  for (const [resolution, record] of Object.entries(scan.markers || {})) {
+    const detail = element("details"); detail.append(element("summary", `Resolution ${resolution}: marker evidence (${record.status})`), element("p", record.limitation), table(["Cluster", "Gene", "log2 FC", "Detected inside", "Detected outside", "Adjusted p"], array(record.markers).map(m => [m.clusterId,m.gene,evidenceNumber(m.avgLog2FC),evidenceNumber(m.pct1),evidenceNumber(m.pct2),evidenceNumber(m.pAdj)]))); section.append(detail);
+  }
+  return section;
+}
 function renderClustering(details, proposal) {
   if (proposal.clustering == null) return strategySection("Clustering and resolution", null, "Processed clusters are reused; no new resolution or diagnostic comparison is invented.");
   const card = cycleNode("section", null, "clustering-card", {class: "strategy-evidence-card clustering-card"}); card.append(element("h3", "Clustering and resolution"));
@@ -1128,6 +1183,7 @@ function renderClustering(details, proposal) {
   const bound = actual?.status === "saved" && actual.source === "analysis_saved_louvain_diagnostics" && hash(actual.basis_artifact_sha256) && actual.basis_artifact_sha256 === diagnostic.basis_artifact_sha256 && hash(actual.analysis_artifact_sha256);
   if (bound && Array.isArray(actual.candidates) && actual.candidates.length) comparison.append(element("p", "Actual saved comparison from the approved analysis checkpoint; new draft values have not been executed."), table(["Resolution", "Chosen", "Clusters", "Smallest", "Largest", "ARI / chosen", "ARI / previous"], actual.candidates.map(row => [evidenceNumber(row.resolution), typeof row.chosen === "boolean" ? String(row.chosen) : "Unknown", evidenceNumber(row.n_clusters), evidenceNumber(row.min_cluster_size), evidenceNumber(row.max_cluster_size), evidenceNumber(row.ari_vs_chosen), evidenceNumber(row.ari_vs_previous)])));
   else empty(comparison, "Not run or no bound saved diagnostic comparison is available. Candidate settings do not imply observed cluster counts.");
+  if (details.cluster_diagnostics) card.append(renderClusterTree(details.cluster_diagnostics));
   card.append(comparison); return card;
 }
 function chooseBatchDraft() {
@@ -1215,12 +1271,12 @@ function renderPCs(details, proposal) {
 function renderMad(details, proposal) {
   const saved = details.qc_mad || {}, panel = details.mad_panel || {}, choice = proposal.qc || {}, selected = array(panel.presets).find(row => row?.preset_id === choice.preset_id), error = madReviewError(details, proposal);
   const card = cycleNode("section", null, "mad-card", {class: "strategy-evidence-card mad-card"});
-  card.append(element("h3", "Sample-aware quality candidates"), cycleNode("p", "Saved choice: " + (choice.preset_id || "Unknown") + (choice.preset_id === "keep_all" ? " · keep all pre-score cells (default)" : " · explicit reviewed quality rule"), "mad-choice", {"data-preset": choice.preset_id || "unknown"}));
+  card.append(element("h3", "Sample-aware quality candidates"), cycleNode("p", "QC in saved proposal: " + (choice.preset_id || "Unknown") + (choice.preset_id === "keep_all" ? " · default starting retention choice; not by itself a completed QC assessment" : " · explicit candidate in the saved proposal; approval is separate"), "mad-choice", {"data-preset": choice.preset_id || "unknown"}));
   card.append(cycleNode("p", "One saved panel covers every declared QC group. A choice edits the complete plan draft only; save, inspect and approve the whole plan before Continue. No preset is universally best and retained cell counts are not biological truth.", "mad-review-note", {class: "microcopy"}));
   const grouping = panel.grouping || {}, capture = details.doublet_diagnostics?.capture || {}, method = panel.method || {};
   card.append(cycleNode("p", "QC grouping: " + (grouping.column || grouping.id || "Unknown") + "; role: " + (grouping.declared_role || "Unknown") + "; source: " + (grouping.source || "Unknown") + ". Capture/loading unit: " + (capture.column || capture.id || "Unknown") + ". QC group, sample, capture and donor are distinct declarations; no relationship is inferred.", "mad-grouping", {class: "microcopy"}));
-  card.append(cycleNode("p", "Counts/features: log10(x+1), median ± " + evidenceNumber(method.k) + " × scaled MAD; scaled MAD constant: " + evidenceNumber(method.mad_constant) + ". Mitochondrial fraction: upper tail on its original scale. Strict comparisons use the saved exact thresholds; rounded display values never control execution.", "mad-method", {class: "microcopy"}));
-  card.append(cycleNode("p", "High RNA is flagged only. Ribosomal and haemoglobin measurements are diagnostic only; none authorizes automatic deletion. MAD zero/near zero, small groups, missing/nonfinite values and distribution warnings can make a candidate unavailable. Unknown is distinct from an observed zero.", "mad-risk", {class: "evidence-explainer"}));
+  card.append(cycleNode("p", "Counts/features: log10(x+1), low-tail deletion below median − " + evidenceNumber(method.k) + " × scaled MAD; upper bands flag only. Scaled MAD constant: " + evidenceNumber(method.mad_constant) + ". Mitochondrial fraction: upper tail on its original scale. Strict comparisons use the saved exact thresholds; rounded display values never control execution.", "mad-method", {class: "microcopy"}));
+  card.append(cycleNode("p", "High RNA is flagged only. Ribosomal and haemoglobin measurements are diagnostic only; none authorizes automatic deletion. MAD zero/near zero, small groups or missing/nonfinite values can make a candidate unavailable. Distribution warnings are interpretive and do not impose a normality gate. Unknown is distinct from an observed zero.", "mad-risk", {class: "evidence-explainer"}));
   const stage = panel.stage_counts || {}, impact = saved.impact || {}, counts = details.qc_stage_counts || details.stage_counts || impact.stage_counts || {};
   card.append(cycleNode("p", "Original: " + evidenceNumber(counts.original_cells ?? stage.original_cells) + "; minimal prefilter: " + evidenceNumber(counts.prefilter_cells ?? stage.pre_score_cells) + "; pre-score: " + evidenceNumber(counts.pre_score_cells ?? stage.pre_score_cells) + "; post-QC: " + evidenceNumber(counts.post_qc_cells ?? impact.impact?.post_qc_cells ?? impact.retained ?? impact.retained_cells ?? selected?.retained) + "; post-doublet: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? counts.final_selected_cells) + ". Quality statistics cells: " + evidenceNumber(stage.statistics_cells) + ".", "mad-stage-counts", {class: "microcopy"}));
   const rate = details.doublet_diagnostics?.rate || {}, reference = details.doublet_diagnostics?.reference;
@@ -1237,14 +1293,26 @@ function renderMad(details, proposal) {
   card.append(element("label", "Draft candidate for the whole plan", {for: "mad-preset-select"}), select);
   const candidates = cycleNode("div", null, "mad-candidates"); candidates.append(table(["Preset", "Rule", "Available", "Pre-score", "Retained", "Removed", "Retained fraction", "Unavailable reasons"], array(panel.presets).map(row => [row.preset_id, row.rule || row.label || "Unknown", row.available === true ? "Yes" : "No", evidenceNumber(row.pre_score), evidenceNumber(row.retained), evidenceNumber(row.removed), evidenceNumber(row.fraction_retained), array(row.unavailable_reasons).join("; ") || "None recorded"]))); card.append(candidates);
   const warnings = cycleNode("div", null, "mad-warnings"); warnings.append(element("h4", "Saved panel warnings")); for (const warning of array(panel.warnings)) warnings.append(element("p", typeof warning === "string" ? warning : json(warning))); if (!array(panel.warnings).length) empty(warnings, "None recorded; this does not establish an optimal distribution."); card.append(warnings);
+  const flags = cycleNode("section",null,"mad-flag-summary");
+  flags.append(element("h4","Single-metric flags and overlaps before choosing a QC rule"),
+    element("p","Each row uses its QC group's pre-score denominator. Only means failing exactly one of low counts, low features and high mt. 2+ flags is overlapping evidence, not extra removals. These flags do not select a rule; high RNA is diagnostic only.",{class:"microcopy"}),
+    table(["QC group","Pre-score denominator","Low counts only","Low features only","High mt only","2+ flags","No quality flag","Unknown flag rows"],array(panel.groups).map(group=>{const f=group.flag_summary||{},p=f.patterns||{};return[group.value||"Unknown",evidenceNumber(f.denominator),evidenceNumber(p.low_count_only),evidenceNumber(p.low_feature_only),evidenceNumber(p.high_mt_only),evidenceNumber(f.multiple_quality_flags),evidenceNumber(p.none),evidenceNumber(f.unknown_cells)];})),
+    element("p","Actual removal and retention follow the selected saved candidate below. Cell-type-specific deletion risk is not assessed here; no independent identity evidence or author labels are assumed.",{class:"microcopy"}));
+  card.append(flags);
+  const margins=cycleNode("section",null,"mad-mt-absolute-margins");
+  margins.append(element("h4","Mitochondrial absolute margins · percentage points"),
+    table(["QC group","Median mt %","Upper mt %","Upper − median (percentage points)","Scaled MAD"],array(panel.groups).map(group=>{const metric=group.metrics?.percent_mt||{},exact=metric.exact||{},valid=metric.available===true&&Number.isFinite(exact.median)&&Number.isFinite(exact.upper_raw);return[group.value||"Unknown",evidenceNumber(exact.median),valid?evidenceNumber(exact.upper_raw):"Unavailable",valid?evidenceNumber(exact.upper_raw-exact.median):"Unavailable",evidenceNumber(exact.scaled_mad)];})),
+    element("p","A positive MAD can still give a tiny absolute mt change. Inspect the measured margin, technical precision, flag overlaps and sample comparisons before deciding. No universal minimum difference or normality gate is added; displayed values never change exact R thresholds.",{class:"evidence-explainer"}));
+  card.append(margins);
   const groupDetails = cycleNode("details", null, "mad-groups"); groupDetails.append(element("summary", "Every QC group: exact thresholds, rounded displays, diagnostics and candidate effects"));
   for (const group of array(panel.groups)) {
     const section = element("section", null, {class: "mad-group", "data-qc-group": group.group_id || "unknown"});
     section.append(element("h4", typeof group.value === "string" && group.value ? group.value : "Unknown group"), element("p", "Original: " + evidenceNumber(group.before) + "; pre-score: " + evidenceNumber(group.pre_score)));
     for (const [name, metric] of Object.entries(group.metrics || {})) section.append(element("h5", name + " · " + (metric.available === true ? "available" : "Unknown / unavailable")), element("p", "Exact thresholds used by R"), raw(metric.exact || null), element("p", "Rounded display only"), raw(metric.display || null), raw({unavailable_reasons: metric.unavailable_reasons, warnings: metric.warnings}));
+    section.append(element("h5","Disjoint quality-flag patterns (pre-score denominator)"),table(["Pattern","Flagged cells"],Object.entries(group.flag_summary?.patterns||{}).map(([name,count])=>[name,evidenceNumber(count)])));
     section.append(element("h5", "Diagnostic-only ribosomal / haemoglobin and high-RNA flags"), raw(group.diagnostic_metrics || null), raw({flags: group.flags, warnings: group.warnings}));
     const effects = array(panel.presets).map(candidate => {const row = array(candidate.groups).find(item => item.group_id === group.group_id) || {}; return [candidate.preset_id, evidenceNumber(row.pre_score), evidenceNumber(row.retained), evidenceNumber(row.removed), evidenceNumber(row.fraction_retained)];});
-    section.append(table(["Preset", "Pre-score", "Retained", "Removed", "Retained fraction"], effects)); groupDetails.append(section);
+    section.append(table(["Preset", "Pre-score", "Retained", "Removed / group original", "Retained / group original"], effects)); groupDetails.append(section);
   }
   card.append(groupDetails);
   const scope = cycleNode("details", null, "mad-cell-scope"); scope.append(element("summary", "Complete exact quality retained / removed cell IDs"), cycleNode("p", error ? "Unavailable — rebuild the saved binding before approving." : "Retained: " + array(details.qc_impact?.keep_cells).length + "; removed from original input: " + array(details.qc_impact?.remove_cells).length + ". Includes explicit prefilter exclusions; every literal ID is shown without truncation.", "mad-cell-count"), element("h4", "Retained quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.keep_cells).join("\n") || "None", "mad-keep-ids", {class: "doublet-id-list", tabindex: "0"}), element("h4", "Removed quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.remove_cells).join("\n") || "None", "mad-remove-ids", {class: "doublet-id-list", tabindex: "0"})); card.append(scope);
@@ -1351,6 +1419,229 @@ function updateStrategyDraftStatus() {
   $("strategy-impact-draft-status").setAttribute("data-invalid", String(!!(typedError || savedError)));
   renderContinuation();
 }
+function renderScientificAssessment() {
+  const target=$("run-scientific-assessment");if(!target)return;
+  const run=state.view?.run,assessment=run?.scientific_assessment;target.replaceChildren();
+  target.hidden=!assessment&&run?.status!=="complete";if(target.hidden)return;
+  const valid=assessment?.schema==="scagentkit.scientific-assessment.v1"&&assessment.certified_qc===false&&
+    assessment.workflow_status===run.status&&hash(assessment.source_review_hash)&&assessment.source_review_hash===run.strategy_review?.hash&&Array.isArray(assessment.unassessed_steps);
+  if(!valid){target.append(element("h2","Scientific assessment unavailable"),element("p","Scientific assessment was not recorded or is unverified for this saved result. Software completion does not certify QC or cell identities."));return;}
+  const unresolved=array(assessment.unresolved_steps),incomplete=assessment.unassessed_steps.length>0||unresolved.length>0;
+  target.append(element("h2",incomplete?"Scientific assessment remains incomplete":"Recorded decisions and diagnostic assessment"),element("p",assessment.message||"Software completion is not biological or QC certification."));
+  if(assessment.qc_choice==="keep_all_quality_deferred")target.append(element("p","QC thresholds remain deferred: the keep-all quality starting point does not establish adequate QC.",{class:"scientific-assessment-deferred"}));
+  if(assessment.unassessed_steps.length)target.append(element("p","Unassessed steps: "+assessment.unassessed_steps.join(", "),{"data-testid":"scientific-unassessed-steps"}));
+  if(unresolved.length)target.append(element("p","Unresolved decisions or conflicts: "+unresolved.join(", "),{"data-testid":"scientific-unresolved-steps"}));
+  if(array(assessment.unresolved_details).length){const details=element("details");details.append(element("summary","Unresolved facts, conflicts and uncertainty"));for(const step of assessment.unresolved_details){details.append(element("h3",step.id));recommendationList(details,"Missing facts",step.missing);recommendationList(details,"Conflicts",step.conflicts);recommendationList(details,"Uncertainty",step.uncertainty);}target.append(details);}
+  if(state.stale||state.awaitingFreshInspect)target.append(element("p","Last saved assessment shown; refresh the verified state before another decision.",{class:"microcopy"}));
+}
+function recommendationContext() {
+  const run = state.view?.run, record = run?.strategy_review, review = run?.review_node;
+  const recommendations = record?.details?.recommendations;
+  const bound = !state.stale && !state.connectionLost && !state.awaitingFreshInspect && review?.kind === "strategy" &&
+    review.review_hash === record?.hash && review.expected_revision === run?.revision &&
+    record?.input_hash === run?.input_hash && review.project_id === run?.project_id && review.input_hash === run?.input_hash;
+  if (!bound) return {current:false, reason:"Recommendations are not current. Refresh the saved review before using a candidate."};
+  if (recommendations == null) return {current:false, reason:"Recommendations were not recorded for this saved review; no assessment is inferred from default choices."};
+  if (recommendations.binding && ["input_hash","config_hash","evidence_hash"].some(key => (recommendations.binding[key] ?? null) !== (record[key] ?? null)))
+    return {current:false,reason:"Recommendations are unavailable: their saved input, configuration or evidence binding is not current."};
+  const ids = ["qc","doublet","pcs","batch","resolution"], statuses = ["recommend_execute","recommend_skip","insufficient_information"], assessments = ["assessed","pending_computation","unavailable"];
+  if (recommendations.schema !== "scagentkit.recommendations.v1" || recommendations.policy_version !== "1" || !Array.isArray(recommendations.steps) ||
+      new Set(recommendations.steps.map(step => step?.id)).size !== recommendations.steps.length || recommendations.steps.some(step => !ids.includes(step?.id) || !statuses.includes(step.status) || !assessments.includes(step.assessment) || !Array.isArray(step.candidates) || step.candidates.some(candidate => !candidate || typeof candidate.id !== "string" || !candidate.id || typeof candidate.label !== "string" || typeof candidate.available !== "boolean") || new Set(step.candidates.map(candidate => candidate.id)).size !== step.candidates.length))
+    return {current:false, reason:"Recommendations are unavailable: the saved schema or policy is unsupported. No assessment is inferred."};
+  return {current:true, recommendations, reviewHash:record.hash};
+}
+function recommendationDraft(draft, stepId, candidate) {
+  const key = {qc:"qc",doublet:"doublet",pcs:"pcs",batch:"batch",resolution:"clustering"}[stepId], changes = candidate?.changes;
+  if (!key || candidate?.available !== true || !changes || typeof changes !== "object" || Array.isArray(changes) || Object.keys(changes).length !== 1 || !Object.hasOwn(changes,key))
+    throw new Error("Only an available saved candidate for this operation can edit the local draft.");
+  const choice = changes[key];
+  if (!choice || typeof choice !== "object" || Array.isArray(choice)) throw new Error("The candidate must contain a complete typed choice.");
+  const next = JSON.parse(JSON.stringify(draft));
+  if (key === "clustering") {
+    if (!next.clustering || Object.keys(choice).length !== 1 || !Object.hasOwn(choice,"resolution") || typeof choice.resolution !== "number" || !Number.isFinite(choice.resolution) || choice.resolution <= 0 || choice.resolution > 2)
+      throw new Error("A resolution candidate changes only its measured resolution; the diagnostic grid stays in the draft.");
+    next.clustering = {...next.clustering,resolution:choice.resolution};
+  } else next[key] = JSON.parse(JSON.stringify(choice));
+  const error = typedStrategyError(next); if (error) throw new Error(error);
+  return next;
+}
+function applyRecommendation(stepId, candidateId, reviewHash) {
+  if (recommendationFactsDirty()) {message("Save or discard local fact edits before using a strategy candidate. Your fact edits are preserved.",true);return false;}
+  const context = recommendationContext();
+  if (!ready() || recommendationFactsDirty() || node()?.kind !== "strategy" || !node()?.can_revise || !context.current || context.reviewHash !== reviewHash) {
+    message("Refresh the saved strategy review before using this recommendation. Your local draft is preserved.",true); return false;
+  }
+  const step = context.recommendations.steps.find(row => row.id === stepId), candidate = step?.candidates.find(row => row.id === candidateId);
+  try {
+    const draft = recommendationDraft(strategyDraft(),stepId,candidate);
+    setStrategyDraft(draft,true);
+    message("Candidate copied to the local draft. Save complete strategy using ‘Save edits and rebuild review’, then inspect R's rebuilt evidence before approval. Saved measurements and approvals have not changed.");
+    return true;
+  } catch (error) {message(error.message + " The draft was not changed.",true); return false;}
+}
+function recommendationList(target, title, values) {
+  if (!Array.isArray(values) || !values.length) return;
+  const list = element("ul",null,{class:"recommendation-list"});
+  for (const value of values) list.append(element("li",typeof value === "string" ? value : json(value)));
+  target.append(element("h4",title),list);
+}
+function updateRecommendationAvailability() {
+  const region = state.recommendationRegion; if (!region) return;
+  const context = recommendationContext();
+  region.notice.textContent = context.current ? "Saved R recommendations · assessment state is shown per step. Candidates change the local draft only; draft edits do not update saved measurements." : context.reason;
+  region.cards.hidden = !context.current;
+  for (const control of region.controls) control.disabled = !ready() || recommendationFactsDirty() || !node()?.can_revise || !context.current || control.getAttribute("data-unavailable") === "true";
+}
+function recommendationFactValue(field, input) {
+  const raw = String(input.value ?? "").trim();
+  if (!raw) return null;
+  if (["boolean","checkbox"].includes(field.type)) {
+    if (!["true","false"].includes(raw)) throw new Error("Choose explicitly declared Yes, No or Unknown.");
+    return raw === "true";
+  }
+  if (field.type === "number") {
+    const value = Number(raw); if (!Number.isFinite(value)) throw new Error("Enter a finite numeric fact, or leave it unknown."); return value;
+  }
+  if (field.type === "select") {
+    const option = array(field.options).find(row => String(row.value) === raw);
+    if (!option) throw new Error("Select a value from the saved input's available facts."); return option.value;
+  }
+  if (field.type !== "text") throw new Error("This fact field type is unsupported.");
+  return raw;
+}
+function recommendationFactPatch(items) {
+  const patch = {};
+  for (const {field,input} of items) {
+    const parts = typeof field.key === "string" ? field.key.split(".") : [];
+    if (!parts.length || parts.some(part => !/^[A-Za-z][A-Za-z0-9_]*$/.test(part) || ["__proto__","prototype","constructor"].includes(part))) throw new Error("Unsupported fact key.");
+    const value = recommendationFactValue(field,input);
+    if (JSON.stringify(value) === JSON.stringify(field.value ?? null)) continue;
+    let target = patch;
+    parts.forEach((part,index) => {if (index === parts.length-1) target[part]=value; else {if (!Object.hasOwn(target,part)) target[part]={}; if (!target[part] || typeof target[part]!=="object" || Array.isArray(target[part])) throw new Error("Conflicting fact keys."); target=target[part];}});
+  }
+  return patch;
+}
+function recommendationFactsDirty() {
+  const form = state.recommendationFacts; if (!form) return false;
+  try {return Object.keys(recommendationFactPatch(form.items)).length > 0;} catch (_) {return true;}
+}
+function updateRecommendationFactsAvailability() {
+  const form = state.recommendationFacts; if (!form) return;
+  const context = recommendationContext(), editable = ready() && context.current && context.reviewHash === form.reviewHash && context.recommendations.fact_editable === true && node()?.can_revise && ["strategy_propose","strategy_apply"].includes(state.view.run.stage) && !strategyDirty();
+  for (const control of [...form.items.map(row=>row.input),form.reviewer,form.reason]) control.disabled = !editable;
+  form.save.disabled = !editable || !recommendationFactsDirty(); form.discard.disabled = !ready() || !recommendationFactsDirty();
+}
+function renderRecommendationFacts(target, context) {
+  state.recommendationFacts = null;
+  const fields = context.current ? context.recommendations.fact_fields : null;
+  if (!Array.isArray(fields) || !fields.length) return;
+  const section = element("section",null,{class:"recommendation-facts","data-testid":"recommendation-facts"});
+  section.append(element("h3","Declare missing or corrected study facts"),element("p","Unknown stays unknown. Choose actual metadata columns and record the source; a sample label does not establish a physical capture. Save just the facts you can establish; only the reviewer and source/reason are required for this submission. Optional missing facts can remain unassessed while supported work continues. Saving facts rebuilds local suggestions and records no scientific approval.",{class:"microcopy"}));
+  const form = element("form",null,{"data-testid":"recommendation-facts-form"}), items = [];
+  for (const field of fields) {
+    if (!field || typeof field.key !== "string" || !["select","text","number","boolean","checkbox"].includes(field.type)) continue;
+    const label = element("label",field.label || field.key), input = element(["select","boolean","checkbox"].includes(field.type)?"select":"input",null,{"data-testid":"recommendation-fact-"+field.key.replaceAll(".","-"),"aria-label":field.label || field.key});
+    if (["select","boolean","checkbox"].includes(field.type)) {
+      input.append(element("option","Unknown — not declared",{value:""}));
+      for (const option of ["boolean","checkbox"].includes(field.type) ? [{value:true,label:"Yes — explicitly declared"},{value:false,label:"No — explicitly declared"}] : array(field.options)) input.append(element("option",option.label || String(option.value),{value:String(option.value)}));
+    } else {input.setAttribute("type",field.type === "number" ? "number" : "text"); if(field.type==="number")input.setAttribute("step","any");}
+    input.value = field.value == null ? "" : String(field.value); input.required = false; input.setAttribute("data-assessment-required",String(field.required === true));
+    label.append(input); form.append(label); if(field.reason)form.append(element("p",field.reason,{class:"microcopy"}));
+    items.push({field,input}); for(const event of ["input","change"])input.addEventListener(event,()=>buttons());
+  }
+  const reviewerLabel = element("label","Fact declaration reviewer"), reviewer = element("input",null,{"data-testid":"recommendation-facts-reviewer",maxlength:"200"}); reviewer.required=true; reviewerLabel.append(reviewer);
+  const reasonLabel = element("label","Source and reason for these facts"), reason = element("textarea",null,{"data-testid":"recommendation-facts-reason",maxlength:"4000",rows:"2"}); reason.required=true; reasonLabel.append(reason);
+  const save = element("button","保存事实并生成本地建议",{type:"submit",class:"button quiet","data-testid":"recommendation-facts-save"}), discard = element("button","Discard local fact edits",{type:"button",class:"button quiet","data-testid":"recommendation-facts-discard"});
+  form.append(reviewerLabel,reasonLabel,save,discard); section.append(form); target.append(section);
+  state.recommendationFacts = {form,items,reviewer,reason,save,discard,reviewHash:context.reviewHash};
+  form.addEventListener("submit",event=>{event.preventDefault();saveRecommendationFacts(context.reviewHash);});
+  discard.addEventListener("click",()=>{if(!ready())return;renderRecommendations();buttons();message("Local fact edits discarded. Saved study facts and approvals have not changed.");});
+  if (context.recommendations.fact_editable !== true) section.append(element("p","Facts are read-only at this saved stage. No configuration change is authorized here.",{class:"microcopy"}));
+  updateRecommendationFactsAvailability();
+}
+async function saveRecommendationFacts(reviewHash) {
+  const context = recommendationContext(), form = state.recommendationFacts;
+  if (!ready() || !form || !context.current || context.reviewHash !== reviewHash || form.reviewHash !== reviewHash || context.recommendations.fact_editable !== true || !node()?.can_revise || !["strategy_propose","strategy_apply"].includes(state.view.run.stage)) return false;
+  if (strategyDirty()) {message("Save or discard the complete strategy draft before saving facts. Local fact edits are preserved.",true);return false;}
+  if (!form.form.reportValidity()) return false;
+  let facts;
+  try {facts=recommendationFactPatch(form.items);if(!Object.keys(facts).length)throw new Error("Edit at least one declared fact before saving.");} catch(error){message(error.message,true);return false;}
+  const reviewer=form.reviewer.value.trim(),reason=form.reason.value.trim();if(!reviewer||!reason){message("Enter the fact reviewer and source/reason.",true);return false;}
+  const payload=basePayload("facts",reviewer,reason);payload.facts=facts;let prepare=false,saved=false;
+  state.busy=true;buttons();
+  try {
+    const answer=await request(payload);state.view=answer;state.continuation=answer.continuation||null;state.stale=false;state.connectionLost=false;state.awaitingFreshInspect=false;state.recommendationFacts=null;state.suggestion=null;state.suggestionLost=false;state.suggestionError="";stopSuggestionPolling();render();saved=true;
+    prepare=answer.run.status==="ready"&&["prefilter","strategy_evidence"].includes(answer.run.stage);
+    message(prepare ? "Facts saved without approval. Preparing local diagnostic suggestions; the worker will stop at the rebuilt strategy review." : "Facts saved without approval. Suggestions are not yet rebuilt; use local Continue preparation or resume in R, then inspect the new review.");
+  } catch(error){state.stale=true;message(error.message+" Local fact edits are retained; refresh before another submission. No automatic retry was made.",true);}
+  finally{state.busy=false;buttons();}
+  if(!saved)return false;
+  if(prepare && canContinue(false)) await continueRun(false);
+  else if(prepare) message("Facts saved without approval. Suggestions are not yet rebuilt; local Continue preparation is unavailable. Resume preparation in R, then inspect the new review.");
+  return true;
+}
+function preselectRecommendationDraft(context) {
+  if (!context.current || state.view?.effective_readonly === true || !node()?.can_revise || activeJob() || strategyDirty()) return false;
+  if (context.recommendations.fact_editable !== true) return false;
+  if ($("qc-draft-preselection-opt-in")?.checked !== true) return false;
+  if (!(state.preselectedRecommendationReviews instanceof Set)) state.preselectedRecommendationReviews = new Set();
+  const key = state.view.run.project_id + ":" + context.reviewHash;
+  if (state.preselectedRecommendationReviews.has(key)) return false;
+  state.preselectedRecommendationReviews.add(key);
+  const step = context.recommendations.steps.find(step => step.id === "qc"), selection = step?.draft_preselection;
+  if (selection?.automatic !== true || selection?.draft_only !== true || !selection.candidate_id) return false;
+  const candidate = step.candidates.find(candidate => candidate.id === selection.candidate_id && candidate.available === true);
+  if (!candidate) return false;
+  try {
+    setStrategyDraft(recommendationDraft(strategyDraft(),"qc",candidate),true);
+    message("QC comparison preselected in the local draft — NOT SAVED, NOT APPROVED. Review, change or discard it; saving and explicit approval remain separate.");
+    return true;
+  } catch (_) { return false; }
+}
+function renderRecommendations() {
+  const target = $("strategy-recommendations"); if (!target) return;
+  target.replaceChildren(element("h2","Recommendations and your next decision"));
+  const notice = element("p",null,{class:"recommendation-notice",role:"status","data-testid":"recommendations-status"}), cards = element("div",null,{class:"recommendation-grid","data-testid":"recommendations-steps"});
+  target.append(notice,cards); const controls = []; state.recommendationRegion = {notice,cards,controls};
+  const context = recommendationContext();
+  preselectRecommendationDraft(context);
+  if (context.current) {
+    const rec = context.recommendations;
+    recommendationList(cards,"Completed work recorded by R",rec.completed);
+    if (typeof rec.next_decision === "string") cards.append(element("p","Next decision: " + rec.next_decision,{class:"recommendation-next","data-testid":"recommendations-next-decision"}));
+    for (const step of rec.steps) {
+      const card = element("section",null,{class:"recommendation-step","data-recommendation-step":step.id,"data-testid":"recommendation-step-"+step.id});
+      const statuses = {recommend_execute:"Recommend execute",recommend_skip:"Recommend skip",insufficient_information:"Insufficient information"}, assessments = {assessed:"Assessed from saved evidence",pending_computation:"Assessment pending computation",unavailable:"Assessment unavailable"};
+      card.append(element("h3",step.title || step.id),element("p",statuses[step.status],{class:"pill muted","data-testid":"recommendation-status-"+step.id}),element("p",assessments[step.assessment],{class:"microcopy","data-testid":"recommendation-assessment-"+step.id}));
+      recommendationList(card,"Completed",step.completed); recommendationList(card,"Reasons",step.reasons); recommendationList(card,"Conflicts to review",step.conflicts); recommendationList(card,"Uncertainty",step.uncertainty);
+      if (array(step.missing).length) {
+        card.append(element("h4","Missing information"),table(["Fact","Why it matters"],array(step.missing).map(row => [row.label || row.field || "Unspecified fact",row.reason || "Reason not supplied"])));
+      }
+      if (step.scientific_diagnostics) { const diagnostics = element("details"); diagnostics.append(element("summary","Optional local sensitivity, resampling and expression evidence"),raw(step.scientific_diagnostics)); card.append(diagnostics); }
+      if (step.sample_comparison && typeof step.sample_comparison === "object") card.append(renderSampleQCComparison(step.sample_comparison));
+      if (step.draft_preselection?.candidate_id) card.append(element("p","Draft comparison (unsaved and unapproved): " + step.draft_preselection.candidate_id + ". " + step.draft_preselection.reason,{class:"microcopy"}));
+      for (const candidate of step.candidates) {
+        const item = element("section",null,{class:"recommendation-candidate","data-testid":"recommendation-candidate-"+step.id+"-"+candidate.id});
+        item.append(element("h4",candidate.label || candidate.id)); recommendationList(item,"Candidate reasons",candidate.reasons); recommendationList(item,"Candidate conflicts",candidate.conflicts);
+        if (candidate.impact && typeof candidate.impact === "object" && Object.keys(candidate.impact).length) {
+          const impact = element("details"); impact.append(element("summary","Saved candidate impact"),raw(candidate.impact)); item.append(impact);
+        }
+        let valid = candidate.available === true;
+        try {recommendationDraft(strategyDraft(),step.id,candidate);} catch (_) {valid = false;}
+        const apply = element("button",step.draft_preselection?.candidate_id === candidate.id ? "Load suggested comparison in local draft" : "Use candidate in local draft",{type:"button",class:"button quiet","data-unavailable":String(!valid),"data-testid":"recommendation-use-"+step.id+"-"+candidate.id}); controls.push(apply);
+        apply.addEventListener("click",()=>applyRecommendation(step.id,candidate.id,context.reviewHash)); item.append(apply);
+        if (!valid) item.append(element("p","Unavailable for this draft. Inspect the saved reasons and supported parameter groups; no assessment or choice is invented.",{class:"microcopy"}));
+        card.append(item);
+      }
+      if (typeof step.next_decision === "string") card.append(element("p","Next decision: " + step.next_decision,{class:"recommendation-next"}));
+      cards.append(card);
+    }
+    recommendationList(cards,"Limits of these recommendations",rec.limitations);
+  }
+  renderRecommendationFacts(target,context);
+  target.append(element("p","The existing author decisions remain: strategy and QC, measured resolution selection, and annotations. Using a candidate does not save, approve, compute or request a model.",{class:"microcopy"}));
+  updateRecommendationAvailability();
+}
 function savedOperationSummary(key, proposal) {
   const choice = proposal[key === "qc-mad" ? "qc" : key];
   if (choice === null) return "Explicit reuse · no new parameters";
@@ -1405,6 +1696,7 @@ function renderStrategy() {
   const original = counts.original_cells ?? impact.input_cell_count ?? details.quality?.cell_count;
   $("strategy-impact-summary").textContent = Number.isFinite(Number(retained)) && retained != null ? "Saved projected retention: " + fmt(retained) + (original != null ? " of " + fmt(original) + " input cells" : " cells") + ". Inspect the exact scopes and applicable operations below before approval." : "Exact cell retention and applicability are saved in the detailed impact evidence below. Approval covers this complete typed strategy; no calculation runs while reviewing.";
   renderStrategyOperations(details, proposal);
+  renderRecommendations();
   const cycleSupported = details.cycle_diagnostics != null || Object.hasOwn(proposal, "cycle") || Array.isArray(details.capabilities?.cycle);
   const doubletSupported = doubletEnabled(details, proposal);
   $("strategy-blockers").replaceChildren(strategyTextSection("Local blockers", applicability.blockers, "No local blockers were recorded.", true));
@@ -1460,7 +1752,7 @@ function render() {
   $("run-qc").hidden = !run.stage.startsWith("qc") || current?.kind !== "qc";
   if (!$("run-qc").hidden && !$("run-qc-frame").getAttribute("src")) $("run-qc-frame").setAttribute("src", scopedRunURL(continuationEnabled() ? "/review-qc?localContinue=1" : "/review-qc"));
   $("run-strategy").hidden = !run.strategy_review;
-  if (run.strategy_review) renderStrategy(); else state.strategyDraftText = null;
+  if (run.strategy_review) renderStrategy(); else {state.strategyDraftText = null; state.recommendationFacts = null;}
   $("run-annotation").hidden = !run.annotation_review;
   if (run.annotation_review) renderAnnotation(); else state.drafts.clear();
   renderAnnotationPreparation();
@@ -1525,6 +1817,7 @@ async function decide(action, continueAfter = false) {
   if (continueApproved) await continueRun(false);
 }
 async function decideStrategy(action, continueAfter = false) {
+  if (recommendationFactsDirty()) {message("Save or discard the local fact edits before changing a scientific strategy decision.",true);return;}
   if (!ready() || node()?.kind !== "strategy" || !["approve", "reject", "revise"].includes(action)) return;
   if (action === "revise" ? !node().can_revise : !node().can_decide) return;
   if (action === "approve" && strategyDirty()) {message("Save the complete strategy and inspect the rebuilt review before approval.", true); return;}
@@ -1575,4 +1868,5 @@ window.addEventListener("message", event => {
 });
 window.addEventListener("pagehide", () => {stopPolling(); stopSuggestionPolling();});
 window.addEventListener("pageshow", event => {if (event.persisted && state.view && !state.busy) {if (dirty()) {state.stale = true; state.awaitingFreshInspect = true; renderContinuation(); buttons();} else load();}});
+$("qc-draft-preselection-opt-in").addEventListener("change", () => renderRecommendations());
 load();

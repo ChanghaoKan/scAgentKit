@@ -147,3 +147,5 @@ export(sc_run_subcluster_apply)
 export(sc_run_subcluster_undo)
 export(sc_run_subcluster_unknown)
 export(sc_run_open)
+
+export(sc_run_ambient_correction)

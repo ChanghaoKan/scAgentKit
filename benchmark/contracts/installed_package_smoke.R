@@ -67,7 +67,17 @@ local({
       stop(paste("Installed background worker failed:",paste(status,collapse="\n")),call.=FALSE)
     jsonlite::fromJSON(output,simplifyVector=FALSE)
   }
-  analysis_job <- background("annotation_propose")
+  analysis_job <- background("strategy_propose")
+  measured <- sc_review(sc_open("table-project"))
+  scan <- measured$view$strategy_review$details$cluster_diagnostics
+  stopifnot(measured$view$status=="awaiting_review",!is.null(scan),
+    identical(scan$schema,"scagentkit.cluster-scan.v1"),length(scan$resolutions)>1L,
+    measured$plan$clustering$resolution %in% scan$resolutions)
+  # A measured scan is a distinct scientific decision, never an automatic pass.
+  selected <- sc_review(measured,"approve",reviewer="installed software control",
+    reason="Reviewed actual fixed synthetic scan; retain the explicit measured resolution")
+  stopifnot(selected$view$status=="ready")
+  annotation_job <- background("annotation_propose")
   annotation <- sc_review(sc_open("table-project"))
   stopifnot(annotation$view$status=="awaiting_configuration")
   labels <- annotation$annotations
@@ -110,7 +120,7 @@ local({
     working_directory_role="fresh temporary directory outside source checkout",
     input_entries=c("RDS","single 10x MEX","multi-sample 10x table with shuffled cell metadata"),
     rds_initial_status=initial$status,rds_service_reused=again$reused,
-    background_jobs=list(analysis_job,final_job),scientific_approvals=2L,
+    background_jobs=list(analysis_job,annotation_job,final_job),scientific_approvals=3L,
     complete_service_reused=complete$reused,complete_service_restarted=!restarted$reused,
     result_http_status=view$run_status,result_evidence_complete=view$evidence_complete,
     cells=ncol(result),features=nrow(result),provider_calls=0L,

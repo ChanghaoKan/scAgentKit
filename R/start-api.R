@@ -3,6 +3,8 @@
 #' @param sample_id Explicit ID for one MEX directory; table inputs declare it per row.
 #' @param matrix_kind Explicit raw/filtered declaration for one MEX directory.
 #' @param cell_metadata Optional keyed sample_id/barcode cell metadata data.frame/CSV/TSV.
+#' @param scientific_review Explicit optional rebuilding/extended expression diagnostics, off by default.
+#'   New raw strategy projects retain applicable declared-human classic panel evidence.
 #' @param feature_key Original names with recorded technical keys (default), or compatible IDs.
 #' @param project_dir New project directory, or the same saved project to reopen.
 #' @param context Declared species, tissue, research_goal, optional notes, columns and design.
@@ -23,7 +25,11 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   processed_reason = NULL, cluster_column = "seurat_clusters",
   model_suggestions = c("off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
-  feature_key = c("name", "id")) {
+  feature_key = c("name", "id"), scientific_review = NULL) {
+  if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
+      !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
+    stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
+  scientific_review <- .sc_run_science_options(scientific_review)
   model_suggestions <- match.arg(model_suggestions)
   .sc_project_string(project_dir, "project_dir")
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
@@ -55,6 +61,8 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
         (!is.null(processed_reason) && !identical(processed_reason,state$config$processed_reason)))
       stop("Reopening cannot replace saved entry, reuse reason or cluster column.", call. = FALSE)
     context <- state$config$context
+    if (!is.null(scientific_review) && !identical(scientific_review,state$config$scientific_review))
+      stop("Reopening cannot replace saved scientific diagnostics; use the original configuration or a new project.",call.=FALSE)
     reuse_processed <- identical(state$config$start_stage, "processed")
     processed_reason <- state$config$processed_reason
     cluster_column <- state$config$cluster_column
@@ -97,6 +105,14 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   if (reuse_processed) {
     .sc_project_string(processed_reason, "processed_reason")
     args <- c(args, "--reuse-processed", "--processed-reason", shQuote(processed_reason))
+  }
+  if (!is.null(scientific_review)) {
+    if (reuse_processed) stop("Scientific diagnostics require a new raw entry.",call.=FALSE)
+    science_file <- tempfile("scagentkit-science-",fileext=".json")
+    on.exit(unlink(science_file),add=TRUE)
+    jsonlite::write_json(scientific_review,science_file,auto_unbox=TRUE,null="null")
+    Sys.chmod(science_file,"0600")
+    args <- c(args,"--scientific-review-file",shQuote(science_file))
   }
   error_file <- tempfile("scagentkit-start-error-")
   on.exit(unlink(error_file),add=TRUE)

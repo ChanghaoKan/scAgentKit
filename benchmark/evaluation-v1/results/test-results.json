@@ -1,0 +1,35 @@
+{
+  "source_commit": "51cc4c9519ba4c71bb4fbc70dd3ae01fe4dd79f0",
+  "python": {
+    "total": 376,
+    "passed": 361,
+    "skipped": 15,
+    "failed": 0,
+    "skip_scope": "External fixtures not configured; installed-R native cases did execute"
+  },
+  "node": {
+    "files": 21,
+    "failed_files": 0,
+    "workbench_dom_assertions": 125
+  },
+  "R": {
+    "check_source": "5ca149d71658ec9b90d9556841d11b07e3f22cd6",
+    "passed": 9469,
+    "skipped": 2,
+    "errors": 0,
+    "warnings": 0,
+    "notes": 0,
+    "repeated_for_display_only_fix": false,
+    "reason": "Scientific R functions and testthat unchanged; installed R workbench/start/recovery/locks run through Python suite"
+  },
+  "ambient_documentation": {
+    "R_blocks_parse_only": 2,
+    "example_execution": false,
+    "new_fits": 0,
+    "API": "scAgentKit::sc_run_ambient_correction",
+    "browser_implementation": false
+  },
+  "hosted_ci": "Historical and final-head hosted checks are distinguished in engineering-log-summary.md and PR checks; local counts are not hosted counts.",
+  "provider_calls": 0,
+  "scientific_rerun_for_report": false
+}

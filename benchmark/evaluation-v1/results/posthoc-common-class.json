@@ -1,0 +1,1825 @@
+{
+  "schema": "scagentkit.posthoc-common-class.v1",
+  "status": "exploratory_seen_data_not_confirmatory",
+  "status_policy_version": "scagentkit.prediction-status.v1",
+  "prediction_audit_sha256": "1ad687baa446ab11873fce41eb621557ddf2c7a50406fcfd7ac30b5e1af96e26",
+  "source_metrics_sha256": "990bd5b832c9c7a7e1fdd0c60c1931da454a1d4da6238fd809b509350bbb4d87",
+  "label_map_unchanged": true,
+  "scientific_rerun": false,
+  "model_calls": 0,
+  "ifnb_common_class_policy": "Post-hoc intersection of frozen author/reference vocabularies, excluding Other; not selected by model score. Original all-class metrics remain in metrics.json.",
+  "ifnb": [
+    {
+      "original_cells": 5000,
+      "original_agreement_denominator": 5000,
+      "subset_cells": 4894,
+      "excluded_truth_cells": 106,
+      "correct": 4188,
+      "common_classes": [
+        "B",
+        "Dendritic",
+        "Monocyte",
+        "NK",
+        "T"
+      ],
+      "macro_f1": 0.7409825351490685,
+      "subset_correct_yield": 0.8557417245606865,
+      "original_universe_correct_yield": 0.8376,
+      "unknown_predictions": 0,
+      "noncommon_predictions": 10,
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 925,
+          "correct": 487,
+          "precision": 0.5264864864864864,
+          "recall": 0.9979508196721312,
+          "f1": 0.689313517338995
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 76,
+          "correct": 76,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1967,
+          "correct": 1912,
+          "precision": 0.9720386375190646,
+          "recall": 0.9989550679205852,
+          "f1": 0.9853130636433909
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 423,
+          "correct": 222,
+          "precision": 0.524822695035461,
+          "recall": 0.9910714285714286,
+          "f1": 0.6862442040185471
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 1493,
+          "correct": 1491,
+          "precision": 0.9986604152712659,
+          "recall": 0.7308823529411764,
+          "f1": 0.8440418907444098
+        }
+      ],
+      "policy": "Exclude only noncommon author truth; Unknown, noncommon, excluded and failed predictions remain misses in the selected truth denominator.",
+      "storage": "baseline-1",
+      "method": "candidate_author"
+    },
+    {
+      "original_cells": 5000,
+      "original_agreement_denominator": 5000,
+      "subset_cells": 4894,
+      "excluded_truth_cells": 106,
+      "correct": 4449,
+      "common_classes": [
+        "B",
+        "Dendritic",
+        "Monocyte",
+        "NK",
+        "T"
+      ],
+      "macro_f1": 0.8310834783356453,
+      "subset_correct_yield": 0.9090723334695545,
+      "original_universe_correct_yield": 0.8898,
+      "unknown_predictions": 17,
+      "noncommon_predictions": 192,
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 416,
+          "correct": 394,
+          "precision": 0.9471153846153846,
+          "recall": 0.8073770491803278,
+          "f1": 0.8716814159292036
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 145,
+          "correct": 91,
+          "precision": 0.6275862068965518,
+          "recall": 0.3991228070175439,
+          "f1": 0.4879356568364611
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1869,
+          "correct": 1777,
+          "precision": 0.9507758159443552,
+          "recall": 0.9284221525600836,
+          "f1": 0.9394660322495374
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 236,
+          "correct": 202,
+          "precision": 0.8559322033898306,
+          "recall": 0.9017857142857143,
+          "f1": 0.8782608695652174
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 2019,
+          "correct": 1985,
+          "precision": 0.9831599801882119,
+          "recall": 0.9730392156862745,
+          "f1": 0.9780734170978074
+        }
+      ],
+      "policy": "Exclude only noncommon author truth; Unknown, noncommon, excluded and failed predictions remain misses in the selected truth denominator.",
+      "storage": "baseline-1",
+      "method": "singler_author"
+    },
+    {
+      "original_cells": 5000,
+      "original_agreement_denominator": 5000,
+      "subset_cells": 4894,
+      "excluded_truth_cells": 106,
+      "correct": 4188,
+      "common_classes": [
+        "B",
+        "Dendritic",
+        "Monocyte",
+        "NK",
+        "T"
+      ],
+      "macro_f1": 0.7409825351490685,
+      "subset_correct_yield": 0.8557417245606865,
+      "original_universe_correct_yield": 0.8376,
+      "unknown_predictions": 0,
+      "noncommon_predictions": 10,
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 925,
+          "correct": 487,
+          "precision": 0.5264864864864864,
+          "recall": 0.9979508196721312,
+          "f1": 0.689313517338995
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 76,
+          "correct": 76,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1967,
+          "correct": 1912,
+          "precision": 0.9720386375190646,
+          "recall": 0.9989550679205852,
+          "f1": 0.9853130636433909
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 423,
+          "correct": 222,
+          "precision": 0.524822695035461,
+          "recall": 0.9910714285714286,
+          "f1": 0.6862442040185471
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 1493,
+          "correct": 1491,
+          "precision": 0.9986604152712659,
+          "recall": 0.7308823529411764,
+          "f1": 0.8440418907444098
+        }
+      ],
+      "policy": "Exclude only noncommon author truth; Unknown, noncommon, excluded and failed predictions remain misses in the selected truth denominator.",
+      "storage": "after-1",
+      "method": "candidate_author"
+    },
+    {
+      "original_cells": 5000,
+      "original_agreement_denominator": 5000,
+      "subset_cells": 4894,
+      "excluded_truth_cells": 106,
+      "correct": 4449,
+      "common_classes": [
+        "B",
+        "Dendritic",
+        "Monocyte",
+        "NK",
+        "T"
+      ],
+      "macro_f1": 0.8310834783356453,
+      "subset_correct_yield": 0.9090723334695545,
+      "original_universe_correct_yield": 0.8898,
+      "unknown_predictions": 17,
+      "noncommon_predictions": 192,
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 416,
+          "correct": 394,
+          "precision": 0.9471153846153846,
+          "recall": 0.8073770491803278,
+          "f1": 0.8716814159292036
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 145,
+          "correct": 91,
+          "precision": 0.6275862068965518,
+          "recall": 0.3991228070175439,
+          "f1": 0.4879356568364611
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1869,
+          "correct": 1777,
+          "precision": 0.9507758159443552,
+          "recall": 0.9284221525600836,
+          "f1": 0.9394660322495374
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 236,
+          "correct": 202,
+          "precision": 0.8559322033898306,
+          "recall": 0.9017857142857143,
+          "f1": 0.8782608695652174
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 2019,
+          "correct": 1985,
+          "precision": 0.9831599801882119,
+          "recall": 0.9730392156862745,
+          "f1": 0.9780734170978074
+        }
+      ],
+      "policy": "Exclude only noncommon author truth; Unknown, noncommon, excluded and failed predictions remain misses in the selected truth denominator.",
+      "storage": "after-1",
+      "method": "singler_author"
+    },
+    {
+      "original_cells": 5000,
+      "original_agreement_denominator": 5000,
+      "subset_cells": 4894,
+      "excluded_truth_cells": 106,
+      "correct": 4188,
+      "common_classes": [
+        "B",
+        "Dendritic",
+        "Monocyte",
+        "NK",
+        "T"
+      ],
+      "macro_f1": 0.7409825351490685,
+      "subset_correct_yield": 0.8557417245606865,
+      "original_universe_correct_yield": 0.8376,
+      "unknown_predictions": 0,
+      "noncommon_predictions": 10,
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 925,
+          "correct": 487,
+          "precision": 0.5264864864864864,
+          "recall": 0.9979508196721312,
+          "f1": 0.689313517338995
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 76,
+          "correct": 76,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1967,
+          "correct": 1912,
+          "precision": 0.9720386375190646,
+          "recall": 0.9989550679205852,
+          "f1": 0.9853130636433909
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 423,
+          "correct": 222,
+          "precision": 0.524822695035461,
+          "recall": 0.9910714285714286,
+          "f1": 0.6862442040185471
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 1493,
+          "correct": 1491,
+          "precision": 0.9986604152712659,
+          "recall": 0.7308823529411764,
+          "f1": 0.8440418907444098
+        }
+      ],
+      "policy": "Exclude only noncommon author truth; Unknown, noncommon, excluded and failed predictions remain misses in the selected truth denominator.",
+      "storage": "after-no-diagnostics-1",
+      "method": "candidate_author"
+    },
+    {
+      "original_cells": 5000,
+      "original_agreement_denominator": 5000,
+      "subset_cells": 4894,
+      "excluded_truth_cells": 106,
+      "correct": 4449,
+      "common_classes": [
+        "B",
+        "Dendritic",
+        "Monocyte",
+        "NK",
+        "T"
+      ],
+      "macro_f1": 0.8310834783356453,
+      "subset_correct_yield": 0.9090723334695545,
+      "original_universe_correct_yield": 0.8898,
+      "unknown_predictions": 17,
+      "noncommon_predictions": 192,
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 416,
+          "correct": 394,
+          "precision": 0.9471153846153846,
+          "recall": 0.8073770491803278,
+          "f1": 0.8716814159292036
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 145,
+          "correct": 91,
+          "precision": 0.6275862068965518,
+          "recall": 0.3991228070175439,
+          "f1": 0.4879356568364611
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1869,
+          "correct": 1777,
+          "precision": 0.9507758159443552,
+          "recall": 0.9284221525600836,
+          "f1": 0.9394660322495374
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 236,
+          "correct": 202,
+          "precision": 0.8559322033898306,
+          "recall": 0.9017857142857143,
+          "f1": 0.8782608695652174
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 2019,
+          "correct": 1985,
+          "precision": 0.9831599801882119,
+          "recall": 0.9730392156862745,
+          "f1": 0.9780734170978074
+        }
+      ],
+      "policy": "Exclude only noncommon author truth; Unknown, noncommon, excluded and failed predictions remain misses in the selected truth denominator.",
+      "storage": "after-no-diagnostics-1",
+      "method": "singler_author"
+    }
+  ],
+  "baron": {
+    "pancreatic_accuracy_status": "not_applicable_incompatible_hpca_reference",
+    "pancreatic_accuracy": null,
+    "pancreatic_macro_f1": null,
+    "legacy_results": "Original literal matches and failures preserved unchanged in metrics.json and report-original-v1.md; they do not validate pancreatic labels."
+  },
+  "resources": [
+    {
+      "dataset": "pbmc3k",
+      "storage": "baseline-1",
+      "wall_seconds": 620.26,
+      "cpu_user_seconds": 593.103,
+      "cpu_system_seconds": 23.444,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "d6d839ad81a5240b2f58e0bed499a6774714830b18b701674d15baf509edad9e",
+        "authoritative_state_sha256": "7ff4a6832cff516153177eb097840f6884a67c7461135bdcc275ae4e86eba1ac",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T21:15:40.226Z",
+            "end": "2026-10-18T21:17:30.880Z",
+            "seconds": 110.654,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T21:17:30.880Z",
+            "end": "2026-10-18T21:17:48.646Z",
+            "seconds": 17.766,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T21:17:48.646Z",
+            "end": "2026-10-18T21:18:08.105Z",
+            "seconds": 19.459,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T21:18:08.105Z",
+            "end": "2026-10-18T21:22:24.338Z",
+            "seconds": 256.233,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T21:22:24.338Z",
+            "end": "2026-10-18T21:22:37.365Z",
+            "seconds": 13.027,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved."
+      },
+      "timing_projection_sha256": "d9783ccd212001158b53a1b4cedc2eb959f397c884a6804da8e0959ce166d586"
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-snapshot-1",
+      "wall_seconds": null,
+      "cpu_user_seconds": null,
+      "cpu_system_seconds": null,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "59814de83970a212ee26efd4f9266b68eab0afb929022b228f9c82fe7f5d64d1",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T21:24:49.772Z",
+            "end": "2026-10-18T21:31:09.551Z",
+            "seconds": 379.779,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T21:31:09.551Z",
+            "end": "2026-10-18T21:37:23.064Z",
+            "seconds": 373.513,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T21:37:23.064Z",
+            "end": "2026-10-18T21:37:53.634Z",
+            "seconds": 30.57,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T21:37:53.634Z",
+            "end": "2026-10-18T22:02:34.133Z",
+            "seconds": 1480.499,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T22:02:34.133Z",
+            "end": "2026-10-18T22:02:59.175Z",
+            "seconds": 25.042,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "snapshot-show",
+            "elapsed": 29.192,
+            "user": 20.351,
+            "system": 8.683,
+            "output_file": "review-01-snapshot-show.txt",
+            "output_bytes": 90611946,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "snapshot-approve",
+            "elapsed": 50.267,
+            "user": 40.094,
+            "system": 9.995,
+            "output_file": "review-02-snapshot-approve.txt",
+            "output_bytes": 90518338,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "8363b516839a422c5dff68b0cd3f1896829ae5b9217a0fd988062db28d26fbe5"
+      },
+      "timing_projection_sha256": "316cf5191391b9d94e1ca28e9c5e482d61e714d1d3109dabb61dbf6428f930cb"
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-no-diagnostics-1",
+      "wall_seconds": 437.865,
+      "cpu_user_seconds": 416.535,
+      "cpu_system_seconds": 17.179,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "2529872a5fa82639a37e0ad0bad5fde9cac71dc327073a63cdbedc000cd70d7d",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T22:05:23.701Z",
+            "end": "2026-10-18T22:09:33.348Z",
+            "seconds": 249.647,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T22:09:33.348Z",
+            "end": "2026-10-18T22:09:53.452Z",
+            "seconds": 20.104,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T22:09:53.452Z",
+            "end": "2026-10-18T22:10:40.180Z",
+            "seconds": 46.728,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T22:10:40.180Z",
+            "end": "2026-10-18T22:11:09.462Z",
+            "seconds": 29.282,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T22:11:09.462Z",
+            "end": "2026-10-18T22:11:32.370Z",
+            "seconds": 22.908,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 5.079,
+            "user": 4.737,
+            "system": 0.332,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 980253,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 263.875,
+            "user": 254.546,
+            "system": 7.209,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 2037955,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 5.888,
+            "user": 5.498,
+            "system": 0.383,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 2037955,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 56.257,
+            "user": 54.01,
+            "system": 1.738,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 2074625,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 5.469,
+            "user": 4.865,
+            "system": 0.541,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 2074625,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 8.993,
+            "user": 7.131,
+            "system": 1.718,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 9582561,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 7.318,
+            "user": 5.976,
+            "system": 1.309,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 9582561,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 32.58,
+            "user": 29.496,
+            "system": 2.477,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 9488971,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "5bb7217f3c3f96afbae0853ce39ea7d0b752ea1a73b37d274b7d17a89c06888d"
+      },
+      "timing_projection_sha256": "2e6d5a1099e9e9034170b470e3b7753da58ae7e22f20b6ac93e8794bb2e048cd"
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-qc-or-1",
+      "wall_seconds": 770.588,
+      "cpu_user_seconds": 679.648,
+      "cpu_system_seconds": 78.583,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "ee8e0e746bb53a32b0eeb404b22eca7f0cdc72a336efc1dba31fd7154f18c2cb",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T22:12:53.210Z",
+            "end": "2026-10-18T22:20:13.250Z",
+            "seconds": 440.04,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T22:20:13.250Z",
+            "end": "2026-10-18T22:20:42.265Z",
+            "seconds": 29.015,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T22:20:42.265Z",
+            "end": "2026-10-18T22:21:45.487Z",
+            "seconds": 63.222,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T22:21:45.487Z",
+            "end": "2026-10-18T22:23:32.113Z",
+            "seconds": 106.626,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T22:23:32.113Z",
+            "end": "2026-10-18T22:24:14.920Z",
+            "seconds": 42.807,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 3.814,
+            "user": 3.63,
+            "system": 0.162,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 988145,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 454.178,
+            "user": 435.385,
+            "system": 14.36,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 13268847,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 10.205,
+            "user": 8.187,
+            "system": 1.927,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 13268847,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 85.326,
+            "user": 74.326,
+            "system": 8.453,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 13299046,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 12.524,
+            "user": 8.366,
+            "system": 3.306,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 13299046,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 38.834,
+            "user": 22.559,
+            "system": 15.606,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 85751616,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 34.088,
+            "user": 17.696,
+            "system": 15.392,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 85751616,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 78.913,
+            "user": 58.589,
+            "system": 17.893,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 85664470,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "f09dc4b61d692bead19b7a6d79ddbeb0950ea1f069fbfbdcbbecd987c2b11b4d"
+      },
+      "timing_projection_sha256": "bf1692277edadd2bec7f7ed6dfa66cd65aba2b3c7b1ee4339667c1c71ef4fba2"
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "baseline-1",
+      "wall_seconds": 714.528,
+      "cpu_user_seconds": 666.119,
+      "cpu_system_seconds": 37.832,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "d6d839ad81a5240b2f58e0bed499a6774714830b18b701674d15baf509edad9e",
+        "authoritative_state_sha256": "a5a3389ee6338fd52010a8a2c7da82a5d85ff241067f09b640b93351e1fefd20",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T22:26:46.034Z",
+            "end": "2026-10-18T22:33:54.317Z",
+            "seconds": 428.283,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T22:33:54.317Z",
+            "end": "2026-10-18T22:34:11.082Z",
+            "seconds": 16.765,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T22:34:11.082Z",
+            "end": "2026-10-18T22:35:20.769Z",
+            "seconds": 69.687,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T22:35:20.769Z",
+            "end": "2026-10-18T22:35:55.094Z",
+            "seconds": 34.325,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T22:35:55.094Z",
+            "end": "2026-10-18T22:36:30.715Z",
+            "seconds": 35.621,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 6.075,
+            "user": 5.468,
+            "system": 0.511,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 1744948,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 438.22,
+            "user": 415.719,
+            "system": 16.751,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 3601345,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 6.031,
+            "user": 5.343,
+            "system": 0.604,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 3601345,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 79.947,
+            "user": 76.238,
+            "system": 3.034,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 3719450,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 4.825,
+            "user": 4.05,
+            "system": 0.678,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 3719450,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 10.728,
+            "user": 8.189,
+            "system": 2.416,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 18311284,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 10.591,
+            "user": 6.785,
+            "system": 3.493,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 18311284,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 54.975,
+            "user": 45.94,
+            "system": 7.14,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 18138991,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "06d2d1677b5f364a445310c1643ba65146ecfd8a44089dc1ba6cbfa39069ff2e"
+      },
+      "timing_projection_sha256": "8a2e2061a7358494b764aa209a173345095223ca3dedd9bab69a5477d5531a4a"
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-1",
+      "wall_seconds": 1382.874,
+      "cpu_user_seconds": 1214.598,
+      "cpu_system_seconds": 150.588,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "a019f63912a4d8dc7a95be660db50e3b2dd6ac6f8eeb7c77f081274bd51d43e7",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T22:38:46.255Z",
+            "end": "2026-10-18T22:54:15.497Z",
+            "seconds": 929.242,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T22:54:15.497Z",
+            "end": "2026-10-18T22:54:40.778Z",
+            "seconds": 25.281,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T22:54:40.778Z",
+            "end": "2026-10-18T22:56:00.066Z",
+            "seconds": 79.288,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T22:56:00.066Z",
+            "end": "2026-10-18T22:58:26.595Z",
+            "seconds": 146.529,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T22:58:26.595Z",
+            "end": "2026-10-18T22:59:13.576Z",
+            "seconds": 46.981,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 5.827,
+            "user": 5,
+            "system": 0.721,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 1746084,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 943.688,
+            "user": 891.312,
+            "system": 40.513,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 24508425,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 9.564,
+            "user": 6.997,
+            "system": 2.479,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 24508425,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 93.614,
+            "user": 86.487,
+            "system": 6.174,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 24626331,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 8.148,
+            "user": 5.643,
+            "system": 2.375,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 24626331,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 62.83,
+            "user": 33.885,
+            "system": 28.533,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 288503274,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 56.59,
+            "user": 26.309,
+            "system": 29.756,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 288503274,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 116.005,
+            "user": 76.533,
+            "system": 37.001,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 288330972,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "410f8a5f44cad53f493916217e3c72d1f3640323295be8ec1a5cff4ce6a89b07"
+      },
+      "timing_projection_sha256": "0f6e31565b13e1dbbdb1133ad5b6294026d219c164c9aaef3924541d4b453834"
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-no-diagnostics-1",
+      "wall_seconds": 637.946,
+      "cpu_user_seconds": 606.14,
+      "cpu_system_seconds": 25.448,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "082b271b3f442d1fe3dc0b73e5bdda1e2ef01c98e68fcb5988fd2ea4a03a86ae",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T23:01:38.455Z",
+            "end": "2026-10-18T23:08:40.783Z",
+            "seconds": 422.328,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T23:08:40.783Z",
+            "end": "2026-10-18T23:08:57.082Z",
+            "seconds": 16.299,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T23:08:57.082Z",
+            "end": "2026-10-18T23:10:11.332Z",
+            "seconds": 74.25,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T23:10:11.332Z",
+            "end": "2026-10-18T23:10:37.634Z",
+            "seconds": 26.302,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T23:10:37.634Z",
+            "end": "2026-10-18T23:11:00.910Z",
+            "seconds": 23.276,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 3.911,
+            "user": 3.599,
+            "system": 0.287,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 1746099,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 431.823,
+            "user": 414.18,
+            "system": 13.377,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 3605554,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 5.916,
+            "user": 5.229,
+            "system": 0.642,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 3605554,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 82.747,
+            "user": 77.439,
+            "system": 3.784,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 3723460,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 4.712,
+            "user": 4.207,
+            "system": 0.485,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 3723460,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 8.03,
+            "user": 6.143,
+            "system": 1.855,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 18824245,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 7.311,
+            "user": 5.398,
+            "system": 1.88,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 18824245,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 32.213,
+            "user": 29.865,
+            "system": 2.224,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 18651988,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "830c6feb348243a2e5458550401ba4784f38d48d1ddd170fa51a7a0cd55f034f"
+      },
+      "timing_projection_sha256": "ded4bf2ece49e6aef13df359c5e7a97b26638b8e6a6449661ab34011fb5dd50f"
+    },
+    {
+      "dataset": "baron",
+      "storage": "baseline-1",
+      "wall_seconds": 2722.628,
+      "cpu_user_seconds": 2577.914,
+      "cpu_system_seconds": 108.852,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "d6d839ad81a5240b2f58e0bed499a6774714830b18b701674d15baf509edad9e",
+        "authoritative_state_sha256": "8687fa5de54ee3c80bbd6a164c011463d6607040547455d8b81c5dcd60087aa7",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T22:28:02.173Z",
+            "end": "2026-10-18T23:02:52.052Z",
+            "seconds": 2089.879,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T23:02:52.052Z",
+            "end": "2026-10-18T23:03:20.181Z",
+            "seconds": 28.129,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T23:03:20.181Z",
+            "end": "2026-10-18T23:08:29.910Z",
+            "seconds": 309.729,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-18T23:08:29.910Z",
+            "end": "2026-10-18T23:09:12.853Z",
+            "seconds": 42.943,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-18T23:09:12.853Z",
+            "end": "2026-10-18T23:09:59.515Z",
+            "seconds": 46.662,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 5.933,
+            "user": 5.435,
+            "system": 0.457,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 3073610,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 2105.473,
+            "user": 1997.44,
+            "system": 80.278,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 4938821,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 10.806,
+            "user": 8.943,
+            "system": 1.406,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 4938821,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 324.634,
+            "user": 310.989,
+            "system": 10.232,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 4961652,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 8.037,
+            "user": 6.466,
+            "system": 1.205,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 4961652,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 12.528,
+            "user": 9.585,
+            "system": 2.733,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 23006407,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 11.243,
+            "user": 7.968,
+            "system": 2.89,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 23006407,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 62.007,
+            "user": 55.839,
+            "system": 5.003,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 22841996,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "d6b1f0001e4cf9f6a0eb2dda9d73f1bfb879923deedb3ff5f9db8d84ae1a8890"
+      },
+      "timing_projection_sha256": "26aa589dfc5af393031a7da579fa997c74ce26d36efde3cdece85dfd675a2eb5"
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-1",
+      "wall_seconds": 3515.88,
+      "cpu_user_seconds": 3245.4,
+      "cpu_system_seconds": 247.036,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "572b866454dc25b2734e5825e9d0fdf234a987ca11657911dd33ee70d8bbe94e",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-18T23:13:15.119Z",
+            "end": "2026-10-18T23:58:04.825Z",
+            "seconds": 2689.706,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-18T23:58:04.825Z",
+            "end": "2026-10-18T23:58:42.933Z",
+            "seconds": 38.108,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-18T23:58:42.933Z",
+            "end": "2026-10-19T00:02:38.287Z",
+            "seconds": 235.354,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-19T00:02:38.287Z",
+            "end": "2026-10-19T00:07:08.216Z",
+            "seconds": 269.929,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-19T00:07:08.216Z",
+            "end": "2026-10-19T00:08:23.280Z",
+            "seconds": 75.064,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 3.773,
+            "user": 3.501,
+            "system": 0.272,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 3100289,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 2708.138,
+            "user": 2640.909,
+            "system": 51.945,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 96743914,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 16.456,
+            "user": 11.383,
+            "system": 4.897,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 96743914,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 256.741,
+            "user": 244.111,
+            "system": 10.698,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 96758741,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 13.982,
+            "user": 9.012,
+            "system": 4.857,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 96758741,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 115.141,
+            "user": 58.301,
+            "system": 55.937,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 928405014,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 108.122,
+            "user": 51.397,
+            "system": 55.866,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 928405014,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 198.474,
+            "user": 134.339,
+            "system": 60.691,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 928240594,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "a8d8622de5c67aedc09907a121ff197685b57570324db8294d8469408f0881f3"
+      },
+      "timing_projection_sha256": "dca394be9cbf207d36407eb99217def2a77aeb23aa3557b4d9361fbf6d43cc41"
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-no-diagnostics-1",
+      "wall_seconds": 1791.823,
+      "cpu_user_seconds": 1745.582,
+      "cpu_system_seconds": 36.708,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "96f1a742dd3d8e9d0ea5ce8d48fbd60c3a4395d7a673f37650d8d6b3d6487037",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-19T00:12:49.654Z",
+            "end": "2026-10-19T00:35:46.668Z",
+            "seconds": 1377.014,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-19T00:35:46.668Z",
+            "end": "2026-10-19T00:36:06.007Z",
+            "seconds": 19.339,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-19T00:36:06.007Z",
+            "end": "2026-10-19T00:39:50.450Z",
+            "seconds": 224.443,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-19T00:39:50.450Z",
+            "end": "2026-10-19T00:40:20.534Z",
+            "seconds": 30.084,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-19T00:40:20.534Z",
+            "end": "2026-10-19T00:40:53.270Z",
+            "seconds": 32.736,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 3.838,
+            "user": 3.534,
+            "system": 0.303,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 3100304,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 1387.608,
+            "user": 1356.654,
+            "system": 23.243,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 4968573,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 7.12,
+            "user": 6.544,
+            "system": 0.55,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 4968573,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 234.774,
+            "user": 229.16,
+            "system": 4.516,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 4983400,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 5.544,
+            "user": 4.963,
+            "system": 0.536,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 4983400,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 9.43,
+            "user": 7.621,
+            "system": 1.751,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 23698667,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 7.785,
+            "user": 6.081,
+            "system": 1.659,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 23698667,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 43.036,
+            "user": 39.865,
+            "system": 2.895,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 23534292,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "9ceee24691d85d6b440c45fc9c6555b7224ca209c5b01504258f6a8ec6aed1e5"
+      },
+      "timing_projection_sha256": "84565a7b9d7257f7503c910b5c64e84e58ab5af944351b705c76de5057183525"
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-sample-hvg-1",
+      "wall_seconds": 3611.964,
+      "cpu_user_seconds": 3341.546,
+      "cpu_system_seconds": 248.272,
+      "peak_memory_bytes": null,
+      "human_time_seconds": null,
+      "pure_compute_seconds": null,
+      "saved_stage_intervals": {
+        "project_status": "complete",
+        "stage": "complete",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "authoritative_state_sha256": "e5b181af4a87c40bb9fd77287edc149677f5ff2d36f5a38e09e6c700c90fcf8f",
+        "segments": [
+          {
+            "name": "approved_foundation_to_measured_review",
+            "start": "2026-10-19T00:44:10.963Z",
+            "end": "2026-10-19T01:29:58.264Z",
+            "seconds": 2747.301,
+            "scope": "Approved computation plus integrity/artifact persistence/review publication; excludes subsequent printed review collection"
+          },
+          {
+            "name": "measured_review_to_selection_approval",
+            "start": "2026-10-19T01:29:58.264Z",
+            "end": "2026-10-19T01:30:38.524Z",
+            "seconds": 40.26,
+            "scope": "API review/integrity/rendering and automated policy; includes collector overhead, no human participant"
+          },
+          {
+            "name": "selection_approval_to_annotation_evidence",
+            "start": "2026-10-19T01:30:38.524Z",
+            "end": "2026-10-19T01:34:37.597Z",
+            "seconds": 239.073,
+            "scope": "Marker/reference/expression work plus API integrity/persistence"
+          },
+          {
+            "name": "annotation_evidence_to_approval",
+            "start": "2026-10-19T01:34:37.597Z",
+            "end": "2026-10-19T01:39:16.870Z",
+            "seconds": 279.273,
+            "scope": "API show/revise/validation/rendering and automated policy; includes collector overhead, not human effort"
+          },
+          {
+            "name": "annotation_approval_to_finalization",
+            "start": "2026-10-19T01:39:16.870Z",
+            "end": "2026-10-19T01:40:46.886Z",
+            "seconds": 90.016,
+            "scope": "Approved label application/export plus integrity/persistence"
+          }
+        ],
+        "warning": "Timestamp-bounded wall-time segments are descriptive under concurrent local load. Review intervals include API validation and collector rendering; do not equate them with pure logging time, algorithm cost or human time saved.",
+        "review_operations": [
+          {
+            "sequence": 1,
+            "operation": "show",
+            "elapsed": 3.944,
+            "user": 3.647,
+            "system": 0.295,
+            "output_file": "review-01-show.txt",
+            "output_bytes": 3100421,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 2,
+            "operation": "approve",
+            "elapsed": 2767.04,
+            "user": 2697.851,
+            "system": 53.102,
+            "output_file": "review-02-approve.txt",
+            "output_bytes": 96796001,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 3,
+            "operation": "show",
+            "elapsed": 17.024,
+            "user": 12.185,
+            "system": 4.823,
+            "output_file": "review-03-show.txt",
+            "output_bytes": 96796001,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 4,
+            "operation": "approve",
+            "elapsed": 260.82,
+            "user": 252.633,
+            "system": 7.586,
+            "output_file": "review-04-approve.txt",
+            "output_bytes": 96810796,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 5,
+            "operation": "show",
+            "elapsed": 15.34,
+            "user": 10.479,
+            "system": 4.76,
+            "output_file": "review-05-show.txt",
+            "output_bytes": 96810796,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 6,
+            "operation": "revise",
+            "elapsed": 117.499,
+            "user": 62.501,
+            "system": 54.259,
+            "output_file": "review-06-revise.txt",
+            "output_bytes": 926237077,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 7,
+            "operation": "show",
+            "elapsed": 110.712,
+            "user": 55.922,
+            "system": 53.966,
+            "output_file": "review-07-show.txt",
+            "output_bytes": 926237077,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          },
+          {
+            "sequence": 8,
+            "operation": "approve",
+            "elapsed": 224.973,
+            "user": 153.889,
+            "system": 67.627,
+            "output_file": "review-08-approve.txt",
+            "output_bytes": 926072722,
+            "timing_scope": "Public review API including integrity checks, optional continuation and complete rendering to a file; not isolated numerical kernel time"
+          }
+        ],
+        "review_operations_source_sha256": "5b4bf96bfe0ca292aee315b9a858b04143008edab0888dc50dfbb05cc6736291"
+      },
+      "timing_projection_sha256": "b4612e73f78a409b0a2937b70dd4216d74b294697752cb084b02f0040b15d6d6"
+    }
+  ],
+  "timing_limitation": "Wall intervals include integrity checks, persistence, API work and review rendering under concurrent load. They are not pure compute, isolated logging cost or human time. No peak memory was captured. PBMC snapshot/resume intervals are not whole runs.",
+  "failures_preserved": [
+    [
+      "ifnb",
+      "after-qc-or-1-process.json",
+      1,
+      "preserved; see original log"
+    ],
+    [
+      "baron",
+      "after-qc-or-1-process.json",
+      1,
+      "preserved; see original log"
+    ]
+  ]
+}

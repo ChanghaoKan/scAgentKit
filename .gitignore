@@ -6,6 +6,8 @@
 *.Rcheck/
 *.tar.gz
 .DS_Store
+__pycache__/
+*.pyc
 check/
 workbench/.local/
 workbench/**/__pycache__/

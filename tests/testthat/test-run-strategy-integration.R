@@ -58,8 +58,24 @@ strategy_integration_begin <- function(root, object = strategy_integration_fixtu
 }
 
 strategy_integration_continue <- function(root, snapshot = sc_run_inspect(root), retry = FALSE) {
-  suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
+  result <- suppressWarnings(sc_run_continue(root, snapshot$project_id, snapshot$input_hash,
     snapshot$revision, retry = retry))
+  measured <- sc_run_inspect(root)
+  if (identical(result$status, "awaiting_review") &&
+      identical(measured$review_node$kind, "strategy") &&
+      !is.null(measured$strategy_review$details$cluster_diagnostics)) {
+    # These fixtures explicitly approve their prespecified software-control
+    # resolution only AFTER inspecting its newly measured scan. Dedicated
+    # cluster-review tests call raw Continue to assert the intermediate stop.
+    expect_true(measured$strategy_review$details$canonical_proposal$clustering$resolution %in%
+      measured$strategy_review$details$cluster_diagnostics$resolutions)
+    strategy_integration_decide(root, snapshot = measured,
+      reason = "Approve the prespecified synthetic resolution after inspecting the measured scan.")
+    measured <- sc_run_inspect(root)
+    result <- suppressWarnings(sc_run_continue(root, measured$project_id, measured$input_hash,
+      measured$revision, retry = retry))
+  }
+  result
 }
 
 strategy_integration_decide <- function(root, action = "approve", snapshot = sc_run_inspect(root),
@@ -170,7 +186,7 @@ test_that("one concentrated strategy review authorizes QC and analysis, with sep
   expect_true(all(c("strategy_evidence", "strategy_apply", "qc_apply", "strategy_basis",
     "strategy_neighbors", "strategy_cluster", "markers", "annotation_evidence") %in% state$completed))
   approvals <- Filter(function(event) event$action == "approved", state$history)
-  expect_identical(vapply(approvals, function(event) event$details$kind, character(1)), "strategy")
+  expect_identical(vapply(approvals, function(event) event$details$kind, character(1)), c("strategy", "strategy"))
   analysis <- scAgentKit:::.sc_run_get(root, state, "analysis")
   expect_true(all(c("pca", "umap") %in% names(analysis@reductions)))
   expect_true(all(c("sc_strategy_nn", "sc_strategy_snn") %in% names(analysis@graphs)))
@@ -206,7 +222,7 @@ test_that("one concentrated strategy review authorizes QC and analysis, with sep
   expect_true(all(c("reviewed_type", "reviewed_type_confidence", "reviewed_type_rationale") %in% names(output[[]])))
   final_state <- scAgentKit:::.sc_run_load(root)
   decisions <- Filter(function(event) event$action == "approved", final_state$history)
-  expect_identical(vapply(decisions, function(event) event$details$kind, character(1)), c("strategy", "annotation"))
+  expect_identical(vapply(decisions, function(event) event$details$kind, character(1)), c("strategy", "strategy", "annotation"))
   complete_files <- strategy_integration_files(root)
   expect_identical(strategy_integration_continue(root)$status, "complete")
   expect_identical(strategy_integration_files(root), complete_files)

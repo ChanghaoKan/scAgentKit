@@ -37,6 +37,9 @@
 #' @param qc_mad Optional explicit QC grouping and finite deterministic MAD panel.
 #'   A nested prefilter may declare an explicitly preapproved minimum-count rule;
 #'   default prefilter and quality preset retain all cells.
+#' @param scientific_review Optional local PC sensitivity, resampling, resolution
+#'   extension and extended expression diagnostics; disabled by default. New raw
+#'   strategy projects retain applicable declared-human classic panel evidence.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
 #'   creation receipts supplied by sc_run_subcluster, not analysis settings.
 #' @return Durable run status. Use sc_run_inspect, sc_run_approve and sc_run_resume.
@@ -49,9 +52,13 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    annotation_proposal = NULL, qc_preview = list(),
                    reference_review = list(), annotation_history = NULL,
                    strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
-                   doublet_diagnostics = NULL, qc_mad = NULL,
+                   doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL) {
+  if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
+      !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
+    stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
+  scientific_review <- .sc_run_science_options(scientific_review)
   start_stage <- match.arg(start_stage)
   if (!identical(strategy, TRUE) && !identical(strategy, FALSE)) stop("strategy must be TRUE or FALSE.", call. = FALSE)
   if (!is.null(strategy_proposal)) strategy <- TRUE
@@ -115,7 +122,13 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
+  if (!is.null(scientific_review)) {
+    if (!strategy || start_stage != "qc") stop("scientific_review requires raw strategy entry.",call.=FALSE)
+    config$scientific_review <- scientific_review
+  }
   if (strategy) config$strategy <- TRUE
+  if (strategy && start_stage == "qc")
+    config$basic_expression_review <- .sc_run_basic_expression_options(checked$context)
   if (!is.null(subcluster_origin)) {
     config$subcluster_origin <- subcluster_origin
     config$subcluster_creation <- subcluster_creation
@@ -178,9 +191,33 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
 }
 
 .sc_run_implementation <- function() {
-  ns <- environment(.sc_run_drive)
-  selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE))
+  # A replaced/mocked coordinator can have a different lexical environment;
+  # its environment must never redirect discovery away from package bindings.
+  ns <- asNamespace("scAgentKit")
+  selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE), method = "radix")
   selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", "sc_select_pcs", ".adjusted_rand_index", "sc_cycle_gene_set"))
+  # Coordinator wrappers call scientific helpers outside the sc_run prefix.
+  # Follow their package-local references transitively, without executing any
+  # helper/provider or fingerprinting unrelated legacy workflows. External
+  # kernels retain their version/runtime contracts below and in saved evidence.
+  pending <- selected
+  while (length(pending)) {
+    referenced <- unique(unlist(lapply(pending, function(name) {
+      fn <- get(name, envir = ns, inherits = FALSE)
+      # all.names ignores pairlists. A synthetic call exposes nested default
+      # expressions as syntax, retaining required missing arguments unevaluated.
+      defaults <- as.call(c(list(as.name("list")), as.list(formals(fn))))
+      c(all.names(body(fn)), all.names(defaults))
+    }), use.names = FALSE))
+    local <- referenced[vapply(referenced, function(name)
+      exists(name, envir = ns, inherits = FALSE) &&
+        is.function(get(name, envir = ns, inherits = FALSE)), logical(1))]
+    pending <- setdiff(local, selected)
+    selected <- unique(c(selected, pending))
+  }
+  # Symbol helpers such as %||% sort differently under C and UTF-8 collation.
+  # Fingerprints must retain byte-stable ordering in every R worker process.
+  selected <- sort(selected, method = "radix")
   code <- lapply(selected, function(name) {
     fn <- get(name, envir = ns)
     list(name = name, formals = paste(deparse(formals(fn), width.cutoff = 500L), collapse = "\n"),
@@ -189,7 +226,10 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   # Optional diagnostic dependencies are fingerprinted in their immutable
   # evidence. Installing a missing scorer before evidence generation must not
   # invalidate a stopped project; completed fixed scores are reused, not refit.
-  .sc_run_hash(list(code = code, versions = lapply(c("Seurat", "SeuratObject", "agentomicsCore", "Matrix", "irlba", "RcppAnnoy", "uwot"),
+  # Seurat's default Wilcoxon marker method automatically chooses presto,
+  # limma or stats from installed availability. These are basic marker kernels,
+  # not optional diagnostics whose fixed evidence can be generated later.
+  .sc_run_hash(list(code = code, versions = lapply(c("Seurat", "SeuratObject", "agentomicsCore", "Matrix", "irlba", "RcppAnnoy", "uwot", "presto", "limma"),
     function(p) if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else "unavailable")))
 }
 
@@ -425,6 +465,27 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         proposed <- .sc_run_get_proposal(root, state, "strategy", evidence$summary, provider, chat_fn, retry, local_only)
         state <- proposed$state
         if (is.null(proposed$proposal)) return(.sc_run_public(state))
+        if (!is.null(state$recommendation_rebuild)) {
+          # The former draft is preserved in the facts archive. Only binding
+          # fields change here; newly prepared predictions never inherit a
+          # previous removal instruction without a fresh complete review.
+          proposal <- proposed$proposal
+          mad <- evidence$private$mad_record
+          if (!is.null(mad)) {
+            if (identical(proposal$qc$schema, "scagentkit.qc.mad.v1")) proposal$qc$panel_hash <- mad$panel_hash
+            if (identical(proposal$qc$schema, "scagentkit.qc.rules.v1"))
+              proposal$qc$rules <- lapply(proposal$qc$rules, function(rule) {
+                if (identical(rule$op, "mad_preset")) rule$panel_hash <- mad$panel_hash
+                rule
+              })
+          }
+          if (!is.null(evidence$private$doublet_record)) proposal$doublet <- list(method = "keep",
+            reason = "Fresh fixed predictions require review; facts preparation authorizes no cell removal.")
+          else proposal$doublet <- NULL
+          state <- .sc_run_put(root, state, "manual_strategy", proposal)
+          proposed$proposal <- proposal
+          state$recommendation_rebuild <- NULL
+        }
         validated <- .sc_run_strategy_validate(proposed$proposal, evidence)
         state <- .sc_run_strategy_review_publish(root, state, validated, evidence)
         state <- .sc_run_strategy_pending(root, state, validated, evidence)
@@ -480,6 +541,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         seu <- .sc_run_strategy_cluster(.sc_run_get(root, state, "strategy_neighbors"), state$config, plan)
         state <- .sc_run_put(root, state, "analysis", seu)
         state$completed <- unique(c(state$completed, "analysis")); state$nodes$analysis <- "EXECUTED"
+        state <- .sc_run_cluster_after(root, state, plan)
+        if (identical(state$status, "awaiting_review")) return(.sc_run_public(state))
         state <- .sc_run_checkpoint(root, state, stage, "markers")
       } else if (stage == "qc_evidence") {
         evidence <- .sc_run_qc_evidence(.sc_run_get(root, state, "input"), state$config$context, state$config$assay, state$config$counts_layer)
@@ -595,6 +658,10 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         seu@misc$strategy_execution,
       limitations = strategy_record$details$limitations,
       scientific_acceptance = "Execution verified; biological conclusions remain analyst-reviewed.")
+    strategy_summary$recommendations <- strategy_record$details$recommendations
+    strategy_summary$scientific_assessment <- .sc_run_scientific_assessment(root, state)
+    strategy_summary$scientific_assessment$workflow_status <- "complete"
+    .sc_run_atomic(strategy_summary$scientific_assessment, file.path(root, "output", "scientific_assessment.json"), json = TRUE)
     if (!is.null(state$config$cycle_diagnostics)) strategy_summary$cycle_diagnostics <- strategy_record$details$cycle_diagnostics
     if (!is.null(state$config$doublet_diagnostics)) strategy_summary$doublet_diagnostics <- strategy_record$details$doublet_diagnostics
     if (!is.null(state$config$qc_mad)) strategy_summary$qc_mad <- strategy_record$details$qc_mad
@@ -720,6 +787,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   report <- c("# scAgentKit server-side analysis", paste("Project:", state$project_id), paste("Input SHA256:", state$input_hash), paste("Config SHA256:", state$config_hash), paste("Implementation SHA256:", state$implementation_hash),
               paste("Cells:", ncol(seu), "Features:", nrow(seu)), "QC and annotation approvals are recorded in decision_history.json.",
               "Computed artifacts are EXECUTED; overall scientific conclusions require separate analyst acceptance.",
+              if (isTRUE(state$config$strategy)) strategy_summary$scientific_assessment$message,
               if (isTRUE(state$config$strategy)) paste("Supported strategy settings and reused authorization/checkpoints are in strategy_summary.json.",
                 if (!is.null(state$config$cycle_diagnostics)) "The approved cycle choice, fixed pre-QC diagnostic reference and actual scaling regressors are in cycle_summary.json; no cycling cells were deleted." else "Cycle diagnostics were not enabled.",
                 if (!is.null(state$config$doublet_diagnostics))

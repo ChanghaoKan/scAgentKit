@@ -2,11 +2,17 @@
 # Used by qc_split, qc_add_metrics, annot_llm_annotate,
 # sc_resolution_recommend, sc_select_batch_var, annot_compare_with_reference.
 
-# Literal species-specific ribosomal protein symbols, excluding kinases
-# such as RPS6KA1/RPS6KB1. Shared by legacy and saved-run QC.
+# Literal species-specific cytoplasmic ribosomal protein symbol conventions.
+# SA / lateral-stalk P0-P2 and protein paralogs (e.g. L22L1/L39L/L36AL)
+# are included, while anchors exclude RPS6K kinases and P/-ps pseudogenes.
+# MGI nomenclature / human ortholog records: MGI:105381, MGI:1927636,
+# MGI:1927099, MGI:1914436, MGI:1913733, MGI:1915278, MGI:1915422;
+# https://www.informatics.jax.org/marker/MGI:105381 (Rpsa / RPSA).
+# This is a naming heuristic, not an exhaustive annotation or alias lookup.
+# Shared by legacy metrics/removal, saved-run diagnostics and species fallback.
 .sc_run_ribo_pattern <- function(species) {
-  switch(species, human="^RP[SL][0-9]+[AXY]?[0-9]*$",
-    mouse="^Rp[sl][0-9]+[axy]?[0-9]*$", NULL)
+  switch(species, human="^(RP[SL][0-9]+[ALXY]?[0-9]*|RPSA|RPLP[012]|RPL36AL)$",
+    mouse="^(Rp[sl][0-9]+[alxy]?[0-9]*|Rpsa|Rplp[012]|Rpl36al)$", NULL)
 }
 
 # Detect species by gene-name pattern.
