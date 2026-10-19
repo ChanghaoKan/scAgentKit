@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Default ontology mapping uses the unmodified, SHA256-pinned Cell Ontology
+  v2026-06-08 base asset, bundled with CC-BY-4.0 attribution and license.
+  There is no latest-version network fallback. Ambiguous exact labels/synonyms
+  remain unresolved, as do fuzzy and obsolete matches.
+
 - With explicit creation-time project transfer consent, stage one automatic model
   draft per saved evidence snapshot. Strict exact-payload consent stays explicit.
   Saved attempts, uncertain accounting, unsaved edits and unavailable budgets
