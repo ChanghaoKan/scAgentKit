@@ -24,6 +24,30 @@
 - Release acceptance retries transient downloads with bounded attempts and an
   explicit1800-second timeout; permanent errors and checksum mismatches fail.
 
+## Review presentation and legacy label migration
+
+- R review printing now gives bounded summaries with explicit access to the full
+  sealed `snapshot$view` and `snapshot$annotations`; it does not remove evidence,
+  audit records or weaken hashes. This is separate from the HTTP display repair.
+- Grounded declared counterevidence is a review hint and no longer alone makes
+  an accepted, grounded legacy proposal unusable. Citation validity, review hints,
+  label usability and explicit reviewed-workflow approval are separate. Invalid
+  citations, absent support and unresolved/action-blocked proposals remain blocked.
+- `annot_apply()` retains existing per-cell labels for blocked **and unmapped**
+  clusters; only eligible mapped cells or explicit manual overrides are replaced.
+  If the target column is absent, unreplaced cells start as `Unannotated`.
+  Manual overrides are audited separately and do not establish model success.
+- `hybrid_confidence` remains the raw weighted numeric heuristic; it is neither
+  calibrated probability nor writeback permission. Its raw band is saved as
+  `hybrid_confidence_raw_label`; effective `hybrid_confidence_label`/`confidence`
+  and `label_usable` can be low/false despite a high raw score. For example a raw
+  0.710 can coexist with blocked fabricated support. Preserve raw response audits.
+- Before upgrading, preserve the original object/project and exact environment.
+  Review retained labels and new usability/review fields rather than assuming a
+  nonempty label was newly accepted. Use explicit manual overrides for a deliberate
+  legacy label change; use a new project with independent approval for the reviewed
+  workflow. Never rewrite old project hashes/approvals/checkpoints to force resume.
+
 ## Breaking changes
 
 The reviewed workflow and helper fingerprints change. Preserve each existing
