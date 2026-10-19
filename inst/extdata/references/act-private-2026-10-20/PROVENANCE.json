@@ -1,0 +1,72 @@
+{
+  "schema": "scagentkit.private-ACT-snapshot.v1",
+  "snapshot_id": "local-download-2026-10-20",
+  "distribution": "PRIVATE-LOCAL-ONLY",
+  "database_redistribution_license": "unconfirmed-user-will-ask-author",
+  "publisher_release": null,
+  "publisher_release_date": null,
+  "downloaded_date_as_supplied": "2026-10-20",
+  "download_date_is_publisher_release": false,
+  "source_page": "http://xteam.xbio.top/ACT/download.jsp",
+  "source_urls_authenticated": false,
+  "columns": [
+    "Species",
+    "Tissue",
+    "CellType",
+    "Marker",
+    "Resource",
+    "SourceFile",
+    "SourceURL"
+  ],
+  "scope": "explicit human/mouse and exact trimmed case-insensitive tissue; no all-tissue or cross-species fallback",
+  "preparation": "Lossless deterministic gzip of user-supplied merged TSV bytes. No marker deduplication, recasing, ortholog inference or PMID rewriting. Source row is original merged table line number.",
+  "citation": {
+    "authors": "Quan F et al.",
+    "title": "Annotation of cell types (ACT): a convenient web server for cell type annotation",
+    "journal": "Genome Medicine",
+    "year": 2023,
+    "volume": "15",
+    "article": "91",
+    "doi": "10.1186/s13073-023-01249-5",
+    "pmid": "37924118",
+    "url": "https://link.springer.com/article/10.1186/s13073-023-01249-5",
+    "citation_is_database_license": false,
+    "snapshot_matches_paper_data_version_verified": false
+  },
+  "files": [
+    {
+      "species": "human",
+      "file": "ACT_Human_merged.tsv.gz",
+      "bytes": 117706,
+      "sha256": "171c8666ed4c0aa8af8f427274eae4a59c3ebf005edcc4799fa7f1b7b2b368b3",
+      "original_name": "ACT_Human_merged.tsv",
+      "original_bytes": 743295,
+      "original_sha256": "afbd2d956e910ecdeb4f606ead3e48d0fc9501d36b976506bd636572081590e0",
+      "data_rows": 3767,
+      "source_prefix": "http://xteam.xbio.top/ACT/download/Human/"
+    },
+    {
+      "species": "mouse",
+      "file": "ACT_Mouse_merged.tsv.gz",
+      "bytes": 120534,
+      "sha256": "b22014fee18bb3e37879418f027d4d9903c74c5229f1a5523a6c42ceb304367a",
+      "original_name": "ACT_Mouse_merged.tsv",
+      "original_bytes": 598641,
+      "original_sha256": "b22e6d2c120dab02b68d2a2cf4a82b2561a9047a7227519c5172c88170923a61",
+      "data_rows": 2721,
+      "source_prefix": "http://xteam.xbio.top/ACT/download/Mouse/"
+    },
+    {
+      "file": "ACT-DOWNLOAD-README.txt",
+      "bytes": 482,
+      "sha256": "dd0d8e38809060d52d15b2ae684e8943f23a4bad633f3d7957ffb5714f706729",
+      "original_sha256": "dd0d8e38809060d52d15b2ae684e8943f23a4bad633f3d7957ffb5714f706729"
+    },
+    {
+      "file": "download_manifest.tsv.gz",
+      "bytes": 28918,
+      "sha256": "0565a6387a72292d844b32a0624fa6b26528126dbd915a69647b696c95ee632c",
+      "original_sha256": "fc9e4a3cdb0a9e2f7b89e70de915e9a92bec88bd3a5c990d42405f03757ac475"
+    }
+  ]
+}
