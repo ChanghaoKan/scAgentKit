@@ -49,3 +49,15 @@ test_that("shared ARI retains permutation and degenerate partition behavior", {
   expect_equal(.adjusted_rand_index(rep(1,4),rep("A",4)),1)
   expect_true(is.na(.adjusted_rand_index("A","A")))
 })
+
+test_that("standalone marker testing uses declared cluster metadata and preserves IDs", {
+  obj<-SeuratObject::pbmc_small
+  obj$seurat_clusters<-as.character(obj$RNA_snn_res.1)
+  SeuratObject::Idents(obj)<-rep("unrelated identity",ncol(obj))
+  before<-.sc_run_hash(obj)
+  expected<-suppressWarnings(Seurat::FindAllMarkers(obj,group.by="seurat_clusters",
+    only.pos=FALSE,min.pct=.25,logfc.threshold=0,verbose=FALSE))
+  actual<-suppressWarnings(sc_find_markers(obj))
+  expect_identical(actual,expected)
+  expect_identical(.sc_run_hash(obj),before)
+})

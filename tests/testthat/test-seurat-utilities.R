@@ -5,7 +5,7 @@ test_that("retained metrics preserve raw counts and require an explicit species 
   before<-.sc_run_hash(x)
   expect_error(qc_add_metrics(x),"Declare species")
   for(assay_type in c("Assay5","Assay")) {
-    use<-x;if(assay_type=="Assay")use[["RNA"]]<-SeuratObject::CreateAssayObject(counts=counts)
+    use<-if(assay_type=="Assay")withr::with_options(list(Seurat.object.assay.version="v3"),Seurat::CreateSeuratObject(counts,min.cells=0,min.features=0)) else x
     out<-qc_add_metrics(use,species="human")
     expect_identical(colnames(out),colnames(x));expect_identical(rownames(out),rownames(x))
     expect_equal(unname(out$percent.ribo),100*as.numeric(counts["RPSA",])/as.numeric(Matrix::colSums(counts)))

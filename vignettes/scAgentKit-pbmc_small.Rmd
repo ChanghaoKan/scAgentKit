@@ -1,85 +1,60 @@
 ---
-title: "A reviewed pbmc_small tutorial with scAgentKit"
+title: "One reviewed pbmc_small workflow with scAgentKit"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{A reviewed pbmc_small tutorial with scAgentKit}
+  %\VignetteIndexEntry{One reviewed pbmc_small workflow with scAgentKit}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+knitr::opts_chunk$set(collapse=TRUE,comment="#>",eval=FALSE)
 ```
 
-## Start with the offline tutorial
+The current development build has one project engine, used from R or the local
+browser. Starting from raw counts, it pauses for the initial strategy, measured
+clustering and annotation. Save edits, inspect the resulting snapshot, then
+approve each scientific decision separately. Opening a project does not run it.
 
-Load an installed current development version with `library(scAgentKit)`.
-Copy the steps below into an R session and inspect each saved review before
-approving it. Chunks are not evaluated during the build because approval is an
-interactive analyst action. The example needs no API key, data download or
-optional algorithm package.
+## Offline public software control
 
-This example uses the public SeuratObject `pbmc_small` counts (230 genes,
-80 cells). The mock supplies fixed software-control settings and `Unknown`
-annotations. It makes no network request. These settings are for learning the
-workflow, not for choosing parameters for a study.
-
-```{r tutorial}
-source(system.file("examples", "researcher-pbmc.R", package = "scAgentKit"))
-project_dir <- file.path(getwd(), "pbmc-tutorial")  # choose a new directory
-mock <- make_researcher_pbmc_mock()
-run <- researcher_pbmc_start(project_dir, mock)
-
-view <- researcher_pbmc_inspect(project_dir)
-view$strategy_review$details
-researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
-  reason = "Reviewed the tutorial settings and retained-cell scope.")
-run <- researcher_pbmc_resume(project_dir, mock)
-
-view <- researcher_pbmc_inspect(project_dir)
-view$strategy_review$details$cluster_diagnostics
-researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
-  reason = "Reviewed the measured resolution comparison; retain this software control's 0.4, without claiming an optimal resolution.")
-run <- researcher_pbmc_resume(project_dir, mock)
-
-view <- researcher_pbmc_inspect(project_dir)
-view$annotation_review$details
-researcher_pbmc_decide(project_dir, view, reviewer = "analyst",
-  reason = "Reviewed markers; keep tutorial identities unresolved as Unknown.")
-done <- researcher_pbmc_resume(project_dir, mock)
-stopifnot(identical(done$status, "complete"))
-final_object <- readRDS(done$output$seurat)
-done$output
+```{r public-control}
+library(scAgentKit)
+source(system.file("examples","three-gate-analysis.R",package="scAgentKit"))
+checked <- three_gate_analysis(tempfile("pbmc-three-gates-"))
+checked$receipt
 ```
 
-Each approval records a decision about the saved proposal. Resume performs the
-approved work and stops at the next review step. Inspect a fresh snapshot after
-changing a proposal. The tutorial helpers wrap the same `sc_run()`,
-`sc_run_inspect()`, `sc_run_review()` and `sc_run_resume()` used for real projects.
+This helper explicitly approves a **public fixture only**: SeuratObject's
+`pbmc_small` (230 genes, 80 cells), ordinary resolution scan retained, limited
+PCs/HVGs and Unknown labels. It makes no model request. Its receipt requires
+three actual approvals and unchanged input; it does not validate biology or
+supply study parameters. Chunks are not evaluated during vignette build because
+scientific approval for a real dataset belongs to the researcher; the separate
+regression and installed-package acceptance execute this public helper.
 
+## Your study
 
-## Inspect and reopen
-
-```{r reopen}
-view <- sc_run_inspect(project_dir)
-view$status
-view$output
-# Optional, using installed resources with an existing Python >= 3.9:
-sc_open(project_dir)
+```{r study}
+project <- sc_analyze("counts.rds","new-study-project",
+  context=list(species="human",tissue="Actual tissue",research_goal="Actual question"))
+initial <- sc_review(project)
+# Inspect QC/retention and the complete plan before deciding.
+measured <- sc_review(initial,"approve",reviewer="analyst",
+  reason="Explain the reviewed initial plan.",continue=TRUE)
+measured <- sc_review(measured)
+measured$view$strategy_review$details$cluster_diagnostics
+# Inspect actual PCs, resolution scan/tree, marker contrasts and sample composition.
+annotation <- sc_review(measured,"approve",reviewer="analyst",
+  reason="Explain the measured clustering choice.",continue=TRUE)
+# Complete annotation$annotations with labels/Unknown, confidence, reasons and citations.
+# Revise, inspect the full proposal, then approve separately; see the R protocol.
 ```
 
-The viewer reads saved results without continuing analysis. Keep the same R
-implementation and library for later computation. `complete` records execution;
-it does not establish biological correctness of the tutorial labels.
-
-## Continue with your own study
-
-Use genuine raw counts and verified study metadata, or explicitly declare a
-processed-Seurat entry with a reuse reason. Review study-specific QC, PC,
-clustering and annotation choices rather than copying the tutorial settings.
-Model assistance is optional and requires separate aggregate-transfer consent.
-
-The repository's [documentation index](https://github.com/ChanghaoKan/scAgentKit/blob/main/docs/README.md)
-links the complete researcher guide, current strategy and annotation contracts,
-optional methods and browser instructions. Installed API help is available with
-`help(package = "scAgentKit")`.
+Choose manual versus immutable configured-model initialization before creating a
+project. Model payload consent is separate from scientific approval. Inputs are
+not reinterpreted as donor/capture/batch based on names. `sc_result()` returns a
+Seurat; marker/reference utilities return tables and plot utilities return paths.
+There is no AgentSeurat analysis pipeline or automatic hybrid-score writeback.
+See `vignette("scAgentKit-pbmc_small")`, package help and the repository R protocol
+for the complete annotation and reopening steps.
