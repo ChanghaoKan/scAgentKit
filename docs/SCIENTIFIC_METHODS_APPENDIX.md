@@ -68,6 +68,27 @@ ribosomal/haemoglobin values, without that MT floor. Its existing small-group,
 nonfinite and near-zero-MAD availability guards remain unchanged. These are
 different software policies, not interchangeable biological recommendations.
 
+## Main annotation marker pool
+
+The native coordinator defaults to FindAllMarkers with both directions enabled,
+min.pct=0.25 and logfc.threshold=0. The detection prefilter uses
+`max(pct.1, pct.2) >= min.pct`: either side can qualify, not both sides required.
+The supplied summary then keeps strict `avg_log2FC > 1` and `p_val_adj < 0.05`,
+ranks descending by `pct.1 - pct.2`, and keeps at most 30 genes per cluster.
+Explicit marker settings are recorded with native evidence. A manually supplied
+table without this provenance is labelled unrecorded rather than assigned the
+default policy.
+
+Main-workflow citations and local reference overlap use this selected pool;
+they do not range over all assayed or tested genes. A valid supporting gene
+outside the top 30 or FC/p-adjusted cutoffs cannot be cited through this pool.
+Absence is not absent expression. Reference coverage and Fisher enrichment
+remain conditional on query selection, reference curation and the separately
+recorded pre-test background. Known-label citations additionally require
+positive saved FC and pct.1 greater than pct.2; these numerical guards do not
+establish gene-label semantics. This review records and tests the existing
+policy without broadening the pool or loosening evidence gates.
+
 ## Ambient estimation and correction
 
 The input copy and original count hash are preserved. Corrected counts are

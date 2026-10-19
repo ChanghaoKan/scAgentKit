@@ -190,6 +190,7 @@
        details = list(input_cells = input, cell_count = nrow(input), cluster_count = length(ids),
          output_columns = output_columns, canonical_proposal = .sc_run_annotation_review_plain(checked),
          annotations = rows, source = source,
+         marker_pool = evidence$summary$marker_pool,
          child_context = evidence$summary$child_context,
          parent_context_database = evidence$private$child_context,
          statistic_units = list(avgLog2FC = "saved log2 fold change",

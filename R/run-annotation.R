@@ -103,6 +103,10 @@
   attr(markers, "cluster_column") <- attr(summary, "cluster_column") <- cluster_column
   tested_background <- .sc_run_marker_background(working,assay,settings)
   attr(summary,"tested_background") <- tested_background
+  attr(summary,"marker_pool") <- list(status="recorded",parameters=settings,
+    detection_prefilter="max(pct.1, pct.2) >= min_pct using native Seurat values; either side can qualify",
+    summary_filter="avg_log2FC > log2fc_cut and p_val_adj < padj_cut; rank pct.1 - pct.2 descending, then top_n per cluster",
+    limitation="Citations and local reference overlap use this filtered top-marker pool, not all assayed or tested genes. Missing genes do not imply absent expression; coverage and Fisher results are conditional on this query selection.")
   science <- .sc_run_science_options(config$scientific_review)
   if(!is.null(science) && (length(science$panels) || science$cross_sample || science$mixed_lineage)) {
     panels <- science$panels
@@ -200,6 +204,8 @@
       cellCount = sum(membership == id),
       markers = unname(Filter(function(x) identical(x$clusterId, id), records)))),
     reference_mode = options$ai_mode)
+  summary$marker_pool <- if (!is.null(attr(table,"marker_pool"))) attr(table,"marker_pool") else
+    list(status="unrecorded",limitation="The upstream selection policy for this supplied marker table was not recorded; it is not assumed to be the native default or all assayed genes.")
   if (!is.null(annotation_context)) summary$child_context <- .sc_run_child_context_public(annotation_context)
   if (identical(options$ai_mode, "guided")) {
     summary$reference_candidates <- lapply(local$per_cluster, function(x)
