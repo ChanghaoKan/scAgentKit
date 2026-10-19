@@ -386,6 +386,7 @@ function renderSuggestion() {
   else if (!note && item?.can_auto_request) note = "The confirmed project scope permits one automatic draft request for this saved evidence. Scientific approval remains separate.";
   else if (!note && item?.can_request) note = preview?.external ? "The exact transfer is approved. Requesting a suggestion is a separate explicit action." : "Requesting this declared local suggestion is an explicit action.";
   if (!note && item?.kind === "annotation" && !item?.candidate) note = "Prepare the local annotation worksheet on this page, or explicitly request a configured model suggestion. A complete proposal still requires separate scientific approval.";
+  if (item?.fallback?.saved) note += " Local rule draft saved: " + item.fallback.reason;
   $("suggestion-message").textContent = note; $("suggestion-message").className = "suggestion-message" + (state.suggestionLost || response && response.status !== "ok" ? " error" : "");
   const disclosure = $("suggestion-disclosure");
   if (disclosure.dataset.initialized !== "true") {disclosure.open = !disabled; disclosure.setAttribute("data-initialized", "true");}

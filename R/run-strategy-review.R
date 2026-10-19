@@ -367,7 +367,7 @@
   validated <- .sc_run_strategy_validate(proposal, evidence)
   .sc_run_subcluster_strategy(state, validated, evidence)
   old <- if (is.null(state$files$strategy_validated)) NULL else .sc_run_get(root, state, "strategy_validated")
-  if (!identical(review_binding$source, "adopted_typed_suggestion"))
+  if (!isTRUE(review_binding$source %in% c("adopted_typed_suggestion", "local_rule_fallback")))
     state <- .sc_run_draft_track(root, state, "strategy", old$proposal, validated$proposal)
   changed <- if (is.null(old)) names(validated$dependency_hashes) else names(validated$dependency_hashes)[vapply(names(validated$dependency_hashes), function(key)
     !identical(validated$dependency_hashes[[key]], old$dependency_hashes[[key]]), logical(1))]

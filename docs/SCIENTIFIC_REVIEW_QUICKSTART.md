@@ -113,6 +113,13 @@ Use creation-time project consent only after inspecting its aggregate categories
 before another request. Use the linked R procedure for external-transfer stops
 not offered by the page.
 
+If a configured suggestion fails (including missing key, invalid JSON or budget
+stop), its local rule draft and reason are saved without approval or retry.
+Complete suitable grouped MAD evidence selects conservative AND3; incomplete
+evidence retains keep-all and explicitly unassessed QC. Saved human edits remain
+in force; inspect the effective draft. A valid model annotation is not automatically
+changed to Unknown. An analyst may make that separate, recorded revision.
+
 ## 7. Choose optional methods only when their inputs are ready
 
 | Choice | Required preparation | Details |

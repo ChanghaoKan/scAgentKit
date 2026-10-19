@@ -177,6 +177,19 @@
     result$preview$remaining_usd >= provider$reservation_usd
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan, guided_review_hash=context$binding$guided_review_hash))
+  if (same_evidence && !is.null(saved$fallback)) {
+    result$fallback <- saved$fallback
+    # A local draft may change the scientific proposal binding. The terminal
+    # worker receipt still identifies the exact dispatched suggestion; it grants
+    # no authority over the refreshed scientific draft.
+    result$suggestion_hash <- saved$suggestion_hash
+    result$can_approve <- FALSE
+    result$can_discard <- FALSE
+    result$status <- saved$status
+    result$response <- .sc_run_suggestion_response(saved$response)
+    result$can_request <- FALSE
+    result$can_auto_request <- FALSE
+  }
   result$can_adopt <- current && identical(saved$status, "candidate") && !is.null(saved$candidate)
   result$can_discard <- current && !saved$status %in% c("adopted", "discarded")
   result$reference_mode<-context$reference_mode
@@ -353,6 +366,8 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       suggestion_hash = suggestion_hash, request_hash = context$request_hash,
       response_status = answer$status, cached = isTRUE(answer$cached), simulated = simulate,
       cost_state = answer$cost_state, charged_or_held_usd = answer$charged_or_held_usd))
+    if (!identical(answer$status, "ok"))
+      state <- .sc_run_suggestion_fallback(root, state, context, answer)
     .sc_run_save(root, state)
   } else if (action == "discard") {
     if (!current || saved$status %in% c("adopted", "discarded"))

@@ -65,3 +65,22 @@ test_that("human annotation row retention is exact-scope and checkpoint protecte
   cat("changed", file = file, append = TRUE)
   expect_error(.sc_run_draft_controls(root, state), "changed")
 })
+
+test_that('explicit analyst Unknown override is distinct from a valid labelled model candidate',{
+ root<-.sc_run_root(tempfile('manual-unknown-override-'),create=TRUE);on.exit(unlink(root,recursive=TRUE))
+ state<-list(files=list(),history=list(),revision=0L,config=list(input_policy=list()))
+ ev<-list(private=list(input_cells=data.frame(cell_id=c('A','B'),cluster=c('0','1'))))
+ state<-.sc_run_put(root,state,'annotation_evidence',ev)
+ row<-function(id,label)list(clusterId=id,label=label,confidence='medium',rationale='Model marker-supported candidate.',markers=list('CD3D'))
+ model<-list(schema='scagentkit.annotation.v1',annotations=list(row('0','T cell'),row('1','T cell')))
+ manual<-model;manual$annotations[[1]]$label<-'Unknown';manual$annotations[[1]]$confidence<-'low'
+ manual$annotations[[1]]$rationale<-'Explicit analyst override for unresolved cluster; separate from model validity.';manual$annotations[[1]]$markers<-list()
+ state<-.sc_run_put(root,state,'annotation_validated',manual)
+ state<-.sc_run_draft_track(root,state,'annotation',model,manual)
+ result<-.sc_run_merge_model_draft(root,state,'annotation',model)
+ expect_identical(result$preserved,'0')
+ expect_identical(result$proposal$annotations[[1]]$label,'Unknown')
+ expect_identical(result$proposal$annotations[[2]]$label,'T cell')
+ expect_identical(model$annotations[[1]]$label,'T cell')
+ expect_true('human_draft_edits_recorded'%in%vapply(state$history,`[[`,character(1),'action'))
+})

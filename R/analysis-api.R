@@ -225,6 +225,10 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)
   if (!"qc_mad" %in% names(extra)) extra$qc_mad <- .sc_ui_mad_setup(context)
+  # Configuring a provider must not remove the local reviewable rule draft.
+  # Configured-provider dispatch belongs to the suggestion channel. Preserve
+  # the existing explicit in-memory chat_fn contract for advanced R callers.
+  if (is.null(plan) && is.null(chat_fn)) plan <- list()
   proposal <- NULL
   if (is.null(provider) || !is.null(plan)) {
     object <- metadata_input

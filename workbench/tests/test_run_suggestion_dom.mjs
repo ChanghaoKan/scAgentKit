@@ -400,6 +400,16 @@ await test("preparing guided differences stages a new strict preview without ano
   assert.equal(h.requests.some(row=>row.url.endsWith("/decision")||row.url.endsWith("/suggestion/request")),false);
 });
 
+await test("failed model displays saved local rule draft without another request", async () => {
+ const value=model(7,"failed");Object.assign(value.suggestion,{can_request:false,can_auto_request:false,
+ response:{status:"invalid_response",error:"Empty QC rules rejected."},
+ fallback:{saved:true,preset_id:"keep_all",reason:"QC remains unassessed; keep all. Human edits preserved; no approval."}});
+ const h=setup(scientificReview(7),value);await h.call("renderSuggestion");
+ assert.match(h.el("suggestion-message").textContent,/Local rule draft saved/);
+ assert.match(h.el("suggestion-message").textContent,/unassessed/);
+ await h.call("maybeAutoSuggestion");assert.equal(h.requests.length,0);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

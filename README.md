@@ -114,6 +114,12 @@ review=list(allow_external=TRUE))` without project consent. Neither mode replace
 the three scientific approvals below. Use `provider="manual"`, omit consent and keep budget zero
 for local manual review. See the [model contract](docs/dev/UNIFIED_MODEL_REVIEW.md).
 
+If a suggestion fails validation, has no usable key or exceeds its budget, the
+configured suggestion workflow saves a local rule draft and its reason without
+approval or retry. Complete suitable MAD evidence uses conservative AND3;
+otherwise QC stays unassessed with keep-all. Saved human edits take precedence.
+Review the effective draft before approving it. Usage estimates are not invoices.
+
 ### 1. Choose input and declare sample facts
 
 Choose a new project directory. For one 10x MEX directory, set its sample ID and
