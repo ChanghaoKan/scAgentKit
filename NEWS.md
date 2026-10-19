@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Calibrate three valid public-aggregate DeepSeek Flash responses and select a
+  USD0.20 cap for standard new-project settings, with explicit data/cap consent.
+  Failed suggestions save a local rule draft without approval or retry; retain
+  safe original numeric usage with integrity hashes. Other model settings need
+  an explicit budget. Token-rate estimates are not provider cash invoices.
+
 - Keep five installed researcher examples (three-gate tutorial, installation
   wrapper, explicit model setup, multi-sample 10x and scoped subcluster review).
   Move focused/historical drivers and technical documentation to repository-only
@@ -8,7 +14,7 @@
   Integrate the paired researcher guides, document direct provider setup and
   separate user instructions from implementation contracts. Explain current
   AND3, LogNormalize, reference and diagnostic limits without claiming biological
-  accuracy or a calibrated paid budget. Public entry errors add a next action;
+  accuracy. Public entry errors add a next action;
   saved audit fields and scientific integrity checks are unchanged.
 
 - Model scan previews use a versioned compact aggregate with full graph and

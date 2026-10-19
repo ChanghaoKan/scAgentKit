@@ -10,8 +10,9 @@ Configure provider/model, an explicit USD cap and transfer consent directly in
 `sc_start()` before opening a new project; follow the [README entry](../README.md#analysis-protocol)
 and installed `full-llm-workflow.R`. Existing environment keys only; missing keys
 leave a manual workflow. Without project-scope consent, each exact payload needs
-separate approval. Draft adoption/Save never approves science. Default cap is zero;
+separate approval. Draft adoption/Save never approves science. Standard
 DeepSeek Flash has a USD0.20 default cap after real-provider calibration;
+an explicit `budget=0` still blocks paid requests, and
 [data/budget consent and measured limits](MODEL_BUDGET.md) still apply.
 
 New eligible drafts use conservative AND3 QC only when all required group metrics

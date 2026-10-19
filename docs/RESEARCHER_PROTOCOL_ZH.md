@@ -9,7 +9,8 @@
 在新项目 `sc_start()` 中直接配置 provider/model、明确 USD 上限和传输同意；见
 [README 入口](../README.zh-CN.md#分析步骤)及随包 `full-llm-workflow.R`。
 只使用已有环境 key；缺 key 时进入人工路径。不使用项目级同意时，每个确切 payload 单独审批。
-采纳候选或 Save 不等于科学审批。默认预算为零，真实模型预算校准尚未完成。
+采纳候选或 Save 不等于科学审批。标准 DeepSeek Flash 新项目默认上限为 USD0.20；
+[实测费用、适用设置和首次同意](MODEL_BUDGET.md)仍须核对，显式 `budget=0` 禁止付费请求。
 
 新草稿仅在各组所需指标完整且适用时使用保守 AND3；否则明确保留 keep-all。
 细胞周期仅对物种和基因覆盖适用的输入尝试评分；自动 doublet 仅在合格 called-cell/capture 队列中标记，
