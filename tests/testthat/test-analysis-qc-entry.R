@@ -16,9 +16,10 @@ test_that("main entry binds sample-aware MAD choices without automatic quality d
   expect_length(panel$groups, 2L)
   expect_identical(x$plan$qc$schema, "scagentkit.qc.rules.v1")
   expect_identical(x$plan$qc$rules[[1]]$metric, "nCount")
-  expect_equal(x$plan$qc$rules[[1]]$min, 1)
+  expect_equal(x$plan$qc$rules[[1]]$min, 0)
   expect_identical(x$plan$qc$rules[[2]]$preset_id, "keep_all")
-  expect_match(x$plan$qc$rationale, "all-zero")
+  expect_match(x$plan$qc$rationale, "Unfiltered keep-all")
+  expect_match(x$plan$qc$rationale, "QC remains unassessed")
   expect_match(paste(x$plan$qc$risks, collapse = " "), "empty-droplet")
   expect_length(.sc_run_get(x$project_dir, .sc_run_load(x$project_dir), "strategy_validated")$qc_validated$keep_cells, 80L)
   alternative <- .sc_ui_plan(list(qc_preset = "low_counts3"), base = x$plan)
@@ -28,16 +29,17 @@ test_that("main entry binds sample-aware MAD choices without automatic quality d
   expect_identical(panel$method$ribo_hb_action, "diagnostic only; no deletion")
 })
 
-test_that("undeclared samples remain explicitly unstratified and QC edits stay bound", {
+test_that("undeclared samples disable implicit pooled MAD and QC edits stay bound", {
   cfg <- .sc_ui_mad_setup(list())
-  expect_identical(cfg$grouping$method, "single")
-  expect_match(cfg$grouping$source, "not a declared single sample")
+  expect_identical(cfg, FALSE)
+  expect_null(.sc_run_mad_options(list(), cfg))
   expect_identical(.sc_ui_mad_setup(entry_qc_context())$grouping$declared_role, "sample")
 })
 
 
 test_that("entry panel retains explicit unavailable and heuristic warning states", {
-  opts <- .sc_run_mad_options(list(), .sc_ui_mad_setup(list()))
+  opts <- .sc_run_mad_options(list(), list(grouping=list(method="single", id="synthetic",
+    source="Explicit single-group metric unit fixture; never an automatic default.")))
   small <- .sc_run_mad_metric(seq_len(20), "nCount", opts)
   expect_false(small$available)
   expect_match(paste(small$unavailable_reasons, collapse = " "), "Fewer than 30")

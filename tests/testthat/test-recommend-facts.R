@@ -5,13 +5,14 @@ facts_fixture_functions <- function() {
   fixture
 }
 
-test_that("explicit initial sample facts replace pooled MAD grouping without approval or deletion", {
+test_that("explicit initial sample facts enable grouped MAD without implicit pooling approval or deletion", {
   fixture <- facts_fixture_functions()
   root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
   sc_analyze(fixture$recommend_workspace_input(), root,
     context = list(species = "human", tissue = "software fixture", research_goal = "Explicit sample facts"))
   old <- .sc_run_load(root)
-  expect_identical(old$config$qc_mad$grouping$method, "single")
+  expect_null(old$config$qc_mad)
+  expect_null(old$config$context$columns$sample)
   out <- fixture$recommend_workspace_facts(root, list(columns = list(sample = "sample")))
   saved <- .sc_run_load(root)
   expect_identical(out$status, "ready")

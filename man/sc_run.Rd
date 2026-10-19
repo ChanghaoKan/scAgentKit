@@ -24,7 +24,7 @@ sc_run(input, project_dir, context = list(), provider = NULL,
   strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
   doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
   subcluster_origin = NULL, subcluster_creation = NULL,
-  .subcluster_lock_owner = NULL)
+  .subcluster_lock_owner = NULL, input_policy = NULL)
 sc_run_inspect(project_dir)
 sc_run_approve(project_dir, proposal_hash, reviewer, reason = "",
   preview_hash = NULL, expected_revision = NULL)

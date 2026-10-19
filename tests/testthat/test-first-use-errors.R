@@ -88,7 +88,7 @@ test_that("missing split normalized and incomplete processed layers fail without
   first_use_failed_start(data_only, file.path(work, "missing-counts"), "Exact layer.*counts.*Available layers.*data")
   ambiguous <- object
   SeuratObject::LayerData(ambiguous, assay = "RNA", layer = "counts.extra") <- counts
-  first_use_failed_start(ambiguous, file.path(work, "ambiguous-counts"), "Split.*counts.*JoinLayers")
+  first_use_failed_start(ambiguous, file.path(work, "ambiguous-counts"), "Exact and split.*counts.*unambiguous source")
   normalized <- object
   SeuratObject::LayerData(normalized, assay = "RNA", layer = "data") <- log1p(counts)
   first_use_failed_start(normalized, file.path(work, "data-as-counts"), "normalized.*cannot.*counts",
