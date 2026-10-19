@@ -976,6 +976,9 @@ annot_subcluster <- function(obj,
   parsed$raw_confidence <- parsed$confidence
   parsed$raw_recommended_action <- parsed$recommended_action
   parsed$evidence_status <- validity$status
+  parsed$citation_status <- validity$citation_status
+  parsed$review_required <- validity$review_required
+  parsed$review_reasons <- validity$review_reasons
   parsed$label_usable <- validity$label_usable
   parsed$evidence_reasons <- validity$reasons
   if (!validity$label_usable) {

@@ -69,13 +69,13 @@ test_that("legacy application preserves old per-cell labels for blocked proposal
   expect_identical(unname(fresh@data$cell_type), rep("Unannotated", 6))
 })
 
-test_that("the local gate rejects unresolved, partial, disabled and contradictory evidence without semantic claims", {
+test_that("the local gate rejects unresolved, partial, disabled and fabricated evidence without semantic claims", {
   valid <- list(primary_annotation = "T cell", annotation_status = "ok", confidence = "high",
     supporting_markers = "REAL", contradicting_markers = character(), recommended_action = "accept")
   gate <- scAgentKit:::.annotation_evidence_validity
   expect_true(gate(valid, "REAL")$label_usable)
   for (edits in list(list(primary_annotation = "Unknown"), list(annotation_status = "partial"),
-    list(annotation_status = "failed"), list(contradicting_markers = "REAL"),
+    list(annotation_status = "failed"),
     list(contradicting_markers = "FORGED"), list(recommended_action = "reject"),
     list(supporting_markers = character()))) {
     x <- valid; x[names(edits)] <- edits
@@ -107,4 +107,18 @@ test_that("application accepts saved rescue citations only for the exact current
   changed <- obj; changed@params$llm_annotation_input_cells$cell_id[1] <- "FOREIGN"
   expect_warning(blocked <- annot_apply(changed), "needs review")
   expect_identical(blocked@data$cell_type, changed@data$cell_type)
+})
+
+test_that("grounded accepted counterevidence preserves legacy writeback and manual override behavior", {
+  withr::local_options(lifecycle_verbosity="quiet")
+  obj <- legacy_validity_fixture()
+  obj@params$llm_annotations <- data.frame(cluster="0",primary_annotation="Grounded candidate",
+    confidence="high",annotation_status="ok",supporting_markers="REAL",
+    contradicting_markers="G3",recommended_action="accept")
+  out <- annot_apply(obj)
+  expect_identical(unname(out@data$cell_type[1:3]),rep("Grounded candidate",3))
+  expect_identical(out@data$cell_type[4:6],obj@data$cell_type[4:6])
+  overridden <- annot_apply(obj,manual_overrides=c(`0`="Author label"))
+  expect_identical(unname(overridden@data$cell_type[1:3]),rep("Author label",3))
+  expect_identical(tail(overridden@decisions,1)[[1]]$params$annotation_sources[["0"]],"manual_override")
 })

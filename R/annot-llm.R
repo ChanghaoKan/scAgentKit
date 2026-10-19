@@ -385,6 +385,9 @@ annot_llm_annotate <- function(obj,
     parsed$raw_recommended_action <- parsed$recommended_action
     parsed$marker_validation_enabled <- isTRUE(validate_markers)
     parsed$evidence_status <- validity$status
+    parsed$citation_status <- validity$citation_status
+    parsed$review_required <- validity$review_required
+    parsed$review_reasons <- validity$review_reasons
     parsed$label_usable <- validity$label_usable
     parsed$evidence_reasons <- validity$reasons
     if (!validity$label_usable) {
@@ -941,6 +944,9 @@ annot_llm_annotate <- function(obj,
       confidence              = as.character(a$confidence %||% NA),
       raw_confidence          = as.character(a$raw_confidence %||% a$confidence %||% NA),
       evidence_status         = as.character(a$evidence_status %||% "not_assessed"),
+      citation_status         = as.character(a$citation_status %||% "not_assessed"),
+      review_required         = isTRUE(a$review_required),
+      review_reasons          = collapse(a$review_reasons),
       label_usable            = isTRUE(a$label_usable),
       evidence_reasons        = collapse(a$evidence_reasons),
       marker_validation_enabled = isTRUE(a$marker_validation_enabled),
