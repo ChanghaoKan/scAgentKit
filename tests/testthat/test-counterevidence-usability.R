@@ -23,3 +23,12 @@ test_that("fold-change direction does not invent semantic counterevidence", {
   expect_true(result$label_usable)
   expect_false(.annotation_evidence_validity(parsed,markers$gene)$review_required)
 })
+
+test_that("recorded unsupported support cannot be reported as citation-valid", {
+  parsed <- list(primary_annotation="T cell",annotation_status="ok",confidence="high",
+    supporting_markers="CD3D",contradicting_markers=character(),recommended_action="accept",
+    hallucination_rate=1)
+  value <- .annotation_evidence_validity(parsed,"CD3D")
+  expect_false(value$label_usable)
+  expect_identical(value$citation_status,"invalid")
+})

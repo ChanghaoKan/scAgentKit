@@ -21,11 +21,12 @@
   if (!length(valid_support)) reasons <- c(reasons, "no_valid_same_cluster_support")
   if (length(unsupported)) reasons <- c(reasons, "unsupported_citations")
   rate <- parsed$hallucination_rate
-  if (is.numeric(rate) && length(rate) == 1L && is.finite(rate) && rate > 0)
+  recorded_unsupported <- is.numeric(rate) && length(rate) == 1L && is.finite(rate) && rate > 0
+  if (recorded_unsupported)
     reasons <- c(reasons, "recorded_unsupported_support")
   if (!identical(parsed$recommended_action, "accept")) reasons <- c(reasons, "action_requires_review")
   citation_status <- if (!isTRUE(validation_enabled)) "not_validated" else
-    if (length(unsupported)) "invalid" else if (!length(valid_support)) "insufficient_support" else "valid"
+    if (length(unsupported) || recorded_unsupported) "invalid" else if (!length(valid_support)) "insufficient_support" else "valid"
   review_reasons <- c(reasons, if (length(valid_contradict)) "declared_counterevidence_requires_review")
   list(citation_status = citation_status, review_required = length(review_reasons) > 0L,
     review_reasons = review_reasons,
