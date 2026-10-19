@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Remove the legacy HTTP/IP CellMarker fallback. Until the fixed official
+  HTTPS file has a verified checksum, provide a clear waiting message and
+  explicit local XLSX import with SHA256 provenance. Require species/tissue,
+  report zero matches, and never authenticate a publisher URL from a sidecar
+  or silently expand the tissue scope. No CellMarker data is redistributed.
+
 - Default ontology mapping uses the unmodified, SHA256-pinned Cell Ontology
   v2026-06-08 base asset, bundled with CC-BY-4.0 attribution and license.
   There is no latest-version network fallback. Ambiguous exact labels/synonyms

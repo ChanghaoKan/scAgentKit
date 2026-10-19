@@ -69,7 +69,7 @@ annot_load_reference <- function(path, tissue_filter = NULL, species = NULL) {
 annot_match_reference <- function(obj,reference,top_n_candidates=5) {
   result<-.sc_reference_match(obj,reference,top_n_candidates)
   out<-result$matches;attr(out,"all_matches")<-result$all_matches
-  fields<-c("source_path","source_md5","source_url","requested_url","source_url_verified","source_version","marker_column","n_input_rows","species","tissue_filter")
+  fields<-c("source_path","source_md5","source_url","requested_url","source_url_verified","source_version","marker_column","n_input_rows","species","tissue_filter","source_sha256","source_mode","scope_status","scope_notice")
   attr(out,"reference_provenance")<-stats::setNames(lapply(fields,function(key)attr(reference,key)),fields)
   out
 }
