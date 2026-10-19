@@ -54,7 +54,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
-                   .subcluster_lock_owner = NULL) {
+                   .subcluster_lock_owner = NULL, input_policy = NULL) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -117,16 +117,20 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   } else .sc_run_subcluster_lock_verify(root, .subcluster_lock_owner)
   if (file.exists(file.path(root, "state.rds"))) stop("Run already exists; use sc_run_resume or choose a new project_dir.", call. = FALSE)
   checked <- .sc_run_input(input, context, assay, counts_layer, start_stage, processed_reason,
-                           cluster_column = cluster_column, normalized_layer = normalized_layer)
+                           cluster_column = cluster_column, normalized_layer = normalized_layer, input_policy = input_policy)
   if (!is.null(subcluster_origin) && !identical(colnames(checked$seu), subcluster_origin$selected_cells))
     stop("Scoped child raw input must have the exact frozen parent selection in literal cell order.", call. = FALSE)
-  .sc_run_annotation_target(checked$seu, annotation_column, cluster_column)
+  .sc_run_annotation_target(checked$seu, annotation_column, cluster_column, checked$diagnostics$preserved_metadata$key)
   config <- list(context = checked$context, assay = assay, counts_layer = counts_layer,
                  normalized_layer = normalized_layer, cluster_column = cluster_column,
                  analysis = analysis, markers = list(), annotation_column = annotation_column,
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
+  if (!is.null(input_policy)) {
+    config$input_policy <- .sc_run_input_policy(input_policy)
+    config$input_policy$metadata_key <- checked$diagnostics$preserved_metadata$key
+  }
   if (!is.null(scientific_review)) {
     if (!strategy || start_stage != "qc") stop("scientific_review requires raw strategy entry.",call.=FALSE)
     config$scientific_review <- scientific_review
@@ -179,6 +183,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(annotation_proposal)) state <- .sc_run_put(root, state, "manual_annotation", annotation_proposal)
   state <- .sc_run_event(state, "planned", list(input_hash = state$input_hash, config_hash = state$config_hash,
                                               implementation_hash = state$implementation_hash))
+  if (!is.null(checked$diagnostics$preserved_metadata)) state <- .sc_run_event(state,
+    "input_metadata_preserved", c(checked$diagnostics$preserved_metadata,
+      list(original_cell_ids_retained = TRUE, boundary = "Prior metadata is separately preserved, not accepted as new annotations.")))
   if (length(checked$diagnostics$input_transforms)) state <- .sc_run_event(state,
     "input_layers_joined", list(transforms = checked$diagnostics$input_transforms,
       original_source = checked$source, source_replaced = FALSE))
@@ -626,7 +633,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       } else if (stage == "annotation_apply") {
         .sc_run_require_approval(state, "annotation")
         .sc_run_annotation_review_verify(root, state)
-        seu <- .sc_run_annotation_apply(.sc_run_get(root, state, "analysis"), .sc_run_get(root, state, "annotation_validated"), state$config$annotation_column)
+        seu <- .sc_run_annotation_apply(.sc_run_get(root, state, "analysis"), .sc_run_get(root, state, "annotation_validated"), state$config$annotation_column, state$config$input_policy$metadata_key)
         state <- .sc_run_put(root, state, "annotated", seu)
         state <- .sc_run_checkpoint(root, state, stage, "finalize")
       } else if (stage == "finalize") {

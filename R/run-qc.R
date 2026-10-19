@@ -45,7 +45,7 @@
 
 .sc_run_input <- function(input, context = list(), assay = "RNA", counts_layer = "counts",
                           start_stage = "qc", processed_reason = NULL,
-                          cluster_column = "seurat_clusters", normalized_layer = "data") {
+                          cluster_column = "seurat_clusters", normalized_layer = "data", input_policy = NULL) {
   .sc_project_string(assay, "assay")
   .sc_project_string(counts_layer, "counts_layer")
   if (!is.character(start_stage) || length(start_stage) != 1L ||
@@ -84,6 +84,12 @@
   counts <- .sc_project_layer(seu, assay, counts_layer, raw_counts = TRUE)
   if (!setequal(colnames(counts), colnames(seu)))
     .sc_project_fail("Selected raw counts layer must cover every object cell exactly; explicitly join or reconstruct split layers first.")
+  policy <- .sc_run_input_policy(input_policy)
+  preservation <- NULL
+  if (policy$preserve_metadata) {
+    preservation <- .sc_run_preserve_input_metadata(seu)
+    seu <- preservation$seu
+  }
   context <- .sc_run_context(context, seu)
   processed <- identical(start_stage, "processed")
   if (processed) {
@@ -106,6 +112,7 @@
                           raw_counts_validated = TRUE, sparse_counts = inherits(counts, "sparseMatrix"),
                           processed_reason = if (processed) processed_reason else NULL,
                           input_transforms = prepared_layers$receipts,
+                          preserved_metadata = if (is.null(preservation)) NULL else preservation[c("key", "hash")],
                           warnings = warnings))
 }
 

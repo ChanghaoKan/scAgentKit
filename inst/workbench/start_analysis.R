@@ -59,7 +59,7 @@ setup$provider <- get(".sc_run_provider_spec", ns)(setup$provider)$metadata
 if (identical(request$entry, "processed")) {
   scAgentKit::sc_run(request$input, request$project, context = request$context,
     start_stage = "processed", processed_reason = request$processed_reason,
-    cluster_column = request$cluster_column, provider = setup$provider, budget = setup$budget, review = setup$review)
+    cluster_column = request$cluster_column, provider = setup$provider, budget = setup$budget, review = setup$review, input_policy = list(preserve_metadata = TRUE))
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
   plan = list(), provider = setup$provider, budget = setup$budget, review = setup$review,
   scientific_review=request$scientific_review)

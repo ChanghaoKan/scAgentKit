@@ -303,17 +303,18 @@
   validated
 }
 
-.sc_run_annotation_target <- function(seu, column, cluster_column = NULL) {
+.sc_run_annotation_target <- function(seu, column, cluster_column = NULL, preserve_key = NULL) {
   .sc_project_string(column, "annotation_column")
   fields <- c(label = column, confidence = paste0(column, "_confidence"),
               rationale = paste0(column, "_rationale"))
-  if (any(unname(fields) %in% names(seu[[]])) ||
+  if (!is.null(preserve_key)) .sc_run_preserved_metadata_verify(seu, preserve_key)
+  if ((is.null(preserve_key) && any(unname(fields) %in% names(seu[[]]))) ||
       (!is.null(cluster_column) && cluster_column %in% unname(fields)))
     stop("Annotation output columns already exist or conflict with the cluster column; choose a new annotation_column to preserve prior annotations.", call. = FALSE)
   fields
 }
 
-.sc_run_annotation_apply <- function(seu, proposal, column = "sc_annotation") {
+.sc_run_annotation_apply <- function(seu, proposal, column = "sc_annotation", preserve_key = NULL) {
   seu <- .sc_project_unwrap(seu)
   .sc_project_string(column, "annotation column")
   if (!inherits(proposal, "sc_run_annotation_proposal") ||
@@ -328,7 +329,7 @@
                         stringsAsFactors = FALSE)
   if (!identical(.review_input_alignment(attr(proposal, "input_cells"), current), "verified"))
     stop("Approved annotation cell IDs or cluster assignments differ from the current object.", call. = FALSE)
-  fields <- .sc_run_annotation_target(seu, column, cluster_column)
+  fields <- .sc_run_annotation_target(seu, column, cluster_column, preserve_key)
   ids <- vapply(proposal$annotations, function(x) x$clusterId, character(1))
   for (field in names(fields)) {
     mapping <- stats::setNames(vapply(proposal$annotations, function(x) x[[field]], character(1)), ids)

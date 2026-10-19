@@ -204,6 +204,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     saveRDS(input,transport,version=2L);input<-transport
   }
   extra <- list(...)
+  if (!"input_policy" %in% names(extra)) extra$input_policy <- list(preserve_metadata = TRUE)
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)
   if (!"qc_mad" %in% names(extra)) extra$qc_mad <- .sc_ui_mad_setup(context)

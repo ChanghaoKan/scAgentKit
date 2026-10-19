@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Preserve original cell metadata, column locations and exact cell-ID mapping
+  separately in modern-entry Seurat checkpoints. A collision-safe hashed misc
+  record protects prior labels before new reviewed output fields are written.
+  Direct sc_run keeps its existing fresh-column default; protected record or
+  cell-scope changes still block annotation.
+
 - Automatically join valid Seurat v5 counts/data partitions within the selected
   assay at input. Every source value, feature set and exact cell partition is
   checked and a join receipt is saved. Mixed exact/split layers, overlapping or
