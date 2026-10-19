@@ -55,10 +55,10 @@ tutorial$receipt
 
 网页入口使用 10x MEX 目录、样本表或 RDS **文件路径**。
 Counts 须为有限、非负整数，gene/cell ID 唯一。确认选定 RNA counts 层覆盖所有细胞；
-split layers 须在进入前明确整理。输入格式及 feature/metadata 匹配见 [10x 输入](TENX_INPUT.md)。
+同 assay 的 split counts 仅在精确覆盖及 counts 检查通过后合并；歧义层仍阻止进入。输入格式及 feature/metadata 匹配见 [10x 输入](TENX_INPUT.md)。
 
 声明 species、tissue 和研究目标。sample、donor、capture、condition、batch 只映射到已核实的
-metadata 列，且每个细胞都有值；未知角色省略。未声明 QC 分组时保持 pooled 或显示不可用。
+metadata 列，且每个细胞都有值；未知角色省略。检查元数据角色草稿：单个安全候选可预填，多个候选须人工选择；缺分组事实时明确显示未评估。
 以 RDS 为例：
 
 ```r
@@ -67,7 +67,7 @@ service <- sc_start("input.rds", "new-review-project", context=context)
 ```
 
 页面显示导入摘要与未审批方案。核对细胞数、特征名称和样本事实，再进入策略复核。
-默认人工模式，无 provider，模型预算为零；模型设置见第 6 节。
+默认预算为零；明确 provider="manual" 可选择本地人工路径，模型设置见第 6 节。
 
 ## 5. 复核方案和实测分群
 
@@ -99,11 +99,11 @@ sc_open("new-annotation-project")
 
 ## 6. 可选模型辅助
 
-打开网页前，先在 R 中以 provider、model、生成设置及预算初始化**新**项目；这些设置随后固定。
+打开网页前，在 `sc_start(provider=..., budget=..., review=...)` 中直接配置**新**项目；provider、model、生成设置及预算随后固定。
 密钥通过实际运行进程的环境提供。`Rscript --vanilla` 需要继承的环境，不读取 `.Renviron`。
 完整配置见[模型设置与发送同意](dev/UNIFIED_MODEL_REVIEW.md)。
 
-预览内容及目的地，同意这次传输，再明确请求候选。查看、采纳或编辑候选后 Save，
+先检查聚合类别和上限，再决定是否给予创建时项目级同意；在其范围内，候选可按每个证据快照自动请求一次。没有项目级同意时，预览内容及目的地，同意确切传输，再明确请求。查看、采纳或编辑候选后 Save，
 再独立批准科学方案。若请求结果不明确，先查看已保存 job 和用量记录，再决定是否重新请求。
 页面未提供的 external-transfer 停点，按链接指南中的 R 操作处理。
 
@@ -117,7 +117,7 @@ sc_open("new-annotation-project")
 | Cell-cycle 选项 | 明确 species，测得且记录来源的 gene set；选择 keep/full/受支持的 difference | [Cell-cycle 复核](dev/CELL_CYCLE_REVIEW.md) |
 | Ambient 校正 | 单独 R API；SoupX 需完整 capture、匹配的 raw/filtered counts、至少 20 个额外 droplets 和具名 clusters；decontX 需明确初步 clusters | [Ambient 输入与版本](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction) |
 
-额外 PC sensitivity、重采样、分辨率扩展、sample-consensus HVG、QC 草稿自动预选、
+额外 PC sensitivity、重采样、分辨率扩展、sample-consensus HVG、实验性 OR 草稿比较、
 跨样本/混合谱系扩展初始均关闭；需要时为新项目明确选择。
 采用 ambient 校正结果时，先查看单独返回的 counts，再另建项目。
 
@@ -132,7 +132,7 @@ sc_open("new-annotation-project")
 阅读每簇 marker 及已配置的参考候选。所有行填写标签或 Unknown、置信度、理由和提供的支持 marker。
 未编辑行选择参考候选可复制标签/引用，解释由你补充；批量 Unknown 要求理由并保留已编辑行。
 Save complete proposal，通看各群，再批准注释并继续。随后看到完成状态及结果页。
-详细操作见[参考设置](dev/CM2_EVIDENCE_REVIEW.md)和 [marker 定义](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)。
+详细操作见[ACT 参考设置](ACT_LOCAL_REFERENCE.md)和 [marker 定义](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)。
 
 ## 10. 可选子分析和新的父对象输出
 

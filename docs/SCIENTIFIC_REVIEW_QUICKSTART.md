@@ -61,11 +61,11 @@ The example supplies practice choices; make your study decisions in a new direct
 
 Use a 10x MEX directory, sample table or RDS **file path**. Counts need finite
 nonnegative integers and unique gene/cell IDs. The RNA counts layer must cover
-all cells; prepare split layers explicitly. See [formats/matching](TENX_INPUT.md).
+all cells. Eligible same-assay split count layers are joined only after exact coverage/count checks; ambiguous layers remain blocked. See [formats/matching](TENX_INPUT.md).
 
 Declare species/tissue/research goal. Map sample/donor/capture/condition/batch
 only to verified columns complete for every cell; omit unknown roles.
-Unspecified QC grouping stays pooled/unavailable. For RDS:
+Review the metadata-role draft: one safe candidate may prefill a role; multiple candidates require your choice. Missing group facts remain explicitly unassessed. For RDS:
 
 ```r
 context <- list(species="human", tissue="Blood", research_goal="Study question")
@@ -73,7 +73,7 @@ service <- sc_start("input.rds", "new-review-project", context=context)
 ```
 
 Check the import summary and unapproved plan: cells, features and sample facts.
-Continue to strategy review. Default: manual, no provider, zero budget; see section 6 for models.
+Continue to strategy review. Default budget is zero; choose provider="manual" for local-only review, or see section 6 for model setup.
 
 ## 5. Review the plan and measured clustering
 
@@ -104,13 +104,12 @@ and section 9.
 
 ## 6. Optional model assistance
 
-Initialize a **new** project in R with fixed provider/model/settings/budget
-before opening the page. Supply the key in the execution environment;
+Configure a **new** project directly with sc_start(provider=..., budget=..., review=...)
+before opening the page. The saved provider/model/settings/budget stay fixed. Supply the key in the execution environment;
 `Rscript --vanilla` inherits it without reading `.Renviron`.
 Follow [configuration/consent](dev/UNIFIED_MODEL_REVIEW.md).
 
-Preview content/destination, approve transfer, then Request. Edit/adopt, Save
-and separately approve science. For unclear outcomes, inspect saved job/usage
+Use creation-time project consent only after inspecting its aggregate categories and cap; eligible drafts can then be requested automatically once per evidence snapshot. Without that scope, preview content/destination, approve the exact transfer, then Request. Edit/adopt, Save and separately approve science. For unclear outcomes, inspect saved job/usage
 before another request. Use the linked R procedure for external-transfer stops
 not offered by the page.
 
@@ -125,7 +124,7 @@ not offered by the page.
 | Ambient correction | Separate R API: SoupX needs complete capture, matching raw/filtered counts, ≥20 extra droplets, named clusters; decontX needs preliminary clusters | [Ambient inputs and versions](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction) |
 
 Extra PC sensitivity, resampling, resolution extension, sample-consensus HVGs,
-QC draft preselection and cross-sample/mixed-lineage extensions start off; select
+experimental OR draft comparison and cross-sample/mixed-lineage extensions start off; select
 them for a new project. Inspect ambient-corrected counts separately; adopt in a new project.
 
 ## 8. Open the page on a remote machine
@@ -140,7 +139,7 @@ Read markers/reference candidates. Fill all rows: label/Unknown, confidence,
 reason, supplied markers. Reference selection copies label/citations into an
 untouched row; add interpretation. Bulk Unknown needs a reason and preserves edits.
 Save complete proposal, inspect all populations, approve/continue. Next: results.
-[Reference setup](dev/CM2_EVIDENCE_REVIEW.md) and [marker definitions](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)
+[ACT reference setup](ACT_LOCAL_REFERENCE.md) and [marker definitions](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)
 provide the detailed procedures.
 
 ## 10. Optional child analysis and a new parent output
