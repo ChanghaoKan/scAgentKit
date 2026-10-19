@@ -1,5 +1,7 @@
-# Development — bundled ACT snapshot (unreleased)
+# scAgentKit 0.8.1 (experimental prerelease)
 
+- Align package metadata, bilingual installation and operator instructions, and
+  exact-tag archive/anonymous clean-install acceptance on version 0.8.1.
 - Embed lossless pinned Human/Mouse ACT TSV snapshots for new modern raw projects
   and new processed browser entries. Load offline at creation, require declared
   species/exact tissue, and save the selected table as a checksummed project
@@ -11,7 +13,7 @@
   implementation hash and old-project inspect/resume before acceptance; never
   rewrite an old implementation/config hash or approval to force migration.
 
-# Previous development batch
+## Guided workflow and model budgets
 
 - Use the user-selected USD1.00 default cap for standard new DeepSeek Flash
   projects; explicit custom nonnegative finite budgets take precedence. Existing

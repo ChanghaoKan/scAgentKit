@@ -1,10 +1,8 @@
 # R analysis protocol
 
-This is the **0.8.0** protocol linked from the
-[README](../README.md#one-project-workflow). Its ordinary raw-count scan has three
-scientific approvals. The published v0.6.0 default has two; use the matching
-[release protocol](dev/RELEASE_060_PROTOCOL.md) with that archive. Do not mix versions
-when reopening projects.
+This is the **0.8.1** protocol linked from the [README](../README.md#analysis-protocol).
+The raw-count workflow has three scientific approvals. Existing projects retain
+their saved configuration and implementation identity when reopened.
 
 Choose manual or model-assisted initialization before creating the project.
 This example uses the manual default (`provider=NULL`, zero budget); you supply

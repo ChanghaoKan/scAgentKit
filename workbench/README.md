@@ -61,10 +61,8 @@ measured review. At the annotation boundary, select
 **Prepare annotation table**, inspect the markers and fill in the blank rows.
 Save the complete proposal, inspect it, then select **Approve annotation and
 continue locally** to produce the saved result. These are three scientific
-approvals. Starting the service or preparing a table grants none. Published
-v0.6.0 has no default resolution scan and uses two approvals; follow its
-[version-matched protocol](../docs/dev/RELEASE_060_PROTOCOL.md). Explicit processed
-reuse starts at annotation and has its own entry.
+approvals. Starting the service or preparing a table grants none. This guide
+targets scAgentKit 0.8.1. Explicit processed reuse starts at annotation and has its own entry.
 
 To leave populations unresolved, supply one reason and explicitly select
 **Keep all unfilled populations Unknown**. Known labels require citations from

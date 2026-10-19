@@ -1,7 +1,8 @@
-# Researcher documentation
+# scAgentKit 0.8.1 documentation
 
 Start with the [English README](../README.md) or [中文 README](../README.zh-CN.md), then use the matching operator guide.
 
+- [0.8.1 release notes](RELEASE_NOTES_0.8.1.md)
 - [English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md) · [中文操作协议](RESEARCHER_PROTOCOL_ZH.md)
 - [10x input and sample metadata](TENX_INPUT.md)
 - [Local ACT reference and provenance](ACT_LOCAL_REFERENCE.md)

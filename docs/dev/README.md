@@ -6,7 +6,6 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [ANNOTATION ASSISTANCE](ANNOTATION_ASSISTANCE.md)
 - [ANNOTATION REVIEW](ANNOTATION_REVIEW.md)
 - [API CONSOLIDATION](API_CONSOLIDATION.md)
-- [BENCHMARK PROTOCOL DRAFT](BENCHMARK_PROTOCOL_DRAFT.md)
 - [CELL CYCLE REVIEW](CELL_CYCLE_REVIEW.md)
 - [CM2 EVIDENCE REVIEW](CM2_EVIDENCE_REVIEW.md)
 - [COMPLETE ANALYSIS WALKTHROUGH](COMPLETE_ANALYSIS_WALKTHROUGH.md)
@@ -14,14 +13,13 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [ENVIRONMENT RESTORE](ENVIRONMENT_RESTORE.md)
 - [EVALUATION PROTOCOL V1](EVALUATION_PROTOCOL_V1.md)
 - [HARMONY PC REVIEW](HARMONY_PC_REVIEW.md)
-- [IFNB MODEL AB PROTOCOL](IFNB_MODEL_AB_PROTOCOL.md)
 - [MAD REVIEW](MAD_REVIEW.md)
 - [OFFLINE COMPARISON CONTRACT](OFFLINE_COMPARISON_CONTRACT.md)
 - [PARAMETER CONTEXT CONTROLS](PARAMETER_CONTEXT_CONTROLS.md)
 - [QC-review](QC-review.md)
-- [RELEASE 060 PROTOCOL](RELEASE_060_PROTOCOL.md)
-- [RELEASE NOTES 0.6.0](RELEASE_NOTES_0.6.0.md)
-- [RELEASE NOTES 0.8.0](RELEASE_NOTES_0.8.0.md)
-- [RELEASE PLAN](RELEASE_PLAN.md)
 - [UNIFIED MODEL REVIEW](UNIFIED_MODEL_REVIEW.md)
 - [annotation-response-recovery](annotation-response-recovery.md)
+
+## Archived versions and past plans
+
+[Archive index](archive/README.md) retains historical release protocols, notes and past benchmark/model plans. These are history, not the current 0.8.1 operating instructions.

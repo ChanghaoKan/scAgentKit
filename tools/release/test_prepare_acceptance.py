@@ -51,7 +51,7 @@ class DownloadTests(unittest.TestCase):
                 module.read('https://example.org/a',opener=opening,sleep=lambda _:None)
             self.assertEqual(len(calls),expected)
 class ArtifactVersionTests(unittest.TestCase):
-    def artifact(self, root, version="0.8.0.9001"):
+    def artifact(self, root, version="0.8.1"):
         name="scAgentKit_"+version+".tar.gz"
         with tarfile.open(root/name,"w:gz") as archive:
             files={"DESCRIPTION":"Package: scAgentKit\nVersion: "+version+"\nPackaged: source build\n",
@@ -67,11 +67,11 @@ class ArtifactVersionTests(unittest.TestCase):
     def test_development_artifact_uses_exact_version_and_verbatim_current_readme(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);sha=self.artifact(root)
-            result=self.run_preflight(root,"artifact",sha,"0.8.0.9001")
+            result=self.run_preflight(root,"artifact",sha,"0.8.1")
             self.assertEqual(result.returncode,0,result.stderr)
             receipt=module.json.loads((root/"download-receipt.json").read_text())
-            self.assertEqual(receipt["version"],"0.8.0.9001");self.assertIsNone(receipt["tag"])
-            self.assertIn('scAgentKit_0.8.0.9001.tar.gz',(root/"README-install.R").read_text())
+            self.assertEqual(receipt["version"],"0.8.1");self.assertIsNone(receipt["tag"])
+            self.assertIn('scAgentKit_0.8.1.tar.gz',(root/"README-install.R").read_text())
     def test_wrong_source_version_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);sha=self.artifact(root)
@@ -80,11 +80,11 @@ class ArtifactVersionTests(unittest.TestCase):
     def test_changed_archive_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);self.artifact(root)
-            result=self.run_preflight(root,"artifact","0"*64,"0.8.0.9001")
+            result=self.run_preflight(root,"artifact","0"*64,"0.8.1")
             self.assertNotEqual(result.returncode,0);self.assertIn("Downloaded bytes differ",result.stderr)
     def test_public_mode_remains_pinned_and_invalid_version_fails_before_network(self):
         with tempfile.TemporaryDirectory() as directory:
-            for mode,version in [("public","0.8.0.9001"),("artifact","../unsafe")]:
+            for mode,version in [("public","0.8.1.9001"),("artifact","../unsafe")]:
                 result=self.run_preflight(Path(directory),mode,"0"*64,version)
                 self.assertEqual(result.returncode,2);self.assertIn("error:",result.stderr)
 

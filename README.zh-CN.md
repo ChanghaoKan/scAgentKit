@@ -13,7 +13,6 @@ scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC�
 
 当前源码工作流分别停在三次审批：分析方案、实测分群选择、注释提案。
 按下方步骤操作；可选方法见[操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)。
-历史 v0.6.0 请用[对应版本的协议](docs/dev/RELEASE_060_PROTOCOL.md)。
 
 | 复核 1 | 复核 2 | 复核 3 |
 | --- | --- | --- |
@@ -26,8 +25,15 @@ scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC�
 支持 **macOS 和 Linux**，**不支持 Windows**：本地服务和后台计算进程使用
 [Unix `fcntl` 文件锁](https://docs.python.org/3/library/fcntl.html)。
 
-使用当前开发版本时，在匹配 checkout 中运行 `R CMD build .`，记录归档 SHA256。
-在归档所在目录的新 R 会话中安装包及必要依赖：
+当前推荐版本为 **0.8.1（实验性 prerelease）**。下载归档及校验文件，先验证原始字节：
+
+```sh
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.1.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.1/scAgentKit_0.8.1.tar.gz
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.1/SHA256SUMS
+shasum -a 256 -c SHA256SUMS  # macOS；Linux：sha256sum -c SHA256SUMS
+```
+
+校验通过后，在归档所在目录的新 R 会话中安装：
 
 ```r
 options(timeout=max(1800, getOption("timeout", 60)))
@@ -36,21 +42,18 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.8.0.9001.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.1.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0.9001",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.1",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
 ```
 
-应从选定 library 读到版本 `0.8.0.9001`。记录归档校验值、包版本和 `sessionInfo()`。
+应从选定 library 读到版本 `0.8.1`。记录归档校验值、包版本和 `sessionInfo()`。
 可选方法的依赖与版本要求见[运行环境支持](docs/LINUX_RUNTIME_SUPPORT.md)。
 若 GitHub 依赖下载达到 API 配额，`remotes` 可使用已有的 `GITHUB_PAT`。
-[历史 v0.8.0 发布](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
-是单独归档，不包含当前开发版本的修改。
-
 ## 离线安装检查
 
 在新项目中运行随包的小数据示例：
@@ -62,7 +65,7 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 ```
 
 应得到含 80 个细胞、Unknown 标签的 Seurat 对象，然后再接入自己的输入。
-[发布检查](docs/dev/RELEASE_PLAN.md)保留安装与示例运行日志。
+[发布检查](docs/dev/archive/RELEASE_PLAN.md)保留安装与示例运行日志。
 
 <a id="一个项目工作流"></a>
 

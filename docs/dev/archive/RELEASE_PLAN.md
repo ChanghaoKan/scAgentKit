@@ -4,7 +4,7 @@
 
 0.8.0 is an experimental breaking release. It removes 36 function exports and
 AgentSeurat at the previously stated earliest removal milestone. Read
-[API/type changes](API_CONSOLIDATION.md) and [release notes](RELEASE_NOTES_0.8.0.md).
+[API/type changes](../API_CONSOLIDATION.md) and [release notes](RELEASE_NOTES_0.8.0.md).
 The standard raw-count workflow requires strategy, measured-clustering and
 annotation approvals; a completed workflow does not establish biological accuracy.
 
@@ -106,7 +106,7 @@ versions. A mismatch rejects resume/approval, including resume of completed runs
 Keep the original environment and exact package build to continue an old
 project, or start a new project directory from the original input and review it
 again. Never alter hashes or authority/checkpoints to bypass this boundary.
-Author-label metadata priors remain off by default. See [NEWS](../../NEWS.md).
+Author-label metadata priors remain off by default. See [NEWS](../../../NEWS.md).
 
 The historical 0.6.x/0.7.x retention window ends at the separately documented
 0.8.0 removal milestone above. Historical tags and assets remain unchanged.

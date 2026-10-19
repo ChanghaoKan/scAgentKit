@@ -1,8 +1,7 @@
 # Scientific review: operator guide
 
-Use 0.8.0 on the data machine. [中文操作指南](RESEARCHER_PROTOCOL_ZH.md).
-See [README](../README.md) for installation, pre-1.0 policy and [limitations](../README.md#limitations);
-use the [historical protocol](dev/RELEASE_060_PROTOCOL.md) for v0.6.0.
+Use 0.8.1 on the data machine. [中文操作指南](RESEARCHER_PROTOCOL_ZH.md).
+See [README](../README.md) for installation, pre-1.0 policy and [limitations](../README.md#limitations).
 
 ## Model setup in this source build
 

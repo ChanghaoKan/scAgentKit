@@ -15,7 +15,6 @@ contains a new Seurat object, marker tables, figures and your recorded decisions
 This source workflow pauses for three approvals: your analysis plan, the measured
 clustering choice and the annotation proposal. Follow the steps below; the
 [operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) covers optional methods.
-For historical v0.6.0, use its [matching protocol](docs/dev/RELEASE_060_PROTOCOL.md).
 
 | Review 1 | Review 2 | Review 3 |
 | --- | --- | --- |
@@ -28,8 +27,16 @@ Browser resources are included in the R package.
 Supported platforms: **macOS and Linux**. **Windows is unsupported** because the
 local service and worker use [Unix `fcntl` file locks](https://docs.python.org/3/library/fcntl.html).
 
-For this development version, run `R CMD build .` in the matching checkout and
-record the archive SHA256. Install the resulting local archive in a fresh R session:
+The recommended version is **0.8.1 (experimental prerelease)**. Download its
+archive and checksum, then verify the exact bytes before installation:
+
+```sh
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.1.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.1/scAgentKit_0.8.1.tar.gz
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.1/SHA256SUMS
+shasum -a 256 -c SHA256SUMS  # macOS; Linux: sha256sum -c SHA256SUMS
+```
+
+After the checksum passes, install in a fresh R session from that directory:
 
 ```r
 options(timeout=max(1800, getOption("timeout", 60)))
@@ -38,22 +45,19 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.8.0.9001.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.1.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0.9001",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.1",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
 ```
 
-Expect version `0.8.0.9001` from the selected library. Record its archive checksum,
+Expect version `0.8.1` from the selected library. Record its archive checksum,
 package versions and `sessionInfo()`. Optional dependency/version requirements
 are in [runtime support](docs/LINUX_RUNTIME_SUPPORT.md). If GitHub dependency
 downloads hit an API quota, `remotes` can use an existing `GITHUB_PAT`.
-The [historical v0.8.0 release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
-is a separate archive and does not include this development version's changes.
-
 ## Offline installation check
 
 Run the bundled small-data example in a new project:
@@ -65,7 +69,7 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 ```
 
 Expect a Seurat object with 80 cells and Unknown labels. Then use your own
-input below. The [release checks](docs/dev/RELEASE_PLAN.md) record the installation
+input below. The [release checks](docs/dev/archive/RELEASE_PLAN.md) record the installation
 and example logs.
 
 <a id="one-project-workflow"></a>

@@ -7,7 +7,7 @@ on:
       tag:
         description: Merged release tag to build and publish
         required: true
-        default: v0.8.0
+        default: v0.8.1
 
 permissions:
   contents: read
@@ -50,8 +50,8 @@ jobs:
           archive="scAgentKit_${package_version}.tar.gz"
           source_commit=$(git rev-parse HEAD)
           if [ "$RELEASE_EVENT" = workflow_dispatch ]; then
-            test "$package_version" = 0.8.0
-            test "$RELEASE_TAG" = v0.8.0
+            test "$package_version" = 0.8.1
+            test "$RELEASE_TAG" = v0.8.1
             test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$source_commit"
             git merge-base --is-ancestor "$source_commit" origin/main
             test "$(git show -s --format=%P "$source_commit" | wc -w)" -eq 2
@@ -114,19 +114,19 @@ jobs:
             const fs = require('fs');
             const crypto = require('crypto');
             const tag = process.env.RELEASE_TAG;
-            if (tag !== 'v0.8.0') throw new Error('Unexpected release tag');
+            if (tag !== 'v0.8.1') throw new Error('Unexpected release tag');
             const receipt = JSON.parse(fs.readFileSync('release-source/build-receipt.json'));
-            const archiveHash = crypto.createHash('sha256').update(fs.readFileSync('release-source/scAgentKit_0.8.0.tar.gz')).digest('hex');
+            const archiveHash = crypto.createHash('sha256').update(fs.readFileSync('release-source/scAgentKit_0.8.1.tar.gz')).digest('hex');
             if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified ||
                 receipt.sha256 !== process.env.RELEASE_SHA256 || archiveHash !== receipt.sha256)
               throw new Error('Source provenance mismatch');
-            const body = fs.readFileSync('docs/dev/RELEASE_NOTES_0.8.0.md','utf8') +
+            const body = fs.readFileSync('docs/RELEASE_NOTES_0.8.1.md','utf8') +
               '\n\nSource commit: `' + receipt.source_commit + '`. SHA256: `' + receipt.sha256 +
               '`.\nBuild and public-install acceptance: ' + receipt.workflow_url;
             const result = await github.rest.repos.createRelease({...context.repo, tag_name: tag,
-              target_commitish: receipt.source_commit, name: 'scAgentKit 0.8.0 (experimental)',
+              target_commitish: receipt.source_commit, name: 'scAgentKit 0.8.1 (experimental)',
               body, draft: true, prerelease: true});
-            for (const name of ['scAgentKit_0.8.0.tar.gz','SHA256SUMS','build-receipt.json']) {
+            for (const name of ['scAgentKit_0.8.1.tar.gz','SHA256SUMS','build-receipt.json']) {
               await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: result.data.id,
                 name, data: fs.readFileSync('release-source/'+name)});
             }

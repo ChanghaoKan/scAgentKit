@@ -1,8 +1,7 @@
 # scAgentKit 研究者操作协议
 
-在数据所在机器上使用 0.8.0 工作流。[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
+在数据所在机器上使用 0.8.1 工作流。[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
 安装、1.0 前的兼容政策及[局限](../README.zh-CN.md#局限)统一见 README。
-历史 v0.6.0 请用[对应协议](dev/RELEASE_060_PROTOCOL.md)。
 
 ## 本源码构建的模型入口
 

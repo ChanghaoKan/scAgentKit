@@ -37,7 +37,7 @@ or valid cell identities.
 Use the versioned GitHub Release archive and `remotes::install_local()` exactly
 as shown in the [README](../README.md#installation). Do not substitute a mutable
 branch or a different tag. The pending publication plan and archive verification
-steps are in [release preparation](dev/RELEASE_PLAN.md).
+steps are in [release preparation](dev/archive/RELEASE_PLAN.md).
 
 Record the archive SHA256, R executable, `.libPaths()`, installed package versions
 and `sessionInfo()`. Preserve the project's original environment when resuming;

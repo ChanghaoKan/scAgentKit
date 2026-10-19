@@ -1,7 +1,7 @@
 # Published v0.6.0 protocol / 已发布 v0.6.0 操作路径
 
 Use the published archive and checksum instructions in the
-[English README](../../README.md#installation) or [中文 README](../../README.zh-CN.md#安装).
+[English README](../../../README.md#installation) or [中文 README](../../../README.zh-CN.md#安装).
 The installed package version alone does not identify a development build;
 record the archive checksum and dependency environment. The default v0.6.0
 plan sets `diagnostic_resolutions=NULL`: two scientific approvals cover the
@@ -18,7 +18,7 @@ following creates a manual project: no provider, no model request, zero budget.
 MEX path or a declared sample table; it does not accept an in-memory Seurat.
 For a model project, initialize the provider/model/settings/budget with
 `sc_analyze()`/`sc_run()` before reopening the same input via `sc_start()`.
-Those settings are immutable; see [configuration and consent](UNIFIED_MODEL_REVIEW.md).
+Those settings are immutable; see [configuration and consent](../UNIFIED_MODEL_REVIEW.md).
 
 首次调用前先决定人工或模型辅助初始化。下例是人工项目；标签和置信度由用户提供。
 `sc_start()` 的 RDS 输入是含原始 counts/Seurat 的**文件路径**，也支持 MEX 路径或
@@ -45,7 +45,7 @@ service <- sc_start("input.rds", "new-release-project",
    定性置信度、理由及同簇引用。保存完整提案后，审查、审批并继续。
 3. 在同一包环境用 `sc_result("new-release-project")` 读取结果；重开不自动执行或请求模型。
 
-The [offline installation check](../../README.md#offline-installation-check) uses
+The [offline installation check](../../../README.md#offline-installation-check) uses
 public `pbmc_small` and explicit software-control approvals. It tests installation
 and abstains with Unknown; it is not biological validation. For preview code,
 install its fixed commit separately and follow its three-gate protocol instead.

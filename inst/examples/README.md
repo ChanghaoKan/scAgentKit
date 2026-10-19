@@ -1,4 +1,4 @@
-# User examples
+# scAgentKit 0.8.1 — User examples
 
 - `three-gate-analysis.R`: explicit offline public `pbmc_small` software control, three approvals and Unknown labels; no biological recommendation or model call.
 - `simple-analysis.R`: installation-check wrapper around that same three-gate helper.
