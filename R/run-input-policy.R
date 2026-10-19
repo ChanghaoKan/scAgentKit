@@ -1,12 +1,13 @@
 # The modern entry preserves prior metadata separately, without renaming roles
 # or treating old annotations as an approved result of the new analysis.
 .sc_run_input_policy <- function(value) {
-  if (is.null(value)) return(list(preserve_metadata = FALSE))
+  if (is.null(value)) return(list(preserve_metadata = FALSE, automatic_metadata = FALSE, automatic_mad = FALSE))
   if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
-      length(setdiff(names(value), "preserve_metadata")) ||
+      length(setdiff(names(value), c("preserve_metadata", "automatic_metadata", "automatic_mad"))) ||
       !all(vapply(value, function(flag) is.logical(flag) && length(flag) == 1L && !is.na(flag), logical(1))))
-    stop("input_policy accepts preserve_metadata=TRUE/FALSE.", call. = FALSE)
-  list(preserve_metadata = isTRUE(value$preserve_metadata))
+    stop("input_policy accepts logical preserve_metadata, automatic_metadata and automatic_mad flags.", call. = FALSE)
+  list(preserve_metadata = isTRUE(value$preserve_metadata), automatic_metadata = isTRUE(value$automatic_metadata),
+    automatic_mad = isTRUE(value$automatic_mad))
 }
 
 .sc_run_preserve_input_metadata <- function(seu) {

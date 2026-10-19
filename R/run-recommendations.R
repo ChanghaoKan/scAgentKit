@@ -55,6 +55,8 @@
     unlist(lapply(names(value), function(key) known_keys(value[[key]],
       if (nzchar(prefix)) paste(prefix, key, sep = ".") else key)), use.names = FALSE)
   }
+  if (identical(state$config$metadata_role_draft$status, "needs_selection")) missing <- c(missing,
+    list(list(field = "columns.sample", reason = state$config$metadata_role_draft$notice)))
   keys <- unique(c(vapply(missing, function(x) as.character(x$field), character(1)), known_keys(facts)))
   # Provenance is requested only when a declaration needs it; the author does
   # not have to fill unrelated optional protocols or algorithm parameters.
@@ -109,6 +111,7 @@
       pc_basis_sha256 = pc_review$artifact$sha256),
     steps = steps, completed = list("Raw-count, ID and declared-role validation; local QC measurements and proposal impacts are saved."),
     fact_editable = .sc_run_recommend_fact_editable(review_state), fact_values = facts,
+    metadata_role_candidates = state$config$metadata_role_draft,
     fact_fields = .sc_run_recommend_fact_fields(steps, state, columns, facts),
     next_decision = if (is.null(scan))
       "Review the measured QC candidates, missing optional facts, PC rule and batch alternatives together. Save the complete corrected plan, then approve this first scientific strategy; local computation stops at measured resolution review." else

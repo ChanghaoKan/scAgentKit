@@ -94,5 +94,17 @@ auto.fetchImpl=async(url,options)=>{const next=answer();next.run.revision=8;next
 await auto.call("saveRecommendationFacts",reviewHash);assert.equal(auto.requests.length,2,"Facts save may queue only the fixed local diagnostic worker");assert.equal(JSON.parse(auto.requests[0].options.body).action,"facts");assert.equal(JSON.parse(auto.requests[1].options.body).retry,false);assert.equal(auto.state.continuation.job.status,"queued");
 const locked=copy(value);locked.run.strategy_review.details.recommendations.fact_editable=false;const noedit=setup(locked);assert.equal(noedit.state.recommendationFacts.save.disabled,true);await noedit.call("saveRecommendationFacts",reviewHash);assert.equal(noedit.requests.length,0);
 const stale=setup(value);stale.state.stale=true;await stale.call("saveRecommendationFacts",reviewHash);assert.equal(stale.requests.length,0);
+const mappingValue=copy(value);
+mappingValue.run.strategy_review.details.recommendations.metadata_role_candidates={
+  schema:"scagentkit.metadata-role-candidates.v1",status:"needs_selection",
+  notice:"Choose the sample column explicitly; automatic pooled MAD is disabled.",
+  candidates:[{column:"orig.ident",distinct_values:1},{column:"sample",distinct_values:2}],
+  privacy:{cell_ids_included:false,per_cell_values_included:false}};
+mappingValue.run.strategy_review.details.recommendations.fact_fields=[{
+  key:"columns.sample",label:"Sample grouping",type:"select",options:[{value:"orig.ident",label:"orig.ident"},{value:"sample",label:"sample"}],value:null,required:true}];
+const mappingUI=setup(mappingValue);
+assert.match(mappingUI.el("strategy-recommendations").textContent,/automatic pooled MAD is disabled/);
+assert.equal(mappingUI.state.recommendationFacts.items[0].input.value,"");
+assert.equal(mappingUI.requests.length,0,"Displaying candidates cannot declare a sample or approve a plan");
 console.log(JSON.stringify({passed:true,actualBrowser:false,actualProductionFunctions:true,modelCalls:0,cases:["unknown booleans stay unknown","edited-only typed nested patch","invalid/prototype fields rejected","exact bound facts action","duplicate click blocked","read-only and stale blocked","no generated-assessment claim without worker"]}));
 })().catch(error=>{console.error(error);process.exitCode=1;});

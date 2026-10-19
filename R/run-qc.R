@@ -90,7 +90,9 @@
     preservation <- .sc_run_preserve_input_metadata(seu)
     seu <- preservation$seu
   }
-  context <- .sc_run_context(context, seu)
+  metadata_roles <- if (identical(input_type, "Seurat") && policy$automatic_metadata)
+    .sc_run_metadata_roles(seu, context, select_single = TRUE) else list(context = context, summary = NULL)
+  context <- .sc_run_context(metadata_roles$context, seu)
   processed <- identical(start_stage, "processed")
   if (processed) {
     .sc_project_string(processed_reason, "processed_reason")
@@ -112,6 +114,7 @@
                           raw_counts_validated = TRUE, sparse_counts = inherits(counts, "sparseMatrix"),
                           processed_reason = if (processed) processed_reason else NULL,
                           input_transforms = prepared_layers$receipts,
+                          metadata_role_candidates = metadata_roles$summary,
                           preserved_metadata = if (is.null(preservation)) NULL else preservation[c("key", "hash")],
                           warnings = warnings))
 }

@@ -1,5 +1,12 @@
 # Development (unreleased)
 
+- Prepare a persisted sample-role draft from five whitelisted metadata columns.
+  A sole complete candidate can be a documented sample fallback; multiple
+  candidates require author choice and never imply a technical batch. Model
+  summaries contain group sizes and common fixed-vocabulary values only, not
+  IDs, free-text metadata or rare labels. Unmapped input no longer receives
+  automatic pooled MAD; choosing facts rebuilds grouped evidence without approval.
+
 - Preserve original cell metadata, column locations and exact cell-ID mapping
   separately in modern-entry Seurat checkpoints. A collision-safe hashed misc
   record protects prior labels before new reviewed output fields are written.

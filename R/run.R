@@ -130,6 +130,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(input_policy)) {
     config$input_policy <- .sc_run_input_policy(input_policy)
     config$input_policy$metadata_key <- checked$diagnostics$preserved_metadata$key
+    config$metadata_role_draft <- checked$diagnostics$metadata_role_candidates
   }
   if (!is.null(scientific_review)) {
     if (!strategy || start_stage != "qc") stop("scientific_review requires raw strategy entry.",call.=FALSE)
@@ -183,6 +184,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(annotation_proposal)) state <- .sc_run_put(root, state, "manual_annotation", annotation_proposal)
   state <- .sc_run_event(state, "planned", list(input_hash = state$input_hash, config_hash = state$config_hash,
                                               implementation_hash = state$implementation_hash))
+  if (!is.null(checked$diagnostics$metadata_role_candidates)) state <- .sc_run_event(state,
+    "metadata_role_draft_prepared", list(summary = checked$diagnostics$metadata_role_candidates,
+      biological_or_technical_inference_accepted = FALSE))
   if (!is.null(checked$diagnostics$preserved_metadata)) state <- .sc_run_event(state,
     "input_metadata_preserved", c(checked$diagnostics$preserved_metadata,
       list(original_cell_ids_retained = TRUE, boundary = "Prior metadata is separately preserved, not accepted as new annotations.")))
@@ -341,6 +345,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     "Available presets are keep_all, conservative_and3, low_counts3, low_features3, high_mt3 and any_quality3. keep_all is the low-risk default. AND/OR and single-indicator candidates have different measured consequences; no candidate is a universal optimum.",
     "MAD zero/near-zero, small groups, missing values and mixed distributions can make candidates unavailable. Explain uncertainties; do not treat Unknown as zero or optimize against retained cell number or cluster labels.",
     "High RNA is flag-only; ribosomal/hemoglobin percentages are diagnostic only. Only one complete human-approved strategy authorizes exact preset execution; no background rule switching or per-group approvals.")
+  if (kind == "strategy" && !is.null(evidence$metadata_role_candidates)) schema <- paste(schema,
+    "metadata_role_candidates contains only whitelisted column names and privacy-filtered aggregate sizes/values.",
+    "If the sample role is unresolved, provide a clearly labelled sample/donor/condition mapping DRAFT with reasons in inferences, and ask the analyst to choose in the study-facts editor.",
+    "Do not turn the draft into a fact, invent missing columns, silently pool MAD, or infer technical batch/capture provenance from a column name.",
+    "When grouped MAD is unavailable, preserve cells and explicitly state that quality remains unassessed rather than inventing a threshold.")
   schema <- sub("These are independent suggestions", "These are suggestions", schema, fixed = TRUE)
   dependency <- if (kind != "annotation") "" else if (identical(evidence$reference_mode, "guided"))
     "Database candidates were supplied as guidance. This suggestion depends on that reference; agreement is not independent replication." else
@@ -500,6 +509,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
           proposal <- proposed$proposal
           mad <- evidence$private$mad_record
           if (!is.null(mad)) {
+            if (identical(proposal$qc$schema, "scagentkit.qc.v1")) proposal <- .sc_run_mad_bind_legacy_draft(proposal, mad)
             if (identical(proposal$qc$schema, "scagentkit.qc.mad.v1")) proposal$qc$panel_hash <- mad$panel_hash
             if (identical(proposal$qc$schema, "scagentkit.qc.rules.v1"))
               proposal$qc$rules <- lapply(proposal$qc$rules, function(rule) {

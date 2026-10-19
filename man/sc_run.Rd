@@ -60,7 +60,7 @@ sc_run_accept(project_dir, reviewer, reason)
 \item{provider}{Provider name or safe configuration list. Built-in DeepSeek and Grok use runtime environment keys.}
 \item{chat_fn}{Explicit in-memory function accepting system and user prompts. Never saved.}
 \item{budget}{Project USD reservation limit. Default zero. Unknown accounting holds its reservation.}
-\item{input_policy}{Optional local input preservation policy. preserve_metadata=TRUE stores original metadata and an exact identity cell-ID map in a collision-safe misc record. The modern sc_analyze/sc_start entry enables it; direct sc_run retains the strict fresh-output-column default.}
+\item{input_policy}{Optional local input policy. automatic_metadata permits a single-candidate sample fallback; multiple candidates remain an analyst choice. automatic_mad enables newly declared grouped MAD after fact review; it never enables implicit pooled MAD. preserve_metadata=TRUE stores original metadata and an exact identity cell-ID map in a collision-safe misc record. The modern sc_analyze/sc_start entry enables it; direct sc_run retains the strict fresh-output-column default.}
 \item{review}{Named policy: allow_external permits an exact-payload transfer approval node; preapprove_qc explicitly supplies a typed rule. Optional transfer_consent records an explicit creation-time project scope (mode='project', confirmed=TRUE, reviewer, reason, categories); its provider, prompt version and budget remain fixed. Omit it for strict per-payload transfer approval. No scientific approval is granted.}
 \item{start_stage}{qc for raw input, or processed to reuse existing analysis.}
 \item{processed_reason}{Required provenance for processed entry and skipped QC/analysis.}

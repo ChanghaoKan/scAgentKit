@@ -127,16 +127,8 @@
   }
   base
 }
-.sc_ui_mad_setup <- function(context) {
-  columns <- context$columns
-  if (is.character(columns)) columns <- as.list(columns)
-  role <- if (!is.null(columns$qc_group)) "qc_group" else if (!is.null(columns$sample)) "sample" else NULL
-  grouping <- if (is.null(role)) list(method = "single", id = "unstratified_input",
-    source = "No sample/QC-group role was declared. Pooled unstratified diagnostics, not a declared single sample; per-sample conclusions are unavailable.") else
-    list(method = "column", column = columns[[role]], declared_role = role,
-      source = paste0("Explicit context$columns$", role, " declaration; no donor or capture role inferred."))
-  list(grouping = grouping)
-}
+.sc_ui_mad_setup <- function(context) .sc_run_mad_group_defaults(context)
+
 .sc_ui_pc_limits <- function(seu, config, scale_factor) {
   scale_factor <- .sc_run_strategy_number(scale_factor, "analysis$scale_factor", 0, open_min = TRUE)
   normalized <- Seurat::NormalizeData(seu, assay = config$assay,
@@ -204,13 +196,22 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     saveRDS(input,transport,version=2L);input<-transport
   }
   extra <- list(...)
-  if (!"input_policy" %in% names(extra)) extra$input_policy <- list(preserve_metadata = TRUE)
+  defaults <- list(preserve_metadata = TRUE, automatic_metadata = TRUE, automatic_mad = !"qc_mad" %in% names(extra))
+  if ("input_policy" %in% names(extra)) {
+    invisible(.sc_run_input_policy(extra$input_policy))
+    defaults[names(extra$input_policy)] <- extra$input_policy
+  }
+  extra$input_policy <- .sc_run_input_policy(defaults)
+  source_context <- context
+  metadata_input <- if (is.character(input) && length(input) == 1L) readRDS(input) else input
+  if (inherits(metadata_input, "Seurat") && extra$input_policy$automatic_metadata)
+    context <- .sc_run_metadata_roles(metadata_input, context, select_single = TRUE)$context
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)
   if (!"qc_mad" %in% names(extra)) extra$qc_mad <- .sc_ui_mad_setup(context)
   proposal <- NULL
   if (is.null(provider) || !is.null(plan)) {
-    object <- if (is.character(input) && length(input) == 1L) readRDS(input) else input
+    object <- metadata_input
     dimensions <- dim(object)
     if (length(dimensions) != 2L) stop("input must be a counts matrix, Seurat object or its RDS path.", call. = FALSE)
     panel <- NULL
@@ -246,7 +247,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     limits <- .sc_ui_pc_limits(selected_object, config, proposal$analysis$scale_factor)
     proposal <- .sc_ui_plan(edits, dimensions = dim(selected_object), mad = panel, pc_limits = limits)
   }
-  do.call(sc_run, c(list(input = input, project_dir = project_dir, context = context, strategy = TRUE,
+  do.call(sc_run, c(list(input = input, project_dir = project_dir, context = source_context, strategy = TRUE,
     strategy_proposal = proposal, provider = provider, chat_fn = chat_fn,
     budget = budget, review = review), extra))
   sc_open(project_dir)

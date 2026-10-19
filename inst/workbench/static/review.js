@@ -1533,6 +1533,12 @@ function updateRecommendationFactsAvailability() {
 }
 function renderRecommendationFacts(target, context) {
   state.recommendationFacts = null;
+  const metadataRoles = context.current ? context.recommendations.metadata_role_candidates : null;
+  if (metadataRoles) {
+    const mapping = element("section",null,{"data-testid":"metadata-role-draft"});
+    mapping.append(element("h3","Sample role draft"),element("p",metadataRoles.notice || "Choose the sample role explicitly."));
+    mapping.append(raw(metadataRoles)); target.append(mapping);
+  }
   const fields = context.current ? context.recommendations.fact_fields : null;
   if (!Array.isArray(fields) || !fields.length) return;
   const section = element("section",null,{class:"recommendation-facts","data-testid":"recommendation-facts"});

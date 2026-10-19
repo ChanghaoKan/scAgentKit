@@ -103,6 +103,16 @@
       unlist(context$columns[intersect(c("capture", "group", "condition", "treatment"), names(context$columns))], use.names = FALSE))
     stop("Technical batch metadata column conflicts with capture or biological roles; do not reinterpret those roles as correction targets.", call. = FALSE)
   config$context <- context
+  if (isTRUE(config$input_policy$automatic_metadata))
+    config$metadata_role_draft <- .sc_run_metadata_roles(input, context, select_single = FALSE)$summary
+  if (isTRUE(config$input_policy$automatic_mad) && is.null(config$qc_mad) &&
+      length(intersect(names(facts$columns), c("sample", "qc_group")))) {
+    prepared_mad <- .sc_run_mad_group_defaults(context)
+    if (!identical(prepared_mad, FALSE)) {
+      config$prefilter <- .sc_run_prefilter_options(NULL)
+      config$qc_mad <- .sc_run_mad_options(context, prepared_mad)
+    }
+  }
   config$recommendation_facts <- merged
   if (!is.null(config$qc_mad)) {
     if (length(intersect(names(facts$columns), c("sample", "qc_group")))) {

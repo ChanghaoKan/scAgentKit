@@ -290,6 +290,7 @@
   # local. Size limits are handled by the existing approved request boundary.
   summary <- list(schema = "scagentkit.strategy.evidence.v1", start_stage = start_stage,
     background_facts = background, missing_facts = unique(missing), declared_roles = columns,
+    metadata_role_candidates = config$metadata_role_draft,
     role_sizes = lapply(roles[intersect(c("sample", "qc_group", "capture", "batch", "group", "condition", "treatment"), names(roles))], .sc_run_strategy_group_counts),
     quality = qc_evidence$summary,
     input = list(cells = length(cells), features = nrow(counts),
