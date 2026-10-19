@@ -2,7 +2,24 @@
 
 在数据所在机器上使用 0.8.0 工作流。[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
 安装、1.0 前的兼容政策及[局限](../README.zh-CN.md#局限)统一见 README。
-历史 v0.6.0 请用[对应协议](RELEASE_060_PROTOCOL.md)。
+历史 v0.6.0 请用[对应协议](dev/RELEASE_060_PROTOCOL.md)。
+
+## 本源码构建的模型入口
+
+在新项目 `sc_start()` 中直接配置 provider/model、明确 USD 上限和传输同意；见
+[README 入口](../README.zh-CN.md#分析步骤)及随包 `full-llm-workflow.R`。
+只使用已有环境 key；缺 key 时进入人工路径。不使用项目级同意时，每个确切 payload 单独审批。
+采纳候选或 Save 不等于科学审批。默认预算为零，真实模型预算校准尚未完成。
+
+新草稿仅在各组所需指标完整且适用时使用保守 AND3；否则明确保留 keep-all。
+细胞周期仅对物种和基因覆盖适用的输入尝试评分；自动 doublet 仅在合格 called-cell/capture 队列中标记，
+其他输入保持未评估。逐项核实已保存理由，不把 condition 当技术批次；Harmony 设计保护仍有效。
+实测分辨率必须从实际扫描网格中选择。
+
+ACT 是默认本地参考，见[输入与来源](ACT_LOCAL_REFERENCE.md)；不随包分发或自动下载。
+缺失/零匹配会明确提示。首轮 marker-only 注释后再比较参考，最多一次 guided 差异请求。
+检查实际正向 marker 引用及不可变 PNG。CL 精确匹配不确定时保持缺失。
+采纳候选保留人工编辑，每个完整科学提案仍须人工批准。
 
 ## 1. 先理解三个控件
 
@@ -77,14 +94,14 @@ sc_open("new-annotation-project")
 ```
 
 该入口复用所提供的处理与分群，准备 markers 后停在注释处。
-若要重新分群，从 raw counts 另建项目。后续操作见[已处理对象示例](../inst/examples/server_processed.R)
+若要重新分群，从 raw counts 另建项目。后续操作见[已处理对象示例](../dev/examples/server_processed.R)
 及第 9 节的注释复核。
 
 ## 6. 可选模型辅助
 
 打开网页前，先在 R 中以 provider、model、生成设置及预算初始化**新**项目；这些设置随后固定。
 密钥通过实际运行进程的环境提供。`Rscript --vanilla` 需要继承的环境，不读取 `.Renviron`。
-完整配置见[模型设置与发送同意](UNIFIED_MODEL_REVIEW.md)。
+完整配置见[模型设置与发送同意](dev/UNIFIED_MODEL_REVIEW.md)。
 
 预览内容及目的地，同意这次传输，再明确请求候选。查看、采纳或编辑候选后 Save，
 再独立批准科学方案。若请求结果不明确，先查看已保存 job 和用量记录，再决定是否重新请求。
@@ -95,9 +112,9 @@ sc_open("new-annotation-project")
 | 选择 | 需要先准备什么 | 详细说明 |
 | --- | --- | --- |
 | Sample-consensus HVG | 至少 2 个已声明样本，每个至少 30 个保留细胞；设置 hvg_method=sample_consensus、hvg_column，保存并复核 | [HVG 与诊断](SCIENTIFIC_METHODS_APPENDIX.md) |
-| Harmony | 已核实的技术 batch 列，以及满足检查的研究设计；复核完整方案 | [Harmony/PC](HARMONY_PC_REVIEW.md) |
-| Doublet 评分 | 适用的 droplet raw counts、明确 capture 单位和受支持运行版本 | [Doublet 前提](DOUBLET_REVIEW.md) |
-| Cell-cycle 选项 | 明确 species，测得且记录来源的 gene set；选择 keep/full/受支持的 difference | [Cell-cycle 复核](CELL_CYCLE_REVIEW.md) |
+| Harmony | 已核实的技术 batch 列，以及满足检查的研究设计；复核完整方案 | [Harmony/PC](dev/HARMONY_PC_REVIEW.md) |
+| Doublet 评分 | 适用的 droplet raw counts、明确 capture 单位和受支持运行版本 | [Doublet 前提](dev/DOUBLET_REVIEW.md) |
+| Cell-cycle 选项 | 明确 species，测得且记录来源的 gene set；选择 keep/full/受支持的 difference | [Cell-cycle 复核](dev/CELL_CYCLE_REVIEW.md) |
 | Ambient 校正 | 单独 R API；SoupX 需完整 capture、匹配的 raw/filtered counts、至少 20 个额外 droplets 和具名 clusters；decontX 需明确初步 clusters | [Ambient 输入与版本](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction) |
 
 额外 PC sensitivity、重采样、分辨率扩展、sample-consensus HVG、QC 草稿自动预选、
@@ -115,7 +132,7 @@ sc_open("new-annotation-project")
 阅读每簇 marker 及已配置的参考候选。所有行填写标签或 Unknown、置信度、理由和提供的支持 marker。
 未编辑行选择参考候选可复制标签/引用，解释由你补充；批量 Unknown 要求理由并保留已编辑行。
 Save complete proposal，通看各群，再批准注释并继续。随后看到完成状态及结果页。
-详细操作见[参考设置](CM2_EVIDENCE_REVIEW.md)和 [marker 定义](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)。
+详细操作见[参考设置](dev/CM2_EVIDENCE_REVIEW.md)和 [marker 定义](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)。
 
 ## 10. 可选子分析和新的父对象输出
 
@@ -125,7 +142,7 @@ Save complete proposal，通看各群，再批准注释并继续。随后看到�
 当前不支持 child 再创建 child，也不自动合并重叠 children。
 
 背景编辑仅在停止的注释阶段、写回前提供。保存页面允许的编辑，阅读重新生成的提案并重新审批。
-准确 R 调用、编辑前提及 undo 见[子群复核](SUBCLUSTER_REVIEW.md)和[背景控件](PARAMETER_CONTEXT_CONTROLS.md)。
+准确 R 调用、编辑前提及 undo 见[子群复核](SUBCLUSTER_REVIEW.md)和[背景控件](dev/PARAMETER_CONTEXT_CONTROLS.md)。
 
 ## 11. 输出、恢复与可复现记录
 

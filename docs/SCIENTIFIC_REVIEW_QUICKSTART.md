@@ -2,7 +2,30 @@
 
 Use 0.8.0 on the data machine. [中文操作指南](RESEARCHER_PROTOCOL_ZH.md).
 See [README](../README.md) for installation, pre-1.0 policy and [limitations](../README.md#limitations);
-use the [historical protocol](RELEASE_060_PROTOCOL.md) for v0.6.0.
+use the [historical protocol](dev/RELEASE_060_PROTOCOL.md) for v0.6.0.
+
+## Model setup in this source build
+
+Configure provider/model, an explicit USD cap and transfer consent directly in
+`sc_start()` before opening a new project; follow the [README entry](../README.md#analysis-protocol)
+and installed `full-llm-workflow.R`. Existing environment keys only; missing keys
+leave a manual workflow. Without project-scope consent, each exact payload needs
+separate approval. Draft adoption/Save never approves science. Default cap is zero;
+real-provider budget calibration is still pending.
+
+New eligible drafts use conservative AND3 QC only when all required group metrics
+are available; otherwise keep-all stays explicit. Cell-cycle scoring is attempted
+only with eligible species/genes; automatic doublet diagnostics flag eligible
+called-cell/capture cohorts and leave other inputs unassessed. Verify saved reasons
+for every choice. A condition is not a technical batch, and Harmony design guards
+still apply. Measured resolution choices must come from the actual scan grid.
+
+ACT is the default local reference; see [input and provenance](ACT_LOCAL_REFERENCE.md).
+No ACT file is bundled or automatically downloaded. Missing/unmatched records have
+an explicit notice. Marker-only annotation precedes reference comparison; at most
+one guided difference request is allowed. Inspect actual positive marker citations
+and immutable PNG evidence. Exact CL mapping may remain missing. Human edits survive
+candidate adoption and each whole proposal still requires your approval.
 
 ## 1. Know the three controls
 
@@ -76,7 +99,7 @@ sc_open("new-annotation-project")
 ```
 
 This reuses processing/clusters, prepares markers and stops for annotation.
-Reclustering needs a raw-count project. Continue with the [example](../inst/examples/server_processed.R)
+Reclustering needs a raw-count project. Continue with the [example](../dev/examples/server_processed.R)
 and section 9.
 
 ## 6. Optional model assistance
@@ -84,7 +107,7 @@ and section 9.
 Initialize a **new** project in R with fixed provider/model/settings/budget
 before opening the page. Supply the key in the execution environment;
 `Rscript --vanilla` inherits it without reading `.Renviron`.
-Follow [configuration/consent](UNIFIED_MODEL_REVIEW.md).
+Follow [configuration/consent](dev/UNIFIED_MODEL_REVIEW.md).
 
 Preview content/destination, approve transfer, then Request. Edit/adopt, Save
 and separately approve science. For unclear outcomes, inspect saved job/usage
@@ -96,9 +119,9 @@ not offered by the page.
 | Choice | Required preparation | Details |
 | --- | --- | --- |
 | Sample-consensus HVGs | ≥2 declared samples, each ≥30 retained cells; set hvg_method=sample_consensus and hvg_column; Save/review | [HVG and diagnostics](SCIENTIFIC_METHODS_APPENDIX.md) |
-| Harmony | Verified technical batch, supported design, whole-plan review | [Harmony/PC](HARMONY_PC_REVIEW.md) |
-| Doublet scoring | Suitable droplet counts, declared captures, accepted runtime | [Doublet prerequisites](DOUBLET_REVIEW.md) |
-| Cell-cycle options | Species, measured/sourced gene set; keep/full/supported difference | [Cell-cycle review](CELL_CYCLE_REVIEW.md) |
+| Harmony | Verified technical batch, supported design, whole-plan review | [Harmony/PC](dev/HARMONY_PC_REVIEW.md) |
+| Doublet scoring | Suitable droplet counts, declared captures, accepted runtime | [Doublet prerequisites](dev/DOUBLET_REVIEW.md) |
+| Cell-cycle options | Species, measured/sourced gene set; keep/full/supported difference | [Cell-cycle review](dev/CELL_CYCLE_REVIEW.md) |
 | Ambient correction | Separate R API: SoupX needs complete capture, matching raw/filtered counts, ≥20 extra droplets, named clusters; decontX needs preliminary clusters | [Ambient inputs and versions](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction) |
 
 Extra PC sensitivity, resampling, resolution extension, sample-consensus HVGs,
@@ -117,7 +140,7 @@ Read markers/reference candidates. Fill all rows: label/Unknown, confidence,
 reason, supplied markers. Reference selection copies label/citations into an
 untouched row; add interpretation. Bulk Unknown needs a reason and preserves edits.
 Save complete proposal, inspect all populations, approve/continue. Next: results.
-[Reference setup](CM2_EVIDENCE_REVIEW.md) and [marker definitions](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)
+[Reference setup](dev/CM2_EVIDENCE_REVIEW.md) and [marker definitions](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)
 provide the detailed procedures.
 
 ## 10. Optional child analysis and a new parent output
@@ -130,7 +153,7 @@ automatic overlapping-child merges are unsupported.
 
 Context edits require a stopped annotation stage before writeback. Save, read
 the regenerated proposal and reapprove. See [calls/undo](SUBCLUSTER_REVIEW.md)
-and [editable fields](PARAMETER_CONTEXT_CONTROLS.md).
+and [editable fields](dev/PARAMETER_CONTEXT_CONTROLS.md).
 
 ## 11. Results, reopening and errors
 

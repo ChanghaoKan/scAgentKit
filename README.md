@@ -6,19 +6,16 @@ scAgentKit guides researchers from single-cell counts and sample information
 through QC, basic analysis, clustering and reviewed annotation. A saved project
 contains a new Seurat object, marker tables, figures and your recorded decisions.
 
-**Before 1.0, any version may break compatibility. No deprecation period is
-guaranteed, and resuming a project across versions is unsupported.**
-
 ## Analysis workflow
 
 <img src="docs/diagrams/project-analysis-flow.svg" alt="Three review decisions: initial strategy, measured clustering and annotation" width="1000">
 
 [English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [Diagram source](docs/diagrams/generate_project_flow.py)
 
-Version 0.8.0 pauses for three approvals: your analysis plan, the measured
+This source workflow pauses for three approvals: your analysis plan, the measured
 clustering choice and the annotation proposal. Follow the steps below; the
 [operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) covers optional methods.
-For historical v0.6.0, use its [matching protocol](docs/RELEASE_060_PROTOCOL.md).
+For historical v0.6.0, use its [matching protocol](docs/dev/RELEASE_060_PROTOCOL.md).
 
 | Review 1 | Review 2 | Review 3 |
 | --- | --- | --- |
@@ -31,7 +28,10 @@ Browser resources are included in the R package.
 Supported platforms: **macOS and Linux**. **Windows is unsupported** because the
 local service and worker use [Unix `fcntl` file locks](https://docs.python.org/3/library/fcntl.html).
 
-Download the [v0.8.0 archive](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
+This branch contains unpublished changes; the v0.8.0 release archive does not
+establish that these changes are installed. For this source build, run
+`R CMD build .` in the matching checkout and record its checksum, then install
+that local archive below. For the historical release, download the [v0.8.0 archive](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
 and checksum from the [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0),
 then verify the downloaded file:
 
@@ -76,17 +76,43 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 ```
 
 Expect a Seurat object with 80 cells and Unknown labels. Then use your own
-input below. The [release checks](docs/RELEASE_PLAN.md) record the installation
+input below. The [release checks](docs/dev/RELEASE_PLAN.md) record the installation
 and example logs.
 
 <a id="one-project-workflow"></a>
 
 ## Analysis protocol
 
-The default is manual, with no model provider and zero model budget. For model
-assistance, configure a **new project in R before opening the page**; its
-provider, model, settings and budget then stay fixed. Follow the
-[configuration and transfer-consent steps](docs/UNIFIED_MODEL_REVIEW.md).
+Choose the model policy before creating the project. Keep an existing provider
+key in the analysis machine's environment (`DEEPSEEK_API_KEY` or `XAI_API_KEY`),
+never in code, study notes, browser fields or project files. `sc_start()` can
+configure the provider directly; a separate initialization call is unnecessary.
+Without a usable key it opens the manual workflow. Two detected provider keys
+require an explicit provider choice. The default budget is **USD 0**; a useful
+paid budget has not yet been calibrated with a real provider.
+
+For model assistance, source the helper below, inspect the actual study context
+and aggregate categories, select a provider/model with verified pricing and set
+your own USD cap. Only then set `confirmed=TRUE` in your call. Sourcing sends
+nothing; the zero-cap example cannot make a paid request.
+
+```r
+source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
+service <- full_llm_start("input.rds", "new-project",
+  context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
+  provider=list(name="deepseek", model="deepseek-flash"), budget=0,
+  reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
+  categories=c("study_context", "aggregate_qc", "aggregate_markers",
+    "aggregate_design", "aggregate_expression"), confirmed=FALSE)
+```
+
+`confirmed=FALSE` deliberately asks you to review the setup before starting.
+Project consent permits automatic drafts only within the saved categories,
+provider/model and budget; exact payloads remain inspectable. To require separate
+permission for every payload, use `sc_start(..., provider=..., budget=...,
+review=list(allow_external=TRUE))` without project consent. Neither mode replaces
+the three scientific approvals below. Use `provider="manual"`, omit consent and keep budget zero
+for local manual review. See the [model contract](docs/dev/UNIFIED_MODEL_REVIEW.md).
 
 ### 1. Choose input and declare sample facts
 
@@ -154,7 +180,14 @@ the plots and PC rule.
 
 <a id="gate-annotation"></a>
 
-Open the worksheet and read each cluster's markers and reference candidates.
+Open the worksheet and read each cluster's markers, DotPlot/FeaturePlot evidence
+and reference candidates. ACT is the default local marker source; it is not
+bundled. [Import a lawfully held ACT file](docs/ACT_LOCAL_REFERENCE.md) with actual
+species/tissue and original PMIDs. Missing or unmatched ACT data is visibly
+unavailable and leaves marker/Unknown review usable. The first model draft is
+marker-only; at most one separately budgeted guided difference review may follow.
+Cell Ontology IDs use the pinned exact-name/synonym dictionary; ambiguous or
+unmapped labels retain a missing CLID.
 Fill every row with a label or **Unknown**, confidence, a reason and supplied
 supporting markers. In an untouched row, selecting a reference candidate can
 copy its label and citations; fill in your own confidence and interpretation.
@@ -162,7 +195,7 @@ The bulk Unknown action asks for a reason and preserves edited rows.
 
 Choose **Save complete proposal**, inspect all populations, then
 **Approve annotation and continue**. Expect a completed project and result page.
-For request/edit controls, see [annotation assistance](docs/ANNOTATION_ASSISTANCE.md).
+For request/edit controls, see [annotation assistance](docs/dev/ANNOTATION_ASSISTANCE.md).
 
 ### 4. Retrieve results
 
@@ -200,6 +233,8 @@ read-only browser. See [reopening and errors](docs/SCIENTIFIC_REVIEW_QUICKSTART.
 
 ## Limitations
 
+- Before 1.0, any version may break compatibility without a deprecation period;
+  resuming a project across versions is unsupported.
 - This experimental workflow executes your reviewed choices; completion does
   not establish biological accuracy, optimal QC/PC/resolution settings or time
   savings. Keep-all is a starting choice; `nCount >= 1` removes all-zero input only.
@@ -216,14 +251,14 @@ read-only browser. See [reopening and errors](docs/SCIENTIFIC_REVIEW_QUICKSTART.
   For a new version, create a new project from the original input and review it
   again; retain old evidence separately. **Do not edit saved checksums, approval
   records or intermediate files to force an old project to resume.**
-  See [API changes](docs/API_CONSOLIDATION.md) and [version history](NEWS.md).
+  See [API changes](docs/dev/API_CONSOLIDATION.md) and [version history](NEWS.md).
 
 ## More detail
 
 - [English operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) · [中文操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)
 - [10x input and sample tables](docs/TENX_INPUT.md)
 - [R analysis protocol](docs/R_ANALYSIS_PROTOCOL.md)
-- [Analysis methods](docs/ANALYSIS_STRATEGY_SUPPORT.md) · [Annotation review](docs/ANNOTATION_REVIEW.md)
+- [Analysis methods](docs/dev/ANALYSIS_STRATEGY_SUPPORT.md) · [Annotation review](docs/dev/ANNOTATION_REVIEW.md)
 - [Browser and remote server setup](workbench/README.md) · [Documentation index](docs/README.md)
 
 R help: `?sc_start`, `?sc_analyze`, `help(package="scAgentKit")`.

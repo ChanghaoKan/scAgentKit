@@ -5,17 +5,15 @@
 scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC、基础分析、分群与注释复核。
 保存的项目包含新的 Seurat 对象、marker 表、图和你的决策记录。
 
-**1.0 之前，任何版本都可能破坏兼容性，不保证弃用期，不支持跨版本恢复项目。**
-
 ## 分析流程
 
 <img src="docs/diagrams/project-analysis-flow.zh-CN.svg" alt="三次复核决定：初始方案、实测分群和注释" width="1000">
 
 [English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [流程图生成源](docs/diagrams/generate_project_flow.py)
 
-0.8.0 分别停在三次审批：分析方案、实测分群选择、注释提案。
+当前源码工作流分别停在三次审批：分析方案、实测分群选择、注释提案。
 按下方步骤操作；可选方法见[操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)。
-历史 v0.6.0 请用[对应版本的协议](docs/RELEASE_060_PROTOCOL.md)。
+历史 v0.6.0 请用[对应版本的协议](docs/dev/RELEASE_060_PROTOCOL.md)。
 
 | 复核 1 | 复核 2 | 复核 3 |
 | --- | --- | --- |
@@ -28,7 +26,9 @@ scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC�
 支持 **macOS 和 Linux**，**不支持 Windows**：本地服务和后台计算进程使用
 [Unix `fcntl` 文件锁](https://docs.python.org/3/library/fcntl.html)。
 
-从 [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
+本分支包含尚未发布的修改；历史 v0.8.0 归档不能证明这些修改已安装。
+使用本源码时，在匹配 checkout 中运行 `R CMD build .`，记录 SHA256，再按下方方式安装本地归档。
+历史版本可从 [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
 下载 [v0.8.0 归档](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
 及校验文件，核对下载内容：
 
@@ -71,14 +71,36 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 ```
 
 应得到含 80 个细胞、Unknown 标签的 Seurat 对象，然后再接入自己的输入。
-[发布检查](docs/RELEASE_PLAN.md)保留安装与示例运行日志。
+[发布检查](docs/dev/RELEASE_PLAN.md)保留安装与示例运行日志。
 
 <a id="一个项目工作流"></a>
 
 ## 分析步骤
 
-默认采用人工模式，无模型 provider，模型预算为零。若需模型辅助，先**在 R 中配置新项目，再打开网页**；
-该项目的 provider、model、设置和预算随后固定。具体步骤见[配置与传输同意](docs/UNIFIED_MODEL_REVIEW.md)。
+在新项目创建前决定模型策略。已有 key 只放在分析机器的环境变量
+`DEEPSEEK_API_KEY` 或 `XAI_API_KEY` 中，不写进代码、研究备注、网页或项目文件。
+`sc_start()` 直接接收 provider，不需另行初始化。缺少可用 key 时进入人工路径；
+检测到两个 provider key 时须明确选择。默认预算为 **USD 0**，尚未用真实模型校准付费默认值。
+
+需要模型辅助时，先 source 下方 helper，检查实际研究信息、聚合类别、provider/model、
+已核实价格和自行选择的 USD 上限，再在调用中确认 `confirmed=TRUE`。
+Source 本身不会发送内容；下方零预算示例不能产生付费请求。
+
+```r
+source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
+service <- full_llm_start("input.rds", "new-project",
+  context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
+  provider=list(name="deepseek", model="deepseek-flash"), budget=0,
+  reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
+  categories=c("study_context", "aggregate_qc", "aggregate_markers",
+    "aggregate_design", "aggregate_expression"), confirmed=FALSE)
+```
+
+`confirmed=FALSE` 会要求先检查配置。项目级同意只允许在已保存类别、provider/model 和预算内
+自动准备候选，确切 payload 仍可查看。若要逐次同意确切 payload，使用
+`sc_start(..., provider=..., budget=..., review=list(allow_external=TRUE))`，省略项目级同意。
+两种方式均保留下面三次科学审批。人工路径使用 `provider="manual"`、省略同意并保持零预算。
+详见[模型契约](docs/dev/UNIFIED_MODEL_REVIEW.md)。
 
 ### 1. 选择输入，声明样本事实
 
@@ -136,6 +158,11 @@ counts/layer 检查及明确复用已处理对象的步骤见[操作指南](docs
 
 ### 3. 复核注释
 
+查看 marker 及 DotPlot/FeaturePlot 证据。默认参考是本地 ACT，包中不包含数据库；
+[导入合法持有的 ACT 原文件](docs/ACT_LOCAL_REFERENCE.md)，明确物种/组织并保留原 PMID。
+缺失或零匹配会显示 unavailable，仍可按 marker/Unknown 人工复核。首轮模型注释仅看 marker；
+其后最多一次另计预算的参考差异复核。CLID 使用固定版本的精确名称/同义词字典；歧义或未映射者保持缺失。
+
 <a id="gate-annotation"></a>
 
 打开工作表，阅读每簇 marker 和参考候选。每行填写标签或 **Unknown**、置信度、理由及提供的支持 marker。
@@ -143,7 +170,7 @@ counts/layer 检查及明确复用已处理对象的步骤见[操作指南](docs
 批量 Unknown 需输入理由，并保留已编辑行。
 
 选择 **Save complete proposal**，通看各群，再 **Approve annotation and continue**。
-页面应进入完成状态与结果页。请求及编辑控件见[注释辅助](docs/ANNOTATION_ASSISTANCE.md)。
+页面应进入完成状态与结果页。请求及编辑控件见[注释辅助](docs/dev/ANNOTATION_ASSISTANCE.md)。
 
 ### 4. 取得结果
 
@@ -177,6 +204,7 @@ sc_start("filtered_feature_bc_matrix", project_dir,
 
 ## 局限
 
+- 1.0 前任何版本都可能破坏兼容性，不保证弃用期，不支持跨版本恢复项目。
 - 这套实验性流程执行你复核后的选择；运行完成不证明生物学准确率、QC/PC/分辨率最优或节省时间。
   Keep-all 是起始选择；`nCount >= 1` 只排除全零输入。小数据示例和 Unknown 标签用于检查软件流程。
 - 80% PC 规则是项目经验规则；簇关系树的边表示共享细胞，不是谱系。
@@ -187,14 +215,14 @@ sc_start("filtered_feature_bc_matrix", project_dir,
   可选诊断须输入适用并明确选择，见[操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)。
 - 保留每个项目的原输入、包构建和依赖环境。换版本时，以原输入另建项目并重新复核，旧证据另存。
   **不要修改项目校验值、审批记录或中间计算文件来强行恢复旧项目。**
-  见 [API 变化](docs/API_CONSOLIDATION.md)和[版本记录](NEWS.md)。
+  见 [API 变化](docs/dev/API_CONSOLIDATION.md)和[版本记录](NEWS.md)。
 
 ## 更多资料
 
 - [English operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) · [中文操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)
 - [10x 输入与样本表](docs/TENX_INPUT.md)
 - [R 分析协议](docs/R_ANALYSIS_PROTOCOL.md)
-- [分析方法](docs/ANALYSIS_STRATEGY_SUPPORT.md) · [注释复核](docs/ANNOTATION_REVIEW.md)
+- [分析方法](docs/dev/ANALYSIS_STRATEGY_SUPPORT.md) · [注释复核](docs/dev/ANNOTATION_REVIEW.md)
 - [网页和远程服务器](workbench/README.md) · [文档索引](docs/README.md)
 
 R 帮助：`?sc_start`、`?sc_analyze`、`help(package="scAgentKit")`。

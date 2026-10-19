@@ -1,5 +1,16 @@
 # Development (unreleased)
 
+- Keep five installed researcher examples (three-gate tutorial, installation
+  wrapper, explicit model setup, multi-sample 10x and scoped subcluster review).
+  Move focused/historical drivers and technical documentation to repository-only
+  developer directories. Exclude acceptance/release/environment tools and the
+  retired API inventory from archives while retaining the manifest builder.
+  Integrate the paired researcher guides, document direct provider setup and
+  separate user instructions from implementation contracts. Explain current
+  AND3, LogNormalize, reference and diagnostic limits without claiming biological
+  accuracy or a calibrated paid budget. Public entry errors add a next action;
+  saved audit fields and scientific integrity checks are unchanged.
+
 - Model scan previews use a versioned compact aggregate with full graph and
   split inventory, top-three global markers, and complete top-ten child marker
   blocks selected largest-parent-first within an explicit byte bound. Report

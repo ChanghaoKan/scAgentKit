@@ -115,7 +115,7 @@ jobs:
             if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified ||
                 receipt.sha256 !== process.env.RELEASE_SHA256 || archiveHash !== receipt.sha256)
               throw new Error('Source provenance mismatch');
-            const body = fs.readFileSync('docs/RELEASE_NOTES_0.8.0.md','utf8') +
+            const body = fs.readFileSync('docs/dev/RELEASE_NOTES_0.8.0.md','utf8') +
               '\n\nSource commit: `' + receipt.source_commit + '`. SHA256: `' + receipt.sha256 +
               '`.\nBuild and public-install acceptance: ' + receipt.workflow_url;
             const result = await github.rest.repos.createRelease({...context.repo, tag_name: tag,

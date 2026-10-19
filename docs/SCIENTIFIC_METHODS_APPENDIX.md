@@ -5,11 +5,11 @@ projects retain ordinary PCA/80% selection, the ordinary resolution scan/tree,
 sample QC/elbow/citation/Fisher evidence where applicable, and classic mean/pct
 panels for explicitly declared human blood/PBMC or pancreas. Unknown declarations
 and absent genes are unavailable/missing, not inferred zeros. PC sensitivity,
-resampling, extra resolution extension, sample-consensus HVGs and automatic QC
-draft preselection remain off by default. Cross-sample/mixed-lineage expression
+resampling, extra resolution extension, sample-consensus HVGs remain off by default. Eligible conservative AND3 draft
+selection is described below; incomplete evidence stays keep-all. Cross-sample/mixed-lineage expression
 extensions and R-only SoupX/decontX also remain explicit choices. No evidence
 display authorizes a data transfer, chooses optimal settings or certifies labels. See the registered
-[evaluation protocol](EVALUATION_PROTOCOL_V1.md) and
+[evaluation protocol](dev/EVALUATION_PROTOCOL_V1.md) and
 [operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md). Preset and diagnostic
 eligibility are software rules; no biological default benefit is assumed.
 
@@ -17,7 +17,7 @@ eligibility are software rules; no biological default benefit is assumed.
 | --- | --- | --- |
 | Within-group cell MAD | log10(count+1)/log10(feature+1), raw MT percent; 3 scaledMAD, explicit groups | Counts/features use lower-tail deletion flags; MT uses its upper tail. Upper RNA bands flag only. Distinct from comparing sample medians. |
 | Between-sample QC | One median per declared sample; signed robust z with1.4826 MAD | >=5 comparable samples, complete metrics/nonzero MAD. No automatic sample exclusion; biological design may explain differences. |
-| Draft OR preselection | Available nonredundant any_quality3, complete evidence/no conflicts, <=10% removal overall and <=20% each group, saved keep_all only | Local unsaved/unapproved memory, once per review revision. Existing author choice/edits take precedence. Caps are UI guards, not scientific thresholds. |
+| Conservative AND3 draft | Joint low-count, low-feature and high-MT flags only when the complete saved group-specific MAD evidence is eligible | Incomplete/ambiguous evidence retains keep-all. Never OR-autofill. It is an unapproved draft, not independent cell-quality truth; human choices take precedence. |
 | Per-sample HVG | Vst2000 (or approved feature count) per sample; frequency descending, median rank ascending (missing rank=nfeatures+1), literal-gene tie break | >=2 declared samples, each>=30 retained cells; explicit approved sample_consensus request. Equal sample influence can obscure sample-specific biology. |
 | Reference variance | Exact first cumulative80/85% crossing in first min(50, computed PCs) | Not total expression variance; shortfall and unsupported one-PC crossing remain explicit. |
 | Elbow | Maximum perpendicular distance below endpoint chord after scaling both axes to unit ranges | Requires nonconstant decreasing curve and interior knee. Descriptive alternative, no automatic selection. |
@@ -67,7 +67,7 @@ a revised rule or an explicit supported fixed choice; it is not rounded up.
 Calculation sources: [R's PCA definition of standard deviations and variances](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/prcomp.html),
 the fixed-main [default policy](https://github.com/ChanghaoKan/scAgentKit/blob/2b0827fc04fde28191241c300ab687200df660c8/R/analysis-api.R#L45-L90),
 [exact implementation and shortfall handling](https://github.com/ChanghaoKan/scAgentKit/blob/2b0827fc04fde28191241c300ab687200df660c8/R/run-pc-diagnostics.R#L9-L50),
-and the project's [earlier policy explanation](HARMONY_PC_REVIEW.md#two-pc-policies-with-the-denominator-disclosed).
+and the project's [earlier policy explanation](dev/HARMONY_PC_REVIEW.md#two-pc-policies-with-the-denominator-disclosed).
 These establish the calculation and its project origin, not a universal 80% cutoff.
 
 ## Reading QC flags and retention
@@ -145,3 +145,30 @@ Official method documentation: [SoupX vignette](https://cran.r-project.org/web/p
 These sources describe methods; they do not validate this branch's implementation
 or establish benefit on a particular dataset. Frozen before/after artifacts and
 negative/neutral outcomes must be reported separately before default adoption.
+
+## Current computation and reference scope
+
+The raw workflow uses Seurat LogNormalize (scale factor 10,000), VST variable
+features and PCA. SCTransform/SCT is not an implemented alternative. Declaring
+human or mouse supports the corresponding verified gene/reference handling;
+it does not guarantee cycle or doublet eligibility, cross-species marker validity,
+or coverage of every tissue. Unsupported/missing mappings are unavailable.
+
+Diagnostic resolution scans use positive native markers with min.pct 0.25 and
+logFC threshold 0.25, retaining top 30 per cluster. The selected final clustering
+gets the separate full configured marker calculation; scan pruning never replaces
+that marker CSV. Adjacent-resolution child contrasts use the actual parent-cell
+subset against its other children, with top 10 positive markers and eligibility
+limits. The model summary projects this evidence under a measured byte bound,
+reports omitted blocks and keeps the full local evidence. Ribosomal/MT/cycle
+fractions describe programs, not noisy-cluster or identity classifiers. Resolution
+fallbacks require a value actually scanned; no composite optimum is claimed.
+
+The annotation query pool ranks fold change first and detection difference second;
+shared ribosomal/MT exclusions are configurable and recorded, with the native full
+marker table preserved. ACT coverage deduplicates genes while publication evidence
+retains original PMID strings and source rows. Fisher evidence is conditional on a
+valid tested-gene universe and supported native marker settings; missing universe
+means unavailable, not a substituted enrichment p-value. ACT overlap is not
+independent validation of a guided candidate. Exact CL names/EXACT synonyms use the
+pinned base ontology; ambiguous, obsolete or unmatched labels keep a missing CLID.

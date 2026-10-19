@@ -54,7 +54,7 @@ PBMC after-snapshot为恢复态复制，审批事件可能来自原始项目，�
 不得把sum(show)称作全部日志成本，或把wall−show称作纯compute。现有大R文本输出回归证明
 展示量减少，尚无本轮科学基准运行速度改善测量。
 
-[模型A/B仅方案](../../../docs/IFNB_MODEL_AB_PROTOCOL.md)：无调用、无传输、无费用；尚无模型效果结果。
+[模型A/B仅方案](../../../docs/dev/IFNB_MODEL_AB_PROTOCOL.md)：无调用、无传输、无费用；尚无模型效果结果。
 
 ## 预测状态审计补充
 
