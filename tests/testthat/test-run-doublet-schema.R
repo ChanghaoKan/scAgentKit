@@ -348,3 +348,18 @@ test_that("verified doublet records cannot be detached altered or substituted un
   e <- doublet_schema_rehash(e)
   expect_error(scAgentKit:::.sc_run_strategy_validate(doublet_schema_proposal(), e), "changed|inconsistent")
 })
+
+test_that("automatic and flag modes cannot turn a model proposal into cell deletion", {
+  f <- doublet_schema_fixture()
+  for (mode in c("auto", "flag")) {
+    e <- f$evidence; e$summary$doublet_mode <- mode; e <- doublet_schema_rehash(e)
+    expect_error(.sc_run_strategy_validate(doublet_schema_proposal(method = "remove_predicted"), e), "flag-only")
+    kept <- .sc_run_strategy_validate(doublet_schema_proposal(), e)
+    expect_identical(kept$selected_cells, colnames(f$seu))
+    expect_identical(kept$proposal$doublet$method, "keep")
+  }
+  e <- f$evidence; e$summary$doublet_mode <- "remove"; e <- doublet_schema_rehash(e)
+  choice <- .sc_run_strategy_validate(doublet_schema_proposal(), e)
+  expect_identical(choice$proposal$doublet$method, "remove_predicted")
+  expect_length(choice$selected_cells, 186L)
+})

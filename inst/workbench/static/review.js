@@ -1674,6 +1674,15 @@ function strategyOperationGroup(key, title, card, savedProposal, opened) {
 function renderStrategyOperations(details, proposal) {
   state.strategyFeedback = null; state.madSelect = null; state.strategyControls = []; state.batchControls = null; state.pcControls = null; state.qcControls = null; state.clusteringControls = null;
   const operations = $("strategy-operations"), opened = new Set([...operations.children].filter(child => child.open).map(child => child.getAttribute("data-operation"))); operations.replaceChildren();
+  if (details.automatic_diagnostics && typeof details.automatic_diagnostics === "object") {
+    const diagnosticStatus = element("section",null,{class:"strategy-evidence-card","data-testid":"automatic-diagnostic-status"});
+    diagnosticStatus.append(element("h3","Diagnostic availability"));
+    for (const [kind, item] of Object.entries(details.automatic_diagnostics)) {
+      const status = item?.status === "insufficient" ? "unavailable" : item?.status || "unassessed";
+      diagnosticStatus.append(element("p",kind + ": " + status + ". " + [item?.reason,...array(item?.reasons)].filter(Boolean).join(" ")));
+    }
+    operations.append(diagnosticStatus);
+  }
   for (const [key, title] of [["qc", "QC and cell retention"], ["analysis", "Normalization and PCA basis"], ["pcs", "PC selection"], ["batch", "Batch handling"], ["clustering", "Clustering and resolution"], ["umap", "UMAP"]]) {
     const card = key === "qc" ? renderQCControls(details, proposal) : key === "pcs" ? renderPCs(details, proposal) : key === "clustering" ? renderClustering(details, proposal) : harmonyEnabled(details) && key === "batch" ? renderBatch(details, proposal) : strategySection(title, proposal[key], "Reuse is explicit for a processed start; consult the saved execution plan for this step.");
     operations.append(strategyOperationGroup(key, title, card, details.canonical_proposal || {}, opened));

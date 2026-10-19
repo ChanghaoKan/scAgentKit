@@ -1,5 +1,12 @@
 # Development (unreleased)
 
+- Modern raw entry attempts eligible S/G2M evidence, with regression none by
+  default and explicit unavailable reasons for missing genes/species support.
+  Add doublet auto/off/flag/remove modes: auto/flag keeps cells, and missing
+  called-cell/capture/dependency/cohort facts remain unassessed. Remove requires
+  eligible fixed predictions and exact human strategy approval. No droplet
+  calling, capture inference or cycling-cell deletion is introduced.
+
 - Use one conservative QC fallback: a complete eligible grouped MAD panel
   starts with conservative_and3; otherwise keep all cells and explicitly mark
   quality unassessed. Zero-count cells are not silently dropped by this draft.

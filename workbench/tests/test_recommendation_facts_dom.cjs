@@ -102,7 +102,11 @@ mappingValue.run.strategy_review.details.recommendations.metadata_role_candidate
   privacy:{cell_ids_included:false,per_cell_values_included:false}};
 mappingValue.run.strategy_review.details.recommendations.fact_fields=[{
   key:"columns.sample",label:"Sample grouping",type:"select",options:[{value:"orig.ident",label:"orig.ident"},{value:"sample",label:"sample"}],value:null,required:true}];
+mappingValue.run.strategy_review.details.automatic_diagnostics={
+  cycle:{status:"unavailable",reason:"Mouse scoring needs explicit versioned lists."},
+  doublet:{status:"disabled",reason:"No singlet status is inferred."}};
 const mappingUI=setup(mappingValue);
+assert.match(mappingUI.el("strategy-operations").textContent,/cycle: unavailable.*Mouse scoring.*doublet: disabled/s);
 assert.match(mappingUI.el("strategy-recommendations").textContent,/automatic pooled MAD is disabled/);
 assert.equal(mappingUI.state.recommendationFacts.items[0].input.value,"");
 assert.equal(mappingUI.requests.length,0,"Displaying candidates cannot declare a sample or approve a plan");

@@ -59,10 +59,11 @@ setup$provider <- get(".sc_run_provider_spec", ns)(setup$provider)$metadata
 if (identical(request$entry, "processed")) {
   scAgentKit::sc_run(request$input, request$project, context = request$context,
     start_stage = "processed", processed_reason = request$processed_reason,
-    cluster_column = request$cluster_column, provider = setup$provider, budget = setup$budget, review = setup$review, input_policy = list(preserve_metadata = TRUE))
+    cluster_column = request$cluster_column, provider = setup$provider, budget = setup$budget, review = setup$review, input_policy = list(preserve_metadata = TRUE, doublet_mode = "off"))
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
   plan = list(), provider = setup$provider, budget = setup$budget, review = setup$review,
-  scientific_review=request$scientific_review)
+  scientific_review=request$scientific_review,
+  doublet=if (is.null(request$doublet_mode)) "auto" else request$doublet_mode)
 view <- scAgentKit::sc_run_inspect(request$project)
 jsonlite::write_json(list(project_id = view$project_id, status = view$status, stage = view$stage,
   provider = provider_metadata(request$project)),

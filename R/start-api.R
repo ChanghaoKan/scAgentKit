@@ -30,12 +30,14 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   model_suggestions = c("auto", "off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
-  provider = NULL, budget = 0, review = list(allow_external = FALSE)) {
+  provider = NULL, budget = 0, review = list(allow_external = FALSE),
+  doublet = c("auto", "off", "flag", "remove")) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
   scientific_review <- .sc_run_science_options(scientific_review)
   model_suggestions <- match.arg(model_suggestions)
+  doublet <- match.arg(doublet)
   .sc_project_string(project_dir, "project_dir")
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
   if (existing && is.null(context)) context <- .sc_run_load(.sc_run_root(project_dir))$config$context
@@ -53,6 +55,10 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   for (flag in c("browse", "reuse_processed")) if (!is.logical(get(flag)) ||
       length(get(flag)) != 1L || is.na(get(flag))) stop(flag, " must be TRUE or FALSE.", call. = FALSE)
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
+  if (!existing && reuse_processed) {
+    if (!missing(doublet) && doublet != "off") stop("Processed reuse does not run new doublet diagnostics; use doublet='off' or start a raw project.", call. = FALSE)
+    doublet <- "off"
+  }
   if (!existing && !reuse_processed && !missing(cluster_column) && !identical(cluster_column,"sc_strategy_clusters"))
     stop("cluster_column selects processed input membership; raw analysis creates sc_strategy_clusters.",call.=FALSE)
   preferences <- file.path(path.expand(project_dir), ".workbench-review-launcher", "preferences.json")
@@ -66,6 +72,8 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
         (!is.null(processed_reason) && !identical(processed_reason,state$config$processed_reason)))
       stop("Reopening cannot replace saved entry, reuse reason or cluster column.", call. = FALSE)
     context <- state$config$context
+    if (!missing(doublet) && !identical(doublet, state$config$input_policy$doublet_mode))
+      stop("Reopening uses the saved doublet mode; omit doublet or create a new project.", call. = FALSE)
     if (!is.null(scientific_review) && !identical(scientific_review,state$config$scientific_review))
       stop("Reopening cannot replace saved scientific diagnostics; use the original configuration or a new project.",call.=FALSE)
     reuse_processed <- identical(state$config$start_stage, "processed")
@@ -126,6 +134,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     args <- c(args,"--scientific-review-file",shQuote(science_file))
   }
   if (!existing) {
+    args <- c(args, "--doublet-mode", shQuote(doublet))
     setup_file <- tempfile("scagentkit-provider-", fileext = ".json")
     on.exit(unlink(setup_file), add = TRUE)
     jsonlite::write_json(setup, setup_file, auto_unbox = TRUE, null = "null")

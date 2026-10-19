@@ -290,6 +290,7 @@
   # local. Size limits are handled by the existing approved request boundary.
   summary <- list(schema = "scagentkit.strategy.evidence.v1", start_stage = start_stage,
     background_facts = background, missing_facts = unique(missing), declared_roles = columns,
+    automatic_diagnostics = config$automatic_diagnostics, doublet_mode = config$input_policy$doublet_mode,
     metadata_role_candidates = config$metadata_role_draft,
     role_sizes = lapply(roles[intersect(c("sample", "qc_group", "capture", "batch", "group", "condition", "treatment"), names(roles))], .sc_run_strategy_group_counts),
     quality = qc_evidence$summary,
@@ -331,19 +332,28 @@
   }
   if (cycle_enabled) {
     summary$cycle_diagnostics <- cycle_record$summary
-    summary$capabilities$cycle <- if (processed) c("cycle_scoring", "none") else
+    if (!is.null(summary$automatic_diagnostics$cycle)) {
+      summary$automatic_diagnostics$cycle$status <- cycle_record$summary$status
+      summary$automatic_diagnostics$cycle$reasons <- cycle_record$summary$reasons
+      summary$automatic_diagnostics$cycle$scored_cells <- cycle_record$summary$cohort$scored_cells
+    }
+    summary$capabilities$cycle <- if (processed || !identical(cycle_record$summary$status, "available")) c("cycle_scoring", "none") else
       c("cycle_scoring", "none", "full", "difference")
     summary$capabilities$unsupported <- setdiff(summary$capabilities$unsupported,
       if (processed) "cycle_scoring" else c("cycle_scoring", "cycle_regression"))
   }
   if (doublet_enabled) {
     summary$doublet_diagnostics <- doublet_record$summary
+    if (!is.null(summary$automatic_diagnostics$doublet)) {
+      summary$automatic_diagnostics$doublet$status <- doublet_record$summary$status
+      summary$automatic_diagnostics$doublet$assessed <- identical(doublet_record$summary$status, "available")
+    }
     scored <- identical(doublet_record$summary$status, "available")
-    summary$capabilities$doublet <- if (!scored) "keep" else if (processed)
+    summary$capabilities$doublet <- if (!scored) "keep" else if (processed || isTRUE(config$input_policy$doublet_mode %in% c("auto", "flag")))
       c("doublet_scoring", "keep") else c("doublet_scoring", "keep", "remove_predicted")
     if (scored) {
       summary$capabilities$unsupported <- setdiff(summary$capabilities$unsupported,
-        if (processed) "doublet_scoring" else c("doublet_scoring", "doublet_removal"))
+        if (processed || isTRUE(config$input_policy$doublet_mode %in% c("auto", "flag"))) "doublet_scoring" else c("doublet_scoring", "doublet_removal"))
       for (package in c("scDblFinder", "SingleCellExperiment"))
         summary$dependencies[[package]]$strategy_supported <- TRUE
     }
@@ -487,8 +497,13 @@
   qc_keep <- keep
   doublet <- NULL
   if (doublet_enabled) {
+    mode <- evidence$summary$doublet_mode
     choice <- if ("doublet" %in% names(proposal)) proposal$doublet else
-      list(method = "keep", reason = "Diagnostics only; no removal requested.")
+      if (identical(mode, "remove") && identical(evidence$private$doublet_record$summary$status, "available"))
+        list(method = "remove_predicted", reason = "Explicit remove setup; exact projected cells still require human approval.") else
+        list(method = "keep", reason = "Diagnostics only; no removal requested.")
+    if (isTRUE(mode %in% c("auto", "flag")) && identical(choice$method, "remove_predicted"))
+      stop("This doublet mode is flag-only; keep cells or start an explicit remove configuration before reviewing deletion.", call. = FALSE)
     doublet <- .sc_run_doublet_validate_choice(choice,
       evidence$private$doublet_record, qc_keep,
       cycle_record = if (cycle_enabled) evidence$private$cycle_record else NULL)

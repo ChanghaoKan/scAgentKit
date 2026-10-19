@@ -189,7 +189,7 @@
 sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL,
                        chat_fn = NULL, budget = 0, review = list(allow_external = FALSE),
                        sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
-                       feature_key = c("name", "id"), ...) {
+                       feature_key = c("name", "id"), doublet = c("auto", "off", "flag", "remove"), ...) {
   imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
   input <- imported$input; context <- imported$context
   if (imported$imported) {
@@ -198,7 +198,10 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     saveRDS(input,transport,version=2L);input<-transport
   }
   extra <- list(...)
-  defaults <- list(preserve_metadata = TRUE, automatic_metadata = TRUE, automatic_mad = !"qc_mad" %in% names(extra))
+  doublet <- match.arg(doublet)
+  defaults <- list(preserve_metadata = TRUE, automatic_metadata = TRUE, automatic_mad = !"qc_mad" %in% names(extra),
+    automatic_cycle = !"cycle_diagnostics" %in% names(extra),
+    doublet_mode = if (identical(extra$doublet_diagnostics, FALSE)) "off" else doublet)
   if ("input_policy" %in% names(extra)) {
     invisible(.sc_run_input_policy(extra$input_policy))
     defaults[names(extra$input_policy)] <- extra$input_policy

@@ -144,6 +144,17 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     config$subcluster_creation <- subcluster_creation
     config$annotation_context <- .sc_run_child_context_initial(subcluster_creation$parent_annotation_context)
   }
+  if (!is.null(config$input_policy) && start_stage == "qc" && strategy) {
+    automatic <- .sc_run_automatic_diagnostics(checked$seu, config, cycle_diagnostics, doublet_diagnostics)
+    config$automatic_diagnostics <- automatic$assessments
+    if (!is.null(doublet_diagnostics) && !identical(doublet_diagnostics, FALSE)) {
+      config$recommendation_facts$doublet <- doublet_diagnostics[intersect(names(doublet_diagnostics),
+        c("data_type", "technology", "input_source", "empty_droplets_removed", "full_called_cohort", "capture", "rate"))]
+      config$recommendation_doublet_settings <- doublet_diagnostics[intersect(names(doublet_diagnostics),
+        c("column_prefix", "seed", "nfeatures", "dims", "artificial_doublets", "iter", "clusters"))]
+    }
+    cycle_diagnostics <- automatic$cycle; doublet_diagnostics <- automatic$doublet
+  }
   cycle_options <- .sc_run_cycle_options(checked$context, cycle_diagnostics)
   if (!is.null(cycle_options)) config$cycle_diagnostics <- cycle_options
   doublet_options <- .sc_run_doublet_options(checked$context, doublet_diagnostics)
@@ -345,6 +356,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     "Available presets are keep_all, conservative_and3, low_counts3, low_features3, high_mt3 and any_quality3. keep_all is the low-risk default. AND/OR and single-indicator candidates have different measured consequences; no candidate is a universal optimum.",
     "MAD zero/near-zero, small groups, missing values and mixed distributions can make candidates unavailable. Explain uncertainties; do not treat Unknown as zero or optimize against retained cell number or cluster labels.",
     "High RNA is flag-only; ribosomal/hemoglobin percentages are diagnostic only. Only one complete human-approved strategy authorizes exact preset execution; no background rule switching or per-group approvals.")
+  if (kind == "strategy") schema <- paste(schema,
+    "Explain each QC, doublet, cycle, batch and HVG choice using the actual study goal/tissue, measured distributions, MAD impacts and declared design.",
+    "For proliferation, development or tumour goals generally preserve cycle biology with regression none; cycling_dominant evidence may justify reviewing difference regression, never automatic deletion.",
+    "A technical batch with measured composition differences may justify Harmony only after the existing confounding and rank guards; no declared technical provenance means none.",
+    "Auto/flag doublet modes propose keeping cells with diagnostic flags; remove is available only for an explicit remove setup and exact human strategy review.")
   if (kind == "strategy" && !is.null(evidence$metadata_role_candidates)) schema <- paste(schema,
     "metadata_role_candidates contains only whitelisted column names and privacy-filtered aggregate sizes/values.",
     "If the sample role is unresolved, provide a clearly labelled sample/donor/condition mapping DRAFT with reasons in inferences, and ask the analyst to choose in the study-facts editor.",

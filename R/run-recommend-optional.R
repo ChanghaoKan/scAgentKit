@@ -74,6 +74,12 @@
   step <- .sc_run_recommend_optional_step("doublet", "Capture-specific doublet evidence and reviewed handling")
   step$uncertainty <- list("Predictions are not calibrated probabilities or doublet truth; homotypic doublets can remain undetected.",
     "Doublet diagnostics do not delete cells. Any predicted-cell removal requires a separate exact strategy approval.")
+  if (identical(config$input_policy$doublet_mode, "off")) {
+    step$status <- "recommend_skip"
+    step$reasons <- list("Doublet mode is off; no classifier assessment or singlet claim is made.")
+    step$next_decision <- "Keep cells. Select a scoring mode in a new setup if doublet assessment is required."
+    return(step)
+  }
   record <- evidence$private$doublet_record
   if (is.null(record)) {
     preparation <- .sc_run_recommend_doublet_options(config)
@@ -141,12 +147,14 @@
   step$assessment <- "assessed"
   step$status <- if (length(removal)) "recommend_execute" else "recommend_skip"
   step$reasons <- list("Fixed capture-specific predictions have been compared with the exact current pure-QC selection; review both retention and predicted-cell removal.")
-  removal_available <- length(removal) > 0L && length(keep) - length(removal) >= 21L && !identical(evidence$summary$start_stage, "processed")
+  flag_only <- isTRUE(config$input_policy$doublet_mode %in% c("auto", "flag"))
+  if (flag_only) step$status <- "recommend_skip"
+  removal_available <- !flag_only && length(removal) > 0L && length(keep) - length(removal) >= 21L && !identical(evidence$summary$start_stage, "processed")
   step$candidates <- list(
     .sc_run_recommend_optional_candidate("keep", "Keep current QC-passing cells", list(doublet = list(method = "keep", reason = "Review fixed predictions without automatic removal.")), TRUE,
       "Retain all QC-passing cells; a predicted class is not measured truth.", list(removed = 0L, retained = length(keep))),
     .sc_run_recommend_optional_candidate("remove_predicted", "Review removal of fixed predictions intersecting QC", list(doublet = list(method = "remove_predicted", reason = "Author review of exact fixed predicted-cell intersection with approved QC.")), removal_available,
-      c("Only after explicit author approval; no new scoring or deletion quota.", if (!removal_available) "No nonempty supported raw-entry removal leaving at least 21 cells is available."),
+      c("Only after explicit author approval; no new scoring or deletion quota.", if (flag_only) "This setup is flag-only; no deletion choice is enabled.", if (!removal_available) "No nonempty supported raw-entry removal leaving at least 21 cells is available."),
       list(removed = length(removal), retained = length(keep) - length(removal))))
   step$next_decision <- "Review per-capture predictions and their QC intersection; explicitly approve keep or the exact removal candidate."
   step

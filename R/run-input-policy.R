@@ -1,13 +1,16 @@
 # The modern entry preserves prior metadata separately, without renaming roles
 # or treating old annotations as an approved result of the new analysis.
 .sc_run_input_policy <- function(value) {
-  if (is.null(value)) return(list(preserve_metadata = FALSE, automatic_metadata = FALSE, automatic_mad = FALSE))
+  flags <- c("preserve_metadata", "automatic_metadata", "automatic_mad", "automatic_cycle")
+  if (is.null(value)) return(c(stats::setNames(as.list(rep(FALSE, length(flags))), flags), list(doublet_mode = NULL)))
   if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
-      length(setdiff(names(value), c("preserve_metadata", "automatic_metadata", "automatic_mad"))) ||
-      !all(vapply(value, function(flag) is.logical(flag) && length(flag) == 1L && !is.na(flag), logical(1))))
-    stop("input_policy accepts logical preserve_metadata, automatic_metadata and automatic_mad flags.", call. = FALSE)
-  list(preserve_metadata = isTRUE(value$preserve_metadata), automatic_metadata = isTRUE(value$automatic_metadata),
-    automatic_mad = isTRUE(value$automatic_mad))
+      length(setdiff(names(value), c(flags, "doublet_mode"))) ||
+      !all(vapply(value[intersect(names(value), flags)], function(flag) is.logical(flag) && length(flag) == 1L && !is.na(flag), logical(1))))
+    stop("input_policy needs logical preservation/automatic flags and optional doublet_mode auto/off/flag/remove.", call. = FALSE)
+  mode <- value$doublet_mode
+  if (!is.null(mode) && (!is.character(mode) || length(mode) != 1L || is.na(mode) || !mode %in% c("auto", "off", "flag", "remove")))
+    stop("doublet_mode must be auto, off, flag or remove.", call. = FALSE)
+  c(stats::setNames(lapply(flags, function(key) isTRUE(value[[key]])), flags), list(doublet_mode = mode))
 }
 
 .sc_run_preserve_input_metadata <- function(seu) {

@@ -124,7 +124,7 @@
     if (identical(group$method, "column")) config$qc_mad$grouping$column <- context$columns[[group$declared_role]]
     config$qc_mad <- .sc_run_mad_options(context, config$qc_mad)
   }
-  if (length(merged$doublet)) {
+  if (length(merged$doublet) && !identical(config$input_policy$doublet_mode, "off")) {
     config$doublet_diagnostics <- NULL
     preparation <- .sc_run_recommend_doublet_options(config)
     if (isTRUE(preparation$ready)) {

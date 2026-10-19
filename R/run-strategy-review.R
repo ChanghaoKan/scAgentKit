@@ -108,6 +108,7 @@
     details = list(canonical_proposal = validated$proposal,
       background = list(facts = summary$background_facts, missing = summary$missing_facts),
       quality = summary$quality, qc_impact = qc, capabilities = summary$capabilities,
+      automatic_diagnostics = summary$automatic_diagnostics,
       applicability = list(executable = validated$executable, blockers = validated$blockers, details = validated$applicability),
       dependency_hashes = validated$dependency_hashes,
       execution_plan = if (state$config$start_stage == "processed") list("Reuse the supplied QC and processed analysis; compute current markers after approval.") else

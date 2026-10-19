@@ -8,7 +8,8 @@ sc_start(input, project_dir, context = NULL, checkout = NULL,
   model_suggestions = c("auto", "off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
-  provider = NULL, budget = 0, review = list(allow_external = FALSE))
+  provider = NULL, budget = 0, review = list(allow_external = FALSE),
+  doublet = c("auto", "off", "flag", "remove"))
 }
 \arguments{
 \item{scientific_review}{Explicit optional rebuilding/extended expression diagnostics for a new raw project, disabled by default. Applicable declared-human blood/PBMC or pancreas classic panels remain baseline evidence. Reopening cannot replace saved settings.}
@@ -20,6 +21,7 @@ sc_start(input, project_dir, context = NULL, checkout = NULL,
 \item{context}{Declared species, tissue, research_goal and optional notes, columns and design; required for a new project, otherwise saved context is used.}
 \item{checkout}{Optional matching developer checkout, selected explicitly or via options(scAgentKit.checkout=...). Installed package resources are the default.}
 \item{model_suggestions}{Operator mode: auto (default; selects configured suggestions or mock simulation from the saved provider), off, configured, or simulate (immutable mock provider only). Preview and exact transfer authorization remain separate from scientific approval.}
+\item{doublet}{Auto (default) or flag attempts eligible called-cell diagnostics and keeps cells; off explicitly leaves them unassessed. Remove stages an exact predicted-cell removal proposal only when prerequisites pass; human scientific approval remains required. Missing dependencies, capture or calling provenance are explicitly unassessed.}
 \item{provider}{Explicit name/list, including name='openai_compatible' with HTTPS base_url, model and api_key_env. NULL detects exactly one DeepSeek/Grok key; missing or ambiguous keys fall back to manual mode with a notice. Keys are never saved.}
 \item{budget}{Explicit nonnegative project USD cap; default zero pending measured real-provider calibration.}
 \item{review}{Creation-time list with allow_external=TRUE/FALSE. Omit transfer_consent for strict approval of each external payload. To confirm one creation-time scope, add transfer_consent=list(mode='project', confirmed=TRUE, reviewer='...', reason='...', categories=c('study_context','aggregate_qc','aggregate_markers','aggregate_design','aggregate_expression')). This binds the provider, prompt version and explicit budget. Only requests within these categories skip repeated transfer approval. Payload previews remain available; no scientific approval is granted.}
