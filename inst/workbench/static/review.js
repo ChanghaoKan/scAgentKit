@@ -355,6 +355,9 @@ function suggestionSummary(candidate, kind) {
   if (candidate.doublet) parts.push("Doublets: " + candidate.doublet.method);
   return parts;
 }
+function budgetAmount(value) {
+  return Number.isFinite(value) ? "$" + (Number(value.toFixed(4)) === value ? value.toFixed(4) : String(value)) : "unavailable";
+}
 function renderNewProjectBudget() {
   const input = $("new-project-budget"), configured = state.suggestion?.suggestion?.new_project_budget_default;
   if (!input.dataset.initialized && Number.isFinite(configured) && configured >= 0) {
@@ -362,7 +365,7 @@ function renderNewProjectBudget() {
   }
   const raw = input.value.trim(), amount = Number(raw);
   const valid = raw !== "" && Number.isFinite(amount) && amount >= 0;
-  $("new-project-budget-message").textContent = valid ? `Chosen new-project cap: $${amount.toFixed(4)}. Current project unchanged; no request sent.` : "Enter a nonnegative finite USD cap; no project or request is created here.";
+  $("new-project-budget-message").textContent = valid ? `Chosen new-project cap: ${budgetAmount(amount)}. Current project unchanged; no request sent.` : "Enter a nonnegative finite USD cap; no project or request is created here.";
   $("new-project-budget-command").textContent = valid ? `sc_start(input, "new-project", context=context, provider="deepseek", budget=${amount}, review=list(allow_external=TRUE))` : "";
 }
 function renderSuggestion() {
@@ -376,7 +379,7 @@ function renderSuggestion() {
   $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot change the current project’s key, endpoint, model or budget.";
   if (preview) {
     const usd = value => Number.isFinite(value) ? "$" + value.toFixed(4) : "unavailable";
-    $("suggestion-summary").textContent += ` Budget ${usd(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
+    $("suggestion-summary").textContent += ` Budget ${budgetAmount(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
   }
   $("suggestion-notice").textContent = preview?.notice || "";
   $("suggestion-approve").textContent = preview?.simulated ? "Approve and run this exact simulated suggestion" : preview?.external ? "Approve and request this exact aggregate transfer" : "Approve and request this exact local suggestion";
