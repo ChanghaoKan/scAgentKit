@@ -9,8 +9,9 @@ test_that("unsupported corrected stability does not discard applicable cheap exp
     cycle=list(method="none"),clustering=list(resolution=.6))
   testthat::local_mocked_bindings(.sc_run_science_partition=function(...) stop("Unsupported correction rerun was attempted"))
   before <- .sc_run_hash(obj)
-  for (pipeline in c("harmony","cycle")) {
-    if (pipeline=="cycle") {plan$batch$method <- "none";plan$cycle$method <- "regress"}
+  for (pipeline in c("harmony","full","difference")) {
+    plan$batch$method <- if(pipeline=="harmony") "harmony" else "none"
+    plan$cycle$method <- if(pipeline=="harmony") "none" else pipeline
     value <- .sc_run_science_diagnostics(obj,config,plan)
     for (key in c("pc_sensitivity","resampling","resolution_extension")) {
       expect_identical(value[[key]]$status,"unavailable")
@@ -23,5 +24,16 @@ test_that("unsupported corrected stability does not discard applicable cheap exp
     expect_identical(value$input_object_hash,before)
     expect_identical(value$hash,.sc_run_hash(value[names(value)!="hash"]))
   }
+  calls<-0L
+  testthat::local_mocked_bindings(
+    .sc_run_science_partition=function(...) {calls<<-calls+1L;stats::setNames(as.character(obj$cluster),colnames(obj))},
+    .sc_run_science_marker_consistency=function(...) list(status="measured"))
+  plan$batch$method<-"none";plan$cycle$method<-"none"
+  config$scientific_review$resampling<-FALSE
+  config$scientific_review$resolution_extension<-FALSE
+  ordinary<-.sc_run_science_diagnostics(obj,config,plan)
+  expect_gt(calls,0L)
+  expect_identical(ordinary$pc_sensitivity$status,"measured")
+  expect_identical(ordinary$expression$status,"measured")
   expect_identical(.sc_run_hash(obj),before)
 })
