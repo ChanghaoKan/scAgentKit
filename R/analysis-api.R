@@ -356,22 +356,39 @@ print.sc_analysis <- function(x, ...) {
   invisible(x)
 }
 
+# Bounded presentation only: the sealed snapshot and saved records stay complete.
+.sc_ui_print_summary <- function(value) {
+  text <- capture.output(utils::str(value, max.level = 2L, list.len = 6L,
+    vec.len = 4L, give.attr = FALSE, width = 100L, strict.width = "cut"))
+  cat(paste(substr(head(text, 40L), 1L, 160L), collapse = "\n"), "\n", sep = "")
+  if (length(text) > 40L) cat("[Summary limited to 40 lines; inspect the full snapshot field.]\n")
+}
+
 #' @export
 print.sc_review_snapshot <- function(x, ...) {
   .sc_ui_intact(x, TRUE)
-  previous <- options(max.print = .Machine$integer.max)
-  on.exit(options(previous), add = TRUE)
   cat("Review:", x$project_dir, "\nStatus:", x$view$status, "Stage:", x$view$stage,
-    "\nDeclared study facts:\n")
-  print(x$view$context)
-  cat("Measured evidence:\n"); print(x$view$evidence)
-  if (!is.null(x$view$computed_diagnostics)) {cat("Saved computed diagnostics:\n"); print(x$view$computed_diagnostics)}
-  if (!is.null(x$view$strategy_review)) {cat("Complete strategy and local impact:\n"); print(x$view$strategy_review$details)}
-  if (!is.null(x$view$annotation_review)) {cat("Complete annotation and supplied marker evidence:\n"); print(x$view$annotation_review$details)}
-  if (identical(x$view$pending$kind, "external_transfer")) {cat("Exact external transfer preview (consent is separate from scientific review):\n"); print(x$view$pending)}
-  if (!is.null(x$view$failure)) print(x$view$failure)
-  if (!is.null(x$view$output)) print(x$view$output)
-  if (!is.null(x$annotations)) {cat("Editable annotation table (blank labels require analyst input):\n"); print(x$annotations)}
+    "\nBounded summary; complete evidence is available as snapshot$view and snapshot$annotations.\n",
+    "Use the object returned by sc_review() as snapshot; inspect details before approving.\n",
+    "Declared study facts:\n")
+  .sc_ui_print_summary(x$view$context)
+  fields <- c(evidence = "Measured evidence", computed_diagnostics = "Saved computed diagnostics",
+    strategy_review = "Strategy and local impact", annotation_review = "Annotation and supplied marker evidence",
+    failure = "Failure", output = "Output")
+  for (field in names(fields)) if (!is.null(x$view[[field]])) {
+    cat(fields[[field]], " [snapshot$view$", field, "]:\n", sep = "")
+    value <- x$view[[field]]
+    if (field %in% c("strategy_review", "annotation_review")) value <- value$details
+    .sc_ui_print_summary(value)
+  }
+  if (identical(x$view$pending$kind, "external_transfer")) {
+    cat("External transfer summary; exact payload in snapshot$view$pending (separate consent):\n")
+    .sc_ui_print_summary(x$view$pending)
+  }
+  if (!is.null(x$annotations)) {
+    cat("Editable annotation table [snapshot$annotations; blank labels require analyst input]:\n")
+    .sc_ui_print_summary(x$annotations)
+  }
   cat("Confirm only this snapshot. revise saves a new draft; approve saves a decision.\n",
     "continue=TRUE on scientific approval runs local work only. request is separate; no automatic retry.\n", sep = "")
   invisible(x)

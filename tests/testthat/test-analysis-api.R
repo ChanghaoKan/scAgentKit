@@ -30,7 +30,7 @@ test_that("high-level manual review binds drafts and preserves source and author
   expect_identical(x$view$status, "awaiting_review")
   expect_error(sc_review(root, "approve", reviewer = "test", reason = "No displayed snapshot"), "snapshot")
   shown <- ui_review(x)
-  expect_true(any(grepl("Complete strategy", attr(shown, "display"))))
+  expect_true(any(grepl("Strategy and local impact", attr(shown, "display"))))
   statefile <- file.path(root, "state.rds"); original <- .sc_project_sha_file(statefile)
   sc_open(root); sc_result_error <- try(sc_result(root), silent = TRUE)
   expect_s3_class(sc_result_error, "try-error")
