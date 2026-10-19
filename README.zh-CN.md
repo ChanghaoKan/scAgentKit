@@ -17,6 +17,10 @@ scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC�
 按下方步骤操作；可选方法见[操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)。
 历史 v0.6.0 请用[对应版本的协议](docs/RELEASE_060_PROTOCOL.md)。
 
+| 复核 1 | 复核 2 | 复核 3 |
+| --- | --- | --- |
+| [初始方案](#gate-strategy) | [实测分群](#gate-clustering) | [注释](#gate-annotation) |
+
 ## 安装
 
 需要 R ≥ 4.2、Seurat ≥ 5，网页另需 Python ≥ 3.9。

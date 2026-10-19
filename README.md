@@ -20,6 +20,10 @@ clustering choice and the annotation proposal. Follow the steps below; the
 [operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) covers optional methods.
 For historical v0.6.0, use its [matching protocol](docs/RELEASE_060_PROTOCOL.md).
 
+| Review 1 | Review 2 | Review 3 |
+| --- | --- | --- |
+| [Initial plan](#gate-strategy) | [Measured clustering](#gate-clustering) | [Annotation](#gate-annotation) |
+
 ## Installation
 
 Requires R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3.9 for the browser.
