@@ -158,10 +158,9 @@
   total <- as.numeric(Matrix::colSums(counts))
   if (any(!is.finite(total))) .sc_project_fail("Raw-count column totals must be finite; QC cannot summarize overflowing totals.")
   detected <- as.numeric(Matrix::colSums(counts > 0))
-  species <- if (is.null(context$species)) "" else tolower(trimws(context$species))
-  pattern <- if (species %in% c("human", "homo sapiens", "homo_sapiens")) "^MT-" else
-    if (species %in% c("mouse", "mus musculus", "mus_musculus")) "^mt-" else NULL
-  mt_genes <- if (is.null(pattern)) character() else grep(pattern, rownames(counts), value = TRUE)
+  mitochondrial <- .sc_run_mito_features(seu, assay, rownames(counts),
+    .sc_run_species(context$species, allow_missing = TRUE))
+  mt_genes <- mitochondrial$features
   mt <- rep(NA_real_, length(cells))
   if (length(mt_genes)) {
     numerator <- as.numeric(Matrix::colSums(counts[mt_genes, , drop = FALSE]))
@@ -182,15 +181,10 @@
                      function(metric) .sc_run_qc_distribution(metrics[[metric]][group$indices])),
                                   c("nCount", "nFeature", "percent_mt")))
   })
-  mt_reason <- if (length(mt_genes)) NULL else if (is.null(pattern))
-    "Species is unspecified or unsupported; declare human/mouse with matching gene symbols, or omit percent_mt filtering." else
-    "No mitochondrial genes match the declared species symbol convention; percentage is unavailable, not zero."
   summary <- list(schema = "scagentkit.qc.evidence.v1", assay = assay, counts_layer = counts_layer,
                   cells = ncol(counts), features = nrow(counts),
                   grouping_roles = intersect(c("sample", "capture"), names(context$columns)),
-                  mitochondrial = list(available = length(mt_genes) > 0L,
-                                       feature_count = length(mt_genes), pattern = pattern,
-                                       unavailable_reason = mt_reason),
+                  mitochondrial = mitochondrial$summary,
                   groups = groups,
                   sample_comparison = .sc_run_sample_qc_comparison(metrics),
                   interpretation = c("Quantiles summarize the supplied raw counts, before any filtering.",

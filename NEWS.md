@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Use existing aligned human/mouse feature-symbol annotations for mitochondrial
+  QC on Ensembl identifiers. Missing, partial, species-conflicting or ambiguous
+  mappings remain conspicuously unavailable, never a fabricated zero percentage.
+  No annotation database is downloaded and input count features remain unchanged.
+
 - Add explicit creation-time aggregate transfer consent bound to provider,
   category list, prompt version and project USD cap. Exact previews and hashes
   remain available; requests outside that scope still require strict review.
