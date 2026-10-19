@@ -9,6 +9,8 @@ local({
   stopifnot(length(repositories)>0L, all(grepl("^https://",repositories)))
   options(repos=stats::setNames(repositories,
     if(length(repositories)==1L) "CRAN" else paste0("CRAN",seq_along(repositories))))
+  expected_version <- Sys.getenv("SCAGENTKIT_EXPECTED_VERSION", "0.8.0")
+  stopifnot(grepl("^[0-9]+([.-][0-9]+)+$", expected_version))
   lib <- path.expand("~/R/scagentkit-library")
   stopifnot(!dir.exists(lib) || !length(list.files(lib, all.files=TRUE, no..=TRUE)))
   initial <- as.data.frame(installed.packages(), stringsAsFactors=FALSE)
@@ -21,7 +23,7 @@ local({
   cat("Repository configuration:\n"); print(getOption("repos"))
   # These bytes came directly from the README inside the downloaded archive.
   sys.source("README-install.R", envir=environment())
-  stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0",
+  stopifnot(as.character(packageVersion("scAgentKit")) == expected_version,
     identical(normalizePath(dirname(find.package("scAgentKit"))), normalizePath(lib)))
   installed <- as.data.frame(installed.packages(), stringsAsFactors=FALSE)
   external <- installed[is.na(installed$Priority),,drop=FALSE]
@@ -46,7 +48,8 @@ local({
   stopifnot(inspected$status=="awaiting_review", again$reused,
     identical(service$pid,again$pid))
   download <- jsonlite::read_json("download-receipt.json", simplifyVector=TRUE)
-  jsonlite::write_json(list(status="passed", package_version="0.8.0",
+  stopifnot(identical(download$version, expected_version))
+  jsonlite::write_json(list(status="passed", package_version=expected_version,
     initial_non_base_packages=0L, existing_dependency_library_reused=FALSE,
     restored_R_package_cache=FALSE, installed_dependencies=nrow(external),
     download=download, offline_example="passed", provider_calls=0L,

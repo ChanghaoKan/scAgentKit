@@ -28,21 +28,8 @@ Browser resources are included in the R package.
 Supported platforms: **macOS and Linux**. **Windows is unsupported** because the
 local service and worker use [Unix `fcntl` file locks](https://docs.python.org/3/library/fcntl.html).
 
-This branch contains unpublished changes; the v0.8.0 release archive does not
-establish that these changes are installed. For this source build, run
-`R CMD build .` in the matching checkout and record its checksum, then install
-that local archive below. For the historical release, download the [v0.8.0 archive](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
-and checksum from the [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0),
-then verify the downloaded file:
-
-```sh
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/SHA256SUMS
-shasum -a 256 -c SHA256SUMS  # macOS; on Linux use: sha256sum -c SHA256SUMS
-```
-
-Continue only if the checksum matches. In a fresh R session, run this from the
-download directory to install the package and its required dependencies:
+For this development version, run `R CMD build .` in the matching checkout and
+record the archive SHA256. Install the resulting local archive in a fresh R session:
 
 ```r
 options(timeout=max(1800, getOption("timeout", 60)))
@@ -51,19 +38,21 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.8.0.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.0.9001.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0.9001",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
 ```
 
-Expect version `0.8.0` from your private library. Record the archive checksum,
+Expect version `0.8.0.9001` from the selected library. Record its archive checksum,
 package versions and `sessionInfo()`. Optional dependency/version requirements
 are in [runtime support](docs/LINUX_RUNTIME_SUPPORT.md). If GitHub dependency
 downloads hit an API quota, `remotes` can use an existing `GITHUB_PAT`.
+The [historical v0.8.0 release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
+is a separate archive and does not include this development version's changes.
 
 ## Offline installation check
 

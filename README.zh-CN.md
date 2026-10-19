@@ -26,19 +26,8 @@ scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC�
 支持 **macOS 和 Linux**，**不支持 Windows**：本地服务和后台计算进程使用
 [Unix `fcntl` 文件锁](https://docs.python.org/3/library/fcntl.html)。
 
-本分支包含尚未发布的修改；历史 v0.8.0 归档不能证明这些修改已安装。
-使用本源码时，在匹配 checkout 中运行 `R CMD build .`，记录 SHA256，再按下方方式安装本地归档。
-历史版本可从 [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
-下载 [v0.8.0 归档](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
-及校验文件，核对下载内容：
-
-```sh
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/SHA256SUMS
-shasum -a 256 -c SHA256SUMS  # macOS; on Linux use: sha256sum -c SHA256SUMS
-```
-
-校验通过后，在归档所在目录的新 R 会话中安装包及必要依赖：
+使用当前开发版本时，在匹配 checkout 中运行 `R CMD build .`，记录归档 SHA256。
+在归档所在目录的新 R 会话中安装包及必要依赖：
 
 ```r
 options(timeout=max(1800, getOption("timeout", 60)))
@@ -47,18 +36,20 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.8.0.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.0.9001.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0.9001",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
 ```
 
-应从你的私有 library 读到版本 `0.8.0`。记录归档校验值、包版本和 `sessionInfo()`。
+应从选定 library 读到版本 `0.8.0.9001`。记录归档校验值、包版本和 `sessionInfo()`。
 可选方法的依赖与版本要求见[运行环境支持](docs/LINUX_RUNTIME_SUPPORT.md)。
 若 GitHub 依赖下载达到 API 配额，`remotes` 可使用已有的 `GITHUB_PAT`。
+[历史 v0.8.0 发布](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
+是单独归档，不包含当前开发版本的修改。
 
 ## 离线安装检查
 
