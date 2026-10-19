@@ -1,0 +1,20 @@
+{
+  "checks": {
+    "source": true,
+    "provider": true,
+    "history": true,
+    "integration_history": true,
+    "qc": true,
+    "strategy": true,
+    "analysis": true,
+    "annotation": true,
+    "outputs": true,
+    "complete_run_reconstructed": true,
+    "complete_evidence_reconstructed": true,
+    "all_unique_scientific_evidence_and_history_unchanged": true
+  },
+  "full_history_events": 40,
+  "full_annotation_rows": 14,
+  "full_label_rows": 5000,
+  "scientific_pipeline_rerun": false
+}

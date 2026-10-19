@@ -1,0 +1,126 @@
+{
+  "schema": "scagentkit.public-coverage.v1",
+  "scope": "Engineering execution is separate from scientific benefit. Evidence identifiers refer to retained local artifacts; public aggregate receipts are included here, not private full logs.",
+  "items": [
+    {
+      "item": "CI and completed-export recovery",
+      "commits": "b4b59dd",
+      "main_entry": "workflow/workbench-tests + sc_run_inspect/sc_run_resume + RunWorkbenchRuntime.describe",
+      "execution_evidence": "R9469PASS2SKIP; Python358PASS15SKIP; actual completed fixture edits/deletes CSV/summary/bundle, rejects Seurat/checkpoint tamper",
+      "UI_coverage": "main CI; real completed R/web recovery test passed",
+      "effect_limit": "software integrity only; no scientific accuracy claim"
+    },
+    {
+      "item": "Bounded dependency downloader",
+      "commits": "4f5373d",
+      "main_entry": "tools/release/prepare-acceptance.py and release workflow",
+      "execution_evidence": "4 focused cases; fresh Linux5ca passed",
+      "UI_coverage": "README execution path",
+      "effect_limit": "No scientific method change"
+    },
+    {
+      "item": "Sample median QC",
+      "commits": "1233f51",
+      "main_entry": "sc_start/sc_analyze -> .sc_run_qc_evidence -> sample_comparison",
+      "execution_evidence": "focused6 + fullR; public PBMC1sample, Baron4 actual specimens frozen",
+      "UI_coverage": "Actual installed main QC/details browser passed on two explicitly declared software groups; public PBMC1/Baron4 cannot satisfy five-group outlier gate.",
+      "effect_limit": "Five-group outlier threshold ineligible for present public cohorts; do not invent samples"
+    },
+    {
+      "item": "Local QC preselection",
+      "commits": "e1df891,e66ea74,2a8deca,4dfff11,1c9c4ca",
+      "main_entry": "main strategy UI local draft; explicit Save and Approve",
+      "execution_evidence": "Historical untouched 1c9c4ca archive actual Chrome8/8PASS; default unchecked experimental opt-in, local-only/noPOST/noauthority mutation;21Node files allpass; postapproval fact_editable=false guard",
+      "UI_coverage": "Actual installed main entry default-off/edit/save/approve/native completion/reopen passed; browser-qc-opt-in/browser-report.json",
+      "effect_limit": "PBMC original reference yield decreases by exclusions; retained predictions differ slightly. No universal default benefit; explicit experimental checkbox required."
+    },
+    {
+      "item": "PC elbow",
+      "commits": "3a083ec",
+      "main_entry": "main .sc_run_pc_candidates and measured recommendations",
+      "execution_evidence": "focused6 + fullR; actual native computed curve saved; bounded-ui-followup/elbow-control160/acceptance-report.json PASS; source projects untouched. Earlier 120-cell synthetic attempt correctly rejected zero-variance selected HVGs and remains logged.",
+      "UI_coverage": "Supplement: actual Chrome155 clicked measured elbow(3 PCs), proved local-only/no POST/no state/history mutation; Save rebuilt review/proposal hashes with no approval; separate Confirm added exactly one approval. Isolated 160-cell duplicate-count software control stopped ready/strategy_apply revision27, no second Continue.",
+      "effect_limit": "Descriptive candidate; no automatic optimum"
+    },
+    {
+      "item": "k±5 sensitivity",
+      "commits": "a8fc9d6,b38a109",
+      "main_entry": "actual .sc_run_cluster_scan -> science partition/native marker consistency",
+      "execution_evidence": "PBMC28/33/38 ARI.968993/1/.970869. Saved Baron PC11/16/21 ARI.931334/1/.867649,clusters14/14/16; native graphs/markers recomputed, fixedselectedPC16; fullproject and offline scoring complete.",
+      "UI_coverage": "Actual installed main workflow real workers/Roracle passed; optional diagnostics opened and asserted at measured strategy review",
+      "effect_limit": "Parameter sensitivity is not independent biological validation"
+    },
+    {
+      "item": "Sample consensus HVG",
+      "commits": "bca3c09,d6445f3",
+      "main_entry": "typed main strategy analysis.hvg_method/hvg_column -> native preprocess",
+      "execution_evidence": "真实Baron5000细胞/4样本全流程与评分完成，3次审批；各样本2000HVG，最终2000与VariableFeatures及PCA输入一致，50PC。全局交集1565/Jaccard.642710；分区ARI.898104；计数哈希不变。流程3611.964s。",
+      "UI_coverage": "安装归档真实Chrome编辑/保存/审批/使用80HVG/重开8/8通过（160细胞复制计数软件控制）；真实Baron2kHVG主R流程完成。未另跑5000细胞浏览器操作。",
+      "effect_limit": "共同HVG各样本交集增加，但1样本独有特征0；305候选标签变化，参考仅+2匹配，作者字面匹配不变且参考不兼容。不能证明注释获益；PBMC/ifnb不适用，不把软件重复当生物重复。"
+    },
+    {
+      "item": "Resampling and extension",
+      "commits": "a8fc9d6,9e9fb0d",
+      "main_entry": "approved main scan -> five native80% rebuilds seeds42..46 + bounded extension",
+      "execution_evidence": "PBMC五次80%ARI.954/.682/.646/.954/.652；Baron全局.941/.890/.948/.942/.952；BaronHVG.942/.912/.910/.942/.939。HVG上界ARI.896134真实触发.1/1.4/1.6扩展，计算8/19/21簇，批准分辨率.6不变。",
+      "UI_coverage": "Actual installed main workflow real workers/Roracle passed; optional diagnostics opened and asserted at measured strategy review",
+      "effect_limit": "每个种子、每簇Jaccard/覆盖都保留；计算稳定性不等于供者重复或类型准确率。有界扩展是额外诊断，不自动选择最优策略。"
+    },
+    {
+      "item": "Expression and cross-sample panels",
+      "commits": "a8fc9d6,b38a109,8a8faca",
+      "main_entry": "main marker/annotation evidence -> pct/mean/current marker panels",
+      "execution_evidence": "PBMC bloodpanel TRAC missing; saved Baron real four-sample measured scan has no pancreas-panel missing genes,12/14clusters descriptive cross-sample results,2unavailable under support gates. Final project/scoring complete; comparisons are not donor validation.",
+      "UI_coverage": "PBMC prior browser passed; NEW installed51cc4c9 completed Baron5000-cell/14-cluster actual Chrome155 passed. Saved expression(mean/pct/missing), cross-sample, Fisher/BH and all40 history events opened; no new analysis or editable/HVG5000 browser workflow.",
+      "effect_limit": "No semantic classifier; per-sample concordance is descriptive"
+    },
+    {
+      "item": "Lineage coexpression and count flags",
+      "commits": "8a8faca",
+      "main_entry": "main scientific expression evidence, raw-count flag-only view",
+      "execution_evidence": "actual PBMC coexpression and within-group count flags; fullR26focused science assertions",
+      "UI_coverage": "Classic/mixed evidence present in actual R pipeline; visible joint panel screenshot; aggregate summaries tested",
+      "effect_limit": "T/NK programs overlap; never infer ambient/doublet truth or delete cells"
+    },
+    {
+      "item": "Ambient adapters",
+      "commits": "7bf52c0,c09f2c7",
+      "main_entry": "explicit sc_run_ambient_correction separate complete-capture R branch",
+      "execution_evidence": "native SoupX1.6.2/decontX1.28.0 fullPBMC2700 matchedrawfiltered; originalhashes preserved; storedfits reused after order-only harness failure",
+      "UI_coverage": "R-only explicit optional adapter; diagram clearly separate from browser pipeline",
+      "effect_limit": "55/14 SingleR pruned predictions changed; Unknown40->42/40; no accuracy evidence, defaults stayoff"
+    },
+    {
+      "item": "Citation direction and Fisher",
+      "commits": "3a81349,489542c",
+      "main_entry": "main .sc_run_markers -> real tested background -> annotation reference/joint evidence",
+      "execution_evidence": "positiveFC+positivepctdelta guarded; actual tested universe BH acrossalllabels; native PBMC25reference labels",
+      "UI_coverage": "Actual public PBMC joint review screenshot verifies Fisher/BH/background per candidate; ui-visible-science/ui-report.json passed",
+      "effect_limit": "Enrichment is not calibrated identity probability; missing background unavailable"
+    },
+    {
+      "item": "Large-display integrity",
+      "commits": "9af4620,9a80e89",
+      "main_entry": "fixed read-only run_workbench_projection helper",
+      "execution_evidence": "old actual PBMC>16MiB refused; new public startup PASS; exact cluster/aggregate/sourcehash/history250-event fixture PASS; focusedPython72PASS",
+      "UI_coverage": "Prior PBMC passed. Baron failed409 preserved, then repaired installed archive actual Chrome155 GET200 12,342,881bytes<16MiB,40/40events,14fullannotationrows,5000complete labels;Screenshots recorded in browser reports. Original48files unchanged.",
+      "effect_limit": "Lossless display deduplication only. Full original unique scientific facts, review records, labels and history reconstruct identically; original bound/security/hash checks unchanged. No claim arbitrary future payloads fit the fixed bound."
+    },
+    {
+      "item": "Documentation and workflow image",
+      "commits": "9cb9ce6,2ea7159",
+      "main_entry": "README + Chinese quickstart + methods appendix + SVG/source",
+      "execution_evidence": "Chrome rendered41textboxbounds, PNGchecked, remoteSVGbytesmatch 聚合最终报告、15项范围表、冻结哈希52项全部匹配及只读V2草案已完成；草稿报告。; 51cc4c9 repository one-page ambient R API template now complete;2Rblocks parse-only PASS, no repeated fits, R-only/no webpage explicitly stated.",
+      "UI_coverage": "Delivered GitHub flowchart link",
+      "effect_limit": "Default/optional methods and3approval boundaries explicit"
+    },
+    {
+      "item": "Public-data effects",
+      "commits": "7ce5edb,c93a79b; bf45805 local-only evaluation bookkeeping; frozen harness snapshots",
+      "main_entry": "Frozen counts-only sc_analyze +3 explicit approvals +offlineSingleR +fixed-denominator evaluator; qc_eligibility.R reads frozen MAD checkpoint; --only-variant continues only preregistered ablation after preserved driver failure",
+      "execution_evidence": "11项适用变体和各自评分全部结束。PBMC主配对不变；QCOR排除174，原始参考yield.947037->.898889，同保留细胞.958828->.960808。ifnb三配对5000/15及候选完全相同。Baron三配对5000/14及候选完全相同；HVG5000/14，参考匹配688->690，作者字面匹配197不变，Unknown574->567，SingleR标签0变化。2次缺MT的原QCOR失败保留，修正记账为不适用。",
+      "UI_coverage": "Real main entry coverage as above; classification is candidate-only; reviewedlabelsUnknown",
+      "effect_limit": "No independent truth/human participants; accuracy/time-savings null; no default gate satisfied. Baron annotation-quality validation NOT PASSED: actual HPCA main lacks target pancreas types; literal3.94% is not accuracy. V1 unchanged; any independent pancreas reference/coarse endpoint needs separate V2, not executed. Missing MT makes QCOR unavailable, no partial substitute."
+    }
+  ]
+}
