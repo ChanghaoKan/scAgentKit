@@ -47,7 +47,7 @@ sc_run_unlock(project_dir, token, reason)
 sc_run_accept(project_dir, reviewer, reason)
 }
 \arguments{
-\item{scientific_review}{Optional local PC sensitivity, resampling, resolution extension and expression diagnostics; disabled by default.}
+\item{scientific_review}{Optional local PC sensitivity, resampling, extra resolution extension and extended expression diagnostics; disabled by default. New raw strategy projects retain applicable declared-human blood/PBMC or pancreas classic panels, with missing/unsupported inputs explicitly recorded.}
 \item{input}{Named genuine raw counts matrix, Seurat object, or local RDS path.}
 \item{project_dir}{Server-side directory. Creation requires no existing run.}
 \item{context}{Named user facts with explicitly declared human/Homo sapiens or mouse/Mus musculus species, tissue, notes, optional research_goal and design (type, technical_batch logical, notes), and columns mapping sample, qc_group, capture, batch, group, condition and donor roles to actual metadata columns. Missing facts are disclosed, never inferred as metadata.}

@@ -1,26 +1,38 @@
 # 科学诊断：一页操作指南
 
-本开发分支的诊断均为可选项。结果可能不变或变差；审批成功不代表生物学结论正确。
+新 raw strategy 项目默认保留适用的基础证据；额外重计算须主动开启。结果可能不变或变差，审批成功不代表生物学结论正确。
 旧项目需保留原包和依赖环境，不要修改其 hashes、审批或 checkpoints 来强行恢复。
 
 1. **明确输入和样本角色，再打开新项目。** 使用原始 counts；sample、donor、capture、condition
    分别按实际元数据声明，不从名字猜测，不把处理条件当作技术批次或样本重复。
-   标准浏览器入口现在可显式开启以下诊断（会增加本地计算时间，不调用模型）：
+   默认路径不需要传入 `scientific_review`：
 
    ```r
    service <- sc_start("input.rds", "new-review-project",
      context = list(species="human", tissue="Blood", research_goal="Review local evidence",
-       columns=list(sample="sample_id", condition="condition")),
-     scientific_review=list(pc_sensitivity=TRUE, resampling=TRUE,
-       resolution_extension=TRUE, panels="blood", cross_sample=TRUE,
-       mixed_lineage=TRUE))
+       columns=list(sample="sample_id", condition="condition")))
    ```
 
    仅在输入确有这两列及相应实验事实时使用该示例；没有 sample 信息就省略该声明。
-   `panels="pancreas"` 提供另一组明确的人类描述性面板；其他物种需传入命名 gene list。
+   默认关闭：PC k±5、五次80%重采样、常规scan外的resolution扩展、sample-consensus HVG、QC自动预选。
+   默认保留：常规LogNormalize/全局vst HVG/PCA/内部80%选择、常规resolution scan及cluster tree、
+   适用的样本QC比较与肘部提示、经典面板mean/pct、引用方向和有真实背景时的Fisher/BH。
+   人类 `blood`/`PBMC`/`PBMC3k`/`peripheral blood`/`peripheral blood mononuclear cells` 及 `pancreas`
+   按明确的tissue声明选择内置经典面板，大小写不敏感。不从基因、条件、簇或预测猜组织。
+   其他物种/组织显示不可用；缺失基因列明，不能当成零表达。可显式传
+   `scientific_review=list(panels=list(my_panel=c("gene1","gene2")))` 使用适合该物种的基因。
+   默认经典面板不做跨样本复核或逐细胞混合谱系组合；这些扩展仍可显式开启。
+
+   若确需重计算，在**新项目**调用中主动传入，例如：
+
+   ```r
+   extra_review <- list(pc_sensitivity=TRUE, resampling=TRUE,
+     resolution_extension=TRUE, panels="blood", cross_sample=TRUE, mixed_lineage=TRUE)
+   # sc_start(..., scientific_review=extra_review)；这不是上述默认路径。
+   ```
 
 2. **审查 QC 草稿和样本比较。** 分布、每样本中位数、跨样本异常提示与组内细胞 MAD 分开显示。
-   跨样本稳健异常需要至少五个可比较样本和非零 MAD。满足完整证据及风险上限时，页面可预填
+   跨样本稳健异常需要至少五个可比较样本和非零 MAD。仅主动勾选实验自动预选且满足完整证据及风险上限时，页面可预填
    `any_quality3` 比较草稿，并显著标记未保存/未批准；可修改或弃用。预填不会改变 saved proposal
    或删细胞。先点保存重建影响，再单独审批，最后继续计算；缺失条件会显示不适用原因。
 

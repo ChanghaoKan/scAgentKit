@@ -10,7 +10,7 @@ sc_start(input, project_dir, context = NULL, checkout = NULL,
   feature_key = c("name", "id"), scientific_review = NULL)
 }
 \arguments{
-\item{scientific_review}{Explicit local optional diagnostics for a new raw project. Disabled by default; reopening cannot replace saved settings.}
+\item{scientific_review}{Explicit optional rebuilding/extended expression diagnostics for a new raw project, disabled by default. Applicable declared-human blood/PBMC or pancreas classic panels remain baseline evidence. Reopening cannot replace saved settings.}
 \item{input}{Local RDS file containing raw counts or a Seurat object, a 10x MEX directory, or a sample table data.frame/CSV/TSV.}
 \item{sample_id,matrix_kind}{For one 10x MEX directory, explicit sample ID and raw/filtered declaration. Sample tables instead require sample_id, path, matrix_kind columns. Optional donor/condition/batch/capture/treatment/qc_group/group columns declare those metadata roles. Filtered is a user declaration, not independent evidence of empty-droplet processing.}
 \item{cell_metadata}{Optional data.frame/CSV/TSV keyed by sample_id and barcode. Must cover every imported barcode exactly once; joins use keys rather than row positions. Extra/missing/duplicate keys and overlapping sample/cell fields are rejected.}

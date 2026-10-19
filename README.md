@@ -130,6 +130,8 @@ service <- sc_start(input, project_dir, context=context)
 
 Use a new `project_dir` for each new analysis. Starting from counts reruns basic analysis; [processed-object reuse](workbench/README.md) is an explicit alternative.
 
+New raw strategy projects keep ordinary normalization/global-vst HVGs/PCA, the internal 80% PC policy, the ordinary resolution scan and cluster tree. PC k±5, 80% resampling, extra resolution extension, sample-consensus HVGs and automatic QC draft preselection are off until explicitly enabled. Applicable sample QC, elbow, citation direction and Fisher/BH evidence remain available. Classic mean/detection panels default to explicitly declared human blood/PBMC or pancreas; unsupported declarations and absent genes stay unavailable/missing, never guessed. Cross-sample/mixed-lineage expression extensions remain opt-in. SoupX/decontX stay separate optional R-only calls. See the [default and opt-in guide](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md).
+
 ### 2. Review the strategy and run basic analysis
 
 Check the displayed study facts, measured QC distributions and projected cell retention. The main entry shows the existing MAD candidates for declared sample/QC groups, with their measured thresholds, retention and unavailable reasons. With no declared group it shows pooled, unstratified evidence. The initial keep-all quality choice avoids deleting uncertain cells without study evidence; `nCount >= 1` only excludes all-zero input, not low-quality cells in general. High counts, ribosomal or haemoglobin expression do not authorize automatic deletion. Raw MEX import is not empty-droplet calling.

@@ -1,7 +1,14 @@
 # Optional scientific review methods and boundaries
 
-These methods are opt-in and run locally. They do not authorize a data transfer,
-choose optimal settings or certify labels. See the registered
+Extra rebuilding experiments are opt-in and run locally. New raw strategy
+projects retain ordinary PCA/80% selection, the ordinary resolution scan/tree,
+sample QC/elbow/citation/Fisher evidence where applicable, and classic mean/pct
+panels for explicitly declared human blood/PBMC or pancreas. Unknown declarations
+and absent genes are unavailable/missing, not inferred zeros. PC sensitivity,
+resampling, extra resolution extension, sample-consensus HVGs and automatic QC
+draft preselection remain off by default. Cross-sample/mixed-lineage expression
+extensions and R-only SoupX/decontX also remain explicit choices. No evidence
+display authorizes a data transfer, chooses optimal settings or certifies labels. See the registered
 [evaluation protocol](EVALUATION_PROTOCOL_V1.md) and
 [operator guide](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md). Preset and diagnostic
 eligibility are software rules; no biological default benefit is assumed.

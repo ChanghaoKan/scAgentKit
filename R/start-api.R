@@ -3,7 +3,8 @@
 #' @param sample_id Explicit ID for one MEX directory; table inputs declare it per row.
 #' @param matrix_kind Explicit raw/filtered declaration for one MEX directory.
 #' @param cell_metadata Optional keyed sample_id/barcode cell metadata data.frame/CSV/TSV.
-#' @param scientific_review Optional explicit local sensitivity/expression diagnostics for a new raw project.
+#' @param scientific_review Explicit optional rebuilding/extended expression diagnostics, off by default.
+#'   New raw strategy projects retain applicable declared-human classic panel evidence.
 #' @param feature_key Original names with recorded technical keys (default), or compatible IDs.
 #' @param project_dir New project directory, or the same saved project to reopen.
 #' @param context Declared species, tissue, research_goal, optional notes, columns and design.

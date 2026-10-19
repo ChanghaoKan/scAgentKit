@@ -38,7 +38,8 @@
 #'   A nested prefilter may declare an explicitly preapproved minimum-count rule;
 #'   default prefilter and quality preset retain all cells.
 #' @param scientific_review Optional local PC sensitivity, resampling, resolution
-#'   extension and expression-panel diagnostics; disabled by default.
+#'   extension and extended expression diagnostics; disabled by default. New raw
+#'   strategy projects retain applicable declared-human classic panel evidence.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
 #'   creation receipts supplied by sc_run_subcluster, not analysis settings.
 #' @return Durable run status. Use sc_run_inspect, sc_run_approve and sc_run_resume.
@@ -126,6 +127,8 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     config$scientific_review <- scientific_review
   }
   if (strategy) config$strategy <- TRUE
+  if (strategy && start_stage == "qc")
+    config$basic_expression_review <- .sc_run_basic_expression_options(checked$context)
   if (!is.null(subcluster_origin)) {
     config$subcluster_origin <- subcluster_origin
     config$subcluster_creation <- subcluster_creation

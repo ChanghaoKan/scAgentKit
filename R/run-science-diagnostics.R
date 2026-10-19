@@ -26,6 +26,25 @@
     stop("Built-in panels support human blood/pancreas only; supply explicit symbols for another species.",call.=FALSE))
 }
 
+# Baseline expression evidence is separate from opt-in rebuilding experiments.
+# Only declared species/tissue aliases select a built-in panel; never inspect
+# genes, clusters, condition names or reference predictions to guess a tissue.
+.sc_run_basic_expression_options <- function(context) {
+  species <- if (is.character(context$species) && length(context$species) == 1L)
+    .sc_run_species_values(context$species) else NA_character_
+  tissue <- tolower(trimws(context$tissue))
+  panel <- NULL
+  if (identical(species, "human") && length(tissue) == 1L && !is.na(tissue)) {
+    if (tissue %in% c("blood", "pbmc", "pbmc3k", "peripheral blood", "peripheral blood mononuclear cells")) panel <- "blood"
+    if (identical(tissue, "pancreas")) panel <- "pancreas"
+  }
+  list(schema = "scagentkit.basic-expression-policy.v1",
+    status = if (is.null(panel)) "unavailable" else "available",
+    panel_set = panel, panels = if (is.null(panel)) list() else .sc_run_classic_panels(panel),
+    source = "Explicit declared human species and blood/PBMC or pancreas tissue; no inferred biology or ortholog mapping.",
+    reason = if (is.null(panel)) "No applicable built-in panel for the declared species/tissue. Supply an explicit species-appropriate scientific_review$panels list if needed." else NULL)
+}
+
 .sc_run_science_partition <- function(seu, k, resolution, seed) {
   if (!"pca" %in% names(seu) || k < 2 || k > ncol(SeuratObject::Embeddings(seu,"pca")) || ncol(seu)<21)
     stop("Sensitivity needs actual PCA dimensions and at least 21 cells.",call.=FALSE)

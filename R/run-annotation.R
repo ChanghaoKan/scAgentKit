@@ -112,6 +112,19 @@
       .sc_run_annotation_option(config,"counts_layer","counts"),normalized_layer,cluster_column,
       panels,config$context$columns$sample,science$mixed_lineage)
     attr(summary,"expression_review") <- expression_review
+  } else if (!is.null(config$basic_expression_review)) {
+    basic <- config$basic_expression_review
+    expression_review <- if (identical(basic$status, "available"))
+      .sc_run_expression_panels(seu, assay,
+        .sc_run_annotation_option(config,"counts_layer","counts"), normalized_layer, cluster_column,
+        basic$panels, sample_column = NULL, mixed_lineage = FALSE) else
+      list(status = "unavailable", reason = basic$reason, panels = list())
+    if (identical(expression_review$status, "measured") && !length(expression_review$measured_genes)) {
+      expression_review$status <- "unavailable"
+      expression_review$reason <- "None of the declared classic panel genes are present; no zero expression or species mapping is inferred."
+    }
+    expression_review$default_policy <- basic
+    attr(summary,"expression_review") <- expression_review
   }
   list(markers = markers, marker_summary = summary, tested_background = tested_background,
        summary_lines = agent@params$markers_summary,

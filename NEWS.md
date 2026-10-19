@@ -2,6 +2,14 @@
 
 ## Optional scientific diagnostics (effect evaluation pending)
 
+- New raw strategy projects keep applicable classic mean/detection evidence for
+  explicitly declared human blood/PBMC or pancreas, separate from opt-in
+  rebuilding diagnostics. Unknown tissue/species and absent panel genes are
+  recorded as unavailable/missing. PC sensitivity, resampling, extra resolution
+  extension, sample-consensus HVGs and automatic QC draft preselection stay off
+  by default. Ordinary PCA/80% selection, resolution scan/tree and applicable
+  QC/citation/Fisher evidence remain; SoupX/decontX stay optional R-only calls.
+
 - Add explicit per-sample HVG consensus, sample-median QC comparisons, guarded
   unsaved/unapproved OR draft preselection, PC elbow and optional k+/-5,
   resampling and finite resolution-extension experiments.
