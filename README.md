@@ -24,6 +24,8 @@ For historical v0.6.0, use its [matching protocol](docs/RELEASE_060_PROTOCOL.md)
 
 Requires R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3.9 for the browser.
 Browser resources are included in the R package.
+Supported platforms: **macOS and Linux**. **Windows is unsupported** because the
+local service and worker use [Unix `fcntl` file locks](https://docs.python.org/3/library/fcntl.html).
 
 Download the [v0.8.0 archive](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
 and checksum from the [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0),

@@ -21,6 +21,8 @@ scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC�
 
 需要 R ≥ 4.2、Seurat ≥ 5，网页另需 Python ≥ 3.9。
 网页资源已包含在 R 包中。
+支持 **macOS 和 Linux**，**不支持 Windows**：本地服务和后台计算进程使用
+[Unix `fcntl` 文件锁](https://docs.python.org/3/library/fcntl.html)。
 
 从 [Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
 下载 [v0.8.0 归档](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)
