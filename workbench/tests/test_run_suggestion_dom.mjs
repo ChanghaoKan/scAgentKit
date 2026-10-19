@@ -335,6 +335,21 @@ await test("first manual worksheet rejects foreign, stale and malformed evidence
   assert.throws(() => harness().call("verify", pending), /worksheet/);
 });
 
+await test("project transfer scope keeps exact payload, used and remaining budget visible without science approval", () => {
+  const value = model(7, "approved");
+  Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
+    remaining_usd: .42, charged_or_held_usd: .08, simulated: false,
+    transfer_consent: {mode: "project", budget_usd: .5, categories: ["study_context", "aggregate_qc"]}});
+  const h = setup(science(), value);
+  assert.match(h.el("suggestion-summary").textContent, /confirmed project transfer scope/);
+  assert.match(h.el("suggestion-accounting").textContent, /remaining_usd.*0.42.*charged_or_held_usd.*0.08/s);
+  assert.match(h.el("suggestion-payload").textContent, /transfer_consent.*study_context.*aggregate_qc/s);
+  assert.match(h.el("suggestion-payload").textContent, /public fixture/);
+  assert.equal(h.el("suggestion-approve").hidden, true);
+  assert.equal(h.el("suggestion-request").hidden, false);
+  assert.equal(h.requests.length, 0);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

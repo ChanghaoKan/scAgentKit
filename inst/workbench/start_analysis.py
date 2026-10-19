@@ -40,6 +40,7 @@ def main(argv=None):
     parser.add_argument("--tenx-import", action="store_true", help="Internal R adapter: input RDS contains an exact 10x import receipt")
     parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
     parser.add_argument("--scientific-review-file", help="Explicit local optional diagnostic settings for a new raw project")
+    parser.add_argument("--model-config-file", help="Local creation-time provider, budget and transfer policy; never credentials")
     parser.add_argument("--source-checkout", help="Explicit matching developer source tree")
     model = parser.add_mutually_exclusive_group()
     model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
@@ -91,6 +92,16 @@ def main(argv=None):
         if not isinstance(science, dict) or args.reuse_processed:
             parser.error("Scientific review settings require a JSON object and raw entry")
         request["scientific_review"] = science
+    if args.model_config_file:
+        if args.reopen:
+            parser.error("Reopening uses the saved provider policy; omit --model-config-file")
+        setup_path = Path(args.model_config_file)
+        if setup_path.stat().st_size > 65536:
+            parser.error("Provider configuration exceeds 64 KB")
+        setup = strict_json(setup_path.read_text(encoding="utf-8"))
+        if not isinstance(setup, dict) or set(setup) != {"provider", "budget", "review"}:
+            parser.error("Provider configuration requires provider, budget and review")
+        request["model_setup"] = setup
     env = scrub_secrets(dict(os.environ))
     library = args.r_library or env.get("R_LIBS_USER")
     if library:

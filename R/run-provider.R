@@ -152,7 +152,7 @@
 }
 
 .sc_run_provider_request <- function(request, env_names = NULL) {
-  fields <- c("system_prompt", "user_prompt", "purpose", "evidence_hash", "approved_payload_hash", "validator")
+  fields <- c("system_prompt", "user_prompt", "purpose", "evidence_hash", "approved_payload_hash", "validator", "transfer_scope", "prompt_version")
   if (!is.list(request) || is.null(names(request)) || anyDuplicated(names(request)) ||
       any(!names(request) %in% fields)) stop("Invalid coordinator provider request fields.")
   system <- .sc_run_provider_scalar(request$system_prompt, "system_prompt")
@@ -166,6 +166,13 @@
   evidence <- request$evidence_hash
   if (!is.null(evidence)) evidence <- .sc_run_provider_scalar(evidence, "evidence_hash", "^[a-f0-9]{64}$")
   payload <- list(system_prompt = system, user_prompt = user, purpose = purpose, evidence_hash = evidence)
+  if (!is.null(request$prompt_version)) payload$prompt_version <- .sc_run_provider_scalar(
+    request$prompt_version, "prompt_version", "^[A-Za-z0-9._-]{1,80}$")
+  if (!is.null(request$transfer_scope)) {
+    if (!identical(request$transfer_scope, .sc_run_transfer_scope(purpose)) ||
+        !purpose %in% c("strategy", "qc", "annotation")) stop("Invalid aggregate transfer scope.")
+    payload$transfer_scope <- request$transfer_scope
+  }
   serialized <- .sc_run_provider_json(payload)
   if (!identical(serialized, .sc_run_provider_redact(serialized, env_names))) stop("Credential-like request content is forbidden.")
   payload
@@ -509,6 +516,12 @@
     model_reported = NULL, cost_state = "unknown", cost_usd = NULL,
     reservation_usd = reserve, charged_or_held_usd = reserve, accounting_issue = FALSE,
     response_metadata = .sc_run_provider_response_metadata(NULL), response_audit = NULL)
+  entry$prompt_version <- if (is.null(request$prompt_version)) "unversioned_custom" else request$prompt_version
+  entry$payload_hash <- .sc_run_provider_hash(.sc_run_provider_request(request, spec$metadata$api_key_env))
+  if (!is.null(request$transfer_scope)) {
+    entry$prompt_version <- request$transfer_scope$prompt_version
+    entry$transfer_categories <- request$transfer_scope$categories
+  }
   ledger$entries <- append(ledger$entries, list(entry))
   index <- length(ledger$entries)
   .sc_run_provider_write(ledger, path) # reservation is durable before any HTTP

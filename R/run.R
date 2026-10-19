@@ -100,11 +100,17 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     stop("An initialization lock is supported only for scoped child creation.", call. = FALSE)
   if (strategy && start_stage == "qc" && missing(cluster_column)) cluster_column <- "sc_strategy_clusters"
   if (!is.numeric(budget) || length(budget) != 1L || !is.finite(budget) || budget < 0) stop("budget must be nonnegative USD.", call. = FALSE)
-  allowed_review <- c("allow_external", "preapprove_qc")
+  allowed_review <- c("allow_external", "preapprove_qc", "transfer_consent")
   if (!is.list(review) || any(!names(review) %in% allowed_review)) stop("Unsupported review policy.", call. = FALSE)
   if (!is.null(review$allow_external) && !identical(review$allow_external, TRUE) && !identical(review$allow_external, FALSE)) stop("allow_external must be logical.", call. = FALSE)
   qc_preview <- .sc_run_qc_preview_options(qc_preview)
   reference_review <- .sc_run_reference_options(reference_review)
+  spec <- .sc_run_provider_spec(provider, chat_fn)
+  if (!is.null(review$transfer_consent)) {
+    if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
+    if (!is.null(subcluster_origin)) stop("Scoped children retain strict transfer review; project transfer consent cannot be inherited.", call. = FALSE)
+    review$transfer_consent <- .sc_run_transfer_options(review$transfer_consent, spec$metadata, budget)
+  }
   root <- .sc_run_root(project_dir, create = TRUE)
   if (is.null(.subcluster_lock_owner)) {
     owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
@@ -115,7 +121,6 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(subcluster_origin) && !identical(colnames(checked$seu), subcluster_origin$selected_cells))
     stop("Scoped child raw input must have the exact frozen parent selection in literal cell order.", call. = FALSE)
   .sc_run_annotation_target(checked$seu, annotation_column, cluster_column)
-  spec <- .sc_run_provider_spec(provider, chat_fn)
   config <- list(context = checked$context, assay = assay, counts_layer = counts_layer,
                  normalized_layer = normalized_layer, cluster_column = cluster_column,
                  analysis = analysis, markers = list(), annotation_column = annotation_column,
@@ -174,6 +179,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(annotation_proposal)) state <- .sc_run_put(root, state, "manual_annotation", annotation_proposal)
   state <- .sc_run_event(state, "planned", list(input_hash = state$input_hash, config_hash = state$config_hash,
                                               implementation_hash = state$implementation_hash))
+  if (!is.null(config$review$transfer_consent)) state <- .sc_run_event(state, "transfer_consent_confirmed",
+    c(config$review$transfer_consent, list(provider = spec$metadata$name,
+      model = spec$metadata$model, scientific_approval_required = TRUE)))
   if (start_stage == "processed") {
     state$stage <- "markers"; state <- .sc_run_put(root, state, "analysis", checked$seu)
     state$completed <- c("qc_evidence", "qc_propose", "qc_apply", "analysis")
@@ -340,9 +348,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     for (name in c("s_genes", "g2m_genes", "canonical_s_genes", "canonical_g2m_genes", "symbol_mapping"))
       payload_evidence$cycle_diagnostics$gene_set[[name]] <- NULL
   }
-  list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
+  request <- list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
        user_prompt = .sc_project_json(list(context = if (kind == "annotation" && !is.null(evidence$child_context)) evidence$context else config$context, evidence = payload_evidence)),
-       purpose = kind, evidence_hash = .sc_run_hash(evidence))
+       purpose = kind, evidence_hash = .sc_run_hash(evidence), prompt_version = "aggregate-review.v1")
+  if (!is.null(config$review$transfer_consent)) request$transfer_scope <- .sc_run_transfer_scope(kind)
+  request
 }
 .sc_run_get_proposal <- function(root, state, kind, evidence, provider, chat_fn, retry, local_only = FALSE) {
   manual <- paste0("manual_", kind)
@@ -362,6 +372,14 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   request_hash <- .sc_run_request_hash(request, provider, chat_fn)
   state <- .sc_run_put(root, state, paste0(kind, "_request"), request)
   external <- isTRUE(spec$metadata$external)
+  scope_authorized <- external && .sc_run_transfer_authorized(request, state$config)
+  if (scope_authorized && !request_hash %in% state$transfer_hashes) {
+    state$transfer_hashes <- unique(c(state$transfer_hashes, request_hash))
+    state <- .sc_run_event(state, "external_transfer_authorized", list(request_hash = request_hash,
+      consent_hash = state$config$review$transfer_consent$hash,
+      prompt_version = request$transfer_scope$prompt_version,
+      scientific_approval_required = TRUE))
+  }
   if (external && !request_hash %in% state$transfer_hashes) {
     if (!isTRUE(state$config$review$allow_external)) {
       state$status <- "awaiting_configuration"

@@ -13,8 +13,12 @@
 #'   Set explicitly or via options(scAgentKit.checkout=...) only for development.
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
-#' @param model_suggestions Explicit operator mode: off, configured, or simulate.
-#'   Uses the saved immutable provider; preview and transfer approval remain required.
+#' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
+#' @param budget Explicit project USD cap; zero until a real-provider default is calibrated.
+#' @param review Creation-time transfer policy; optional explicit project scope skips repeated
+#'   transfer approvals within its provider/categories/budget. Payloads remain inspectable.
+#' @param model_suggestions Operator mode: auto, off, configured, or simulate.
+#'   Uses the saved provider; creation-time transfer scope or exact payload approval is required.
 #' @param reuse_processed Explicitly reuse processed layers/clusters. Default FALSE.
 #' @param processed_reason Required reason for processed reuse.
 #' @param cluster_column Saved cluster column for processed reuse.
@@ -23,9 +27,10 @@
 sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   python = NULL, browse = interactive(), reuse_processed = FALSE,
   processed_reason = NULL, cluster_column = "seurat_clusters",
-  model_suggestions = c("off", "configured", "simulate"),
+  model_suggestions = c("auto", "off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
-  feature_key = c("name", "id"), scientific_review = NULL) {
+  feature_key = c("name", "id"), scientific_review = NULL,
+  provider = NULL, budget = 0, review = list(allow_external = FALSE)) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
@@ -67,6 +72,12 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     processed_reason <- state$config$processed_reason
     cluster_column <- state$config$cluster_column
   }
+  setup <- .sc_start_provider_setup(provider, if (!missing(budget)) budget,
+    if (!missing(review)) review, if (existing) state$config)
+  if (model_suggestions == "auto") model_suggestions <- if (identical(setup$provider$name, "manual")) "off" else
+    if (identical(setup$provider$name, "mock")) "simulate" else "configured"
+  if (model_suggestions == "simulate" && !identical(setup$provider$name, "mock"))
+    stop("Simulation requires provider='mock'; choose a new project for another provider.", call. = FALSE)
   if (!is.list(context) || anyDuplicated(names(context)) || !all(c("species", "tissue", "research_goal") %in% names(context)) ||
       length(setdiff(names(context), c("species", "tissue", "research_goal", "notes", "columns", "design"))))
     stop("Supply named context with species, tissue, research_goal and optional notes, columns, design.", call. = FALSE)
@@ -113,6 +124,13 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     jsonlite::write_json(scientific_review,science_file,auto_unbox=TRUE,null="null")
     Sys.chmod(science_file,"0600")
     args <- c(args,"--scientific-review-file",shQuote(science_file))
+  }
+  if (!existing) {
+    setup_file <- tempfile("scagentkit-provider-", fileext = ".json")
+    on.exit(unlink(setup_file), add = TRUE)
+    jsonlite::write_json(setup, setup_file, auto_unbox = TRUE, null = "null")
+    Sys.chmod(setup_file, "0600")
+    args <- c(args, "--model-config-file", shQuote(setup_file))
   }
   error_file <- tempfile("scagentkit-start-error-")
   on.exit(unlink(error_file),add=TRUE)

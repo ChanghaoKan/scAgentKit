@@ -51,12 +51,18 @@ invisible(get(".sc_run_input", ns)(request$input, context = request$context,
   start_stage = if (identical(request$entry, "processed")) "processed" else "qc",
   processed_reason = if (identical(request$entry, "processed")) request$processed_reason else NULL,
   cluster_column = request$cluster_column))
+setup <- request$model_setup
+if (is.null(setup)) setup <- list(provider = NULL, budget = 0, review = list(allow_external = FALSE))
+# Configuration only: credentials are scrubbed from this subprocess. Creation
+# prepares an editable local draft; provider calls use the separate review worker.
+setup$provider <- get(".sc_run_provider_spec", ns)(setup$provider)$metadata
 if (identical(request$entry, "processed")) {
   scAgentKit::sc_run(request$input, request$project, context = request$context,
     start_stage = "processed", processed_reason = request$processed_reason,
-    cluster_column = request$cluster_column, provider = NULL, budget = 0)
+    cluster_column = request$cluster_column, provider = setup$provider, budget = setup$budget, review = setup$review)
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
-  provider = NULL, budget = 0, scientific_review=request$scientific_review)
+  plan = list(), provider = setup$provider, budget = setup$budget, review = setup$review,
+  scientific_review=request$scientific_review)
 view <- scAgentKit::sc_run_inspect(request$project)
 jsonlite::write_json(list(project_id = view$project_id, status = view$status, stage = view$stage,
   provider = provider_metadata(request$project)),

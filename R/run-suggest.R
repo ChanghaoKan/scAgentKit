@@ -105,12 +105,20 @@
   provider <- context$provider
   result$preview <- list(request_hash = context$request_hash, provider = provider,
     model = provider$model, generation = provider$generation,
-    budget = state$config$budget, reservation_usd = provider$reservation_usd,
+    budget = state$config$budget, remaining_usd = max(0, state$config$budget - amount("charged_or_held_usd")),
+    consent_mode = if (is.null(state$config$review$transfer_consent)) "strict" else "project",
+    consent_hash = state$config$review$transfer_consent$hash,
+    transfer_consent = state$config$review$transfer_consent,
+    scope_authorized = .sc_run_transfer_authorized(context$request, state$config),
+    reservation_usd = provider$reservation_usd,
     charged_or_held_usd = amount("charged_or_held_usd"),
     known_cost_usd = amount("charged_or_held_usd", TRUE),
     held_usd = amount("charged_or_held_usd", FALSE), external = provider$external,
     allow_external = isTRUE(state$config$review$allow_external), simulated = simulate,
     notice = if (simulate) "SIMULATED offline software-control response; no model request or biological inference." else
+      if (.sc_run_transfer_authorized(context$request, state$config)) paste(
+        "This aggregate request is within the explicitly confirmed creation-time categories, provider and USD cap.",
+        "The exact payload below remains available. This consent does not approve a scientific plan or labels.") else
       if (provider$external) paste("The exact aggregate QC/marker/expression evidence and declared context below leave this machine.",
         "Raw matrices, cell IDs and per-cell metadata are excluded. Aggregate sample/capture labels and context may identify a study.") else
         "Local runtime provider; no external transfer is authorized by this preview.",
@@ -118,7 +126,8 @@
   saved <- state$suggestion
   current <- !is.null(saved) && identical(saved$suggestion_hash, context$suggestion_hash)
   approved <- context$request_hash %in% state$suggestion_transfer_hashes ||
-    context$request_hash %in% state$transfer_hashes
+    context$request_hash %in% state$transfer_hashes ||
+    .sc_run_transfer_authorized(context$request, state$config)
   result$status <- if (approved) "approved" else "preview"
   if (current) {
     result$status <- saved$status
@@ -251,7 +260,8 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
   saved <- state$suggestion
   current <- !is.null(saved) && identical(saved$suggestion_hash, suggestion_hash)
   approved <- context$request_hash %in% state$suggestion_transfer_hashes ||
-    context$request_hash %in% state$transfer_hashes
+    context$request_hash %in% state$transfer_hashes ||
+    .sc_run_transfer_authorized(context$request, state$config)
   if (action == "approve") {
     if (approved) return(.sc_run_suggestion_view(root, state, simulate))
     state$suggestion_transfer_hashes <- unique(c(state$suggestion_transfer_hashes, context$request_hash))
@@ -276,7 +286,9 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       status = "requesting", simulated = simulate, candidate = NULL, response = NULL)
     state <- .sc_run_event(state, "suggestion_request_started", list(
       suggestion_hash = suggestion_hash, request_hash = context$request_hash, simulated = simulate,
-      retry = FALSE, authority = "Stage a candidate only; no scientific computation."))
+      retry = FALSE, consent_hash = if (.sc_run_transfer_authorized(context$request, state$config)) state$config$review$transfer_consent$hash else NULL,
+      prompt_version = context$request$transfer_scope$prompt_version,
+      authority = "Stage a candidate only; no scientific computation."))
     .sc_run_save(root, state)
     answer <- tryCatch(.sc_run_call(root, request, state$config$provider, chat_fn,
       budget = state$config$budget, allow_external = isTRUE(state$config$review$allow_external), retry = FALSE),

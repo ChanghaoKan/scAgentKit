@@ -1,5 +1,16 @@
 # Development (unreleased)
 
+- Add explicit creation-time aggregate transfer consent bound to provider,
+  category list, prompt version and project USD cap. Exact previews and hashes
+  remain available; requests outside that scope still require strict review.
+  This consent grants no scientific approval and is not inherited by children.
+  Suggestion accounting now includes remaining USD beside used/held amounts.
+
+- Let sc_start save an explicit provider, budget and transfer policy, or detect
+  exactly one configured vendor key. Missing or ambiguous keys use a visible
+  manual fallback. Startup prepares a local draft without sending requests;
+  reopening retains the saved policy, and scientific approvals remain human.
+
 - Support an explicit OpenAI-compatible HTTPS endpoint through the existing
   agentomicsCore factory. Destination and key environment name join the exact
   request hash; keys remain runtime-only. No agentomicsCore changes are needed.
