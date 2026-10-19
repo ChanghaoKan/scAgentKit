@@ -52,7 +52,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   }
   .sc_project_string(input, "input RDS path")
   input <- normalizePath(path.expand(input), mustWork = TRUE)
-  if (dir.exists(input)) stop("input must be an RDS file.", call. = FALSE)
+  if (dir.exists(input)) stop("input must be an RDS file. Supply the saved counts/Seurat file path, or an explicitly declared 10x MEX directory.", call. = FALSE)
   for (flag in c("browse", "reuse_processed")) if (!is.logical(get(flag)) ||
       length(get(flag)) != 1L || is.na(get(flag))) stop(flag, " must be TRUE or FALSE.", call. = FALSE)
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
@@ -71,7 +71,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     if ((!missing(reuse_processed) && !identical(reuse_processed, identical(state$config$start_stage,"processed"))) ||
         (!missing(cluster_column) && !identical(cluster_column,state$config$cluster_column)) ||
         (!is.null(processed_reason) && !identical(processed_reason,state$config$processed_reason)))
-      stop("Reopening cannot replace saved entry, reuse reason or cluster column.", call. = FALSE)
+      stop("Reopening cannot replace saved entry, reuse reason or cluster column. Omit these options to use the saved choices, or create a new project.", call. = FALSE)
     context <- state$config$context
     if (doublet_supplied && !identical(doublet, state$config$input_policy$doublet_mode))
       stop("Reopening uses the saved doublet mode; omit doublet or create a new project.", call. = FALSE)
@@ -89,15 +89,15 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     stop("Simulation requires provider='mock'; choose a new project for another provider.", call. = FALSE)
   if (!is.list(context) || anyDuplicated(names(context)) || !all(c("species", "tissue", "research_goal") %in% names(context)) ||
       length(setdiff(names(context), c("species", "tissue", "research_goal", "notes", "columns", "design"))))
-    stop("Supply named context with species, tissue, research_goal and optional notes, columns, design.", call. = FALSE)
+    stop("Supply named context with species, tissue, research_goal and optional notes, columns, design. Declare the actual study facts; omit unavailable optional roles.", call. = FALSE)
   for (field in c("species", "tissue", "research_goal")) .sc_project_string(context[[field]], field)
   if (!is.null(context$notes) && (!is.character(context$notes) || length(context$notes)!=1L || is.na(context$notes)))
-    stop("notes must be one text value.",call.=FALSE)
+    stop("notes must be one text value. Supply a single study note or omit notes.",call.=FALSE)
   if (is.null(checkout)) checkout <- getOption("scAgentKit.checkout")
   if (!is.null(checkout)) {
     checkout <- normalizePath(path.expand(checkout),mustWork=TRUE)
     runtime <- file.path(checkout,"inst","workbench")
-    if (!dir.exists(file.path(checkout,"R"))) stop("Developer checkout must contain R sources.",call.=FALSE)
+    if (!dir.exists(file.path(checkout,"R"))) stop("Developer checkout must contain R sources. Choose the matching repository root, or omit checkout to use the installed runtime.",call.=FALSE)
   } else runtime <- system.file("workbench",package="scAgentKit")
   if (!nzchar(runtime) || !file.exists(file.path(runtime,"start_analysis.py")))
     stop("Installed browser runtime missing; reinstall scAgentKit.",call.=FALSE)

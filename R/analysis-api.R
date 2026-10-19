@@ -46,7 +46,7 @@
 }
 .sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL, pc_limits = NULL, diagnostic_policy = NULL) {
   if (!is.list(edits) || (length(edits) && (is.null(names(edits)) ||
-      anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list.", call. = FALSE)
+      anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list. Supply the choices you want to revise, then inspect the refreshed review before approving.", call. = FALSE)
   allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap", "cycle", "doublet", "choice_reasons")
   if (length(setdiff(names(edits), allowed))) stop("Unknown plan fields: ", paste(setdiff(names(edits), allowed), collapse = ", "), call. = FALSE)
   new_draft <- is.null(base)
@@ -75,7 +75,7 @@
   if ("risks" %in% names(edits)) base$risks <- as.list(edits$risks)
   if ("analysis" %in% names(edits)) {
     if (!is.list(edits$analysis) || is.null(names(edits$analysis)) ||
-        length(setdiff(names(edits$analysis), c(names(base$analysis),"hvg_method","hvg_column")))) stop("Unknown analysis settings.", call. = FALSE)
+        length(setdiff(names(edits$analysis), c(names(base$analysis),"hvg_method","hvg_column")))) stop("Unknown analysis settings. Use the supported fields in the displayed plan and resubmit the draft.", call. = FALSE)
     base$analysis[names(edits$analysis)] <- edits$analysis
   }
   if (new_draft) {
@@ -311,8 +311,8 @@ sc_review <- function(project, action = c("show", "revise", "approve", "reject",
         stop("Request requires a configured, nonfailed proposal boundary; review pending science/transfer first. Retry stays explicit in sc_run_resume().", call. = FALSE)
       if (!is.null(state$config$subcluster_origin)) stop("Use sc_run_suggest() for scoped child model requests.", call. = FALSE)
       provider <- state$config$provider
-      if (identical(provider$name, "manual")) stop("This project has no configured provider.", call. = FALSE)
-      if (!identical(.sc_run_provider_spec(provider, chat_fn)$metadata, provider)) stop("Provider settings changed.", call. = FALSE)
+      if (identical(provider$name, "manual")) stop("This project has no configured provider. Continue with local manual review, or create a new project with an available provider key and explicit transfer policy.", call. = FALSE)
+      if (!identical(.sc_run_provider_spec(provider, chat_fn)$metadata, provider)) stop("Provider settings changed. Restore the saved provider/model settings or create a new project.", call. = FALSE)
       .sc_run_drive(root, .sc_run_cleanup(root, state), provider, chat_fn, retry = FALSE)
       fresh <- sc_run_inspect(root)
     }
@@ -323,14 +323,14 @@ sc_review <- function(project, action = c("show", "revise", "approve", "reject",
     if (external && continue) stop("Transfer approval cannot continue computation or dispatch; use a separate explicit request.", call. = FALSE)
     if (action == "revise") {
       if (is.null(plan) == is.null(annotations)) stop("Revise needs exactly one of plan or annotations.", call. = FALSE)
-      if (!is.null(plan) && is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry.", call. = FALSE)
+      if (!is.null(plan) && is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry. Inspect sc_review() and supply a complete supported plan before approval.", call. = FALSE)
       proposal <- if (!is.null(plan)) .sc_ui_plan(plan, base = project$plan) else .sc_ui_annotation(annotations)
       # Lock once to bind first drafts as strictly as revisions. The public
       # sc_run_propose lacks a revision argument, so never call it blindly.
       owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
       state <- .sc_run_load(root); .sc_ui_current(root, state, project)
       if (!is.null(plan)) {
-        if (is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry.", call. = FALSE)
+        if (is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry. Inspect sc_review() and supply a complete supported plan before approval.", call. = FALSE)
         .sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason)
       } else {
         .sc_run_propose_locked(root, state, proposal, reviewer, reason, drive = FALSE,
