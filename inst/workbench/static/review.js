@@ -144,10 +144,16 @@ function clusteringDraftError(clustering) {
 }
 function typedStrategyError(value, details = state.view?.run.strategy_review?.details) {
   if (value?.schema !== "scagentkit.strategy.v1") return "Keep the supported scagentkit.strategy.v1 schema. R validates every operation and parameter.";
-  const allowed = ["schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap", "cycle", "doublet"];
+  const allowed = ["schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap", "cycle", "doublet", "choice_reasons"];
   if (Object.keys(value).some(key => !allowed.includes(key))) return "Only supported typed strategy fields can be saved. Provider settings, arbitrary code and extra operations are rejected.";
   function unsafeFields(item) {return item && typeof item === "object" && Object.entries(item).some(([key, child]) => ["code", "r_code", "provider", "chat_fn", "command", "script", "api_key", "system_prompt"].includes(key) || unsafeFields(child));}
   if (unsafeFields(value)) return "Arbitrary code, provider settings and secret-bearing fields cannot be saved as strategy operations.";
+  if (value.choice_reasons != null) {
+    const keys = ["qc","doublet","cycle","batch","hvg","pcs","clustering","umap"];
+    if (typeof value.choice_reasons !== "object" || Array.isArray(value.choice_reasons) || Object.keys(value.choice_reasons).length !== keys.length ||
+        keys.some(key => typeof value.choice_reasons[key] !== "string" || !value.choice_reasons[key].trim() || [...value.choice_reasons[key]].length > 700))
+      return "Provide a concise reason for each strategy choice; other draft edits are preserved.";
+  }
   const parameterError = typedQCRulesError(value.qc, details) || clusteringDraftError(value.clustering);
   if (parameterError) return parameterError;
   if (value.doublet != null && (typeof value.doublet !== "object" || Array.isArray(value.doublet) || Object.keys(value.doublet).some(key => !["method", "reason"].includes(key)) ||
@@ -1674,6 +1680,16 @@ function strategyOperationGroup(key, title, card, savedProposal, opened) {
 function renderStrategyOperations(details, proposal) {
   state.strategyFeedback = null; state.madSelect = null; state.strategyControls = []; state.batchControls = null; state.pcControls = null; state.qcControls = null; state.clusteringControls = null;
   const operations = $("strategy-operations"), opened = new Set([...operations.children].filter(child => child.open).map(child => child.getAttribute("data-operation"))); operations.replaceChildren();
+  if (proposal.choice_reasons) {
+    const reasons = element("details",null,{"data-testid":"strategy-choice-reasons"});
+    reasons.append(element("summary","Reasons for each choice — editable draft"));
+    for (const key of ["qc","doublet","cycle","batch","hvg","pcs","clustering","umap"]) {
+      const label = element("label",key), input = strategyControl("textarea","choice-reason-"+key,proposal.choice_reasons[key],{rows:"2",maxlength:"700","aria-label":key+" reason"});
+      input.addEventListener("input",()=>{try {const draft=strategyDraft();draft.choice_reasons={...draft.choice_reasons,[key]:input.value};setStrategyDraft(draft);} catch(error){message(error.message,true);}});
+      label.append(input);reasons.append(label);
+    }
+    operations.append(reasons);
+  }
   if (details.automatic_diagnostics && typeof details.automatic_diagnostics === "object") {
     const diagnosticStatus = element("section",null,{class:"strategy-evidence-card","data-testid":"automatic-diagnostic-status"});
     diagnosticStatus.append(element("h3","Diagnostic availability"));

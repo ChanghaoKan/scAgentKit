@@ -292,6 +292,7 @@
     background_facts = background, missing_facts = unique(missing), declared_roles = columns,
     automatic_diagnostics = config$automatic_diagnostics, doublet_mode = config$input_policy$doublet_mode,
     metadata_role_candidates = config$metadata_role_draft,
+    choice_reasons_required = !is.null(config$input_policy),
     role_sizes = lapply(roles[intersect(c("sample", "qc_group", "capture", "batch", "group", "condition", "treatment"), names(roles))], .sc_run_strategy_group_counts),
     quality = qc_evidence$summary,
     input = list(cells = length(cells), features = nrow(counts),
@@ -462,12 +463,13 @@
   }
   proposal <- .sc_run_strategy_fields(proposal,
     c("schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap"),
-    optional = c(if (cycle_enabled) "cycle" else character(),
+    optional = c("choice_reasons", if (cycle_enabled) "cycle" else character(),
       if (doublet_enabled) "doublet" else character()), name = "Strategy proposal")
   if (!identical(proposal$schema, "scagentkit.strategy.v1")) stop("Unsupported strategy proposal schema.", call. = FALSE)
   rationale <- .sc_run_strategy_text(proposal$rationale, "strategy$rationale")
   risks <- .sc_run_strategy_array(proposal$risks, "strategy$risks")
   inferences <- .sc_run_strategy_array(proposal$inferences, "strategy$inferences")
+  choice_reasons <- .sc_run_choice_reasons(proposal$choice_reasons, isTRUE(evidence$summary$choice_reasons_required))
   batch <- .sc_run_strategy_fields(proposal$batch, c("method", "reason"),
     optional = c("group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "nested_biology"), name = "strategy$batch")
   method <- .sc_run_strategy_text(batch$method, "strategy$batch$method", 80L)
@@ -604,6 +606,7 @@
   canonical <- list(schema = "scagentkit.strategy.v1", rationale = rationale,
     risks = risks, inferences = inferences, qc = if (processed) NULL else qc_validated$proposal,
     analysis = analysis, pcs = pcs, batch = batch, clustering = clustering, umap = umap)
+  if (!is.null(choice_reasons)) canonical$choice_reasons <- choice_reasons
   if (cycle_enabled) canonical$cycle <- cycle$choice
   if (doublet_enabled) canonical$doublet <- doublet$choice
   blockers <- harmony$blockers

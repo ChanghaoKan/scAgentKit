@@ -316,7 +316,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
 }
 .sc_run_request <- function(kind, evidence, config) {
   schema <- if (kind == "strategy") {
-    paste("Return one JSON object with exactly schema='scagentkit.strategy.v1', rationale, risks (array), inferences (array), qc, analysis, pcs, batch, clustering, umap.",
+    paste("Return one JSON object with exactly schema='scagentkit.strategy.v1', rationale, risks (array), inferences (array), choice_reasons, qc, analysis, pcs, batch, clustering, umap.",
+      "choice_reasons contains exactly qc, doublet, cycle, batch, hvg, pcs, clustering and umap, each a nonempty reason of at most 700 characters based on supplied evidence and study purpose.",
       "User facts, missing facts and measured quantities are distinct. Put any model inference only in inferences; do not invent metadata, sample identities, design or goals.",
       if (is.null(config$qc_mad))
         "For raw entry qc may use legacy scagentkit.qc.v1 with filters, or scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (1 to 32 operations). Derive concrete inclusive bounds from actual quality quantiles and disclose uncertainty. MAD operations are unavailable unless explicitly enabled." else

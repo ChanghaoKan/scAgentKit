@@ -131,6 +131,16 @@ await check("saved local blockers remain explicit rather than hidden in raw audi
 await check("readonly historical groups retain summaries while every scientific edit stays disabled", () => {const value = answer(true); value.run.status = "complete"; value.run.stage = "complete"; value.run.review_node = null; const h = setup(value); assert.match(h.el("strategy-key-parameters").textContent, /Fixed 10 PCs/); assert(h.state.strategyControls.every(control => control.disabled)); assert.equal(h.el("strategy-save").disabled, true); assert.equal(h.el("strategy-approve").disabled, true); assert.equal(h.requests.length, 0);});
 await check("legacy MAD disclosure describes the actual canonical QC preset", () => {const h = setup(); assert.equal(h.call("savedOperationSummary", "qc-mad", {qc: {schema: "scagentkit.qc.mad.v1", preset_id: "keep_all"}}), "Saved preset · keep_all"); assert.equal(h.requests.length, 0);});
 const sha = text => createHash("sha256").update(text).digest("hex");
+await check("each choice reason is editable without replacing other parameters or author edits", () => {
+  const value=answer(true), keys=["qc","doublet","cycle","batch","hvg","pcs","clustering","umap"];
+  details(value).canonical_proposal.choice_reasons=Object.fromEntries(keys.map(key=>[key,"Saved "+key+" reason."]));
+  const h=setup(value), before=draft(h), input=h.control("choice-reason-qc");
+  assert(input);input.value="Author reviewed the measured joint QC consequences.";
+  for(const callback of input.listeners.input || [])callback({target:input});
+  const after=draft(h);assert.equal(after.choice_reasons.qc,input.value);
+  const expected=copy(before);expected.choice_reasons.qc=input.value;assert.deepEqual(after,expected);
+  assert.equal(h.el("strategy-approve").disabled,true);assert.equal(h.requests.length,0);
+});
 const report = {schema: "scagentkit.strategy-parameters.dom-tests.v1", actualProductionSource: true, syntheticContractRecords: true, actualBrowser: false, actualR: false, networkRequests: 0, providerRequests: 0, sourceSha256: sha(source), cssSha256: sha(css), driverSha256: sha(fs.readFileSync(file)), tests: results.length, passed: results.filter(row => row.passed).length, failed: results.filter(row => !row.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 console.log(JSON.stringify({tests: report.tests, passed: report.passed, failed: report.failed, failures: results.filter(row => !row.passed)})); if (report.failed) process.exitCode = 1;

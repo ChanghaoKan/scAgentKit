@@ -44,10 +44,10 @@
     stop("Configuration or implementation changed; restore the pinned environment or start a new project.", call. = FALSE)
   invisible(state)
 }
-.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL, pc_limits = NULL) {
+.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL, pc_limits = NULL, diagnostic_policy = NULL) {
   if (!is.list(edits) || (length(edits) && (is.null(names(edits)) ||
       anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list.", call. = FALSE)
-  allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap")
+  allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap", "cycle", "doublet", "choice_reasons")
   if (length(setdiff(names(edits), allowed))) stop("Unknown plan fields: ", paste(setdiff(names(edits), allowed), collapse = ", "), call. = FALSE)
   new_draft <- is.null(base)
   if (new_draft) {
@@ -68,7 +68,7 @@
       clustering = list(resolution = .5, diagnostic_resolutions = c(.2, .4, .6, .8, 1)),
       umap = list(run = TRUE, n_neighbors = min(30L, dimensions[[2]] - 1L)))
   }
-  for (name in intersect(names(edits), c("rationale", "batch", "umap"))) {
+  for (name in intersect(names(edits), c("rationale", "batch", "umap", "cycle", "doublet", "choice_reasons"))) {
     if (name == "umap" && is.logical(edits[[name]]) && length(edits[[name]]) == 1L)
       base$umap$run <- edits[[name]] else base[[name]] <- edits[[name]]
   }
@@ -127,6 +127,9 @@
     base$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = base$qc$rationale,
       risks = base$qc$risks, remove_if = "any", rules = c(ranges, list(mad_rule)))
   }
+  if (new_draft && !"choice_reasons" %in% names(edits)) base$choice_reasons <- .sc_run_default_choice_reasons(
+    if (length(intersect(names(edits), c("qc", "qc_preset")))) "Explicit caller QC draft; review measured applicability and exact retained cells before approval." else fallback$reason,
+    diagnostic_policy$doublet_mode)
   base
 }
 .sc_ui_mad_setup <- function(context) .sc_run_mad_group_defaults(context)
@@ -235,7 +238,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
       panel <- .sc_run_mad_evidence(checked$seu, config, qc, prefilter_record = prefilter)
     }
     edits <- if (is.null(plan)) list() else plan
-    proposal <- .sc_ui_plan(edits, dimensions = dimensions, mad = panel)
+    proposal <- .sc_ui_plan(edits, dimensions = dimensions, mad = panel, diagnostic_policy = extra$input_policy)
     if (!is.null(panel)) {
       qc$mad_record <- panel; qc$summary$mad <- panel$summary
       qc$evidence_hash <- .sc_run_qc_hash(qc)
@@ -250,7 +253,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
       selected_object <- checked$seu[, selected]
     }
     limits <- .sc_ui_pc_limits(selected_object, config, proposal$analysis$scale_factor)
-    proposal <- .sc_ui_plan(edits, dimensions = dim(selected_object), mad = panel, pc_limits = limits)
+    proposal <- .sc_ui_plan(edits, dimensions = dim(selected_object), mad = panel, pc_limits = limits, diagnostic_policy = extra$input_policy)
   }
   do.call(sc_run, c(list(input = input, project_dir = project_dir, context = source_context, strategy = TRUE,
     strategy_proposal = proposal, provider = provider, chat_fn = chat_fn,

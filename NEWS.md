@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Persist concise per-choice strategy reasons for QC, doublets, cycle, batch,
+  HVGs, PCs, clustering and UMAP. Modern model drafts require all reasons.
+  Each is editable without replacing other draft fields; saved proposals and
+  all scientific approvals remain bound to the exact complete version.
+
 - Modern raw entry attempts eligible S/G2M evidence, with regression none by
   default and explicit unavailable reasons for missing genes/species support.
   Add doublet auto/off/flag/remove modes: auto/flag keeps cells, and missing
