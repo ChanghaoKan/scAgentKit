@@ -1,30 +1,6 @@
-# Bridge layer: aliases agentomicsCore's public extension API back into
-# scAgentKit's namespace using the legacy `.`-prefixed names that the
-# scAgentKit source files (qc-*.R, sc-*.R, annot-*.R) historically used.
-#
-# This lets the ~7000 lines of existing scAgentKit source compile without
-# rewriting every call site of `.record_step()`, `.find_in_decisions()`,
-# `.attach_step_tokens()`, etc.
-#
-# When/if we ever rewrite those files, this file can be deleted.
-#
-# All assignments are made at package-load time. They are not @export'd
-# (they're internal aliases).
-
-#' @importFrom agentomicsCore record_step find_in_decisions
-#' @importFrom agentomicsCore token_record token_records_summarise
-#' @importFrom agentomicsCore with_token_scope attach_step_tokens
-#' @importFrom agentomicsCore esc_html
-NULL
-
-# ---- Re-exports for backward compatibility ----
-# Users who previously called scAgentKit::chat_claude(), ::save_checkpoint(),
-# ::get_decisions(), etc. continue to work after the v0.3.0 refactor.
-# These use the standard roxygen re-export idiom: each `@importFrom` +
-# `@export` + bare `agentomicsCore::name` line makes roxygen generate both
-# importFrom(agentomicsCore, name) and export(name), bundling them into a
-# single reexports.Rd. (This is exactly how tidyverse packages re-export
-# magrittr's pipe.)
+# Provider factories and token utilities. Project authority belongs to the reviewed engine.
+# ---- Provider and token helpers used by the reviewed engine ----
+# Project objects and authority are owned by sc_run; generic object-workflow facades are not exported.
 
 #' @importFrom agentomicsCore chat_claude
 #' @export
@@ -66,37 +42,13 @@ agentomicsCore::make_chat_fn_openai_compat
 #' @export
 agentomicsCore::make_chat_fn_openai_compatible
 
-#' @importFrom agentomicsCore save_checkpoint
-#' @export
-agentomicsCore::save_checkpoint
 
-#' @importFrom agentomicsCore load_checkpoint
-#' @export
-agentomicsCore::load_checkpoint
 
-#' @importFrom agentomicsCore export_decisions
-#' @export
-agentomicsCore::export_decisions
 
-#' @importFrom agentomicsCore get_decisions
-#' @export
-agentomicsCore::get_decisions
 
-#' @importFrom agentomicsCore get_script
-#' @export
-agentomicsCore::get_script
 
-#' @importFrom agentomicsCore get_figures
-#' @export
-agentomicsCore::get_figures
 
-#' @importFrom agentomicsCore get_token_usage
-#' @export
-agentomicsCore::get_token_usage
 
-#' @importFrom agentomicsCore upgrade_checkpoint
-#' @export
-agentomicsCore::upgrade_checkpoint
 
 #' @importFrom agentomicsCore token_usage_summary
 #' @export
@@ -105,66 +57,6 @@ agentomicsCore::token_usage_summary
 #' @importFrom agentomicsCore token_usage_reset
 #' @export
 agentomicsCore::token_usage_reset
-
-#' Extract the underlying Seurat object (backward-compatible alias)
-#'
-#' Alias for [agentomicsCore::get_data()], kept so existing
-#' `scAgentKit::get_seurat()` calls keep working after the v0.3.0
-#' refactor.
-#'
-#' @param obj An AgentSeurat (or AgentOmics) object.
-#' @return The wrapped Seurat object, or a list of Seurat objects.
-#' @export
-get_seurat <- function(obj) {
-  agentomicsCore::get_data(obj)
-}
-
-
-#' Export accumulated scRNA-seq analysis snippets
-#'
-#' scAgentKit wrapper around [agentomicsCore::export_script()] that emits
-#' the standard single-cell library preamble (`Seurat`, `dplyr`,
-#' `tibble`, `qs2`).
-#'
-#' @inheritParams agentomicsCore::export_script
-#' @return Invisibly returns `path`.
-#' @export
-export_script <- function(obj,
-                          path           = "reproducible_script.R",
-                          header_comment = NULL) {
-  agentomicsCore::export_script(
-    obj,
-    path           = path,
-    header_comment = header_comment,
-    libraries      = c("Seurat", "dplyr", "tibble", "qs2"),
-    title          = "Generated scRNA-seq analysis trace",
-    generated_by   = "scAgentKit"
-  )
-}
-
-# ---- Internal alias layer (legacy ".name" -> public "name") ----
-.record_step             <- function(...) agentomicsCore::record_step(...)
-.find_in_decisions       <- function(...) agentomicsCore::find_in_decisions(...)
-.attach_step_tokens      <- function(...) agentomicsCore::attach_step_tokens(...)
-.record_figure           <- function(...) agentomicsCore::record_figure(...)
-.apply_to_data           <- function(...) agentomicsCore::apply_to_data(...)
-.with_token_scope        <- function(expr) {
-  # with_token_scope expects an unevaluated expression; forward via
-  # substitute() so the lazy semantics survive the alias hop.
-  agentomicsCore::with_token_scope(expr)
-}
-.token_record            <- function(...) agentomicsCore::token_record(...)
-.token_records_summarise <- function(...) agentomicsCore::token_records_summarise(...)
-.esc                     <- function(x) agentomicsCore::esc_html(x)
-
-# Resolve the environment after loading, not during lazy-load database
-# construction: R CMD INSTALL serializes an ordinary top-level environment
-# alias into a separate copy. Legacy readers and parallel-worker backfills
-# must share the dependency's live state in each new R process.
-.token_state <- NULL
-.onLoad <- function(libname, pkgname) {
-  assign(".token_state", agentomicsCore::token_state, envir = asNamespace(pkgname))
-}
 
 # Single package-wide NULL-coalescing helper. Missing means NULL, a
 # zero-length value, or a scalar NA; every legacy caller relies on one of

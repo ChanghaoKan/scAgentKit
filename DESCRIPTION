@@ -4,14 +4,12 @@ Title: Human-in-the-Loop, Auditable scRNA-Seq Toolkit
 Version: 0.6.0
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
-Description: Experimental single-cell RNA-seq toolkit covering quality
-    control, integration, dimensionality reduction, clustering, annotation,
-    and sub-annotation. Built on agentomicsCore, it supports optional
-    model-assisted decisions while retaining analyst review, decision
-    records, parameters, figures, and generated script snippets. Includes
-    cycling-cluster lineage cues, structured contamination prompts, hybrid
-    confidence heuristics, marker-citation checks, and best-effort token
-    usage capture when providers return usage metadata.
+Description: Experimental single-cell RNA-seq workflow with explicit scientific
+    review, exact input identity, immutable checkpoints, bounded optional model
+    requests and local browser/R clients of one project engine. Includes measured
+    QC and clustering evidence, manual annotation, scoped child projects and
+    standalone Seurat plotting, marker, reference and ontology utilities.
+    Evidence and workflow completion do not establish biological accuracy.
 License: MIT + file LICENSE
 Encoding: UTF-8
 SystemRequirements: Python (>= 3.9)
@@ -27,11 +25,9 @@ Imports:
     Matrix,
     magrittr,
     jsonlite,
-    lifecycle,
     digest
 Remotes:
-    ChanghaoKan/agentomicsCore@v0.1.1,
-    SeuratData=github::satijalab/seurat-data
+    ChanghaoKan/agentomicsCore@v0.1.1
 Suggests:
     SoupX,
     celda,
@@ -43,15 +39,9 @@ Suggests:
     BiocParallel,
     S4Vectors,
     xgboost,
-    clustree,
-    base64enc,
     httr2,
-    magick,
-    png,
     readxl,
-    future.apply,
     ontologyIndex,
-    SeuratData,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown

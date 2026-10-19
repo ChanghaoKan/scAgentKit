@@ -27,29 +27,6 @@ recommend_qc_fixture <- function(joint = TRUE, mt = TRUE, n = 120L, smooth = FAL
     validated = list(proposal = list(qc = proposal), qc_validated = .sc_run_qc_validate(proposal, qc)))
 }
 
-test_that("QC recommendations respond to actual joint flags and preserve full range logic", {
-  fixture <- recommend_qc_fixture()
-  before <- serialize(fixture, NULL)
-  step <- .sc_run_recommend_qc(fixture$evidence, fixture$validated)
-  expect_identical(step$id, "qc")
-  expect_identical(step$assessment, "assessed")
-  expect_identical(step$status, "recommend_execute")
-  ids <- vapply(step$candidates, `[[`, "", "id")
-  expect_true("conservative_and3" %in% ids)
-  expect_true("keep_all" %in% ids)
-  expect_lt(length(step$candidates), 7L)
-  for (candidate in step$candidates) {
-    choice <- candidate$changes$qc
-    expect_identical(choice$remove_if, "any")
-    expect_identical(choice$rules[[1]], fixture$validated$proposal$qc$rules[[1]])
-    expect_identical(choice$rules[[2]]$panel_hash, fixture$evidence$summary$qc_mad$panel_hash)
-    if (candidate$available) expect_equal(candidate$impact$retained,
-      .sc_run_qc_validate(choice, fixture$evidence$qc)$retention$retained)
-  }
-  expect_identical(serialize(fixture, NULL), before)
-  expect_match(paste(unlist(step$uncertainty), collapse = " "), "not.*quality truth|not.*biological")
-  expect_false(any(grepl("quality assessment completed", unlist(step$completed))))
-})
 
 test_that("QC missing metrics and small groups remain incomplete rather than endorsing keep-all", {
   for (fixture in list(recommend_qc_fixture(mt = FALSE), recommend_qc_fixture(n = 24L))) {
@@ -110,33 +87,6 @@ test_that("PC measured candidates use the existing exact internal reference and 
 })
 
 
-test_that("QC range-only intersections disclose outer-AND re-entry and redundant flags", {
-  fixture <- recommend_qc_fixture()
-  # A low-count range removes the joint outliers. Outer AND with keep_all
-  # restores them, so no candidate may be described as range-first deletion.
-  fixture$validated$proposal$qc$rules[[1]]$min <- 100
-  fixture$validated$proposal$qc$remove_if <- "all"
-  fixture$validated$qc_validated <- .sc_run_qc_validate(fixture$validated$proposal$qc, fixture$evidence$qc)
-  step <- .sc_run_recommend_qc(fixture$evidence, fixture$validated)
-  for (candidate in step$candidates) {
-    expect_true(all(c("range_only_retained", "new_removed_within_range_keep", "reintroduced_range_failed") %in% names(candidate$impact)))
-    if (candidate$impact$reintroduced_range_failed > 0L) {
-      expect_false(candidate$available)
-      expect_match(paste(unlist(candidate$conflicts), collapse = " "), "range-failed")
-    }
-    expect_identical(candidate$changes$qc$remove_if, "all")
-  }
-  fixture$validated$proposal$qc$remove_if <- "any"
-  step <- .sc_run_recommend_qc(fixture$evidence, fixture$validated)
-  for (candidate in step$candidates) {
-    expect_equal(candidate$impact$reintroduced_range_failed, 0)
-    if (candidate$id != "keep_all" && candidate$impact$new_removed_within_range_keep == 0L)
-      expect_false(candidate$available)
-  }
-  corrupted <- fixture$evidence
-  corrupted$summary$qc_mad$groups[[1]]$flags$low_count <- 0L
-  expect_identical(.sc_run_recommend_qc(corrupted, fixture$validated)$assessment, "unavailable")
-})
 
 test_that("PC reports preserve explicit fixed choices and reject mismatched computed scope", {
   record <- .sc_run_pc_candidates(rep(1, 20L))

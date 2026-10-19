@@ -15,14 +15,6 @@ test_that("grounded counterevidence requests review without invalidating an acce
   expect_identical(forged$citation_status,"invalid")
 })
 
-test_that("fold-change direction does not invent semantic counterevidence", {
-  parsed <- list(primary_annotation="T cell",annotation_status="ok",confidence="high",
-    supporting_markers="CD3D",contradicting_markers=character(),recommended_action="accept")
-  markers <- data.frame(gene="CD3D",avg_log2FC=-1,pct.1=.7,pct.2=.9)
-  result <- .compute_hybrid_confidence(parsed,markers,NULL)
-  expect_true(result$label_usable)
-  expect_false(.annotation_evidence_validity(parsed,markers$gene)$review_required)
-})
 
 test_that("recorded unsupported support cannot be reported as citation-valid", {
   parsed <- list(primary_annotation="T cell",annotation_status="ok",confidence="high",

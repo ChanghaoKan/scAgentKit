@@ -1,0 +1,875 @@
+{
+  "reason": "Obsolete orchestration contracts intentionally removed; primary engine and retained utility safety are tested separately. No legacy compatibility facade.",
+  "cases": [
+    {
+      "file": "tests/testthat/test-adaptive-sizing.R",
+      "case": ".adaptive_n_hvg scales with cell count and clamps",
+      "retired_symbols": ".adaptive_n_hvg",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-adaptive-sizing.R",
+      "case": ".adaptive_n_hvg respects n_genes ceiling",
+      "retired_symbols": ".adaptive_n_hvg",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-adaptive-sizing.R",
+      "case": ".adaptive_n_pcs scales with cell count and clamps",
+      "retired_symbols": ".adaptive_n_pcs",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-adaptive-sizing.R",
+      "case": ".adaptive_n_hvg returns integer",
+      "retired_symbols": ".adaptive_n_hvg",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-adaptive-sizing.R",
+      "case": ".adaptive_n_pcs returns integer",
+      "retired_symbols": ".adaptive_n_pcs",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-analysis-api.R",
+      "case": "offline external callbacks preserve separate exact transfer consent and science",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "LLM labels, cluster IDs, and unusual column names replay as data",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "rejected cluster literals replay safely through cell-ID subsetting",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "manual mapping literals and overrides replay without executing text",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "replay verifies input cell IDs before updating or subsetting",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "changed per-cell clusters stop replay before any metadata change or deletion",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-replay.R",
+      "case": "cluster snapshots are matched by cell ID and permit input reordering",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-safety.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-safety.R",
+      "case": "annot_apply keeps LLM-rejected clusters by default",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-apply-safety.R",
+      "case": "annot_apply drops rejected clusters only when explicitly requested",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annot-compare.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "parseable JSON with wrong fields, types, or cardinality fails safely",
+      "retired_symbols": ".call_with_retry",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "a two-argument provider can recover from a schema error and records both attempts",
+      "retired_symbols": ".call_with_retry",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "provider errors and invalid return cardinality produce auditable failures",
+      "retired_symbols": ".call_with_retry",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "ensemble counts valid schemas and preserves failed samples for review",
+      "retired_symbols": ".ensemble_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "citation evidence includes only differential and displayed rescue genes",
+      "retired_symbols": [".annotation_marker_evidence", ".build_user_prompt"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "cycling rescue citations pass the same evidence used by the real prompt",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "independent mode omits reference candidates and automatic author priors",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "independent mode still accepts explicit caller priors",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "a mismatched model cluster echo yields a single failed cluster row",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "all-invalid public annotation calls preserve failure rows and audits",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "strict cycling vocabulary preserves literal labels while recording state",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "exported annotation snippets replay saved outcomes without provider calls",
+      "retired_symbols": ["annot_llm_annotate", "AgentSeurat"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "partial public ensembles cannot claim full step success",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "annotation replay preserves arbitrary real marker and reference doubles bitwise",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "input cardinality and missing cluster IDs fail before any provider call",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-annotation-schema-safety.R",
+      "case": "a provider error is never resent automatically, while malformed output is retried",
+      "retired_symbols": ".call_with_retry",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-03-deprecation.R",
+      "case": "legacy workflow entry emits a lifecycle warning with a real migration route",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-03-deprecation.R",
+      "case": "every deprecated workflow keeps its export and a concrete path",
+      "retired_symbols": ".legacy_workflow_routes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-04-ribosomal.R",
+      "case": "legacy and saved-run QC use the same ribosomal family",
+      "retired_symbols": ["AgentSeurat", "qc_remove_genes"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-05-marker-group.R",
+      "case": "marker calculation follows seurat_clusters after an identity-changing sweep",
+      "retired_symbols": ["AgentSeurat", "sc_cluster_sweep"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-06-marker-invalidation.R",
+      "case": "same-count membership changes invalidate marker-derived caches",
+      "retired_symbols": ["AgentSeurat", "sc_cluster", "sc_cluster_sweep"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-07-provider-delivery.R",
+      "case": "NULL and thrown delivery outcomes are never resent by legacy callers",
+      "retired_symbols": ["AgentSeurat", "annot_llm_annotate", ".call_with_retry", ".ensemble_annotate", ".pcs_call_with_retry", ".resolution_call_with_retry", ".llm_pick_batch_var", ".annotate_one_subcluster_with_llm", ".auto_resolution_for_subset"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-09-subcluster-schema.R",
+      "case": "subcluster replies use annotation schema, cluster binding and marker grounding",
+      "retired_symbols": ".annotate_one_subcluster_with_llm",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-09-subcluster-schema.R",
+      "case": "subcluster failure states survive the actual result annotation table",
+      "retired_symbols": ["AgentSeurat", "annot_subcluster"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-09-subcluster-schema.R",
+      "case": "one failed lineage remains visible when another lineage succeeds",
+      "retired_symbols": ["AgentSeurat", "annot_subcluster"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-10-metadata-priors.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-10-metadata-priors.R",
+      "case": "guided annotation metadata truth requires explicit opt-in and is recorded",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-10-metadata-priors.R",
+      "case": "resolution metadata count prior requires explicit opt-in and is recorded",
+      "retired_symbols": "sc_resolution_recommend",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-12-doublet-version.R",
+      "case": "unsupported installed classifier is rejected during dependency preflight with guidance",
+      "retired_symbols": ["AgentSeurat", "qc_doublet"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-recluster-derived-history.R",
+      "case": "same-count reclustering archives derived summaries without discarding raw audits",
+      "retired_symbols": ["AgentSeurat", "sc_cluster"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-audit-scientific-boundaries.R",
+      "case": "reference coverage exposes 1/1 versus 10/20 without assigning an identity",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "keep is parsed from its field even when reasoning says do not remove",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "vision cannot escalate the caller's retaining actions",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "explicit removal honors a validated remove decision",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "the vision schema rejects invalid action objects instead of scanning prose",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "provider exceptions and non-string replies keep cells and retain failures",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "plot failure is audited without contacting the provider or deleting cells",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "no-candidate calls retain a complete audit and do not contact vision",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "manual operations preserve audit records and removal cannot empty the object",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "saved cleaning scripts replay final cell IDs and labels without a model",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "real Seurat UMAP rendering preserves metadata and uses the image contract",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-clean-celltypes-safety.R",
+      "case": "invalid configuration is rejected before making a vision call",
+      "retired_symbols": "annot_clean_celltypes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-counterevidence-usability.R",
+      "case": "fold-change direction does not invent semantic counterevidence",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-decision-schema.R",
+      "case": "PC retries validate schema and preserve successful and failed raw replies",
+      "retired_symbols": ".pcs_call_with_retry",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-decision-schema.R",
+      "case": "invalid resolution replies fail visibly without snapping or indexing errors",
+      "retired_symbols": ".resolution_call_with_retry",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-decision-schema.R",
+      "case": "batch failure retains candidates and requires explicit integration selection",
+      "retired_symbols": ".llm_pick_batch_var",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-decision-schema.R",
+      "case": "resolution and batch public workflows retain failure audits in decisions",
+      "retired_symbols": ["AgentSeurat", "sc_resolution_recommend", "sc_select_batch_var"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-decision-schema.R",
+      "case": "PC candidate inputs fail before running UMAP or requesting a model",
+      "retired_symbols": ["AgentSeurat", "sc_select_pcs_visual"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-decision-schema.R",
+      "case": "PC public workflow records a model fallback as an unsuccessful decision",
+      "retired_symbols": ["AgentSeurat", "sc_select_pcs_visual"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-ensemble.R",
+      "case": ".ensemble_annotate picks the modal label and reports agreement",
+      "retired_symbols": ".ensemble_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-ensemble.R",
+      "case": ".ensemble_annotate escalates to flag_for_review on low agreement",
+      "retired_symbols": ".ensemble_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-ensemble.R",
+      "case": ".ensemble_annotate unions supporting_markers from modal responses",
+      "retired_symbols": ".ensemble_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-ensemble.R",
+      "case": ".ensemble_annotate worst-case action priority: reject > flag > accept",
+      "retired_symbols": ".ensemble_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-ensemble.R",
+      "case": ".ensemble_annotate handles all-failed gracefully",
+      "retired_symbols": ".ensemble_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": ".compute_hybrid_confidence: strong evidence gives 'high'",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": ".compute_hybrid_confidence: high hallucination drops confidence",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": ".compute_hybrid_confidence: weak evidence gives 'low'",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": ".compute_hybrid_confidence: missing reference is OK",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": ".compute_hybrid_confidence: disagreement only on opposite bands",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": "an unrelated high-scoring reference label cannot boost model confidence",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-hybrid-confidence.R",
+      "case": "missing, non-finite, and unknown heuristic inputs are safe",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-annotation-validity.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-annotation-validity.R",
+      "case": "all-hallucinated raw 0.710 cannot be effectively high or usable",
+      "retired_symbols": ".compute_hybrid_confidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-annotation-validity.R",
+      "case": "legacy model annotation preserves raw audit but does not report unsupported success",
+      "retired_symbols": "annot_llm_annotate",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-annotation-validity.R",
+      "case": "legacy application preserves old per-cell labels for blocked proposals and records manual source",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-annotation-validity.R",
+      "case": "application accepts saved rescue citations only for the exact current cell and cluster scope",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-annotation-validity.R",
+      "case": "grounded accepted counterevidence preserves legacy writeback and manual override behavior",
+      "retired_symbols": "annot_apply",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-qc.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-qc.R",
+      "case": "legacy qc_mad skips a zero-MAD metric instead of removing every expressing cell",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-qc.R",
+      "case": "legacy qc_mad accepts fractional nmad and keeps NA-group cells",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-qc.R",
+      "case": "qc_remove_genes detects species instead of silently defaulting to mouse",
+      "retired_symbols": "qc_remove_genes",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-qc.R",
+      "case": "Ensembl mouse identifiers are not detected as human",
+      "retired_symbols": ".detect_species",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-subcluster-validity.R",
+      "case": "subcluster citation validity is separate from response schema and raw proposal",
+      "retired_symbols": ".annotate_one_subcluster_with_llm",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-subcluster-validity.R",
+      "case": "blocked fine-label proposals preserve heterogeneous old labels and are not success",
+      "retired_symbols": ["AgentSeurat", "annot_subcluster"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "missing compositors never masquerade as multi-panel evidence",
+      "retired_symbols": [".compose_panel_grid_safe", ".compose_resolution_grid"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "both rendering backends failing remove incomplete comparisons",
+      "retired_symbols": [".compose_panel_grid_safe", ".compose_resolution_grid"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "resolution composition failure sends only accurately described numeric evidence",
+      "retired_symbols": [".compose_resolution_grid", "sc_resolution_recommend"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "latest failed PC choice invalidates historical automatic ndim",
+      "retired_symbols": ["sc_select_pcs_visual", "sc_umap"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "PC composition failure stops before the model call",
+      "retired_symbols": "sc_select_pcs_visual",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-legacy-visual-evidence.R",
+      "case": "png fallback composes all supplied PC and resolution panels",
+      "retired_symbols": [".compose_panel_grid_safe", ".compose_resolution_grid"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-project-layer-alignment.R",
+      "case": "token bridge uses the dependency's live state and mock accounting",
+      "retired_symbols": [".token_record", ".with_token_scope"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-project-review.R",
+      "case": "AgentSeurat wrapping a single object keeps all wrapper history",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-prompts.R",
+      "case": ".build_system_prompt: tissue and condition appear in output",
+      "retired_symbols": ".build_system_prompt",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-prompts.R",
+      "case": ".build_system_prompt: contradicting_markers field required",
+      "retired_symbols": ".build_system_prompt",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-prompts.R",
+      "case": ".build_system_prompt: strict_vocabulary FALSE is a 'prefer' prior",
+      "retired_symbols": ".build_system_prompt",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-prompts.R",
+      "case": ".build_system_prompt: strict_vocabulary TRUE forces verbatim match",
+      "retired_symbols": ".build_system_prompt",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-qc-mad.R",
+      "case": "qc_mad in log10 space keeps more right-tail cells than linear-space MAD",
+      "retired_symbols": ["AgentSeurat", "qc_mad"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-qc-mad.R",
+      "case": "qc_mad upper-only metrics (percent.mt) stay in linear space",
+      "retired_symbols": ["AgentSeurat", "qc_mad"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recommend-facts.R",
+      "case": "explicit initial sample facts replace pooled MAD grouping without approval or deletion",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recommend-qc-pc.R",
+      "case": "QC recommendations respond to actual joint flags and preserve full range logic",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recommend-qc-pc.R",
+      "case": "QC range-only intersections disclose outer-AND re-entry and redundant flags",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recording.R",
+      "case": "AgentSeurat constructor works on a minimal Seurat-like list input",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recording.R",
+      "case": ".record_step accumulates decisions, scripts, and params",
+      "retired_symbols": ["AgentSeurat", ".record_step"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recording.R",
+      "case": ".record_step merges params instead of overwriting",
+      "retired_symbols": ["AgentSeurat", ".record_step"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recording.R",
+      "case": ".find_in_decisions retrieves most recent value",
+      "retired_symbols": ["AgentSeurat", ".record_step", ".find_in_decisions"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-recording.R",
+      "case": "get_decisions / get_script / get_figures accessors work",
+      "retired_symbols": ["AgentSeurat", ".record_step"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "AgentSeurat",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "offline review keeps cells, inputs and independent label conflicts",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "label-specific support checks all candidates rather than the highest unrelated score",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "ties outside displayed top candidates stay unknown unless explicitly mapped",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "missing, failed and unsupported annotations are unknown",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "saved displayed rescue evidence is admissible and missing DB evidence is preserved",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "empty references and no overlap are safe typed tables and unknown review",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "reference matching retains all candidates beyond the prompt limit",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "malformed reference and review inputs fail explicitly",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "serialized saved evidence replays deterministically without a provider",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "orphaned saved clusters remain unknown rather than agreeing without cells",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "exact initial cell mappings verify both branches and ignore cell order",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "reclustering and changed cell IDs invalidate cached agreements and replay offline",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-reference-review.R",
+      "case": "missing branch fingerprints are unverified and malformed fingerprints mismatch",
+      "retired_symbols": "annot_review_evidence",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-cycle-engine.R",
+      "case": "legacy regression defaults to a true no-op and mouse scoring fails before unsafe matching",
+      "retired_symbols": ["AgentSeurat", "sc_cellcycle_regress", "sc_cellcycle_score"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-engine.R",
+      "case": "MAD options require an explicit independent grouping role and finite supported settings",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-engine.R",
+      "case": "MAD arithmetic records log10(x+1), raw mt, scaled constant, exact thresholds and conservative unknowns",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-engine.R",
+      "case": "finite panel treats strict equality, display rounding, high RNA and diagnostic percentages correctly",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-engine.R",
+      "case": "unavailable mitochondrial genes and MAD zero block required presets without silently discarding cells",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-engine.R",
+      "case": "panel approval rejects hallucinations, stale bindings and internally inconsistent rehashed flags",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-integration.R",
+      "case": "minimal prefilter and capture scoring precede one explicit sample-aware MAD decision",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-integration.R",
+      "case": "input panel prefilter and context changes cannot consume a whole-panel approval",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-schema.R",
+      "case": "obsolete fixture/helper",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-schema.R",
+      "case": "MAD strategy binds a local panel while provider evidence remains aggregate",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-schema.R",
+      "case": "MAD preset execution is the exact prefilter intersection with local policy flags",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-schema.R",
+      "case": "MAD evidence cannot be detached altered or rebound under a fresh outer hash",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-mad-schema.R",
+      "case": "MAD and prefilter settings bind calculation scope while disabled hashes retain old fields",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-run-qc-rules.R",
+      "case": "saved MAD predicates combine with ranges without restoring prefilter exclusions",
+      "retired_symbols": "qc_mad",
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    },
+    {
+      "file": "tests/testthat/test-subcluster-review-fields.R",
+      "case": "public subcluster results preserve grounded counterevidence review fields after reload",
+      "retired_symbols": ["AgentSeurat", "annot_subcluster"],
+      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
+    }
+  ]
+}

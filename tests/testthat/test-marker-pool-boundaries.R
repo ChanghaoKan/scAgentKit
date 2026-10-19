@@ -1,15 +1,14 @@
 test_that("main marker pool keeps strict FC p-adjusted and top-30 boundaries", {
   withr::local_options(lifecycle_verbosity="quiet")
-  agent<-AgentSeurat(SeuratObject::pbmc_small)
   good<-data.frame(cluster="0",gene=paste0("G",1:31),avg_log2FC=2,p_val_adj=.001,
     pct.1=seq(.99,.69,length.out=31),pct.2=.1)
   boundary<-good[1:3,];boundary$gene<-c("FC_EQUAL","FC_BELOW","PADJ_EQUAL")
   boundary$avg_log2FC<-c(1,.99,2);boundary$p_val_adj<-c(.001,.001,.05)
-  agent@params$all_markers<-rbind(good,boundary)
-  result<-sc_markers_summary(agent,output_path=NULL)@params$markers_filtered
+  full<-rbind(good,boundary)
+  result<-sc_markers_summary(full,output_path=NULL)
   expect_identical(as.character(result$gene),paste0("G",1:30))
   expect_false(any(c("G31",boundary$gene) %in% result$gene))
-  expect_identical(nrow(agent@params$all_markers),34L)
+  expect_identical(nrow(full),34L)
 })
 
 test_that("both native pct columns contribute via maximum not an AND prefilter", {

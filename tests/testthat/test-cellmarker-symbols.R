@@ -32,12 +32,10 @@ test_that("CellMarker gene symbols take precedence over protein aliases and reta
   expect_identical(attr(ref, "source_url"), url)
   expect_identical(attr(ref, "source_version"), "CellMarker2.0")
   expect_true(attr(ref, "source_url_verified"))
-  obj <- AgentSeurat(list(s1 = "stub"))
-  obj@params$markers_filtered <- data.frame(cluster = "0", gene = "FCGR3A")
-  out <- annot_match_reference(obj, ref)
-  expect_identical(out@params$reference_matches$matched_markers, "FCGR3A")
-  expect_identical(out@params$reference_provenance$marker_column, "Symbol")
-  expect_identical(out@params$reference_provenance$source_url, url)
+  out <- annot_match_reference(data.frame(cluster="0",gene="FCGR3A"), ref)
+  expect_identical(out$matched_markers,"FCGR3A")
+  expect_identical(attr(out,"reference_provenance")$marker_column,"Symbol")
+  expect_identical(attr(out,"reference_provenance")$source_url,url)
 })
 
 test_that("CellMarker prefers gene_symbol fallback before marker and documents manual cache URL", {

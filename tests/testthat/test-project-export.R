@@ -85,8 +85,7 @@ test_that("source identity is canonical across object order and sparse forms", {
   expect_true(any(with_zero[["RNA"]]@layers$counts@x == 0))
   expect_identical(project_export_identity(with_zero)[hashes], original[hashes])
 
-  wrapped <- AgentSeurat(object)
-  expect_identical(project_export_identity(wrapped)[hashes], original[hashes])
+  expect_error(project_export_identity(list(object)),"Seurat object")
 })
 
 test_that("expression values, feature IDs and membership enter source identity", {
@@ -183,7 +182,7 @@ test_that("identity uses every object cell and rejects missing or split layers",
   missing_column <- object
   missing_column$seurat_clusters <- NULL
   expect_error(project_export_identity(missing_column), "cluster|membership", ignore.case = TRUE)
-  expect_error(project_export_identity(AgentSeurat(list(a = object, b = object))),
+  expect_error(project_export_identity(list(a = object, b = object)),
                "single|one|Seurat", ignore.case = TRUE)
 })
 
@@ -562,14 +561,6 @@ test_that("explicit preparation analyzes a copy and retains low-depth cells", {
   expect_true("001" %in% colnames(prepared))
   expect_equal(prepared@misc$sc_project_prepare$seed, 17)
   expect_identical(prepared@misc$sc_project_prepare$run_umap, FALSE)
-
-  wrapped <- AgentSeurat(object)
-  wrapped_before <- wrapped
-  wrapped_prepared <- prepare(wrapped)
-  expect_s4_class(wrapped_prepared, "AgentSeurat")
-  expect_identical(wrapped, wrapped_before)
-  expect_identical(colnames(wrapped_prepared@data), colnames(object))
-  expect_equal(wrapped_prepared@params$project_prepare$seed, 17)
 
   matrix_prepared <- prepare(counts)
   expect_s4_class(matrix_prepared, "Seurat")

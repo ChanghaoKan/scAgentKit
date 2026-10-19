@@ -32,25 +32,3 @@ test_that("preparation aligns shuffled counts, metadata and normalized values by
       expected[rownames(canonical), colnames(canonical), drop = FALSE])
   }
 })
-
-test_that("token bridge uses the dependency's live state and mock accounting", {
-  state <- agentomicsCore::token_state
-  old_records <- state$records
-  on.exit(state$records <- old_records, add = TRUE)
-  alias <- scAgentKit:::.token_state
-  expect_true(identical(alias, state))
-  agentomicsCore::token_usage_reset()
-  mock <- function() {
-    scAgentKit:::.token_record("mock", "offline", 11L, 7L, call_type = "test")
-    "offline result"
-  }
-  scoped <- scAgentKit:::.with_token_scope(mock())
-  expect_identical(scoped$value, "offline result")
-  expect_length(scoped$records, 1L)
-  expect_identical(scAgentKit:::.token_state$records, state$records)
-  expect_identical(state$records[[1L]]$input_tokens, 11L)
-  # Legacy parallel annotation backfills through this alias in the reverse
-  # direction; the dependency must see those writes too.
-  alias$records <- c(state$records, scoped$records)
-  expect_length(state$records, 2L)
-})

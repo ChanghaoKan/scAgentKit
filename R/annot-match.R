@@ -59,117 +59,17 @@ annot_load_reference <- function(path, tissue_filter = NULL, species = NULL) {
   ref
 }
 
-#' Score cluster markers against a reference database
-#'
-#' For each cluster's top marker list, computes an overlap score against
-#' each cell type in the reference. The score is reference-marker coverage:
-#' `|cluster_markers intersect celltype_markers| / |celltype_markers|`.
-#' This rewards cell types whose characteristic markers appear prominently
-#' in the cluster's top-N list. Coverage favours small marker sets: a type
-#' with a single matching marker scores 1.0. Candidates are therefore ordered
-#' by score, then by the absolute number of matched markers, and
-#' `celltype_size` and `overlap_count` must be read alongside coverage.
-#' A 1/1 match ranks above 10/20 under this descriptive score; it is weak
-#' single-marker evidence, not a more certain identity. Ordering and tie
-#' breaking do not assign a label. Every candidate requires analyst review.
-#'
-#' @param obj An AgentSeurat object after [sc_markers_summary()].
-#' @param reference A reference data frame from [annot_load_reference()].
-#' @param top_n_candidates Integer, how many top-scoring cell types to
-#'   return per cluster. Default 5.
-#' @param rationale Optional LLM-supplied rationale.
-#'
-#' @return Updated AgentSeurat; a data frame of matches (columns:
-#'   cluster, cell_type, overlap_count, celltype_size, score,
-#'   matched_markers) is stored at `obj@@params$reference_matches`. All scored
-#'   candidates, including zero-overlap entries, are retained at
-#'   `obj@@params$reference_matches_all` for offline evidence review. An empty
-#'   reference produces empty tables rather than an annotation. The reference
-#'   table and source provenance are saved in the object's parameters. When
-#'   current Seurat cluster metadata exists, `reference_match_input_cells`
-#'   retains its exact cell-ID to cluster mapping for later alignment checks.
+#' Match an explicit marker table against a local reference
+#' @param obj Filtered marker data.frame with cluster and gene columns.
+#' @param reference Local reference data.frame with cell_type and marker columns.
+#' @param top_n_candidates Maximum positive-overlap candidates per cluster.
+#' @return Candidate data.frame, with all_matches and reference_provenance attributes.
+#'   Scores are reference-marker coverage, not label confidence or approval.
 #' @export
-annot_match_reference <- function(obj,
-                                  reference,
-                                  top_n_candidates = 5,
-                                  rationale        = NULL) {
-  .legacy_workflow_warn("annot_match_reference")
-
-
-  stopifnot(methods::is(obj, "AgentSeurat"))
-  filtered <- obj@params$markers_filtered
-  if (is.null(filtered)) stop("No filtered markers found; run sc_markers_summary() first.")
-  computed <- .sc_reference_match(filtered,reference,top_n_candidates)
-  reference <- computed$reference
-  matches <- computed$matches
-  all_matches <- computed$all_matches
-  provenance <- list(source_path = attr(reference, "source_path"),
-                     source_md5 = attr(reference, "source_md5"),
-                     source_url = attr(reference, "source_url"),
-                     requested_url = attr(reference, "requested_url"),
-                     source_url_verified = attr(reference, "source_url_verified"),
-                     source_version = attr(reference, "source_version"),
-                     marker_column = attr(reference, "marker_column"),
-                     n_input_rows = attr(reference, "n_input_rows"),
-                     tissue_filter = attr(reference, "tissue_filter"),
-                     species = attr(reference, "species"))
-  input_cells <- .reference_input_cells(obj)
-
-  script <- sprintf(
-'# ---- Reference-matching (top %d candidates / cluster) ----
-# Reference loaded from external file; see annot_load_reference().
-# Overlap score = |cluster_markers intersect celltype_markers| / |celltype_markers|',
-    top_n_candidates)
-
-  if (is.null(rationale)) {
-    rationale <- sprintf(
-      "Matched top markers against reference (%d entries covering %d cell types); top %d candidates per cluster.",
-      nrow(reference), computed$n_celltypes, top_n_candidates
-    )
-  }
-
-  obj <- .record_step(
-    obj            = obj,
-    step_name      = "annot_match_reference",
-    function_name  = "annot_match_reference",
-    params         = list(
-      n_reference_rows   = nrow(reference),
-      n_celltypes        = computed$n_celltypes,
-      top_n_candidates   = top_n_candidates,
-      reference_provenance = provenance,
-      reference_match_input_cells = input_cells,
-      tissue_filter      = attr(reference, "tissue_filter"),
-      species            = attr(reference, "species")
-    ),
-    rationale      = rationale,
-    script_snippet = script,
-    new_stage      = "reference_matched"
-  )
-  obj@params$reference_matches <- matches
-  obj@params$reference_matches_all <- all_matches
-  obj@params$reference_data <- reference
-  obj@params$reference_provenance <- provenance
-  obj@params$reference_match_input_cells <- input_cells
-  obj@params$reference_match_interpretation <- list(
-    score = "Reference coverage = overlap_count / celltype_size; not a probability or confidence.",
-    ordering = "Coverage first, then absolute hits; a 1/1 candidate can precede 10/20.",
-    single_marker = "One matching marker is weak evidence even at 100% reference coverage.",
-    annotation = "Ranked candidates are hypotheses for review; the first candidate is not an assigned identity.")
-  obj
-}
-
-
-
-
-.reference_input_cells <- function(obj) {
-  if (!methods::is(obj@data, "Seurat") ||
-      !"seurat_clusters" %in% names(obj@data@meta.data)) return(NULL)
-  cells <- data.frame(cell_id = colnames(obj@data),
-                      cluster = as.character(obj@data$seurat_clusters),
-                      stringsAsFactors = FALSE)
-  if (anyNA(cells) || any(!nzchar(trimws(cells$cell_id))) ||
-      any(!nzchar(trimws(cells$cluster))) || anyDuplicated(cells$cell_id)) {
-    stop("Current Seurat cell IDs and cluster IDs must be non-empty and non-missing.")
-  }
-  cells
+annot_match_reference <- function(obj,reference,top_n_candidates=5) {
+  result<-.sc_reference_match(obj,reference,top_n_candidates)
+  out<-result$matches;attr(out,"all_matches")<-result$all_matches
+  fields<-c("source_path","source_md5","source_url","requested_url","source_url_verified","source_version","marker_column","n_input_rows","species","tissue_filter")
+  attr(out,"reference_provenance")<-stats::setNames(lapply(fields,function(key)attr(reference,key)),fields)
+  out
 }

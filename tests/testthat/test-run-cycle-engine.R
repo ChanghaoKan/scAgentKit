@@ -286,21 +286,3 @@ test_that("three approved methods reuse normalization and HVGs and preserve ever
   expect_null(legacy@misc$strategy_execution$basis$cycle)
   expect_identical(legacy[[]], f$object[[]])
 })
-
-test_that("legacy regression defaults to a true no-op and mouse scoring fails before unsafe matching", {
-  withr::local_options(lifecycle_verbosity="quiet")
-  f <- cycle_engine_fixture()
-  wrapped <- AgentSeurat(f$object)
-  before <- serialize(wrapped, NULL, version = 2L)
-  expect_identical(sc_cellcycle_regress(wrapped), wrapped)
-  expect_identical(sc_cellcycle_regress(wrapped, mode = "none"), wrapped)
-  expect_error(sc_cellcycle_score(wrapped, species = "mouse"), "Mouse.*explicit|mouse.*explicit")
-  expect_error(sc_cellcycle_score(wrapped, species = "rat"), "species|unsupported|human|mouse")
-  expect_error(sc_cellcycle_score(wrapped, species = "mouse", s_genes = paste0("missingS", 1:5),
-                                  g2m_genes = paste0("missingG", 1:5), source = "Literal mouse fixture", version = "v1"),
-               "Insufficient literal")
-  expect_error(sc_cellcycle_score(wrapped, species = "human", s_genes = f$s_genes,
-                                  g2m_genes = f$g2m_genes, source = "Fixture", version = "v1"),
-               "already exist|fresh")
-  expect_identical(serialize(wrapped, NULL, version = 2L), before)
-})

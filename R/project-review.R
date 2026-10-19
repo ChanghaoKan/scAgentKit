@@ -413,7 +413,7 @@
 }
 
 #' Validate a portable human review against its original Seurat object
-#' @param object Seurat or AgentSeurat wrapping exactly one Seurat object.
+#' @param object Seurat object.
 #' @param journal Path to a generic review-journal JSON file.
 #' @param project Path to its verified evidence project directory.
 #' @param columns Named vector mapping type, state or QC dimensions to new label
@@ -485,8 +485,5 @@ sc_review_apply <- function(object, journal, project, columns = c(type = "review
     for (i in seq_along(fields)) metadata[[paste0(unname(columns[[dimension]]), suffixes[i])]] <- mapping[[fields[i]]]
   }
   seu@meta.data <- metadata
-  if (inherits(object, "Seurat")) return(seu)
-  output <- object
-  if (inherits(output@data, "Seurat")) output@data <- seu else output@data[[1L]] <- seu
-  output
+  seu
 }

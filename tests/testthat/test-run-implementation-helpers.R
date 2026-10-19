@@ -53,7 +53,7 @@ test_that("analysis checkpoint refuses changed reachable helpers before writing"
     stats::setNames(vapply(paths, .sc_project_sha_file, character(1)), paths)
   }
   before <- snapshot()
-  for (name in c("sc_find_markers", "sc_markers_summary", "annot_match_reference", "AgentSeurat",
+  for (name in c(".sc_marker_test", ".sc_marker_summary", ".sc_reference_match", ".cell_cycle_marker_set",
                  ".validate_marker_reference")) {
     implementation_mutation(name, function() {
       expect_false(identical(saved$implementation_hash, .sc_run_implementation()), info = name)
@@ -67,9 +67,9 @@ test_that("analysis checkpoint refuses changed reachable helpers before writing"
   expect_identical(.sc_run_load(root), saved)
 })
 
-test_that("unreachable legacy workflow changes do not invalidate the coordinator", {
+test_that("unreachable plotting utilities do not invalidate the coordinator", {
   before <- .sc_run_implementation()
-  implementation_mutation("annot_subcluster", function() {
+  implementation_mutation("sc_plot_umap", function() {
     expect_identical(.sc_run_implementation(), before)
   })
 })
@@ -81,7 +81,7 @@ test_that("mocked coordinator environments cannot redirect helper discovery", {
   mocked <- .sc_run_implementation()
   expect_match(mocked, "^[[:xdigit:]]{64}$")
   expect_false(identical(mocked, before))
-  implementation_mutation("sc_find_markers", function() {
+  implementation_mutation(".sc_marker_test", function() {
     expect_false(identical(.sc_run_implementation(), mocked))
   })
 })
@@ -94,21 +94,21 @@ test_that("implementation fingerprint is independent of collation locale", {
   available <- suppressWarnings(Sys.setlocale("LC_COLLATE", "C.UTF-8"))
   if (!nzchar(available)) skip("C.UTF-8 collation is unavailable on this platform")
   expect_identical(.sc_run_implementation(), baseline)
-  implementation_mutation("sc_find_markers", function() {
+  implementation_mutation(".sc_marker_test", function() {
     expect_false(identical(.sc_run_implementation(), baseline))
   })
 })
 
 test_that("default-only helper bodies are covered without evaluating missing arguments", {
   ns <- asNamespace("scAgentKit")
-  marker <- get("sc_find_markers", envir = ns, inherits = FALSE)
+  marker <- get(".sc_marker_test", envir = ns, inherits = FALSE)
   changed <- marker
   # obj remains a required/missing argument; inspecting defaults must not
   # evaluate it, or execute this deliberately unusable default expression.
-  formals(changed)$rationale <- quote(annot_subcluster())
-  testthat::local_mocked_bindings(sc_find_markers = changed, .package = "scAgentKit")
+  formals(changed)$unused <- quote(sc_plot_umap())
+  testthat::local_mocked_bindings(.sc_marker_test = changed, .package = "scAgentKit")
   baseline <- .sc_run_implementation()
-  implementation_mutation("annot_subcluster", function() {
+  implementation_mutation("sc_plot_umap", function() {
     expect_false(identical(.sc_run_implementation(), baseline))
   })
   expect_identical(.sc_run_implementation(), baseline)

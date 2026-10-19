@@ -1,138 +1,29 @@
-#' Map cell type labels to Cell Ontology (CL) identifiers
-#'
-#' Resolves free-text cell type names (the LLM's `primary_annotation`
-#' field, or a user-supplied vector) to Cell Ontology IDs (CL:XXXXXXX)
-#' using exact name and synonym matching. Annotations matching neither
-#' get NA, which is biologically honest: scAgentKit will not guess at
-#' a CL ID without literal evidence.
-#'
-#' Match logic (in order):
-#' \enumerate{
-#'   \item Lower-case, whitespace-collapsed exact match against CL term names.
-#'   \item Same against EXACT synonyms only. BROAD, NARROW and RELATED
-#'     synonyms are not equivalences and are never used.
-#'   \item Stop. No fuzzy matching, no embedding similarity. Reviewers
-#'     of methods papers consistently flag fuzzy CL mapping as a source
-#'     of silent label drift; better to report NA than to introduce it.
-#' }
-#'
-#' Adds a `cl_id` column (and `cl_name` if the match resolved through
-#' a synonym, recording the canonical CL label) to `obj@@params$llm_annotations`
-#' and to `obj@@data@@meta.data$cl_id` (mapped per-cell from `cell_type`).
-#'
-#' Only non-obsolete `CL:` terms are candidates. The ontology is read from
-#' `obo_path` or, by default, downloaded once over HTTPS from OBO Foundry
-#' into the user cache. That default is the unversioned latest release, so
-#' pass a pinned `obo_path` for reproducible mappings; its SHA-256 is
-#' recorded in the step parameters. Each path is cached for the session.
-#'
-#' @param obj An AgentSeurat object after [annot_llm_annotate()] (or
-#'   after [annot_apply()] if you want the cell-level `cl_id` column).
-#' @param obo_path Optional path to a CL OBO file. If `NULL` (default),
-#'   the function downloads the latest CL release from OBO Foundry
-#'   (cached under `tools::R_user_dir("scAgentKit", "cache")`) on first
-#'   use.
-#' @param column Character. The annotation column on
-#'   `obj@@params$llm_annotations` to map. Defaults to
-#'   `"primary_annotation"`.
-#' @param map_cells Logical. If `TRUE` (default), also writes
-#'   `obj@@data@@meta.data$cl_id` by joining on `cell_type`. Requires
-#'   `annot_apply()` to have been run first.
-#'
-#' @return Updated AgentSeurat with new columns. Two new fields are
-#'   added to `obj@@params$llm_annotations`:
-#'   \itemize{
-#'     \item `cl_id`: e.g. `"CL:0000084"` or `NA` if no match
-#'     \item `cl_name`: the canonical CL label (may differ from the
-#'       LLM's wording when a synonym matched)
-#'   }
-#'
-#' @section Why exact match only:
-#' Existing tools (CyteType, others) do fuzzy / embedding-based CL
-#' mapping. We deliberately don't, because LLM-driven annotation paired
-#' with fuzzy CL mapping silently launders soft mismatches as canonical
-#' identifiers. With exact match, a non-NA CL ID is a verifiable claim
-#' the reader can check; an NA is an honest "no canonical equivalent
-#' was found, the LLM label stands on its own". Use [cl_lookup()] for
-#' interactive fuzzy exploration when you actually want it.
-#'
+#' Map supplied labels to exact Cell Ontology names or synonyms
+#' @param obj Label data.frame or Seurat copy with a saved label column.
+#' @param obo_path Explicit local CL OBO path; existing documented cache is supported.
+#' @param column Label column, default label for a table or sc_annotation for Seurat.
+#' @param map_cells Whether to append IDs to the returned Seurat copy (never project state).
+#' @return Table with cl_id/cl_name, or a Seurat copy with cl_id/cl_name metadata.
+#'   Matching is dictionary support, not semantic validation or scientific approval.
 #' @export
-annot_map_to_cl <- function(obj,
-                            obo_path  = NULL,
-                            column    = "primary_annotation",
-                            map_cells = TRUE) {
-  stopifnot(methods::is(obj, "AgentSeurat"))
-  ann <- obj@params$llm_annotations
-  if (is.null(ann) || nrow(ann) == 0) {
-    stop("No LLM annotations found. Run annot_llm_annotate() first.")
+annot_map_to_cl <- function(obj,obo_path=NULL,column=NULL,map_cells=TRUE) {
+  seurat<-inherits(obj,"Seurat")
+  if(!seurat&&!is.data.frame(obj))stop("Supply a Seurat object or label table.",call.=FALSE)
+  if(is.null(column))column<-if(seurat)"sc_annotation" else "label"
+  table<-if(seurat)obj[[]] else obj
+  if(!column %in% names(table))stop("Explicit label column is absent.",call.=FALSE)
+  if(!requireNamespace("ontologyIndex",quietly=TRUE))stop("ontologyIndex is required; configure this optional dependency explicitly.",call.=FALSE)
+  cl<-.get_cl_ontology(obo_path);source<-attr(cl,"scAgentKit_source")
+  matched<-lapply(as.character(table[[column]]),function(label).cl_match_one(label,cl))
+  table$cl_id<-vapply(matched,function(x)if(is.null(x$cl_id))NA_character_ else x$cl_id,"")
+  table$cl_name<-vapply(matched,function(x)if(is.null(x$cl_name))NA_character_ else x$cl_name,"")
+  if(seurat) {
+    if(map_cells){obj$cl_id<-stats::setNames(table$cl_id,rownames(table));obj$cl_name<-stats::setNames(table$cl_name,rownames(table))}
+    obj@misc$cell_ontology<-list(source=source,label_column=column,matched=sum(!is.na(table$cl_id)),total=nrow(table))
+    return(obj)
   }
-  if (!column %in% colnames(ann)) {
-    stop(sprintf("Column '%s' not found in obj@params$llm_annotations.",
-                 column))
-  }
-  if (!requireNamespace("ontologyIndex", quietly = TRUE)) {
-    stop("Package 'ontologyIndex' is required. ",
-         "Install with install.packages('ontologyIndex').")
-  }
-
-  cl <- .get_cl_ontology(obo_path)
-  cl_source <- attr(cl, "scAgentKit_source")
-
-  labels <- as.character(ann[[column]])
-  res    <- vapply(labels, function(lab) {
-    m <- .cl_match_one(lab, cl)
-    paste(m$cl_id %||% NA_character_,
-          m$cl_name %||% NA_character_,
-          sep = "\t")
-  }, character(1))
-  parts <- do.call(rbind, strsplit(res, "\t", fixed = TRUE))
-  ann$cl_id   <- ifelse(parts[, 1] == "NA", NA_character_, parts[, 1])
-  ann$cl_name <- ifelse(parts[, 2] == "NA", NA_character_, parts[, 2])
-
-  n_total   <- nrow(ann)
-  n_matched <- sum(!is.na(ann$cl_id))
-  rationale <- sprintf(
-    "Mapped %d / %d annotations to Cell Ontology IDs (exact name/synonym match).",
-    n_matched, n_total
-  )
-
-  obj@params$llm_annotations <- ann
-
-  if (isTRUE(map_cells)) {
-    md <- obj@data@meta.data
-    if ("cell_type" %in% colnames(md)) {
-      lookup <- setNames(ann$cl_id, as.character(ann[[column]]))
-      obj@data@meta.data$cl_id <- unname(lookup[as.character(md$cell_type)])
-    } else {
-      message("[annot_map_to_cl] obj@data@meta.data$cell_type not present; ",
-              "skipping per-cell CL mapping. Run annot_apply() first to enable.")
-    }
-  }
-
-  .record_step(
-    obj            = obj,
-    step_name      = "annot_map_to_cl",
-    function_name  = "annot_map_to_cl",
-    params         = list(
-      column         = column,
-      map_cells      = map_cells,
-      n_total        = n_total,
-      n_matched      = n_matched,
-      match_rate     = n_matched / max(n_total, 1),
-      obo_path       = cl_source$path,
-      obo_sha256     = cl_source$sha256
-    ),
-    rationale      = rationale,
-    script_snippet = sprintf(
-'# ---- Map annotations to Cell Ontology IDs ----
-# Exact name/synonym match against CL; %d / %d (%.0f%%) matched.
-obj <- annot_map_to_cl(obj%s)',
-      n_matched, n_total, 100 * n_matched / max(n_total, 1),
-      if (is.null(obo_path)) "" else sprintf(", obo_path = %s", deparse(obo_path))
-    )
-  )
+  attr(table,"ontology_source")<-source;table
 }
-
 
 #' Look up Cell Ontology IDs interactively
 #'

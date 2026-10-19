@@ -2,11 +2,8 @@ test_that("project markers and references do not construct legacy workflow objec
   obj<-SeuratObject::pbmc_small
   obj$seurat_clusters<-as.character(SeuratObject::Idents(obj))
   before<-.sc_run_hash(obj)
-  testthat::local_mocked_bindings(
-    AgentSeurat=function(...)stop("legacy constructor called"),
-    sc_find_markers=function(...)stop("legacy marker wrapper called"),
-    sc_markers_summary=function(...)stop("legacy summary wrapper called"),
-    annot_match_reference=function(...)stop("legacy reference wrapper called"))
+  expect_false(exists("AgentSeurat",asNamespace("scAgentKit"),inherits=FALSE))
+  expect_false("sc_normalize" %in% getNamespaceExports("scAgentKit"))
   markers<-suppressWarnings(.sc_run_markers(obj,list()))
   expect_gt(nrow(markers$marker_summary),0L)
   ref<-data.frame(cell_type="candidate",marker=markers$marker_summary$gene[1],species="human",tissue="all")
