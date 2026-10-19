@@ -1,3 +1,5 @@
+> PRIVATE LOCAL BUILD 0.8.0.9001 — contains ACT data. Database redistribution permission is unconfirmed; do not push, publish or upload this clone/archive.
+
 # scAgentKit
 
 [English](README.md) · **简体中文**
@@ -158,8 +160,8 @@ counts/layer 检查及明确复用已处理对象的步骤见[操作指南](docs
 
 ### 3. 复核注释
 
-查看 marker 及 DotPlot/FeaturePlot 证据。默认参考是本地 ACT，包中不包含数据库；
-[导入合法持有的 ACT 原文件](docs/ACT_LOCAL_REFERENCE.md)，明确物种/组织并保留原 PMID。
+查看 marker 及 DotPlot/FeaturePlot 证据。此私有本地版为新项目离线加载固定 ACT 快照；
+[私有快照来源与用法](docs/ACT_LOCAL_REFERENCE.md)，明确物种/组织并保留原 PMID。
 缺失或零匹配会显示 unavailable，仍可按 marker/Unknown 人工复核。首轮模型注释仅看 marker；
 其后最多一次另计预算的参考差异复核。CLID 使用固定版本的精确名称/同义词字典；歧义或未映射者保持缺失。
 

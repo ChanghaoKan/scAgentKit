@@ -98,3 +98,5 @@ export(sc_run_open)
 export(sc_run_ambient_correction)
 
 export(annot_import_act)
+
+export(annot_act_reference)

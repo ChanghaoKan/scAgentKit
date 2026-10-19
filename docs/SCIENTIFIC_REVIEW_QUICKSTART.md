@@ -23,7 +23,7 @@ for every choice. A condition is not a technical batch, and Harmony design guard
 still apply. Measured resolution choices must come from the actual scan grid.
 
 ACT is the default local reference; see [input and provenance](ACT_LOCAL_REFERENCE.md).
-No ACT file is bundled or automatically downloaded. Missing/unmatched records have
+This PRIVATE LOCAL build includes a pinned offline ACT snapshot; redistribution permission remains unconfirmed. No automatic download occurs. Missing/unmatched records have
 an explicit notice. Marker-only annotation precedes reference comparison; at most
 one guided difference request is allowed. Inspect actual positive marker citations
 and immutable PNG evidence. Exact CL mapping may remain missing. Human edits survive

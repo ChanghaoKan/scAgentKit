@@ -1,3 +1,5 @@
+> PRIVATE LOCAL BUILD 0.8.0.9001 — contains ACT data. Database redistribution permission is unconfirmed; do not push, publish or upload this clone/archive.
+
 # scAgentKit
 
 **English** · [简体中文](README.zh-CN.md)
@@ -190,9 +192,8 @@ the plots and PC rule.
 <a id="gate-annotation"></a>
 
 Open the worksheet and read each cluster's markers, DotPlot/FeaturePlot evidence
-and reference candidates. ACT is the default local marker source; it is not
-bundled. [Import a lawfully held ACT file](docs/ACT_LOCAL_REFERENCE.md) with actual
-species/tissue and original PMIDs. Missing or unmatched ACT data is visibly
+and reference candidates. This private build loads its pinned ACT snapshot offline for new modern projects,
+with exact declared species/tissue and original PMIDs. [Private source and usage](docs/ACT_LOCAL_REFERENCE.md). Missing or unmatched ACT data is visibly
 unavailable and leaves marker/Unknown review usable. The first model draft is
 marker-only; at most one separately budgeted guided difference review may follow.
 Cell Ontology IDs use the pinned exact-name/synonym dictionary; ambiguous or
