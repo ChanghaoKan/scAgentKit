@@ -96,14 +96,15 @@
   measured <- function(fn) tryCatch(c(list(status="measured"),fn()),error=function(e) list(status="unavailable",reason=conditionMessage(e)))
   corrected_pipeline <- identical(plan$batch$method,"harmony") ||
     (!is.null(plan$cycle) && !identical(plan$cycle$method,"none"))
-  if(corrected_pipeline && (options$pc_sensitivity || options$resampling || options$resolution_extension))
-    return(list(schema="scagentkit.scientific-diagnostics.v1",status="unavailable",
-      reason="Copy-based PCA diagnostics do not yet reproduce approved Harmony/cycle regression; no PCA-only run is presented as same-pipeline stability.",
-      default_changed=FALSE,provider_calls=0L))
+  stability <- function(fn) {
+    if (corrected_pipeline) return(list(status="unavailable",
+      reason="Copy-based PCA diagnostics do not yet reproduce approved Harmony/cycle regression; no PCA-only run is presented as same-pipeline stability."))
+    measured(fn)
+  }
   out <- list(schema="scagentkit.scientific-diagnostics.v1",options=options,
     cells=cells,input_object_hash=before,approved_pc_count=k,approved_resolution=plan$clustering$resolution,
     default_changed=FALSE,provider_calls=0L)
-  if(options$pc_sensitivity) out$pc_sensitivity <- measured(function() {
+  if(options$pc_sensitivity) out$pc_sensitivity <- stability(function() {
     available <- ncol(SeuratObject::Embeddings(seu,"pca"))
     candidates <- sort(unique(pmax(2L,pmin(available,c(k-5L,k,k+5L)))))
     list(actual_pcs=available,requested=c(k-5L,k,k+5L),bounded_candidates=candidates,
@@ -113,7 +114,7 @@
           list(marker_consistency=.sc_run_science_marker_consistency(seu,config,membership,partition)))
       }))
   })
-  if(options$resampling) out$resampling <- measured(function() {
+  if(options$resampling) out$resampling <- stability(function() {
     seed_exists <- exists(".Random.seed",.GlobalEnv,inherits=FALSE)
     old_seed <- if(seed_exists) get(".Random.seed",.GlobalEnv) else NULL
     on.exit(if(seed_exists) assign(".Random.seed",old_seed,.GlobalEnv) else if(exists(".Random.seed",.GlobalEnv,inherits=FALSE)) rm(".Random.seed",envir=.GlobalEnv),add=TRUE)
@@ -136,7 +137,7 @@
     list(fraction=.8,seeds=42:46,rebuild="Normalize/HVG/PCA/neighbors/clusters on each subset",replicates=results,
       interpretation="Computational resampling on one dataset, not donor-level uncertainty or optimal resolution.")
   })
-  if(options$resolution_extension) out$resolution_extension <- measured(function() {
+  if(options$resolution_extension) out$resolution_extension <- stability(function() {
     grid <- sort(unique(c(plan$clustering$resolution,plan$clustering$diagnostic_resolutions)))
     initial <- lapply(grid,function(r) .sc_run_science_partition(seu,k,r,plan$analysis$seed))
     counts <- vapply(initial,function(x) length(unique(x)),integer(1))
