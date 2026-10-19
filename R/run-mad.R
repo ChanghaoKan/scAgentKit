@@ -161,6 +161,22 @@
     action = "diagnostic only; never used for candidate deletion"))
 }
 
+# Disjoint aggregate explanations of existing flags; never a filtering rule.
+.sc_run_mad_flag_summary <- function(flags, indices) {
+  selected <- flags[indices,c("low_count","low_feature","high_mt"),drop=FALSE]
+  known <- stats::complete.cases(selected)
+  pattern_names <- c("none","low_count_only","low_feature_only","count_feature_only",
+    "high_mt_only","count_mt_only","feature_mt_only","all_three")
+  available <- all(known)
+  key <- if (available) as.integer(selected$low_count)+2L*as.integer(selected$low_feature)+4L*as.integer(selected$high_mt) else integer()
+  counts <- if (available) as.list(tabulate(key+1L,nbins=8L)) else rep(list(NULL),8L)
+  names(counts) <- pattern_names
+  list(available=available,denominator=length(indices),known_cells=sum(known),unknown_cells=sum(!known),
+    patterns=counts,any_quality_flag=if(available)sum(key>0L)else NULL,
+    multiple_quality_flags=if(available)sum(key %in% c(3L,5L,6L,7L))else NULL,
+    interpretation="Disjoint low-count/low-feature/high-mt flags among pre-score cells, not selected removals. Unknown flags make intersections unavailable; high RNA is excluded from deletion patterns.")
+}
+
 .sc_run_mad_compute <- function(metrics, group_map, prefilter_cells, options) {
   cells <- metrics$cell_id
   prefilter <- cells %in% prefilter_cells
@@ -190,7 +206,7 @@
       if (!length(indices)) 0L else if (anyNA(flags[[field]][indices])) NULL else sum(flags[[field]][indices]))
     names(flag_counts) <- c("low_count", "low_feature", "high_mt", "high_rna_count", "high_rna_feature")
     list(group_id = paste0("group", i), value = value, before = length(all_indices), pre_score = length(indices),
-      metrics = stats, flags = flag_counts,
+      metrics = stats, flags = flag_counts, flag_summary = .sc_run_mad_flag_summary(flags, indices),
       diagnostic_metrics = list(percent_ribo = .sc_run_qc_distribution(metrics$percent_ribo[indices]),
         percent_hb = .sc_run_qc_distribution(metrics$percent_hb[indices])),
       warnings = unique(c(unlist(lapply(stats, `[[`, "warnings"), use.names = FALSE),

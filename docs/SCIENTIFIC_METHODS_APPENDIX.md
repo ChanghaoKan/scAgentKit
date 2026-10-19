@@ -15,7 +15,7 @@ eligibility are software rules; no biological default benefit is assumed.
 
 | Method | Calculation | Applicability and interpretation |
 | --- | --- | --- |
-| Within-group cell MAD | log10(count+1)/log10(feature+1), raw MT percent; median +/-3 scaledMAD, explicit groups | Existing cell-wise flags. Distinct from comparing sample medians. High RNA remains flag-only. |
+| Within-group cell MAD | log10(count+1)/log10(feature+1), raw MT percent; 3 scaledMAD, explicit groups | Counts/features use lower-tail deletion flags; MT uses its upper tail. Upper RNA bands flag only. Distinct from comparing sample medians. |
 | Between-sample QC | One median per declared sample; signed robust z with1.4826 MAD | >=5 comparable samples, complete metrics/nonzero MAD. No automatic sample exclusion; biological design may explain differences. |
 | Draft OR preselection | Available nonredundant any_quality3, complete evidence/no conflicts, <=10% removal overall and <=20% each group, saved keep_all only | Local unsaved/unapproved memory, once per review revision. Existing author choice/edits take precedence. Caps are UI guards, not scientific thresholds. |
 | Per-sample HVG | Vst2000 (or approved feature count) per sample; frequency descending, median rank ascending (missing rank=nfeatures+1), literal-gene tie break | >=2 declared samples, each>=30 retained cells; explicit approved sample_consensus request. Equal sample influence can obscure sample-specific biology. |
@@ -36,6 +36,37 @@ background. Changing source counts, IDs or approval artifacts is not an acceptab
 way to repair a stale project. Scientific diagnostics are hashed into the saved
 cluster scan and require the same subsequent explicit author review; an empty
 resolution grid cannot silently disable explicitly requested diagnostics.
+
+## Reading QC flags and retention
+
+The saved grouped panel reports disjoint low-count-only, low-feature-only,
+high-MT-only and joint flag patterns among each group's pre-score cells.
+Overlapping independent flags must not be added to estimate unique removals.
+The OR candidate removes the union; the AND candidate removes only the
+three-way intersection. Selected retention also accounts separately for the
+minimal prefilter and doublet choice. Group denominators and original sample
+cell counts remain explicit. Missing flags make intersections unavailable,
+rather than a measured zero. QC groups, declared samples and capture units
+are distinct roles; none is inferred from condition or donor.
+
+The MT table displays the exact saved median, upper threshold, scaled MAD and
+upper-minus-median margin in percentage points. A positive MAD may still imply
+a tiny absolute difference. Assess technical precision, flag overlaps and
+sample comparisons in study context; there is no universal minimum MT margin,
+normality gate or automatic threshold adjustment. Distribution warnings are
+interpretive. The keep_all starting proposal is not a completed QC assessment.
+Cell-type-specific deletion risk remains unassessed without independent
+identity evidence; QC review neither infers author labels nor requires a new
+annotation analysis.
+
+Legacy `qc_mad()` has different, preserved semantics: log10(x) for positive
+counts/features, deletion at both their low and high tails, and upper-only
+MT/ribosomal/haemoglobin deletion with a one-percentage-point scaled-MAD floor.
+It can pool cells or use explicitly selected groups. The coordinator instead
+uses log10(x+1), lower count/feature tails, flag-only high RNA and diagnostic-only
+ribosomal/haemoglobin values, without that MT floor. Its existing small-group,
+nonfinite and near-zero-MAD availability guards remain unchanged. These are
+different software policies, not interchangeable biological recommendations.
 
 ## Ambient estimation and correction
 

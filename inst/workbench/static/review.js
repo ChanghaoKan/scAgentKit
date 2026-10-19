@@ -1105,6 +1105,19 @@ function renderQCControls(details, proposal) {
   card.append(cycleNode("p", "Fields update the complete JSON draft only. Save once, inspect the rebuilt exact impact, then approve the whole strategy. Blank bounds are unbounded; at least one real bound is required. Unknown measurements are not zero or an automatic failure.", "qc-draft-note", {class: "microcopy"}));
   const record = element("details"); record.append(element("summary", "Saved QC parameters and dynamic panel provenance"), raw({saved_qc: details.canonical_proposal?.qc, mad_panel: details.mad_panel ?? null})); card.append(record); return card;
 }
+function renderSampleQCComparison(comparison) {
+  const details=element("details"); details.append(element("summary","Per-sample medians and cross-sample diagnostics (separate from cell MAD)"));
+  if(comparison?.status!=="measured") {empty(details,comparison?.reason||"No explicitly declared sample comparison is recorded; condition/capture are not substituted.");return details;}
+  details.append(element("p",comparison.interpretation||"Saved sample-level evidence; no sample is automatically removed."),
+    table(["Declared sample","Original input cells","Median counts","Median features","Median mt %"],array(comparison.groups).map(row=>[row.sample,evidenceNumber(row.cells),evidenceNumber(row.medians?.nCount),evidenceNumber(row.medians?.nFeature),evidenceNumber(row.medians?.percent_mt)])));
+  for(const contrast of array(comparison.cross_sample)) {
+    details.append(element("h5",contrast.metric||"Unknown metric"));
+    if(contrast.status!=="descriptive_flags") details.append(element("p",contrast.reason||"Between-sample flags unavailable."));
+    details.append(table(["Declared sample","Saved median","Robust z (between samples)","Descriptive flag"],array(contrast.samples).map(row=>[row.sample,evidenceNumber(row.median),evidenceNumber(row.robust_z),typeof row.flagged==="boolean"?(row.flagged?"Flagged; inspect study context":"Not flagged; not quality certification"):"Unavailable"])));
+  }
+  return details;
+}
+
 function renderQCImpact(details) {
   const preview = details.qc_impact, card = cycleNode("section", null, "qc-readable-impact", {class: "qc-readable-impact"}); card.append(element("h3", "Saved QC impact"));
   if (preview?.schema !== "scagentkit.qc.preview.v1") {
@@ -1116,7 +1129,7 @@ function renderQCImpact(details) {
   const retention = preview.retention || {}, stage = details.qc_stage_counts || details.qc_mad?.impact?.stage_counts || {}, logic = preview.rule_logic || {};
   const original = stage.original_cells ?? retention.before, preScore = stage.pre_score_cells;
   const percent = value => typeof value === "number" && Number.isFinite(value) && typeof original === "number" && original > 0 ? (100 * value / original).toFixed(2) + "%" : "Unavailable";
-  card.append(cycleNode("p", "Original input: " + evidenceNumber(original) + "; pre-score: " + evidenceNumber(preScore) + "; after QC: " + evidenceNumber(retention.retained) + "; after separate doublet choice: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? stage.final_selected_cells) + ".", "qc-stage-counts", {class: "parameter-impact-summary"}));
+  card.append(cycleNode("p", "Original input: " + evidenceNumber(original) + "; pre-score: " + evidenceNumber(preScore) + "; after QC: " + evidenceNumber(retention.retained) + "; total QC removals from original: " + evidenceNumber(retention.removed) + "; after separate doublet choice: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? stage.final_selected_cells) + ".", "qc-stage-counts", {class: "parameter-impact-summary"}));
   card.append(cycleNode("p", "Saved preview only. New draft values have not been evaluated; Save rebuilds this evidence in R. All percentages below use original input as denominator. Independent failures overlap and must not be added. Exclusive means actually removed while failing only that rule. Any/all applies to failed rules; Unknown is disclosed separately.", "qc-impact-note", {class: "microcopy"}));
   card.append(cycleNode("p", "Explicit minimal prefilter exclusions cannot be restored by any later fixed range, MAD preset or any/all choice. Saved prefilter removed: " + evidenceNumber(logic.prefilter_removed) + "; quality removed among eligible cells: " + evidenceNumber(logic.quality_removed) + ". Doublet predictions and keep/remove_predicted remain a separate later choice; cells already excluded by QC are not removed twice.", "qc-prefilter-boundary", {class: "microcopy"}));
   const rows = array(preview.filter_impacts);
@@ -1258,12 +1271,12 @@ function renderPCs(details, proposal) {
 function renderMad(details, proposal) {
   const saved = details.qc_mad || {}, panel = details.mad_panel || {}, choice = proposal.qc || {}, selected = array(panel.presets).find(row => row?.preset_id === choice.preset_id), error = madReviewError(details, proposal);
   const card = cycleNode("section", null, "mad-card", {class: "strategy-evidence-card mad-card"});
-  card.append(element("h3", "Sample-aware quality candidates"), cycleNode("p", "Saved choice: " + (choice.preset_id || "Unknown") + (choice.preset_id === "keep_all" ? " · keep all pre-score cells (default)" : " · explicit reviewed quality rule"), "mad-choice", {"data-preset": choice.preset_id || "unknown"}));
+  card.append(element("h3", "Sample-aware quality candidates"), cycleNode("p", "QC in saved proposal: " + (choice.preset_id || "Unknown") + (choice.preset_id === "keep_all" ? " · default starting retention choice; not by itself a completed QC assessment" : " · explicit candidate in the saved proposal; approval is separate"), "mad-choice", {"data-preset": choice.preset_id || "unknown"}));
   card.append(cycleNode("p", "One saved panel covers every declared QC group. A choice edits the complete plan draft only; save, inspect and approve the whole plan before Continue. No preset is universally best and retained cell counts are not biological truth.", "mad-review-note", {class: "microcopy"}));
   const grouping = panel.grouping || {}, capture = details.doublet_diagnostics?.capture || {}, method = panel.method || {};
   card.append(cycleNode("p", "QC grouping: " + (grouping.column || grouping.id || "Unknown") + "; role: " + (grouping.declared_role || "Unknown") + "; source: " + (grouping.source || "Unknown") + ". Capture/loading unit: " + (capture.column || capture.id || "Unknown") + ". QC group, sample, capture and donor are distinct declarations; no relationship is inferred.", "mad-grouping", {class: "microcopy"}));
-  card.append(cycleNode("p", "Counts/features: log10(x+1), median ± " + evidenceNumber(method.k) + " × scaled MAD; scaled MAD constant: " + evidenceNumber(method.mad_constant) + ". Mitochondrial fraction: upper tail on its original scale. Strict comparisons use the saved exact thresholds; rounded display values never control execution.", "mad-method", {class: "microcopy"}));
-  card.append(cycleNode("p", "High RNA is flagged only. Ribosomal and haemoglobin measurements are diagnostic only; none authorizes automatic deletion. MAD zero/near zero, small groups, missing/nonfinite values and distribution warnings can make a candidate unavailable. Unknown is distinct from an observed zero.", "mad-risk", {class: "evidence-explainer"}));
+  card.append(cycleNode("p", "Counts/features: log10(x+1), low-tail deletion below median − " + evidenceNumber(method.k) + " × scaled MAD; upper bands flag only. Scaled MAD constant: " + evidenceNumber(method.mad_constant) + ". Mitochondrial fraction: upper tail on its original scale. Strict comparisons use the saved exact thresholds; rounded display values never control execution.", "mad-method", {class: "microcopy"}));
+  card.append(cycleNode("p", "High RNA is flagged only. Ribosomal and haemoglobin measurements are diagnostic only; none authorizes automatic deletion. MAD zero/near zero, small groups or missing/nonfinite values can make a candidate unavailable. Distribution warnings are interpretive and do not impose a normality gate. Unknown is distinct from an observed zero.", "mad-risk", {class: "evidence-explainer"}));
   const stage = panel.stage_counts || {}, impact = saved.impact || {}, counts = details.qc_stage_counts || details.stage_counts || impact.stage_counts || {};
   card.append(cycleNode("p", "Original: " + evidenceNumber(counts.original_cells ?? stage.original_cells) + "; minimal prefilter: " + evidenceNumber(counts.prefilter_cells ?? stage.pre_score_cells) + "; pre-score: " + evidenceNumber(counts.pre_score_cells ?? stage.pre_score_cells) + "; post-QC: " + evidenceNumber(counts.post_qc_cells ?? impact.impact?.post_qc_cells ?? impact.retained ?? impact.retained_cells ?? selected?.retained) + "; post-doublet: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? counts.final_selected_cells) + ". Quality statistics cells: " + evidenceNumber(stage.statistics_cells) + ".", "mad-stage-counts", {class: "microcopy"}));
   const rate = details.doublet_diagnostics?.rate || {}, reference = details.doublet_diagnostics?.reference;
@@ -1280,14 +1293,26 @@ function renderMad(details, proposal) {
   card.append(element("label", "Draft candidate for the whole plan", {for: "mad-preset-select"}), select);
   const candidates = cycleNode("div", null, "mad-candidates"); candidates.append(table(["Preset", "Rule", "Available", "Pre-score", "Retained", "Removed", "Retained fraction", "Unavailable reasons"], array(panel.presets).map(row => [row.preset_id, row.rule || row.label || "Unknown", row.available === true ? "Yes" : "No", evidenceNumber(row.pre_score), evidenceNumber(row.retained), evidenceNumber(row.removed), evidenceNumber(row.fraction_retained), array(row.unavailable_reasons).join("; ") || "None recorded"]))); card.append(candidates);
   const warnings = cycleNode("div", null, "mad-warnings"); warnings.append(element("h4", "Saved panel warnings")); for (const warning of array(panel.warnings)) warnings.append(element("p", typeof warning === "string" ? warning : json(warning))); if (!array(panel.warnings).length) empty(warnings, "None recorded; this does not establish an optimal distribution."); card.append(warnings);
+  const flags = cycleNode("section",null,"mad-flag-summary");
+  flags.append(element("h4","Single-metric flags and overlaps before choosing a QC rule"),
+    element("p","Each row uses its QC group's pre-score denominator. Only means failing exactly one of low counts, low features and high mt. 2+ flags is overlapping evidence, not extra removals. These flags do not select a rule; high RNA is diagnostic only.",{class:"microcopy"}),
+    table(["QC group","Pre-score denominator","Low counts only","Low features only","High mt only","2+ flags","No quality flag","Unknown flag rows"],array(panel.groups).map(group=>{const f=group.flag_summary||{},p=f.patterns||{};return[group.value||"Unknown",evidenceNumber(f.denominator),evidenceNumber(p.low_count_only),evidenceNumber(p.low_feature_only),evidenceNumber(p.high_mt_only),evidenceNumber(f.multiple_quality_flags),evidenceNumber(p.none),evidenceNumber(f.unknown_cells)];})),
+    element("p","Actual removal and retention follow the selected saved candidate below. Cell-type-specific deletion risk is not assessed here; no independent identity evidence or author labels are assumed.",{class:"microcopy"}));
+  card.append(flags);
+  const margins=cycleNode("section",null,"mad-mt-absolute-margins");
+  margins.append(element("h4","Mitochondrial absolute margins · percentage points"),
+    table(["QC group","Median mt %","Upper mt %","Upper − median (percentage points)","Scaled MAD"],array(panel.groups).map(group=>{const metric=group.metrics?.percent_mt||{},exact=metric.exact||{},valid=metric.available===true&&Number.isFinite(exact.median)&&Number.isFinite(exact.upper_raw);return[group.value||"Unknown",evidenceNumber(exact.median),valid?evidenceNumber(exact.upper_raw):"Unavailable",valid?evidenceNumber(exact.upper_raw-exact.median):"Unavailable",evidenceNumber(exact.scaled_mad)];})),
+    element("p","A positive MAD can still give a tiny absolute mt change. Inspect the measured margin, technical precision, flag overlaps and sample comparisons before deciding. No universal minimum difference or normality gate is added; displayed values never change exact R thresholds.",{class:"evidence-explainer"}));
+  card.append(margins);
   const groupDetails = cycleNode("details", null, "mad-groups"); groupDetails.append(element("summary", "Every QC group: exact thresholds, rounded displays, diagnostics and candidate effects"));
   for (const group of array(panel.groups)) {
     const section = element("section", null, {class: "mad-group", "data-qc-group": group.group_id || "unknown"});
     section.append(element("h4", typeof group.value === "string" && group.value ? group.value : "Unknown group"), element("p", "Original: " + evidenceNumber(group.before) + "; pre-score: " + evidenceNumber(group.pre_score)));
     for (const [name, metric] of Object.entries(group.metrics || {})) section.append(element("h5", name + " · " + (metric.available === true ? "available" : "Unknown / unavailable")), element("p", "Exact thresholds used by R"), raw(metric.exact || null), element("p", "Rounded display only"), raw(metric.display || null), raw({unavailable_reasons: metric.unavailable_reasons, warnings: metric.warnings}));
+    section.append(element("h5","Disjoint quality-flag patterns (pre-score denominator)"),table(["Pattern","Flagged cells"],Object.entries(group.flag_summary?.patterns||{}).map(([name,count])=>[name,evidenceNumber(count)])));
     section.append(element("h5", "Diagnostic-only ribosomal / haemoglobin and high-RNA flags"), raw(group.diagnostic_metrics || null), raw({flags: group.flags, warnings: group.warnings}));
     const effects = array(panel.presets).map(candidate => {const row = array(candidate.groups).find(item => item.group_id === group.group_id) || {}; return [candidate.preset_id, evidenceNumber(row.pre_score), evidenceNumber(row.retained), evidenceNumber(row.removed), evidenceNumber(row.fraction_retained)];});
-    section.append(table(["Preset", "Pre-score", "Retained", "Removed", "Retained fraction"], effects)); groupDetails.append(section);
+    section.append(table(["Preset", "Pre-score", "Retained", "Removed / group original", "Retained / group original"], effects)); groupDetails.append(section);
   }
   card.append(groupDetails);
   const scope = cycleNode("details", null, "mad-cell-scope"); scope.append(element("summary", "Complete exact quality retained / removed cell IDs"), cycleNode("p", error ? "Unavailable — rebuild the saved binding before approving." : "Retained: " + array(details.qc_impact?.keep_cells).length + "; removed from original input: " + array(details.qc_impact?.remove_cells).length + ". Includes explicit prefilter exclusions; every literal ID is shown without truncation.", "mad-cell-count"), element("h4", "Retained quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.keep_cells).join("\n") || "None", "mad-keep-ids", {class: "doublet-id-list", tabindex: "0"}), element("h4", "Removed quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.remove_cells).join("\n") || "None", "mad-remove-ids", {class: "doublet-id-list", tabindex: "0"})); card.append(scope);
@@ -1593,9 +1618,7 @@ function renderRecommendations() {
         card.append(element("h4","Missing information"),table(["Fact","Why it matters"],array(step.missing).map(row => [row.label || row.field || "Unspecified fact",row.reason || "Reason not supplied"])));
       }
       if (step.scientific_diagnostics) { const diagnostics = element("details"); diagnostics.append(element("summary","Optional local sensitivity, resampling and expression evidence"),raw(step.scientific_diagnostics)); card.append(diagnostics); }
-      if (step.sample_comparison && typeof step.sample_comparison === "object") {
-        const samples = element("details"); samples.append(element("summary","Per-sample medians and cross-sample diagnostics (separate from cell MAD)"),raw(step.sample_comparison)); card.append(samples);
-      }
+      if (step.sample_comparison && typeof step.sample_comparison === "object") card.append(renderSampleQCComparison(step.sample_comparison));
       if (step.draft_preselection?.candidate_id) card.append(element("p","Draft comparison (unsaved and unapproved): " + step.draft_preselection.candidate_id + ". " + step.draft_preselection.reason,{class:"microcopy"}));
       for (const candidate of step.candidates) {
         const item = element("section",null,{class:"recommendation-candidate","data-testid":"recommendation-candidate-"+step.id+"-"+candidate.id});
