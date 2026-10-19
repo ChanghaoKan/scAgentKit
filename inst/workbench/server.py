@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import re
 import secrets
 import sys
 import threading
@@ -312,7 +313,8 @@ class Handler(BaseHTTPRequestHandler):
             self._trusted_request()
             self._capture_context()
             route = urlsplit(self.path).path
-            if self.server.run_review and route.startswith("/api/") and route not in ("/api/qc/inspect", "/api/run-review/inspect", "/api/run-review/continuation", "/api/subcluster/inspect", "/api/run-review/suggestion", "/api/run-review/scopes", "/api/run-review/workbench"):
+            annotation_plot = re.fullmatch(r"/api/run-review/annotation-plot/([a-f0-9]{64})", route)
+            if self.server.run_review and route.startswith("/api/") and not annotation_plot and route not in ("/api/qc/inspect", "/api/run-review/inspect", "/api/run-review/continuation", "/api/subcluster/inspect", "/api/run-review/suggestion", "/api/run-review/scopes", "/api/run-review/workbench"):
                 raise StoreError("This server reviews its configured run only", 409)
             if self.server.qc and not self.server.run_review and route.startswith("/api/") and route != "/api/qc/inspect":
                 raise StoreError("This server reviews its configured QC run only", 409)
@@ -355,6 +357,11 @@ class Handler(BaseHTTPRequestHandler):
                     view = self.server.run_subcluster.describe(**query)
                     view.update(ready=True, frozen=True, parent_run=lifecycle["parent_run"])
                     self._respond(200, view)
+            elif annotation_plot:
+                review, _, _ = self._run_context()
+                if not review:
+                    raise StoreError("Start a configured run review to inspect annotation plots", 409)
+                self._respond(200, review.annotation_plot(annotation_plot.group(1)), "image/png")
             elif route == "/api/run-review/inspect":
                 review, continuation, _ = self._run_context()
                 if not review:

@@ -854,6 +854,16 @@ function renderCluster() {
   const suggestion = $("annotation-suggestion"); suggestion.replaceChildren(element("p", item.proposal.label, {class: "annotation-saved-label"}), element("p", `${item.proposal.confidence} confidence · qualitative, uncalibrated`, {class: "annotation-confidence-note"}), element("p", item.proposal.rationale, {class: "annotation-saved-rationale"}), geneParagraph("Cited genes: ", array(item.proposal.markers), {class: "annotation-confidence-note"}));
   const joint = renderJointEvidence(item); suggestion.hidden = joint; $("annotation-reference-section").hidden = joint;
   $("annotation-cell-ids").textContent = array(item.cell_ids).join("\n"); renderMarkers(item);
+  const plots = $("annotation-plot-evidence");
+  const evidence=state.view.run.annotation_review.details.plot_evidence;
+  plots.replaceChildren();plots.hidden=!evidence;
+  if(evidence){plots.append(element("h3","Saved marker and citation plots"),element("p",evidence.notice));
+    for(const plot of array(evidence.plots)){
+      const card=element("figure"), image=element("img",null,{src:scopedRunURL("/api/run-review/annotation-plot/"+plot.sha256),alt:plot.kind+": "+array(plot.genes).join(", "),loading:"lazy"});
+      card.append(image,element("figcaption",plot.kind+" · "+array(plot.genes).join(", ")+" · SHA256 "+plot.sha256));plots.append(card);
+    }
+    if(!array(evidence.plots).length)plots.append(element("p","Plots unavailable: "+evidence.dotplot_status+"; citations: "+evidence.citation_status));
+  }
   const reference = $("annotation-reference"); reference.replaceChildren(element("p", "Saved reference status: " + (item.local_reference?.status || "unavailable"), {class: "annotation-reference-status"}), raw(item.local_reference || {status: "unavailable", interpretation: "No local-reference evidence was supplied."}));
   if (item.measured_expression) reference.append(raw(item.measured_expression));
   const row = state.drafts.get(item.clusterId); $("annotation-label").value = row.label; $("annotation-confidence").value = row.confidence; $("annotation-rationale").value = row.rationale;

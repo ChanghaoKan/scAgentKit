@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Save annotation DotPlot/top-five and cited-gene FeaturePlot PNG evidence
+  before review, bind exact PNG hashes and selections to approval, and rebuild
+  after saved citation changes. Browser reads only PNGs in the current verified
+  review; missing genes or altered evidence cannot silently substitute a plot.
+
 - Modern annotation review saves fixed-ontology mappings against the exact
   draft before approval. Approved writeback adds sc_annotation_cl_id (or the
   chosen label-prefix equivalent); unresolved or ambiguous labels stay blank.

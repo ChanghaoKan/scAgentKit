@@ -192,6 +192,7 @@
        details = list(input_cells = input, cell_count = nrow(input), cluster_count = length(ids),
          output_columns = output_columns, canonical_proposal = .sc_run_annotation_review_plain(checked),
          annotations = rows, source = source, ontology = ontology,
+         plot_evidence = .sc_run_annotation_plots_get(root,state,evidence,checked),
          marker_pool = evidence$summary$marker_pool,
          child_context = evidence$summary$child_context,
          parent_context_database = evidence$private$child_context,
@@ -210,6 +211,7 @@
 .sc_run_annotation_review_publish <- function(root, state, validated, evidence) {
   if (!is.null(state$config$input_policy))
     state <- .sc_run_put(root,state,"annotation_ontology",.sc_run_annotation_ontology(validated))
+  state <- .sc_run_annotation_plots_prepare(root,state,evidence,validated)
   record <- .sc_run_annotation_review_build(root, state, validated, evidence)
   record$hash <- .sc_run_annotation_review_hash(record)
   .sc_run_put(root, state, "annotation_review", record)
@@ -268,7 +270,7 @@
        review_hash = record$hash, parameters_hash = record$parameters_hash,
        rules_hash = record$rules_hash, cell_scope_hash = record$cell_scope_hash,
        target_column = record$target_column, review_path = state$files$annotation_review$path,
-       revision_reviewed = state$revision, ontology_hash = record$details$ontology$hash)
+       revision_reviewed = state$revision, ontology_hash = record$details$ontology$hash, plot_evidence_hash = record$details$plot_evidence$hash)
 }
 .sc_run_annotation_review_view <- function(root, state) {
   if (is.null(state$files$annotation_review)) return(NULL)

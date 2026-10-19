@@ -171,3 +171,5 @@ body.compact-review :is(#annotation-draft-status, #strategy-draft-status, #strat
 .scientific-assessment h2 {font-size:18px;margin-top:0;}
 .scientific-assessment p {font-size:14px;line-height:1.55;}
 .scientific-assessment-deferred {font-weight:600;}
+
+#annotation-plot-evidence figure{margin:12px 0;overflow:auto}#annotation-plot-evidence img{max-width:100%;height:auto}#annotation-plot-evidence figcaption{font-size:11px;overflow-wrap:anywhere;color:#566d8c}

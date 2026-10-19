@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from pathlib import PurePosixPath
 
 try:
     from .evidence import canonical
@@ -20,6 +21,36 @@ class RunReviewRuntime(QCRuntime):
         super().__init__(project_dir, library, rscript, timeout)
         self.bridge = ROOT / "run_review_bridge.R"
         self.bridge_hash = hashlib.sha256(self.bridge.read_bytes()).hexdigest()
+
+    def annotation_plot(self, sha):
+        """Serve only PNG bytes referenced by the freshly verified R review."""
+        if not isinstance(sha, str) or not HASH.fullmatch(sha):
+            raise StoreError("Select a saved annotation plot", 400)
+        with self.lock:
+            self._fresh()
+            view = self.describe()
+            records = (((view.get("run") or {}).get("annotation_review") or {}).get("details") or {}).get("plot_evidence") or {}
+            plots = records.get("plots") or []
+            matches = [row for row in plots if isinstance(row, dict) and row.get("sha256") == sha]
+            if len(matches) != 1:
+                raise StoreError("The plot is not part of the current reviewed annotation evidence", 404)
+            relative = matches[0].get("path")
+            if not isinstance(relative, str):
+                raise StoreError("Saved plot path is invalid", 409)
+            parts = PurePosixPath(relative)
+            if parts.is_absolute() or ".." in parts.parts or len(parts.parts) != 4 or parts.parts[:2] != ("review-evidence", "annotation") or not parts.name.endswith(".png"):
+                raise StoreError("Saved plot path is outside annotation evidence", 409)
+            path = self.project
+            for part in parts.parts:
+                path = path / part
+                if path.is_symlink():
+                    raise StoreError("Saved plot path cannot contain a symlink", 409)
+            if not path.is_file() or path.stat().st_size > 10 * 1024 * 1024:
+                raise StoreError("Saved annotation PNG is unavailable or exceeds 10 MiB", 409)
+            data = path.read_bytes()
+            if not data.startswith(b"\x89PNG\r\n\x1a\n") or hashlib.sha256(data).hexdigest() != sha:
+                raise StoreError("Saved annotation PNG changed; inspect the current review", 409)
+            return data
 
     @staticmethod
     def validate_facts(facts):
