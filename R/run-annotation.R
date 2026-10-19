@@ -48,10 +48,11 @@
 
 .sc_run_markers <- function(seu, config) {
   seu <- .sc_project_unwrap(seu)
-  allowed <- c("only_pos", "min_pct", "logfc_threshold", "top_n", "log2fc_cut", "padj_cut")
+  allowed <- c("only_pos", "min_pct", "logfc_threshold", "top_n", "log2fc_cut", "padj_cut", "exclude_shared", "exclude_genes")
   requested <- .sc_run_annotation_options(config$markers, allowed, "markers")
   settings <- utils::modifyList(list(only_pos = FALSE, min_pct = 0.25,
-    logfc_threshold = 0, top_n = 30L, log2fc_cut = 1, padj_cut = 0.05), requested)
+    logfc_threshold = 0, top_n = 30L, log2fc_cut = 1, padj_cut = 0.05,
+    exclude_shared = TRUE, exclude_genes = character()), requested)
   if (!is.logical(settings$only_pos) || length(settings$only_pos) != 1L || is.na(settings$only_pos))
     stop("markers$only_pos must be TRUE or FALSE.", call. = FALSE)
   for (key in c("min_pct", "logfc_threshold", "log2fc_cut", "padj_cut", "top_n")) {
@@ -62,6 +63,9 @@
         (key == "top_n" && (v < 1 || v != floor(v) || v > .Machine$integer.max)))
       stop("Invalid markers$", key, ".", call. = FALSE)
   }
+  if (!is.logical(settings$exclude_shared) || length(settings$exclude_shared) != 1L || is.na(settings$exclude_shared) ||
+      !is.character(settings$exclude_genes) || anyNA(settings$exclude_genes) || any(!nzchar(settings$exclude_genes)))
+    stop("markers$exclude_shared must be TRUE/FALSE and exclude_genes a character vector of exact feature IDs.", call. = FALSE)
   assay <- .sc_run_annotation_option(config, "assay", "RNA")
   cluster_column <- .sc_run_annotation_option(config, "cluster_column", "seurat_clusters")
   normalized_layer <- .sc_run_annotation_option(config, "normalized_layer", "data")
@@ -93,7 +97,11 @@
     markers[[field]] <- pmax(0, pmin(1, raw))
   }
 
-  computed <- .sc_marker_summary(markers, top_n=settings$top_n,
+  shared_pattern <- "^(RPL[0-9]+[A-Z]?|RPS[0-9]+[A-Z]?|RPLP[0-2]|RPSA)$|^MT[-.]"
+  excluded <- unique(c(settings$exclude_genes, if (settings$exclude_shared)
+    as.character(markers$gene[grepl(shared_pattern, markers$gene, ignore.case = TRUE)]) else character()))
+  pool_input <- markers[!markers$gene %in% excluded, , drop = FALSE]
+  computed <- .sc_marker_summary(pool_input, top_n=settings$top_n,
     log2fc_cut=settings$log2fc_cut, padj_cut=settings$padj_cut)
   summary <- as.data.frame(computed$filtered)
   markers$cluster <- as.character(markers$cluster)
@@ -103,7 +111,11 @@
   attr(summary,"tested_background") <- tested_background
   attr(summary,"marker_pool") <- list(status="recorded",parameters=settings,
     detection_prefilter="max(pct.1, pct.2) >= min_pct using native Seurat values; either side can qualify",
-    summary_filter="avg_log2FC > log2fc_cut and p_val_adj < padj_cut; rank pct.1 - pct.2 descending, then top_n per cluster",
+    summary_filter="avg_log2FC > log2fc_cut and p_val_adj < padj_cut; rank avg_log2FC descending, pct.1 - pct.2 descending, gene ascending, then top_n per cluster",
+    exclusions=list(shared_enabled=settings$exclude_shared, literal_symbol_pattern=shared_pattern,
+      explicit_genes=.sc_project_array(settings$exclude_genes), excluded_genes=.sc_project_array(excluded),
+      feature_mapping="Exact input gene symbols only; no guessed Ensembl-to-symbol conversion.",
+      full_marker_table="Unfiltered full marker results retained unchanged; exclusions affect only the annotation query/citation pool."),
     limitation="Citations and local reference overlap use this filtered top-marker pool, not all assayed or tested genes. Missing genes do not imply absent expression; coverage and Fisher results are conditional on this query selection.")
   science <- .sc_run_science_options(config$scientific_review)
   if(!is.null(science) && (length(science$panels) || science$cross_sample || science$mixed_lineage)) {

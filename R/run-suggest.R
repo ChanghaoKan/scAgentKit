@@ -160,7 +160,7 @@
   held <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
     (!identical(entry$cost_state, "known") || isTRUE(entry$accounting_issue)), logical(1)))
   result$can_auto_request <- isTRUE(result$preview$scope_authorized) && result$can_request &&
-    identical(state$status, "awaiting_review") && !attempted && !held &&
+    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held &&
     result$preview$remaining_usd >= provider$reservation_usd
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan))

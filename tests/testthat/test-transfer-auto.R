@@ -26,3 +26,23 @@ test_that("offline simulation retains distinct scope and never authorizes a remo
   expect_length(.sc_run_load(root)$approvals, 0L)
   expect_true(result$preview$simulated); expect_equal(result$preview$known_cost_usd, 0)
 })
+
+
+test_that("a saved local-only annotation boundary can stage one scoped automatic draft", {
+  env <- new.env(); utils::data("pbmc_small", package = "SeuratObject", envir = env)
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE))
+  confirmation <- list(mode="project",confirmed=TRUE,reviewer="offline-test",reason="Public fixture aggregate scope.",
+    categories=c("study_context","aggregate_qc","aggregate_markers","aggregate_design","aggregate_expression"))
+  env$pbmc_small$seurat_clusters <- as.character(SeuratObject::Idents(env$pbmc_small))
+  suppressWarnings(sc_run(env$pbmc_small, root, context=list(species="human",tissue="blood"),
+    start_stage="processed", processed_reason="Public software-control annotation boundary.",
+    provider="mock",budget=.1,review=list(allow_external=TRUE,transfer_consent=confirmation)))
+  state <- .sc_run_load(root)
+  expect_identical(state$stage,"annotation_propose");expect_identical(state$status,"awaiting_configuration")
+  view <- sc_run_suggest(root,simulate=TRUE)
+  expect_true(view$can_auto_request);expect_identical(view$kind,"annotation")
+  result <- sc_run_suggest(root,"request",project_id=view$project_id,input_hash=view$input_hash,
+    expected_revision=view$revision,suggestion_hash=view$suggestion_hash,simulate=TRUE)
+  expect_identical(result$status,"candidate");expect_false(result$can_auto_request)
+  expect_length(.sc_run_load(root)$approvals,0L)
+})

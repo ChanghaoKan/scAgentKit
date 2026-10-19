@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Annotation query pools rank fold change first, then detection difference.
+  Configurable shared ribosomal/mitochondrial symbol exclusions apply only to
+  that pool; complete marker results remain intact. Save exclusion parameters
+  and observed excluded feature IDs with the pool evidence.
+
 - Remove the legacy HTTP/IP CellMarker fallback. Until the fixed official
   HTTPS file has a verified checksum, provide a clear waiting message and
   explicit local XLSX import with SHA256 provenance. Require species/tissue,

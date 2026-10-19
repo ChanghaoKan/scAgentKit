@@ -18,7 +18,7 @@
     dplyr::filter(avg_log2FC > log2fc_cut, p_val_adj < padj_cut) |>
     dplyr::mutate(pct_diff = pct.1 - pct.2) |>
     dplyr::group_by(cluster) |>
-    dplyr::arrange(dplyr::desc(pct_diff), .by_group = TRUE) |>
+    dplyr::arrange(dplyr::desc(avg_log2FC), dplyr::desc(pct_diff), gene, .by_group = TRUE) |>
     dplyr::slice_head(n = top_n) |>
     dplyr::ungroup()
 
