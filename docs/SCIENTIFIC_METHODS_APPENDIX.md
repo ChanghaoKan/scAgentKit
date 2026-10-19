@@ -37,6 +37,39 @@ way to repair a stale project. Scientific diagnostics are hashed into the saved
 cluster scan and require the same subsequent explicit author review; an empty
 resolution grid cannot silently disable explicitly requested diagnostics.
 
+## The first-50-PC 80% rule: calculation and source
+
+The default `computed_top50` threshold of **0.80 is a scAgentKit project
+heuristic**, retained from its earlier review policy. It is not a Seurat
+recommended threshold. The same implementation also offers 0.85 for review.
+[Seurat RunPCA](https://satijalab.org/seurat/reference/runpca) documents the
+calculation and default storage of 50 PCs; it does not prescribe this 80% rule.
+The official [Seurat dimensionality tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html#determine-the-dimensionality-of-the-dataset)
+describes inspecting PCs and an elbow plot when choosing dimensions.
+
+Let `M` be the number of actually saved PCs and `w = min(50, M)`. The variance
+of component `i` is its saved standard deviation squared, `v[i] = SD[i]^2`.
+For `k` from 1 to `w`, the calculation is:
+
+```text
+cumulative_fraction[k] = sum(v[1:k]) / sum(v[1:w])
+selected_k = first k with cumulative_fraction[k] >= 0.80
+```
+
+Thus the denominator is **the variance sum of the first w saved PCs**. With
+20 saved PCs it uses all 20 and records a 30-PC shortfall; it does not invent
+missing components. With 60 saved PCs it uses only the first 50. This is not
+80% of total expression or total HVG variance. The initial request is also
+bounded by the available features and cells; the actual saved count determines
+the denominator. Invalid variances are rejected. A crossing at one PC requires
+a revised rule or an explicit supported fixed choice; it is not rounded up.
+
+Calculation sources: [R's PCA definition of standard deviations and variances](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/prcomp.html),
+the fixed-main [default policy](https://github.com/ChanghaoKan/scAgentKit/blob/2b0827fc04fde28191241c300ab687200df660c8/R/analysis-api.R#L45-L90),
+[exact implementation and shortfall handling](https://github.com/ChanghaoKan/scAgentKit/blob/2b0827fc04fde28191241c300ab687200df660c8/R/run-pc-diagnostics.R#L9-L50),
+and the project's [earlier policy explanation](HARMONY_PC_REVIEW.md#two-pc-policies-with-the-denominator-disclosed).
+These establish the calculation and its project origin, not a universal 80% cutoff.
+
 ## Reading QC flags and retention
 
 The saved grouped panel reports disjoint low-count-only, low-feature-only,
