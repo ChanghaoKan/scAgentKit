@@ -79,6 +79,8 @@
   }
   if (is.null(source$type)) source$type <- input_type
   .sc_project_ids(colnames(seu), "Complete object cell IDs")
+  prepared_layers <- .sc_run_join_input_layers(seu, assay, counts_layer, normalized_layer)
+  seu <- prepared_layers$seu
   counts <- .sc_project_layer(seu, assay, counts_layer, raw_counts = TRUE)
   if (!setequal(colnames(counts), colnames(seu)))
     .sc_project_fail("Selected raw counts layer must cover every object cell exactly; explicitly join or reconstruct split layers first.")
@@ -103,6 +105,7 @@
                           cell_count = ncol(counts), feature_count = nrow(counts),
                           raw_counts_validated = TRUE, sparse_counts = inherits(counts, "sparseMatrix"),
                           processed_reason = if (processed) processed_reason else NULL,
+                          input_transforms = prepared_layers$receipts,
                           warnings = warnings))
 }
 

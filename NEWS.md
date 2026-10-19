@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Automatically join valid Seurat v5 counts/data partitions within the selected
+  assay at input. Every source value, feature set and exact cell partition is
+  checked and a join receipt is saved. Mixed exact/split layers, overlapping or
+  incomplete cells and incompatible feature sets remain blocking errors.
+  Export and checkpoint readers still require exact protected layers.
+
 - Use existing aligned human/mouse feature-symbol annotations for mitochondrial
   QC on Ensembl identifiers. Missing, partial, species-conflicting or ambiguous
   mappings remain conspicuously unavailable, never a fabricated zero percentage.

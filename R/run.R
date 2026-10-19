@@ -179,6 +179,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(annotation_proposal)) state <- .sc_run_put(root, state, "manual_annotation", annotation_proposal)
   state <- .sc_run_event(state, "planned", list(input_hash = state$input_hash, config_hash = state$config_hash,
                                               implementation_hash = state$implementation_hash))
+  if (length(checked$diagnostics$input_transforms)) state <- .sc_run_event(state,
+    "input_layers_joined", list(transforms = checked$diagnostics$input_transforms,
+      original_source = checked$source, source_replaced = FALSE))
   if (!is.null(config$review$transfer_consent)) state <- .sc_run_event(state, "transfer_consent_confirmed",
     c(config$review$transfer_consent, list(provider = spec$metadata$name,
       model = spec$metadata$model, scientific_approval_required = TRUE)))
