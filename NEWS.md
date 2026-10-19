@@ -1,4 +1,18 @@
-# Development (unreleased)
+# scAgentKit 0.8.0 (experimental)
+
+## Breaking API changes and rebuilding projects
+
+- Remove 36 function exports and the AgentSeurat class. This is the planned
+  earliest removal milestone (0.8.0), not a compatible 0.6.x/0.7.x patch.
+  See docs/API_CONSOLIDATION.md and inst/api-contract.json for the exact list
+  and retained Seurat/table return types. No compatibility facade is provided.
+- Keep original input, project, checkpoints, package build and environment.
+  Rebuild a development project in a new directory and review strategy,
+  measured clustering and annotation independently. Do not edit authority,
+  approvals or implementation hashes to force continuation. Old environments
+  can still be restored separately; old tags/assets are not modified.
+- The standard raw-count path now has three scientific approvals. Defaults,
+  confidence heuristics and numerical parity are not biological validation.
 
 ## Single project workflow
 
@@ -36,7 +50,7 @@
 - Release acceptance retries transient downloads with bounded attempts and an
   explicit1800-second timeout; permanent errors and checksum mismatches fail.
 
-## Review presentation and legacy label migration
+## Earlier intermediate legacy review work (historical)
 
 - R review printing now gives bounded summaries with explicit access to the full
   sealed `snapshot$view` and `snapshot$annotations`; it does not remove evidence,

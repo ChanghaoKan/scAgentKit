@@ -1,4 +1,34 @@
-# Release gates and recorded v0.6.0 procedure
+# Release gates: 0.8.0 and historical 0.6.0
+
+## Current authorized 0.8.0 release
+
+0.8.0 is an experimental breaking release. It removes 36 function exports and
+AgentSeurat at the previously stated earliest removal milestone. Read
+[API/type changes](API_CONSOLIDATION.md) and [release notes](RELEASE_NOTES_0.8.0.md).
+The standard raw-count workflow requires strategy, measured-clustering and
+annotation approvals; a completed workflow does not establish biological accuracy.
+
+1. Complete local full tests, archive and installed-browser checks. Report all
+   failures and skips. Merge dependencies only after their exact-head CI passes;
+   preserve issue commits. Verify the consolidation tree against its final tested head.
+2. Require all four workflows for the final 0.8.0 PR head to succeed. Merge the
+   dependent base and final PR without skipping checks. A changed tree needs
+   affected verification again. Never move an existing tag or overwrite old assets.
+3. Create fresh `v0.8.0` at the actual merge commit. Dispatch release-archive for
+   that tag. It verifies ancestry/two-parent merge and uses untouched `R CMD build`
+   output with SHA256SUMS and build-receipt.json. Do not edit tar members/metadata.
+4. Its clean-install job must anonymously download the public Release asset in
+   the pinned rocker container, verify bytes/tag against the build and start with
+   empty R libraries/no restored package cache. Execute the installation and offline
+   example blocks extracted verbatim from the archive's README. Keep full logs,
+   dependency versions, checksums and source receipts. PR-artifact preflight alone
+   does not satisfy this public-download acceptance.
+5. Publication is incomplete until this post-publication job passes. No paid
+   model is used. Old projects keep their original evidence and environment;
+   rebuild from original inputs in a new directory and approve again. Never alter
+   saved authority/hashes/checkpoints to force resume.
+
+## Historical v0.6.0 procedure (unchanged record)
 
 v0.6.0 was published on 2026-10-18. Its tag and assets are historical; this
 document records its gates and informs a future, separately authorized release.
@@ -78,5 +108,5 @@ project, or start a new project directory from the original input and review it
 again. Never alter hashes or authority/checkpoints to bypass this boundary.
 Author-label metadata priors remain off by default. See [NEWS](../NEWS.md).
 
-Legacy APIs remain exported through 0.6.x and 0.7.x, with removal planned no
-earlier than 0.8.0 and subject to a migration notice.
+The historical 0.6.x/0.7.x retention window ends at the separately documented
+0.8.0 removal milestone above. Historical tags and assets remain unchanged.

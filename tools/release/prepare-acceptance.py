@@ -34,7 +34,7 @@ def main():
     parser.add_argument("commit")
     parser.add_argument("sha256", help="Trusted SHA256 from this workflow's build job")
     args = parser.parse_args()
-    version = "0.6.0"
+    version = "0.8.0"
     tag = "v" + version
     name = "scAgentKit_" + version + ".tar.gz"
 

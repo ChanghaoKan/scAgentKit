@@ -15,8 +15,7 @@ scAgentKit 面向有生物学背景的研究者，帮助减少维护单细胞 RN
 
 [English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [流程图生成源](docs/diagrams/generate_project_flow.py)
 
-本图对应**单独安装的固定提交开发预览**。已发布 v0.6.0 请用[两次审批发布路径](docs/RELEASE_060_PROTOCOL.md)；
-该归档不包含预览的默认实测分群审批及新控件。
+本图对应 **0.8.0**。历史 v0.6.0 请用[两次审批发布路径](docs/RELEASE_060_PROTOCOL.md)；其 tag 和资产保持不变。
 
 ### 哪些自动运行，哪里需要你决定
 
@@ -42,21 +41,21 @@ scAgentKit 面向有生物学背景的研究者，帮助减少维护单细胞 RN
 ## 安装
 
 需要 R ≥ 4.2、Seurat ≥ 5，以及浏览器入口使用的既有 Python ≥ 3.9。
-浏览器资源随 R 包提供。版本 `0.6.0` 为实验性版本。
+浏览器资源随 R 包提供。版本 `0.8.0` 为实验性版本。
 
 公开 Release 下载无需凭据。GitHub 依赖解析可能触及未认证 API 配额；这种情况下
 `remotes` 支持既有 `GITHUB_PAT`。CI 使用既有只读 job token，不生成新凭据。
 
-从 [v0.6.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.6.0)
-下载 [scAgentKit_0.6.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz)，
+从 [v0.8.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0)
+下载 [scAgentKit_0.8.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz)，
 再安装到自己的 R library。文件仅在 release 发布后可用；准备好归档或 CI 成功不会自动发布它。
 见[发布门槛](docs/RELEASE_PLAN.md)。
 
 下载两个文件，并在安装前核对归档：
 
 ```sh
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.6.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/SHA256SUMS
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/SHA256SUMS
 shasum -a 256 -c SHA256SUMS  # macOS; on Linux use: sha256sum -c SHA256SUMS
 ```
 
@@ -69,10 +68,10 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.6.0.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.0.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.6.0",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
@@ -108,51 +107,15 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 [v0.6.0 源码环境配方及恢复边界](docs/ENVIRONMENT_RESTORE.md)固定发布时的 R 环境和包来源。
 应匹配原归档与实现，而不只是版本号；这不是自动的跨版本项目迁移。
 
-## 开发预览
+## 一个项目工作流
 
-已发布 v0.6.0 的默认路径需**两次审批**，请使用[匹配的发布版操作路径](docs/RELEASE_060_PROTOCOL.md)。
-本图及下方步骤对应**尚未发布的固定提交预览** `ae68c12ac44187db5ab22706392f77e2641aa3fa`。
-没有预览版 release 归档。其包版本仍显示 0.6.0，须同时记录源代码提交和依赖环境。
-
-先按上方准备发布版依赖，再在独立源目录取得并检出此固定提交：
-
-```sh
-git clone --no-checkout https://github.com/ChanghaoKan/scAgentKit.git scagentkit-preview-source
-git -C scagentkit-preview-source checkout --detach ae68c12ac44187db5ab22706392f77e2641aa3fa
-```
-
-在**新的 R 会话**中，将源代码安装到另一私有库，使用已准备的依赖，再运行公开小数据的三次审批软件教程：
-
-```r
-preview_sha <- "ae68c12ac44187db5ab22706392f77e2641aa3fa"
-source_dir <- normalizePath("scagentkit-preview-source", mustWork=TRUE)
-stopifnot(identical(system2("git", c("-C", shQuote(source_dir), "rev-parse", "HEAD"),
-  stdout=TRUE), preview_sha))
-preview_lib <- path.expand("~/R/scagentkit-preview-library")
-dir.create(preview_lib, recursive=TRUE, showWarnings=FALSE)
-.libPaths(c(preview_lib, path.expand("~/R/scagentkit-library"), .libPaths()))
-remotes::install_local(source_dir, lib=preview_lib,
-  dependencies=FALSE, upgrade="never", build=FALSE)
-library(scAgentKit, lib.loc=preview_lib)
-stopifnot(identical(normalizePath(find.package("scAgentKit")),
-  normalizePath(file.path(preview_lib, "scAgentKit"))))
-source(system.file("examples", "three-gate-analysis.R", package="scAgentKit"))
-checked <- three_gate_analysis(tempfile("scagentkit-three-gates-"))
-checked$receipt
-```
-
-receipt 应显示 `complete`、三次审批（strategy、strategy、annotation）、80 个细胞和零 provider 请求。
-该教程保留常规分辨率扫描；有限 PC/特征数、关闭 UMAP 及 Unknown 标签均为明确的软件测试设置，
-不是研究建议。旧项目保留原环境；预览另建目录。参见[中文操作指南](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md)
-和[三次审批 R 路径](docs/R_ANALYSIS_PROTOCOL.md)。
-
-当前预览只保留一个审批项目工作流；旧直接编排与 AgentSeurat 对象退场，
-保留工具直接使用 Seurat 或表格。完整[API 与对象类型变化](docs/API_CONSOLIDATION.md)列明清理范围。
-仓库示例和 benchmark 已同步到同一引擎；开发测试项目可重建，不维护旧测试对象兼容 facade。
+0.8.0 删除旧直接编排入口及 AgentSeurat 类。请使用审批项目工作流或保留的 Seurat/表格工具；
+完整变化见 [API 与对象类型说明](docs/API_CONSOLIDATION.md)。保留旧证据，以原始输入另建开发项目并重新审批。
+这是不兼容的实验性版本，不提供跨版本 resume 或旧接口兼容 facade。
 
 ## 分析步骤
 
-本节要求先安装上方固定提交预览；不是已发布 v0.6.0 归档的操作步骤。
+本节对应上方安装的 0.8.0，包含三次独立科学审批。
 
 首次 `sc_start()` 前先决定人工或模型辅助初始化。默认创建人工项目：无 provider、模型预算为零，
 标签和置信度由用户填写。若需模型，先按[配置与传输同意](docs/UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call)

@@ -1,7 +1,7 @@
 # 科学诊断：一页操作指南
 
-本指南对应 README 的[固定提交开发预览](../README.zh-CN.md#开发预览)，
-不适用于已发布归档的默认路径；v0.6.0 使用[两次审批发布路径](RELEASE_060_PROTOCOL.md)。
+本指南对应 README 的[0.8.0 工作流](../README.zh-CN.md#一个项目工作流)，
+历史 v0.6.0 使用[两次审批发布路径](RELEASE_060_PROTOCOL.md)。
 [English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
 
 新 raw strategy 项目默认保留适用的基础证据；额外重计算须主动开启。结果可能不变或变差，审批成功不代表生物学结论正确。

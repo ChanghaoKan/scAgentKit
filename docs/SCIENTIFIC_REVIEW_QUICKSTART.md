@@ -1,7 +1,7 @@
 # Scientific review: operator guide
 
-This guide describes the [fixed-commit developer preview](../README.md#developer-preview),
-not the published v0.6.0 archive. [简体中文](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md).
+This guide describes the [0.8.0 workflow](../README.md#one-project-workflow),
+Historical v0.6.0 has a separate protocol. [简体中文](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md).
 For v0.6.0, use its [two-approval protocol](RELEASE_060_PROTOCOL.md).
 Do not resume an old project with a different implementation or dependency
 fingerprint; preserve its exact environment or review a new project.
