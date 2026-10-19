@@ -335,6 +335,110 @@ await test("first manual worksheet rejects foreign, stale and malformed evidence
   assert.throws(() => harness().call("verify", pending), /worksheet/);
 });
 
+await test("project transfer scope keeps exact payload, used and remaining budget visible without science approval", () => {
+  const value = model(7, "approved");
+  Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
+    remaining_usd: .42, charged_or_held_usd: .08, simulated: false,
+    transfer_consent: {mode: "project", budget_usd: .5, categories: ["study_context", "aggregate_qc"]}});
+  const h = setup(science(), value);
+  assert.match(h.el("suggestion-summary").textContent, /confirmed project transfer scope/);
+  assert.match(h.el("suggestion-accounting").textContent, /remaining_usd.*0.42.*charged_or_held_usd.*0.08/s);
+  assert.match(h.el("suggestion-payload").textContent, /transfer_consent.*study_context.*aggregate_qc/s);
+  assert.match(h.el("suggestion-payload").textContent, /public fixture/);
+  assert.equal(h.el("suggestion-approve").hidden, true);
+  assert.equal(h.el("suggestion-request").hidden, false);
+  assert.equal(h.requests.length, 0);
+});
+
+function autoModel() {
+  const value = model(7, "approved");
+  Object.assign(value.suggestion, {can_auto_request: true, auto_request_key: evidenceHash});
+  Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
+    transfer_consent: {reviewer: "creation-reviewer", reason: "Confirmed public aggregate scope."}});
+  return value;
+}
+await test("project auto draft uses creation consent once and never posts a scientific decision", async () => {
+  const storage = new Map(), h = setup(scientificReview(7), autoModel(), "", storage);
+  h.el("suggestion-reviewer").value = ""; h.el("suggestion-reason").value = "";
+  h.fetchImpl = async (url, options) => {assert.match(url, /suggestion\/request$/);
+    const payload = JSON.parse(options.body); assert.equal(payload.reviewer, "creation-reviewer");
+    const value = autoModel(); value.job = job("running", 7, payload.request_id); return response(value);};
+  await h.call("maybeAutoSuggestion"); await h.call("maybeAutoSuggestion");
+  assert.equal(h.requests.length, 1); assert.equal(h.el("strategy-approve").disabled, true);
+  const reloaded = setup(scientificReview(7), autoModel(), "", storage);
+  await reloaded.call("maybeAutoSuggestion"); assert.equal(reloaded.requests.length, 0);
+});
+for (const [name, mutate] of [["strict scope", h => h.state.suggestion.suggestion.preview.consent_mode = "strict"],
+  ["saved attempt", h => h.state.suggestion.suggestion.can_auto_request = false],
+  ["stale boundary", h => h.state.stale = true],
+  ["unsaved human draft", h => h.state.strategyDraftText = "unsaved correction"],
+  ["unknown accounting", h => h.state.suggestion.job = {...job("failed"), requires_reconciliation: true}]])
+  await test("auto draft does not submit for " + name, async () => {
+    const h = setup(scientificReview(7), autoModel()); mutate(h);
+    await h.call("maybeAutoSuggestion"); assert.equal(h.requests.length, 0);
+  });
+await test("lost automatic request cannot repeat after explicit preview or tab reload", async () => {
+  const storage = new Map(), h = setup(scientificReview(7), autoModel(), "", storage);
+  h.fetchImpl = async () => {throw new Error("Simulated lost receipt");};
+  await h.call("maybeAutoSuggestion"); assert.equal(h.requests.length, 1);
+  h.state.suggestionLost = false; await h.call("maybeAutoSuggestion"); assert.equal(h.requests.length, 1);
+  const reloaded = setup(scientificReview(7), autoModel(), "", storage);
+  await reloaded.call("maybeAutoSuggestion"); assert.equal(reloaded.requests.length, 0);
+});
+
+await test("preparing guided differences stages a new strict preview without another model request or scientific approval", async () => {
+  const initial=model(7,"candidate");initial.suggestion.kind="annotation";
+  initial.suggestion.candidate={schema:"scagentkit.annotation.v1",annotations:[{clusterId:"0",label:"Independent A",confidence:"low",rationale:"Offline fixture",markers:[]}]};
+  Object.assign(initial.suggestion,{can_adopt:true,can_review_conflicts:true,reference_mode:"independent"});
+  const h=setup(annotationReview(7),initial);
+  const guided=model(8,"preview");guided.suggestion.kind="annotation";guided.suggestion.reference_mode="guided";
+  h.fetchImpl=async url=>response(url.endsWith("/inspect")?annotationReview(8):guided);
+  await h.call("suggestionAction","review_conflicts");
+  const writes=h.requests.filter(row=>row.options.method==="POST");
+  assert.equal(writes.length,1);assert.match(writes[0].url,/suggestion\/review_conflicts$/);
+  assert.equal(h.el("suggestion-approve").hidden,false);
+  assert.equal(h.requests.some(row=>row.url.endsWith("/decision")||row.url.endsWith("/suggestion/request")),false);
+});
+
+await test("failed model displays saved local rule draft without another request", async () => {
+ const value=model(7,"failed");Object.assign(value.suggestion,{can_request:false,can_auto_request:false,
+ response:{status:"invalid_response",error:"Empty QC rules rejected."},
+ fallback:{saved:true,preset_id:"keep_all",reason:"QC remains unassessed; keep all. Human edits preserved; no approval."}});
+ const h=setup(scientificReview(7),value);await h.call("renderSuggestion");
+ assert.match(h.el("suggestion-message").textContent,/Local rule draft saved/);
+ assert.match(h.el("suggestion-message").textContent,/unassessed/);
+ await h.call("maybeAutoSuggestion");assert.equal(h.requests.length,0);
+});
+
+await test("visible model budget separates used estimates, held cost and remaining cap", async () => {
+ for (const budget of [1,.73,.1234567]) {
+ const value=model(7,"preview");Object.assign(value.suggestion.preview,{budget,known_cost_usd:.006,held_usd:.05,remaining_usd:budget-.056});
+ const h=setup(scientificReview(7),value);await h.call("renderSuggestion");
+ const visible=h.el("suggestion-summary").textContent;
+ assert(visible.includes(`Budget ${h.call("budgetAmount",budget)}`));
+ assert.match(visible,/estimated used \$0.0060/);
+ assert.match(visible,/held \$0.0500/);
+ assert(visible.includes(`remaining $${(budget-.056).toFixed(4)}`));
+ }
+});
+
+await test("new-project budget configurator uses server default and custom value without changing current policy or sending", async () => {
+ const value=model();value.suggestion.new_project_budget_default=1;value.suggestion.preview.budget=.20;
+ const h=setup(scientificReview(7),value), current=JSON.stringify(h.state.suggestion.suggestion.preview);
+ assert.equal(h.el("new-project-budget").value,"1");
+ assert.equal(h.call("budgetAmount",.000001),"$0.000001");
+ for (const amount of ["0.73","0","2.5","0.000001","0.1234567"]) {
+  h.el("new-project-budget").value=amount;h.call("renderNewProjectBudget");
+  assert(h.el("new-project-budget-command").textContent.includes(`budget=${Number(amount)}`));
+  assert(h.el("new-project-budget-message").textContent.includes(h.call("budgetAmount",Number(amount))));
+ }
+ for (const amount of ["","-1","Infinity","NaN","bad"]) {
+  h.el("new-project-budget").value=amount;h.call("renderNewProjectBudget");
+  assert.equal(h.el("new-project-budget-command").textContent,"");
+ }
+ assert.equal(JSON.stringify(h.state.suggestion.suggestion.preview),current);assert.equal(h.requests.length,0);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

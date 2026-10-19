@@ -49,9 +49,10 @@
   markers <- lapply(assignments, function(membership) {
     working <- seu
     working[[config$cluster_column]] <- factor(unname(membership))
-    found <- .sc_run_markers(working, config)
+    found <- .sc_run_markers(working, .sc_run_scan_marker_config(config))
     list(status = if (nrow(found$marker_summary)) "measured" else "no_markers_passed",
       markers = .sc_run_annotation_marker_records(found$marker_summary), parameters = found$parameters,
+      marker_programs = .sc_run_scan_marker_programs(found$markers,config$context),
       limitation = "Same-data differential markers support comparison; they do not independently validate cluster identities or the resolution.")
   })
   result <- list(schema = "scagentkit.cluster-scan.v1", neighbors_artifact = neighbors_artifact,
@@ -61,6 +62,7 @@
     membership_hashes = lapply(assignments, .sc_run_hash),
     provisional_resolution = plan$clustering$resolution,
     candidates = execution$cluster$candidates, tree = tree, markers = markers,
+    adjacent_splits = .sc_run_adjacent_split_markers(seu,config,assignments),
     interpretation = "No resolution is automatically recommended. Review transitions, marker contrasts and sample composition; optional model suggestions require explicit existing transfer approval, and the author approves the final selection.")
   if (!is.null(config$scientific_review)) result$scientific_diagnostics <- .sc_run_science_diagnostics(seu,config,plan)
   result$hash <- .sc_run_hash(result)

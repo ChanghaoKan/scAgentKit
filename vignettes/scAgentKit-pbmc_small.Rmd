@@ -18,7 +18,7 @@ approve each scientific decision separately. Opening a project does not run it.
 
 ## Offline public software control
 
-```{r public-control}
+```{r public-control, eval=FALSE, purl=FALSE}
 library(scAgentKit)
 source(system.file("examples","three-gate-analysis.R",package="scAgentKit"))
 checked <- three_gate_analysis(tempfile("pbmc-three-gates-"))
@@ -35,7 +35,7 @@ regression and installed-package acceptance execute this public helper.
 
 ## Your study
 
-```{r study}
+```{r study, eval=FALSE, purl=FALSE}
 project <- sc_analyze("counts.rds","new-study-project",
   context=list(species="human",tissue="Actual tissue",research_goal="Actual question"))
 initial <- sc_review(project)

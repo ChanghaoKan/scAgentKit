@@ -6,7 +6,7 @@ history. Its saved UMAP/markers and historical records are read-only. The
 [saved-project guide](README.md) covers startup and
 limits; `/review` below remains the explicit current-decision interface.
 
-The optional workbench connects to an existing `sc_run()` project directory. R remains the authority for proposals, decisions, fingerprints, locks, execution and undo. The browser submits typed decisions and offers **Continue** for the next supported local computation. It cannot submit R code, supply credentials or read the expression matrix. Starting a project remains an explicit R operation. This guide describes the local Continue path; separately enabled [unified model review](../docs/UNIFIED_MODEL_REVIEW.md) adds exact aggregate preview, request consent and an explicit configured-provider request action. Continue itself never dispatches a model. For one parent and its registered children, see [single-service review](README.md).
+The optional workbench connects to an existing `sc_run()` project directory. R remains the authority for proposals, decisions, fingerprints, locks, execution and undo. The browser submits typed decisions and offers **Continue** for the next supported local computation. It cannot submit R code, supply credentials or read the expression matrix. Starting a project remains an explicit R operation. This guide describes the local Continue path; separately enabled [unified model review](../docs/dev/UNIFIED_MODEL_REVIEW.md) adds exact aggregate preview, request consent and an explicit configured-provider request action. Continue itself never dispatches a model. For one parent and its registered children, see [single-service review](README.md).
 
 ## Start a review session
 
@@ -49,7 +49,7 @@ If Continue reaches annotation configuration, use the saved actual cluster evide
 
 ```r
 library(scAgentKit)
-source(system.file("examples", "first-run.R", package = "scAgentKit"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "first-run.R"))
 project_dir <- "/absolute/path/to/project"
 view <- first_run_inspect(project_dir)
 sc_run_propose(project_dir, first_run_unknown(view,

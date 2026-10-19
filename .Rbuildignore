@@ -10,3 +10,9 @@
 (__pycache__|[.]pyc$)
 
 ^README\.zh-CN\.md$
+
+^dev$
+^tools/acceptance$
+^tools/release$
+^tools/environment$
+

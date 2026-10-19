@@ -114,13 +114,17 @@ test_that("raw triplet values cannot hide invalid counts through duplicate aggre
   }
 })
 
-test_that("ID keys retain symbols but do not invent symbol-based mitochondrial measurements",{
+test_that("ID keys use existing explicit mitochondrial symbols without renaming features",{
   f<-tenx_fixture();file<-file.path(f$path,"features.tsv");ft<-read.delim(file,header=FALSE);ft$V2[1]<-"MT-ND1"
   utils::write.table(ft,file,sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
   x<-.sc_ui_tenx_input(f$path,tenx_context(),"S1","filtered",feature_key="id")
   qc<-.sc_run_qc_evidence(x$input,x$context)
-  expect_false(qc$summary$mitochondrial$available)
-  expect_true(all(is.na(qc$metrics$percent_mt)))
+  expect_true(qc$summary$mitochondrial$available)
+  expect_identical(qc$summary$mitochondrial$mapping_source,"feature_metadata:sc_feature_name")
+  expect_identical(qc$summary$mitochondrial$feature_count,1L)
+  counts<-SeuratObject::LayerData(x$input,assay="RNA",layer="counts")
+  expect_equal(unname(qc$metrics$percent_mt),unname(100*as.numeric(counts[1,])/Matrix::colSums(counts)))
+  expect_identical(rownames(x$input),f$ids)
   expect_match(x$input@misc$scagentkit_tenx_import$symbol_note,"unavailable")
 })
 

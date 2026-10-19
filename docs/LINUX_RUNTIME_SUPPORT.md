@@ -25,8 +25,8 @@ The doublet pairs are selected in `R/run-doublet.R`; the Harmony API guard is in
 `R/run-harmony.R`. A generic latest-version install is not a compatibility check.
 Unknown versions, altered classifier functions and incompatible backends are
 rejected. Do not disable a guard to make an installation appear supported.
-See [doublet prerequisites](DOUBLET_REVIEW.md) and
-[Harmony design requirements](HARMONY_PC_REVIEW.md) before enabling either.
+See [doublet prerequisites](dev/DOUBLET_REVIEW.md) and
+[Harmony design requirements](dev/HARMONY_PC_REVIEW.md) before enabling either.
 
 The supported runtime contract is distinct from scientific performance. It does
 not establish calibrated doublet probabilities, preservation of treatment effects
@@ -37,7 +37,7 @@ or valid cell identities.
 Use the versioned GitHub Release archive and `remotes::install_local()` exactly
 as shown in the [README](../README.md#installation). Do not substitute a mutable
 branch or a different tag. The pending publication plan and archive verification
-steps are in [release preparation](RELEASE_PLAN.md).
+steps are in [release preparation](dev/archive/RELEASE_PLAN.md).
 
 Record the archive SHA256, R executable, `.libPaths()`, installed package versions
 and `sessionInfo()`. Preserve the project's original environment when resuming;

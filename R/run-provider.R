@@ -65,10 +65,10 @@
   }
   if (is.null(provider)) provider <- list(name = if (is.null(chat_fn)) "manual" else "custom")
   if (is.character(provider) && length(provider) == 1L) provider <- list(name = tolower(provider))
-  fields <- c("name", "model", "generation", "external", "reservation_usd", "pricing", "api_key_env")
+  fields <- c("name", "model", "generation", "external", "reservation_usd", "pricing", "api_key_env", "base_url")
   if (!is.list(provider) || is.null(names(provider)) || anyDuplicated(names(provider)) ||
       any(!names(provider) %in% fields)) {
-    stop("Provider configuration accepts only name, model, generation, external, reservation_usd, pricing and api_key_env; credentials belong in the runtime environment.")
+    stop("Provider configuration accepts only name, model, generation, external, reservation_usd, pricing, api_key_env and base_url; credentials belong in the runtime environment.")
   }
   name <- .sc_run_provider_scalar(provider$name, "name", "^[A-Za-z0-9._-]+$")
   name <- tolower(name)
@@ -78,7 +78,19 @@
     "model", "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$")
   external <- if (is.null(provider$external)) !name %in% c("manual", "mock", "local") else provider$external
   if (!is.logical(external) || length(external) != 1L || is.na(external)) stop("`external` must be TRUE or FALSE.")
-  if (name %in% c("deepseek", "grok") && !external) stop("Built-in remote providers are external.")
+  if (name %in% c("deepseek", "grok", "openai_compatible") && !external) stop("Built-in remote providers are external.")
+  base_url <- provider$base_url
+  if (identical(name, "openai_compatible")) {
+    if (is.null(provider$model) || is.null(provider$api_key_env))
+      stop("OpenAI-compatible providers require explicit model, api_key_env and HTTPS base_url.")
+    base_url <- .sc_run_provider_scalar(base_url, "base_url")
+    # A destination is part of transmission consent. Keep credentials, queries,
+    # fragments and literal IP addresses out of saved provider configuration.
+    if (!grepl("^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?([:][0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$", base_url) ||
+        grepl("^https://[0-9.]+([:/]|$)", base_url))
+      stop("base_url needs an HTTPS hostname and optional path; omit credentials, query and fragment.")
+    base_url <- sub("/+$", "", base_url)
+  } else if (!is.null(base_url)) stop("base_url is available only for name='openai_compatible'.")
   generation <- list(temperature = 0, max_tokens = 4096, timeout_secs = 180,
     response_format = list(type = "json_object"))
   if (name == "deepseek") generation$thinking <- list(type = "disabled")
@@ -132,6 +144,7 @@
   if (!is.null(env)) env <- .sc_run_provider_scalar(env, "api_key_env", "^[A-Z][A-Z0-9_]*$")
   metadata <- list(name = name, model = model, generation = generation, external = external,
     reservation_usd = reserve, pricing = pricing, api_key_env = env)
+  if (!is.null(base_url)) metadata$base_url <- base_url
   metadata <- .sc_run_provider_plain(metadata)
   if (!identical(.sc_run_provider_json(metadata), .sc_run_provider_redact(.sc_run_provider_json(metadata), env)))
     stop("Credential-like provider metadata is forbidden.")
@@ -139,7 +152,7 @@
 }
 
 .sc_run_provider_request <- function(request, env_names = NULL) {
-  fields <- c("system_prompt", "user_prompt", "purpose", "evidence_hash", "approved_payload_hash", "validator")
+  fields <- c("system_prompt", "user_prompt", "purpose", "evidence_hash", "approved_payload_hash", "validator", "transfer_scope", "prompt_version")
   if (!is.list(request) || is.null(names(request)) || anyDuplicated(names(request)) ||
       any(!names(request) %in% fields)) stop("Invalid coordinator provider request fields.")
   system <- .sc_run_provider_scalar(request$system_prompt, "system_prompt")
@@ -153,6 +166,13 @@
   evidence <- request$evidence_hash
   if (!is.null(evidence)) evidence <- .sc_run_provider_scalar(evidence, "evidence_hash", "^[a-f0-9]{64}$")
   payload <- list(system_prompt = system, user_prompt = user, purpose = purpose, evidence_hash = evidence)
+  if (!is.null(request$prompt_version)) payload$prompt_version <- .sc_run_provider_scalar(
+    request$prompt_version, "prompt_version", "^[A-Za-z0-9._-]{1,80}$")
+  if (!is.null(request$transfer_scope)) {
+    if (!identical(request$transfer_scope, .sc_run_transfer_scope(purpose)) ||
+        !purpose %in% c("strategy", "qc", "annotation", "simulated_strategy", "simulated_qc", "simulated_annotation")) stop("Invalid aggregate transfer scope.")
+    payload$transfer_scope <- request$transfer_scope
+  }
   serialized <- .sc_run_provider_json(payload)
   if (!identical(serialized, .sc_run_provider_redact(serialized, env_names))) stop("Credential-like request content is forbidden.")
   payload
@@ -163,7 +183,8 @@
 .sc_run_request_hash <- function(request, provider = NULL, chat_fn = NULL) {
   spec <- .sc_run_provider_spec(provider, chat_fn)$metadata
   .sc_run_provider_hash(list(schema = "scagentkit.provider-request.v1",
-    provider = spec[c("name", "model", "generation", "external")],
+    provider = spec[c("name", "model", "generation", "external",
+      if (!is.null(spec$base_url)) c("base_url", "api_key_env"))],
     request = .sc_run_provider_request(request, spec$api_key_env)))
 }
 
@@ -195,6 +216,9 @@
       stop("Provider ledger entry is invalid; dispatch refused.")
     if (!is.null(entry$raw) && !identical(entry$response_hash, .sc_run_provider_hash(entry$raw)))
       stop("Provider cached response hash mismatch; dispatch refused.")
+    if (!is.null(entry$raw_usage_hash) &&
+        !identical(entry$raw_usage_hash, .sc_run_provider_hash(entry$raw_usage)))
+      stop("Provider cached raw usage hash mismatch; dispatch refused.")
     if (!is.null(entry$response_metadata_hash) &&
         !identical(entry$response_metadata_hash, .sc_run_provider_hash(entry$response_metadata)))
       stop("Provider cached response metadata hash mismatch; dispatch refused.")
@@ -330,6 +354,10 @@
   adapted <- fn
   original <- body(fn)
   capture <- .sc_run_provider_capture_metadata
+  capture_usage <- function(frame) {
+    parsed <- if (exists("parsed",frame,inherits=FALSE)) get("parsed",frame,inherits=FALSE) else NULL
+    .sc_run_provider_raw_usage(if(is.list(parsed)) parsed$usage else NULL)
+  }
   body(adapted) <- bquote({
     .sc_response_frame <- environment()
     .sc_response_result <- tryCatch(.(original), error = function(.sc_response_error) {
@@ -338,6 +366,7 @@
         call = NULL, response_metadata = .sc_safe_metadata),
         class = c("sc_run_provider_transport_error", "error", "condition")))
     })
+    attr(.sc_response_result, "raw_usage") <- .(capture_usage)(.sc_response_frame)
     attr(.sc_response_result, "response_metadata") <- .(capture)(.sc_response_frame, .(env_names))
     .sc_response_result
   })
@@ -347,7 +376,7 @@
 .sc_run_provider_fn <- function(spec) {
   if (is.function(spec$fn)) return(spec$fn)
   m <- spec$metadata
-  if (!m$name %in% c("deepseek", "grok")) return(NULL)
+  if (!m$name %in% c("deepseek", "grok", "openai_compatible")) return(NULL)
   if (!requireNamespace("agentomicsCore", quietly = TRUE)) stop("agentomicsCore is required for built-in providers.")
   g <- m$generation
   args <- list(model = m$model, api_key_env = m$api_key_env, max_tokens = g$max_tokens,
@@ -358,7 +387,12 @@
   structured <- "structured_response" %in% names(formals(
     getExportedValue("agentomicsCore", "make_chat_fn_openai_compatible")))
   if (structured) args$structured_response <- TRUE
-  fn <- do.call(getExportedValue("agentomicsCore", paste0("chat_", m$name)), args)
+  factory <- if (identical(m$name, "openai_compatible")) {
+    args$base_url <- m$base_url
+    args$supports_vision <- FALSE
+    "make_chat_fn_openai_compatible"
+  } else paste0("chat_", m$name)
+  fn <- do.call(getExportedValue("agentomicsCore", factory), args)
   if (structured) fn else .sc_run_provider_adapter(fn, m$api_key_env)
 }
 
@@ -474,7 +508,7 @@
   if (total + reserve > budget + 1e-12) return(result("budget_stop", "Project budget cannot cover this request reservation.", list(charged_or_held_usd = total, requested_reservation_usd = reserve)))
   # A missing built-in credential is known to precede any HTTP dispatch. Keep
   # cache reads above this check, and do not create an uncertain delivery hold.
-  if (is.null(spec$fn) && spec$metadata$name %in% c("deepseek", "grok") &&
+  if (is.null(spec$fn) && spec$metadata$name %in% c("deepseek", "grok", "openai_compatible") &&
       !nzchar(trimws(Sys.getenv(spec$metadata$api_key_env))))
     return(result("needs_provider", paste0("No provider request was sent. Set ",
       spec$metadata$api_key_env, " in the analysis machine's environment, or supply an explicit chat_fn. No reservation was charged or held.")))
@@ -490,6 +524,12 @@
     model_reported = NULL, cost_state = "unknown", cost_usd = NULL,
     reservation_usd = reserve, charged_or_held_usd = reserve, accounting_issue = FALSE,
     response_metadata = .sc_run_provider_response_metadata(NULL), response_audit = NULL)
+  entry$prompt_version <- if (is.null(request$prompt_version)) "unversioned_custom" else request$prompt_version
+  entry$payload_hash <- .sc_run_provider_hash(.sc_run_provider_request(request, spec$metadata$api_key_env))
+  if (!is.null(request$transfer_scope)) {
+    entry$prompt_version <- request$transfer_scope$prompt_version
+    entry$transfer_categories <- request$transfer_scope$categories
+  }
   ledger$entries <- append(ledger$entries, list(entry))
   index <- length(ledger$entries)
   .sc_run_provider_write(ledger, path) # reservation is durable before any HTTP
@@ -514,6 +554,8 @@
     # Metadata was extracted above. Strip every arbitrary character attribute
     # before returning/caching raw text, including in RDS coordinator snapshots.
     if (is.character(raw)) raw <- as.character(raw)
+    entry$raw_usage <- .sc_run_provider_raw_usage(if(is.list(value)) value$raw_usage else attr(value,"raw_usage",exact=TRUE))
+    if (!is.null(entry$raw_usage)) entry$raw_usage_hash <- .sc_run_provider_hash(entry$raw_usage)
     entry$usage <- .sc_run_provider_usage(value, records)
     parsed <- .sc_run_provider_response_result(raw, request$validator, spec$metadata$api_key_env,
       entry$response_metadata, entry$usage, spec$metadata$generation$max_tokens)
@@ -599,4 +641,22 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
     .sc_run_save(root, state)
   }
   invisible(entry)
+}
+
+# Preserve provider usage field names and nested numeric detail, never the HTTP
+# envelope, headers, arbitrary strings, key material or provider callback frame.
+.sc_run_provider_raw_usage <- function(value) {
+  allowed <- c('prompt_tokens','completion_tokens','total_tokens','input_tokens','output_tokens',
+    'prompt_cache_hit_tokens','prompt_cache_miss_tokens','cache_read_input_tokens',
+    'cache_creation_input_tokens','cached_tokens','prompt_tokens_details','completion_tokens_details',
+    'input_tokens_details','output_tokens_details','reasoning_tokens','audio_tokens',
+    'text_tokens','image_tokens','video_tokens','accepted_prediction_tokens','rejected_prediction_tokens')
+  clean <- function(x, depth=0L) {
+    if (is.numeric(x) && length(x)==1L && is.finite(x) && x>=0 && x==floor(x)) return(as.numeric(x))
+    if (!is.list(x) || is.null(names(x)) || depth>3L || anyDuplicated(names(x))) return(NULL)
+    out <- lapply(x[intersect(names(x),allowed)],clean,depth=depth+1L)
+    Filter(Negate(is.null),out)
+  }
+  if (!is.list(value)) return(NULL)
+  clean(value)
 }

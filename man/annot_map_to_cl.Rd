@@ -6,7 +6,7 @@ annot_map_to_cl(obj, obo_path = NULL, column = NULL, map_cells = TRUE)
 }
 \arguments{
 \item{obj}{Label data.frame or Seurat copy with a saved label column.}
-\item{obo_path}{Explicit local CL OBO path; existing documented cache is supported.}
+\item{obo_path}{Explicit local CL OBO path; NULL uses the bundled, checksum-pinned v2026-06-08 base ontology without downloading.}
 \item{column}{Label column, default label for a table or sc_annotation for Seurat.}
 \item{map_cells}{Whether to append IDs to the returned Seurat copy (never project state).}
 }

@@ -212,13 +212,12 @@ test_that("QC draft preselection is bound, guarded and never replaces an explici
   fixture <- recommend_qc_fixture()
   step <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
   expect_true(isTRUE(step$draft_preselection$draft_only))
-  expect_true(step$draft_preselection$automatic)
-  {
-    expect_identical(step$draft_preselection$candidate_id,"any_quality3")
-    candidate <- Filter(function(x) x$id=="any_quality3",step$candidates)[[1L]]
-    expect_lte(candidate$impact$removed,.1*fixture$validated$qc_validated$retention$before)
-    expect_true(all(vapply(candidate$impact$groups,function(group) group$retained>=.8*group$before,logical(1))))
-  }
+  expect_false(step$draft_preselection$automatic)
+  expect_null(step$draft_preselection$candidate_id)
+  expect_match(step$draft_preselection$reason,"Load any comparison explicitly")
+  # OR remains an inspectable comparison when measured, never an automatic replacement.
+  candidate <- Filter(function(x) x$id=="any_quality3",step$candidates)
+  expect_true(length(candidate) <= 1L)
   fixture$validated$proposal$qc$rules[[2]]$preset_id <- "conservative_and3"
   changed <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
   expect_false(changed$draft_preselection$automatic)

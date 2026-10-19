@@ -1,3 +1,178 @@
+# scAgentKit 0.8.1 (experimental prerelease)
+
+- Align package metadata, bilingual installation and operator instructions, and
+  exact-tag archive/anonymous clean-install acceptance on version 0.8.1.
+- Embed lossless pinned Human/Mouse ACT TSV snapshots for new modern raw projects
+  and new processed browser entries. Load offline at creation, require declared
+  species/exact tissue, and save the selected table as a checksummed project
+  reference. Explicit reference=NULL in sc_analyze opts out; sc_run remains an
+  explicit low-level entry. Existing projects never acquire or replace references.
+- Creation-only helpers remain outside the established execution fingerprint
+  graph. No scientific execution kernel, audit/checkpoint verification, first
+  independent annotation or three-approval behavior changed. Compare the actual
+  implementation hash and old-project inspect/resume before acceptance; never
+  rewrite an old implementation/config hash or approval to force migration.
+
+## Guided workflow and model budgets
+
+- Use the user-selected USD1.00 default cap for standard new DeepSeek Flash
+  projects; explicit custom nonnegative finite budgets take precedence. Existing
+  project caps remain frozen and consent is bound to the actual chosen cap.
+  Three valid public-aggregate responses provide usage calibration; changing the
+  default does not change the shared USD2 test authorization or send a request.
+  Failed suggestions save a local rule draft without approval or retry; retain
+  safe original numeric usage with integrity hashes. Other model settings need
+  an explicit budget. Token-rate estimates are not provider cash invoices.
+
+- Keep five installed researcher examples (three-gate tutorial, installation
+  wrapper, explicit model setup, multi-sample 10x and scoped subcluster review).
+  Move focused/historical drivers and technical documentation to repository-only
+  developer directories. Exclude acceptance/release/environment tools and the
+  retired API inventory from archives while retaining the manifest builder.
+  Integrate the paired researcher guides, document direct provider setup and
+  separate user instructions from implementation contracts. Explain current
+  AND3, LogNormalize, reference and diagnostic limits without claiming biological
+  accuracy. Public entry errors add a next action;
+  saved audit fields and scientific integrity checks are unchanged.
+
+- Model scan previews use a versioned compact aggregate with full graph and
+  split inventory, top-three global markers, and complete top-ten child marker
+  blocks selected largest-parent-first within an explicit byte bound. Report
+  omitted blocks and retain the complete local scan. Bump new request/consent
+  prompt version to aggregate-review.v2; existing histories are never rewritten.
+  Resolution 0.5 is a rule fallback only when actually scanned; otherwise report
+  a conflict and require a choice from measured candidates.
+
+- Compute diagnostic resolution markers with native only-positive, min.pct .25,
+  logFC .25 and top-30 settings. Keep the final selected-cluster full marker
+  calculation unchanged. Save literal-symbol program diagnostics and top-ten
+  within-parent child contrasts for every eligible adjacent-resolution split;
+  small child groups remain explicitly unassessed.
+
+- Reopening a project retains its saved doublet mode when the argument is
+  omitted. Record omission before normalizing the argument; explicit attempts
+  to change the saved mode remain rejected.
+
+- ACT is the user-selected default marker reference, independent of CellMarker;
+  CL remains the exact ontology dictionary. Add explicit local ACT CSV/TSV/XLSX
+  import with source-header mapping, species/tissue filtering, observed SHA256,
+  unknown-version/date disclosure and original PMID/source-row retention. No
+  ACT database is bundled or downloaded through an invalid certificate. Missing
+  ACT data stays visibly unavailable and permits local marker/rule review.
+
+- Modern annotation starts with a marker-only independent model draft. Preserve
+  that immutable response before preparing a reference-guided follow-up for
+  recorded label differences. Allow at most one guided request, within the
+  same project budget and transfer rules; uncertain/failed requests do not
+  unlock another attempt. Guided agreement is not independent validation.
+
+- Save annotation DotPlot/top-five and cited-gene FeaturePlot PNG evidence
+  before review, bind exact PNG hashes and selections to approval, and rebuild
+  after saved citation changes. Browser reads only PNGs in the current verified
+  review; missing genes or altered evidence cannot silently substitute a plot.
+
+- Modern annotation review saves fixed-ontology mappings against the exact
+  draft before approval. Approved writeback adds sc_annotation_cl_id (or the
+  chosen label-prefix equivalent); unresolved or ambiguous labels stay blank.
+  The sealed mapping is reused on application, with additive audit evidence
+  and no new dictionary lookup while reading an approved review.
+
+- Modern projects require explicit reference species/tissue fields and study
+  scope, exclude all-tissue records, and show a plain zero-match next action.
+  Existing low-level scope behavior remains explicitly recorded for legacy
+  adapters; a new modern project always selects strict scope.
+
+- Annotation query pools rank fold change first, then detection difference.
+  Configurable shared ribosomal/mitochondrial symbol exclusions apply only to
+  that pool; complete marker results remain intact. Save exclusion parameters
+  and observed excluded feature IDs with the pool evidence.
+
+- Remove the legacy HTTP/IP CellMarker fallback. Until the fixed official
+  HTTPS file has a verified checksum, provide a clear waiting message and
+  explicit local XLSX import with SHA256 provenance. Require species/tissue,
+  report zero matches, and never authenticate a publisher URL from a sidecar
+  or silently expand the tissue scope. No CellMarker data is redistributed.
+
+- Default ontology mapping uses the unmodified, SHA256-pinned Cell Ontology
+  v2026-06-08 base asset, bundled with CC-BY-4.0 attribution and license.
+  There is no latest-version network fallback. Ambiguous exact labels/synonyms
+  remain unresolved, as do fuzzy and obsolete matches.
+
+- With explicit creation-time project transfer consent, stage one automatic model
+  draft per saved evidence snapshot. Strict exact-payload consent stays explicit.
+  Saved attempts, uncertain accounting, unsaved edits and unavailable budgets
+  prevent automatic requests; adoption and all scientific approvals stay human.
+  Explicit offline mock scope uses a distinct simulation request identity.
+
+- Keep the standard raw project's measured-resolution approval mandatory for
+  model drafts. Explicit advanced no-scan setup remains separate; models cannot
+  disable a required gate. Rare declared metadata groups or literal cell-ID
+  labels/context block only the optional provider path, leaving local review
+  available and preserving the complete source evidence.
+
+- Model adoption retains explicitly supplied and later saved human strategy
+  choices and annotation rows. Versioned controls and additive adoption receipts
+  record which fields were retained; the raw model response is unchanged.
+  A merged draft is revalidated and still grants no scientific approval.
+
+- Persist concise per-choice strategy reasons for QC, doublets, cycle, batch,
+  HVGs, PCs, clustering and UMAP. Modern model drafts require all reasons.
+  Each is editable without replacing other draft fields; saved proposals and
+  all scientific approvals remain bound to the exact complete version.
+
+- Modern raw entry attempts eligible S/G2M evidence, with regression none by
+  default and explicit unavailable reasons for missing genes/species support.
+  Add doublet auto/off/flag/remove modes: auto/flag keeps cells, and missing
+  called-cell/capture/dependency/cohort facts remain unassessed. Remove requires
+  eligible fixed predictions and exact human strategy approval. No droplet
+  calling, capture inference or cycling-cell deletion is introduced.
+
+- Use one conservative QC fallback: a complete eligible grouped MAD panel
+  starts with conservative_and3; otherwise keep all cells and explicitly mark
+  quality unassessed. Zero-count cells are not silently dropped by this draft.
+  Cancel independent OR automatic prefill; saved and edited choices remain
+  unchanged and all filtering still requires the complete human strategy approval.
+
+- Prepare a persisted sample-role draft from five whitelisted metadata columns.
+  A sole complete candidate can be a documented sample fallback; multiple
+  candidates require author choice and never imply a technical batch. Model
+  summaries contain group sizes and common fixed-vocabulary values only, not
+  IDs, free-text metadata or rare labels. Unmapped input no longer receives
+  automatic pooled MAD; choosing facts rebuilds grouped evidence without approval.
+
+- Preserve original cell metadata, column locations and exact cell-ID mapping
+  separately in modern-entry Seurat checkpoints. A collision-safe hashed misc
+  record protects prior labels before new reviewed output fields are written.
+  Direct sc_run keeps its existing fresh-column default; protected record or
+  cell-scope changes still block annotation.
+
+- Automatically join valid Seurat v5 counts/data partitions within the selected
+  assay at input. Every source value, feature set and exact cell partition is
+  checked and a join receipt is saved. Mixed exact/split layers, overlapping or
+  incomplete cells and incompatible feature sets remain blocking errors.
+  Export and checkpoint readers still require exact protected layers.
+
+- Use existing aligned human/mouse feature-symbol annotations for mitochondrial
+  QC on Ensembl identifiers. Missing, partial, species-conflicting or ambiguous
+  mappings remain conspicuously unavailable, never a fabricated zero percentage.
+  No annotation database is downloaded and input count features remain unchanged.
+
+- Add explicit creation-time aggregate transfer consent bound to provider,
+  category list, prompt version and project USD cap. Exact previews and hashes
+  remain available; requests outside that scope still require strict review.
+  This consent grants no scientific approval and is not inherited by children.
+  Suggestion accounting now includes remaining USD beside used/held amounts.
+
+- Let sc_start save an explicit provider, budget and transfer policy, or detect
+  exactly one configured vendor key. Missing or ambiguous keys use a visible
+  manual fallback. Startup prepares a local draft without sending requests;
+  reopening retains the saved policy, and scientific approvals remain human.
+
+- Support an explicit OpenAI-compatible HTTPS endpoint through the existing
+  agentomicsCore factory. Destination and key environment name join the exact
+  request hash; keys remain runtime-only. No agentomicsCore changes are needed.
+  Three scientific approvals, transfer consent and budget checks remain required.
+
 # scAgentKit 0.8.0 (experimental)
 
 ## Breaking API changes and rebuilding projects
@@ -143,6 +318,11 @@ project APIs are retained. The reviewed coordinator has explicit configuration,
 proposal and approval boundaries; these are not signature-compatible replacements.
 Manual split/merge and gene-removal helpers have no one-to-one coordinator
 equivalent. The latter does not authorize input-gene deletion in `sc_run()`.
+
+> **Historical policy, superseded by 0.8.0:** the retention statement above
+> describes the 0.6.0 release. The 0.8.0 API consolidation replaced that policy.
+> Before 1.0, any version may break compatibility, no deprecation period is
+> guaranteed, and cross-version project resume is unsupported.
 
 - Add independently reviewed raw-count child projects from frozen parent cluster selections, with explicit QC/batch/cycle/reference choices and no inherited parent embedding or cluster truth.
 - Apply reviewed child subtypes by literal cell ID to new parent derivatives, with stale/conflicting scope rejection, idempotent receipts, linked immutable application versions and undo; the original parent remains unchanged.

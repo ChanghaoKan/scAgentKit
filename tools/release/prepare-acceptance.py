@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tarfile
@@ -33,8 +34,13 @@ def main():
     parser.add_argument("mode", choices=["artifact", "public"])
     parser.add_argument("commit")
     parser.add_argument("sha256", help="Trusted SHA256 from this workflow's build job")
+    parser.add_argument("--version", default="0.8.1", help="Exact source version from the trusted build job")
     args = parser.parse_args()
-    version = "0.8.0"
+    version = args.version
+    if not re.fullmatch(r"[0-9]+(?:[.-][0-9]+)+", version):
+        parser.error("Invalid exact package version")
+    if args.mode == "public" and version != "0.8.1":
+        parser.error("Public release acceptance remains pinned to 0.8.1")
     tag = "v" + version
     name = "scAgentKit_" + version + ".tar.gz"
 
@@ -69,7 +75,7 @@ def main():
     Path("README-install.R").write_text(block("## Installation"))
     Path("README-offline.R").write_text(block("## Offline installation check"))
     receipt = dict(status="passed", mode=args.mode, anonymous_public_download=args.mode == "public",
-                   tag=tag, source_commit=args.commit, sha256=sha, checksum_matches=True,
+                   tag=tag if args.mode == "public" else None, version=version, source_commit=args.commit, sha256=sha, checksum_matches=True,
                    archive_modified=False, build_sha256_matches=True,
                    readme_commands_extracted_verbatim=True)
     Path("download-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")

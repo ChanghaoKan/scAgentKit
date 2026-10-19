@@ -1,114 +1,53 @@
-#' Query CellMarker 2.0 by tissue/species and build a reference in-place
+#' Import a locally obtained CellMarker 2.0 table with explicit scope
 #'
-#' Fetches marker-to-celltype records from the CellMarker 2.0 download
-#' page and returns a reference data frame compatible with
-#' [annot_match_reference()]. Avoids the chore of maintaining a local
-#' reference TSV.
-#'
-#' CellMarker 2.0 does not expose a clean REST endpoint; instead it
-#' publishes the full curated table as a single XLSX file. We mirror the
-#' full table on first use (\code{~50 MB}), cache it locally, and apply
-#' tissue / species filters in R. Subsequent calls are fast and offline.
-#' Gene symbols are taken from `Symbol`, then `gene_symbol`, then `marker`;
-#' the latter can contain protein aliases that do not match RNA features.
-#'
-#' Source: Hu et al., CellMarker 2.0, Nucleic Acids Research 2023.
-#' Use stable mirror address (original yikedaxue.slwshop.cn often returned 502 Bad Gateway):
-#' \url{http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Mouse.xlsx}
-#' \url{http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Human.xlsx}
-#'
-#' @section Format of the returned reference:
-#' A data frame with columns `cell_type`, `marker`, `tissue`, `species`,
-#' `source` -- the same shape produced by [annot_load_reference()], so it
-#' plugs directly into [annot_match_reference()].
-#'
-#' @param species Character, one of `"human"` or `"mouse"`.
-#' @param tissue Optional character. Case-insensitive substring match
-#'   against CellMarker's `tissue_type` field (e.g. `"colon"`,
-#'   `"liver"`, `"bone marrow"`). If NULL, no tissue filter is applied.
-#' @param cancer_only Logical. If TRUE, restrict to cancer / tumor
-#'   entries. If FALSE (default), include both normal and cancer entries.
-#' @param cache_dir Directory where the CellMarker XLSX is cached.
-#'   Default is `tools::R_user_dir("scAgentKit", "cache")`.
-#' @param force_refresh Logical. If TRUE, re-download even if the cache
-#'   exists. Default FALSE.
-#' @param url Override the source URL (for mirrors or pinned versions).
-#'
-#' @return Data frame shaped for [annot_match_reference()], with the
-#'   `species` and `tissue_filter` attributes set. Source URL, cache path,
-#'   file MD5, source version, and selected marker column are recorded as
-#'   attributes. A manually populated cache without a `.source-url` sidecar
-#'   has an unverified source URL; its path and content MD5 remain recorded.
+#' Automatic retrieval is waiting for a verified fixed official HTTPS asset.
+#' The package does not bundle or redistribute the CellMarker database and does
+#' not use HTTP, IP mirrors, arbitrary URLs, latest URLs or first-use hash trust.
+#' If permitted by the source, download through the official browser page and
+#' pass its local path. A local digest identifies your input; it does not prove
+#' publisher authenticity or grant redistribution rights.
+#' @param species One of "human" or "mouse"; applied to the table's species column.
+#' @param tissue Required nonempty literal tissue filter (case insensitive).
+#' @param cancer_only Restrict to non-Normal cancer context when TRUE.
+#' @param cache_dir Retained for call compatibility; caches are not silently trusted.
+#' @param force_refresh Retained for compatibility; automatic refresh is unavailable.
+#' @param url Only the documented fixed official HTTPS URL is recognized; no mirrors.
+#' @param local_file Explicit path to a lawfully obtained local XLSX file.
+#' @param sha256 Optional expected local file SHA256. This is a user input check,
+#'   not a verified publisher pin.
+#' @return Scoped marker reference with local provenance and explicit zero-match status.
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#'   ref <- annot_query_cellmarker(species = "mouse", tissue = "colon")
-#'   obj <- annot_match_reference(obj, reference = ref)
-#' }
-annot_query_cellmarker <- function(species,
-                                   tissue        = NULL,
-                                   cancer_only   = FALSE,
-                                   cache_dir     = NULL,
-                                   force_refresh = FALSE,
-                                   url           = NULL) {
-
+annot_query_cellmarker <- function(species, tissue = NULL, cancer_only = FALSE,
+                                   cache_dir = NULL, force_refresh = FALSE, url = NULL,
+                                   local_file = NULL, sha256 = NULL) {
   if (missing(species) || !is.character(species) || length(species) != 1L ||
-      is.na(species) || !species %in% c("human", "mouse")) {
-    stop('species must be "human" or "mouse".')
-  }
-  if (!requireNamespace("readxl", quietly = TRUE)) {
-    stop("Install 'readxl' for annot_query_cellmarker: install.packages('readxl')")
-  }
-
-  if (is.null(url)) {
-    # CellMarker 2.0 "all" tables.
-    # Use stable mirror address (original yikedaxue.slwshop.cn often 502)
-    url <- switch(
-      species,
-      human = "http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Human.xlsx",
-      mouse = "http://117.50.127.228/CellMarker/CellMarker_download_files/file/Cell_marker_Mouse.xlsx"
-    )
-  }
-
-  if (is.null(cache_dir)) {
-    cache_dir <- tryCatch(
-      tools::R_user_dir("scAgentKit", which = "cache"),
-      error = function(e) tempdir()
-    )
-  }
-  dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
-  cache_file <- file.path(cache_dir,
-                          sprintf("CellMarker2_%s.xlsx", species))
-  cache_url_file <- paste0(cache_file, ".source-url")
-  recorded_url <- if (file.exists(cache_url_file)) {
-    readLines(cache_url_file, n = 1L, warn = FALSE)
-  } else character()
-  if (!isTRUE(force_refresh) && file.exists(cache_file) && length(recorded_url) &&
-      !identical(recorded_url, url)) {
-    stop("Cached CellMarker table came from a different URL. Use force_refresh = TRUE or a separate cache_dir.")
-  }
-
-  if (force_refresh || !file.exists(cache_file)) {
-    message(sprintf("[annot_query_cellmarker] downloading %s table ...", species))
-    # Download to a temporary file and rename, so an interrupted transfer
-    # never leaves a truncated table that a later call would trust.
-    partial <- tempfile("CellMarker2-", tmpdir = cache_dir, fileext = ".xlsx")
-    on.exit(unlink(partial), add = TRUE)
-    tryCatch(
-      utils::download.file(url, destfile = partial, mode = "wb", quiet = TRUE),
-      error = function(e) {
-        stop("Failed to download CellMarker table from ", url,
-             "\nIf this URL is unreachable from your network, download the",
-             "\nXLSX manually and place it at: ", cache_file,
-             "\n(Original error: ", conditionMessage(e), ")")
-      }
-    )
-    if (!file.rename(partial, cache_file)) stop("Cannot save the downloaded CellMarker table to ", cache_file)
-    writeLines(url, cache_url_file)
-    recorded_url <- url
-  }
-
+      is.na(species) || !species %in% c("human", "mouse"))
+    stop('species must be "human" or "mouse". Set the actual reference species before importing.', call. = FALSE)
+  if (!is.character(tissue) || length(tissue) != 1L || is.na(tissue) || !nzchar(trimws(tissue)))
+    stop("Set one explicit tissue before importing CellMarker; no all-tissue fallback is used.", call. = FALSE)
+  tissue <- trimws(tissue)
+  if (!is.logical(cancer_only) || length(cancer_only) != 1L || is.na(cancer_only))
+    stop("cancer_only must be TRUE or FALSE.", call. = FALSE)
+  official <- "https://bio-bigdata.hrbmu.edu.cn/CellMarker2.0/CellMarker_download_files/file/Cell_marker_All.xlsx"
+  page <- "https://bio-bigdata.hrbmu.edu.cn/CellMarker2.0/CellMarker_download.html"
+  if (!is.null(url) && !identical(url, official))
+    stop("Only the fixed official HTTPS CellMarker URL is recognized; HTTP, IP and alternate mirror URLs are disabled. Supply a local_file obtained through the official source instead.", call. = FALSE)
+  if (is.null(local_file) || isTRUE(force_refresh))
+    stop(paste("Automatic CellMarker download is waiting for a verified fixed official file checksum; the official endpoint returned HTTP 403 during validation.",
+      "No database is bundled and no alternate database is substituted.",
+      "If you have lawful access, open", page, "in your browser, download the table, and pass local_file with explicit species and tissue.",
+      "Local import records its SHA256 without claiming verified publisher provenance."), call. = FALSE)
+  .sc_project_string(local_file, "local_file")
+  cache_file <- normalizePath(local_file, mustWork = TRUE)
+  if (dir.exists(cache_file)) stop("local_file must name the downloaded XLSX file.", call. = FALSE)
+  digest <- digest::digest(file = cache_file, algo = "sha256")
+  if (!is.null(sha256) && (!is.character(sha256) || length(sha256) != 1L || is.na(sha256) ||
+      !grepl("^[0-9a-f]{64}$", sha256) || !identical(sha256, digest)))
+    stop("Local CellMarker SHA256 does not match. Check the selected file; no reference was imported.", call. = FALSE)
+  if (!requireNamespace("readxl", quietly = TRUE))
+    stop("The optional readxl package is unavailable. Configure that dependency before importing the local XLSX file.", call. = FALSE)
+  url <- official
+  recorded_url <- character() # A user local file/sidecar cannot authenticate a publisher URL.
   raw <- suppressMessages(.cellmarker_read_excel(cache_file))
   raw <- as.data.frame(raw, stringsAsFactors = FALSE)
 
@@ -127,14 +66,19 @@ annot_query_cellmarker <- function(species,
   cn_marker   <- col(c("Symbol", "gene_symbol", "marker"))
   cn_tissue   <- col(c("tissue_type", "tissueType", "tissue"))
   cn_cancer   <- col(c("cancer_type", "cancerType", "cancer"))
+  cn_species <- col(c("species", "Species"))
+  actual_species <- tolower(trimws(as.character(raw[[cn_species]])))
+  actual_species[actual_species == "homo sapiens"] <- "human"
+  actual_species[actual_species == "mus musculus"] <- "mouse"
+  raw <- raw[!is.na(actual_species) & actual_species == species, , drop = FALSE]
 
   ref <- data.frame(
     cell_type = raw[[cn_celltype]],
     marker    = raw[[cn_marker]],
     tissue    = raw[[cn_tissue]],
     cancer    = raw[[cn_cancer]],
-    species   = species,
-    source    = "CellMarker2.0",
+    species   = rep(species, nrow(raw)),
+    source    = rep("CellMarker2.0", nrow(raw)),
     stringsAsFactors = FALSE
   )
 
@@ -172,7 +116,12 @@ annot_query_cellmarker <- function(species,
   attr(ref, "source_url") <- if (length(recorded_url)) recorded_url else NA_character_
   attr(ref, "requested_url") <- url
   attr(ref, "source_url_verified") <- length(recorded_url) == 1L
-  attr(ref, "source_version") <- "CellMarker2.0"
+  attr(ref, "source_version") <- "CellMarker2.0-user-local-file"
+  attr(ref, "source_sha256") <- digest
+  attr(ref, "source_mode") <- "explicit_local_import_unverified_publisher"
+  attr(ref, "scope_status") <- if (nrow(ref)) "matched" else "zero_matches"
+  attr(ref, "scope_notice") <- if (nrow(ref)) "Reference filtered to the explicit species and tissue; no scientific identity is inferred." else
+    "No CellMarker records match the selected species and tissue. Check those fields or supply another correctly scoped local table; no all-tissue fallback is used."
   attr(ref, "marker_column") <- cn_marker
   attr(ref, "n_input_rows") <- nrow(raw)
 

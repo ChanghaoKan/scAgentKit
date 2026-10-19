@@ -84,7 +84,7 @@ test_that("offline external callbacks preserve separate exact transfer consent a
     calls <<- calls + 1L
     payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
     proposal <- if (grepl("strategy.v1", system_prompt, fixed = TRUE))
-      .sc_ui_plan(ui_plan(), dimensions = dim(input), mad = payload$evidence$qc_mad) else
+      .sc_ui_plan(utils::modifyList(ui_plan(), list(diagnostic_resolutions = c(.4, .6))), dimensions = dim(input), mad = payload$evidence$qc_mad) else
       list(schema = "scagentkit.annotation.v1", annotations = lapply(payload$evidence$clusters,
         function(cl) list(clusterId = cl$clusterId, label = "Unknown", confidence = "low",
           rationale = "Offline fixture abstention; no scientific identity claim.", markers = list())))
@@ -107,7 +107,11 @@ test_that("offline external callbacks preserve separate exact transfer consent a
   expect_identical(calls, 1L)
   expect_identical(strategy$view$pending$kind, "strategy")
   expect_null(.sc_run_load(strategy$project_dir)$files$analysis)
-  annotation <- suppressWarnings(ui_review(strategy, "approve", reviewer = "test", reason = "Reviewed strategy", continue = TRUE))
+  measured <- suppressWarnings(ui_review(strategy, "approve", reviewer = "test", reason = "Reviewed strategy", continue = TRUE))
+  expect_identical(measured$view$pending$kind, "strategy")
+  expect_length(.sc_run_load(measured$project_dir)$approvals, 2L)
+  measured <- ui_review(measured)
+  annotation <- suppressWarnings(ui_review(measured, "approve", reviewer = "test", reason = "Reviewed actual measured clustering", continue = TRUE))
   expect_identical(calls, 1L)
   next_transfer <- ui_review(annotation, "request", chat_fn = callback)
   expect_identical(next_transfer$view$pending$kind, "external_transfer")
@@ -162,4 +166,23 @@ test_that("failed callbacks cannot be retried by opening or requesting again", {
   expect_error(sc_review(shown, "request", chat_fn = callback), "nonfailed")
   expect_identical(calls, 1L)
   expect_identical(sc_open(x)$view$status, "failed")
+})
+
+test_that('provider-function facade preserves the callback without persisting or approving it',{
+ input<-ui_input();calls<-0L;root<-tempfile('provider-function-')
+ callback<-function(system_prompt,user_prompt){
+  calls<<-calls+1L
+  payload<-jsonlite::fromJSON(user_prompt,simplifyVector=FALSE)
+  proposal<-.sc_ui_plan(utils::modifyList(ui_plan(),list(diagnostic_resolutions=c(.4,.6))),dimensions=dim(input),mad=payload$evidence$qc_mad)
+  list(content=.sc_run_provider_json(proposal),cost_usd=0)
+ }
+ consent<-list(mode='project',confirmed=TRUE,reviewer='offline-R-operator',reason='Explicit synthetic data and USD0.20 cap.',
+ categories=c('study_context','aggregate_qc','aggregate_markers','aggregate_design','aggregate_expression'))
+ x<-sc_analyze(input,root,ui_context(),provider=callback,budget=.20,review=list(allow_external=TRUE,transfer_consent=consent))
+ expect_identical(calls,1L)
+ expect_identical(x$view$status,'awaiting_review')
+ state<-.sc_run_load(root)
+ expect_identical(state$config$provider$name,'custom')
+ expect_length(state$approvals,0)
+ expect_null(state$files$analysis)
 })

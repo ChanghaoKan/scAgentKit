@@ -85,7 +85,7 @@ complete frozen baseline and does not repeat completed numerical variants.
 Post-hoc common-class and timing corrections are in [results/report-corrections.md](results/report-corrections.md).
 Reproduce common-class scores with `python3 posthoc_report.py results/metrics.json output.json`;
 optional `--timings` reads saved stage projections without rerunning analysis.
-The original metrics/failures remain unchanged. [Model A/B protocol](../../docs/IFNB_MODEL_AB_PROTOCOL.md) is protocol-only, with zero model calls.
+The original metrics/failures remain unchanged. [Model A/B protocol](../../docs/dev/archive/IFNB_MODEL_AB_PROTOCOL.md) is protocol-only, with zero model calls.
 
 Prediction statuses are a scoring contract: only `candidate_only_not_reviewed` and
 `reference_prediction` may receive credit. Failed/not-run/schema-failed, missing

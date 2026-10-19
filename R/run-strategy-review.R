@@ -108,6 +108,7 @@
     details = list(canonical_proposal = validated$proposal,
       background = list(facts = summary$background_facts, missing = summary$missing_facts),
       quality = summary$quality, qc_impact = qc, capabilities = summary$capabilities,
+      automatic_diagnostics = summary$automatic_diagnostics,
       applicability = list(executable = validated$executable, blockers = validated$blockers, details = validated$applicability),
       dependency_hashes = validated$dependency_hashes,
       execution_plan = if (state$config$start_stage == "processed") list("Reuse the supplied QC and processed analysis; compute current markers after approval.") else
@@ -355,7 +356,7 @@
     if (is.null(state$files$annotation_evidence)) "annotation_evidence" else "annotation_propose"
   .sc_run_checkpoint(root, state, "strategy_apply", next_stage)
 }
-.sc_run_strategy_propose_locked <- function(root, state, proposal, reviewer, reason) {
+.sc_run_strategy_propose_locked <- function(root, state, proposal, reviewer, reason, review_binding = NULL) {
   .sc_run_subcluster_guard(root, state)
   if (!isTRUE(state$config$strategy)) stop("Strategy mode was not enabled for this project.", call. = FALSE)
   if (state$status %in% c("complete", "running") || "annotation_apply" %in% state$completed || !is.null(state$files$annotated))
@@ -366,6 +367,8 @@
   validated <- .sc_run_strategy_validate(proposal, evidence)
   .sc_run_subcluster_strategy(state, validated, evidence)
   old <- if (is.null(state$files$strategy_validated)) NULL else .sc_run_get(root, state, "strategy_validated")
+  if (!isTRUE(review_binding$source %in% c("adopted_typed_suggestion", "local_rule_fallback")))
+    state <- .sc_run_draft_track(root, state, "strategy", old$proposal, validated$proposal)
   changed <- if (is.null(old)) names(validated$dependency_hashes) else names(validated$dependency_hashes)[vapply(names(validated$dependency_hashes), function(key)
     !identical(validated$dependency_hashes[[key]], old$dependency_hashes[[key]]), logical(1))]
   cached_runtime_changed <- FALSE

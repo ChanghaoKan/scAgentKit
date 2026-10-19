@@ -353,3 +353,31 @@ test_that("HTTP error status survives as safe typed error while body and usage s
   expect_identical(.sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE, retry = TRUE)$status, "retry_refused")
   expect_identical(calls, 1L)
 })
+
+test_that('raw usage retains provider numeric details but excludes arbitrary secrets', {
+ raw <- list(prompt_tokens=10,completion_tokens=7,total_tokens=17,
+  prompt_cache_hit_tokens=2,prompt_cache_miss_tokens=8,
+  completion_tokens_details=list(reasoning_tokens=3),authorization='Bearer never-persist',
+  prompt_tokens_details=list(cached_tokens=2,secret='do-not-copy'))
+ safe <- .sc_run_provider_raw_usage(raw)
+ expect_equal(safe$prompt_tokens,10)
+ expect_equal(safe$completion_tokens_details$reasoning_tokens,3)
+ expect_equal(safe$prompt_tokens_details,list(cached_tokens=2))
+ expect_null(safe$authorization)
+ expect_false(grepl('never-persist|do-not-copy|secret',jsonlite::toJSON(safe)))
+ f<-provider_metadata_fixture();on.exit(unlink(f$root,recursive=TRUE))
+ out<-.sc_run_call(f$root,f$request,f$provider,function(...)list(content=provider_metadata_json,raw_usage=raw))
+ expect_identical(out$raw_usage,safe)
+ expect_equal(.sc_run_provider_read(file.path(f$root,'provider','ledger.json'))$entries[[1]]$raw_usage,safe)
+})
+
+test_that('official adapter captures original usage from mocked HTTP with no headers or attributes',{
+ fn<-provider_metadata_legacy_closure()
+ local_mocked_bindings(req_perform=function(...)provider_metadata_http_fixture(),.package='httr2')
+ value<-.sc_run_provider_adapter(fn)('Offline system.','Offline user.')
+ expect_equal(attr(value,'raw_usage'),list(prompt_tokens=10,completion_tokens=7,prompt_cache_hit_tokens=2))
+ private<-new.env();private$key<-'PRIVATE_USAGE_ATTRIBUTE_TEST'
+ safe<-.sc_run_provider_raw_usage(list(prompt_tokens=structure(10,secret=private)))
+ expect_null(attributes(safe$prompt_tokens))
+ expect_false(grepl('PRIVATE_USAGE_ATTRIBUTE_TEST',rawToChar(serialize(safe,NULL,ascii=TRUE)),fixed=TRUE))
+})

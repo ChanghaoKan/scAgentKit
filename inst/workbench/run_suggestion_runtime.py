@@ -34,7 +34,7 @@ SCHEMA = "scagentkit.run-suggestion.workbench.v1"
 JOB_SCHEMA = "scagentkit.run-suggestion.job.v1"
 ACTIVE = {"queued", "running"}
 TERMINAL = {"succeeded", "failed", "interrupted", "timed_out"}
-ACTIONS = {"preview", "approve", "request", "adopt", "discard"}
+ACTIONS = {"preview", "approve", "request", "adopt", "discard", "review_conflicts"}
 BINDING = ("project_id", "input_hash", "expected_revision", "suggestion_hash")
 MAX_RESULT = 4 * 1024 * 1024
 
@@ -246,10 +246,10 @@ class RunSuggestionRuntime(QCRuntime):
             # A durable request receipt is an idempotency record, never a
             # renewed authority after the input/evidence/revision changes.
             # A fresh GET revalidates current R state before another action.
-            suggestion.update(can_approve=False, can_request=False, can_adopt=False, can_discard=False,
+            suggestion.update(can_approve=False, can_request=False, can_adopt=False, can_discard=False, can_auto_request=False,
                               replay_only=True)
         if job is not None and job["status"] in ACTIVE | {"failed", "interrupted", "timed_out"} and job["suggestion_hash"] == suggestion.get("suggestion_hash"):
-            suggestion.update(can_request=False)
+            suggestion.update(can_request=False, can_auto_request=False)
             if job["status"] in ACTIVE:
                 suggestion.update(can_approve=False, can_adopt=False, can_discard=False)
         answer = {"schema": SCHEMA, "enabled": True, "simulated": self.simulate,

@@ -54,7 +54,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
-                   .subcluster_lock_owner = NULL) {
+                   .subcluster_lock_owner = NULL, input_policy = NULL) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -100,28 +100,39 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     stop("An initialization lock is supported only for scoped child creation.", call. = FALSE)
   if (strategy && start_stage == "qc" && missing(cluster_column)) cluster_column <- "sc_strategy_clusters"
   if (!is.numeric(budget) || length(budget) != 1L || !is.finite(budget) || budget < 0) stop("budget must be nonnegative USD.", call. = FALSE)
-  allowed_review <- c("allow_external", "preapprove_qc")
+  allowed_review <- c("allow_external", "preapprove_qc", "transfer_consent")
   if (!is.list(review) || any(!names(review) %in% allowed_review)) stop("Unsupported review policy.", call. = FALSE)
   if (!is.null(review$allow_external) && !identical(review$allow_external, TRUE) && !identical(review$allow_external, FALSE)) stop("allow_external must be logical.", call. = FALSE)
   qc_preview <- .sc_run_qc_preview_options(qc_preview)
   reference_review <- .sc_run_reference_options(reference_review)
+  spec <- .sc_run_provider_spec(provider, chat_fn)
+  if (!is.null(review$transfer_consent)) {
+    if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
+    if (!is.null(subcluster_origin)) stop("Scoped children retain strict transfer review; project transfer consent cannot be inherited.", call. = FALSE)
+    review$transfer_consent <- .sc_run_transfer_options(review$transfer_consent, spec$metadata, budget)
+  }
   root <- .sc_run_root(project_dir, create = TRUE)
   if (is.null(.subcluster_lock_owner)) {
     owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   } else .sc_run_subcluster_lock_verify(root, .subcluster_lock_owner)
   if (file.exists(file.path(root, "state.rds"))) stop("Run already exists; use sc_run_resume or choose a new project_dir.", call. = FALSE)
   checked <- .sc_run_input(input, context, assay, counts_layer, start_stage, processed_reason,
-                           cluster_column = cluster_column, normalized_layer = normalized_layer)
+                           cluster_column = cluster_column, normalized_layer = normalized_layer, input_policy = input_policy)
   if (!is.null(subcluster_origin) && !identical(colnames(checked$seu), subcluster_origin$selected_cells))
     stop("Scoped child raw input must have the exact frozen parent selection in literal cell order.", call. = FALSE)
-  .sc_run_annotation_target(checked$seu, annotation_column, cluster_column)
-  spec <- .sc_run_provider_spec(provider, chat_fn)
+  .sc_run_annotation_target(checked$seu, annotation_column, cluster_column, checked$diagnostics$preserved_metadata$key)
   config <- list(context = checked$context, assay = assay, counts_layer = counts_layer,
                  normalized_layer = normalized_layer, cluster_column = cluster_column,
                  analysis = analysis, markers = list(), annotation_column = annotation_column,
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
+  if (!is.null(input_policy)) {
+    config$input_policy <- .sc_run_input_policy(input_policy)
+    config$input_policy$metadata_key <- checked$diagnostics$preserved_metadata$key
+    config$metadata_role_draft <- checked$diagnostics$metadata_role_candidates
+    config$metadata_transfer_policy <- .sc_run_metadata_transfer_policy(checked$seu, checked$context)
+  }
   if (!is.null(scientific_review)) {
     if (!strategy || start_stage != "qc") stop("scientific_review requires raw strategy entry.",call.=FALSE)
     config$scientific_review <- scientific_review
@@ -133,6 +144,17 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     config$subcluster_origin <- subcluster_origin
     config$subcluster_creation <- subcluster_creation
     config$annotation_context <- .sc_run_child_context_initial(subcluster_creation$parent_annotation_context)
+  }
+  if (!is.null(config$input_policy) && start_stage == "qc" && strategy) {
+    automatic <- .sc_run_automatic_diagnostics(checked$seu, config, cycle_diagnostics, doublet_diagnostics)
+    config$automatic_diagnostics <- automatic$assessments
+    if (!is.null(doublet_diagnostics) && !identical(doublet_diagnostics, FALSE)) {
+      config$recommendation_facts$doublet <- doublet_diagnostics[intersect(names(doublet_diagnostics),
+        c("data_type", "technology", "input_source", "empty_droplets_removed", "full_called_cohort", "capture", "rate"))]
+      config$recommendation_doublet_settings <- doublet_diagnostics[intersect(names(doublet_diagnostics),
+        c("column_prefix", "seed", "nfeatures", "dims", "artificial_doublets", "iter", "clusters"))]
+    }
+    cycle_diagnostics <- automatic$cycle; doublet_diagnostics <- automatic$doublet
   }
   cycle_options <- .sc_run_cycle_options(checked$context, cycle_diagnostics)
   if (!is.null(cycle_options)) config$cycle_diagnostics <- cycle_options
@@ -174,6 +196,18 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(annotation_proposal)) state <- .sc_run_put(root, state, "manual_annotation", annotation_proposal)
   state <- .sc_run_event(state, "planned", list(input_hash = state$input_hash, config_hash = state$config_hash,
                                               implementation_hash = state$implementation_hash))
+  if (!is.null(checked$diagnostics$metadata_role_candidates)) state <- .sc_run_event(state,
+    "metadata_role_draft_prepared", list(summary = checked$diagnostics$metadata_role_candidates,
+      biological_or_technical_inference_accepted = FALSE))
+  if (!is.null(checked$diagnostics$preserved_metadata)) state <- .sc_run_event(state,
+    "input_metadata_preserved", c(checked$diagnostics$preserved_metadata,
+      list(original_cell_ids_retained = TRUE, boundary = "Prior metadata is separately preserved, not accepted as new annotations.")))
+  if (length(checked$diagnostics$input_transforms)) state <- .sc_run_event(state,
+    "input_layers_joined", list(transforms = checked$diagnostics$input_transforms,
+      original_source = checked$source, source_replaced = FALSE))
+  if (!is.null(config$review$transfer_consent)) state <- .sc_run_event(state, "transfer_consent_confirmed",
+    c(config$review$transfer_consent, list(provider = spec$metadata$name,
+      model = spec$metadata$model, scientific_approval_required = TRUE)))
   if (start_stage == "processed") {
     state$stage <- "markers"; state <- .sc_run_put(root, state, "analysis", checked$seu)
     state$completed <- c("qc_evidence", "qc_propose", "qc_apply", "analysis")
@@ -282,12 +316,15 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   .sc_run_drive(root, state, provider, chat_fn, retry)
 }
 .sc_run_request <- function(kind, evidence, config) {
+  .sc_run_transfer_privacy_check(config)
   schema <- if (kind == "strategy") {
-    paste("Return one JSON object with exactly schema='scagentkit.strategy.v1', rationale, risks (array), inferences (array), qc, analysis, pcs, batch, clustering, umap.",
+    paste("Return one JSON object with exactly schema='scagentkit.strategy.v1', rationale, risks (array), inferences (array), choice_reasons, qc, analysis, pcs, batch, clustering, umap.",
+      "choice_reasons contains exactly qc, doublet, cycle, batch, hvg, pcs, clustering and umap, each a nonempty reason of at most 700 characters based on supplied evidence and study purpose.",
       "User facts, missing facts and measured quantities are distinct. Put any model inference only in inferences; do not invent metadata, sample identities, design or goals.",
       if (is.null(config$qc_mad))
         "For raw entry qc may use legacy scagentkit.qc.v1 with filters, or scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (1 to 32 operations). Derive concrete inclusive bounds from actual quality quantiles and disclose uncertainty. MAD operations are unavailable unless explicitly enabled." else
         "For raw entry qc may use scagentkit.qc.mad.v1 with exactly schema, rationale, risks (array), preset_id and panel_hash copied from the supplied deterministic MAD panel, or scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (1 to 32 operations). A rules combination may include at most one mad_preset operation with the exact saved preset_id and panel_hash, plus measured range operations. Choose only available saved MAD predicates; do not invent multipliers, grouping or scores. Prefilter exclusions remain excluded independently of the chosen rule combination.",
+      'Legal unfiltered keep-all example without MAD: qc={"schema":"scagentkit.qc.v1","rationale":"QC unassessed; retain all for review.","risks":["Quality remains unassessed."],"filters":[{"op":"range","metric":"nCount","min":0}]}. Never encode keep-all as empty rules. With a MAD panel use its exact keep_all preset and panel_hash.',
       "Range operations contain op='range', metric='nCount'|'nFeature'|'percent_mt', optional inclusive min/max and optional group containing only literal sample and/or capture present in evidence. Count/feature bounds are nonnegative integers; percent bounds are between 0 and 100. For qc.rules.v1 remove_if='any' removes cells failing any rule; remove_if='all' removes cells failing every rule. A rule scoped to a different group does not fail that cell. Unsupported or unavailable measurements and a final empty retained set are rejected. No code, genes, invented groups or unsupported operations.",
       "analysis has normalization_method='LogNormalize', scale_factor, nfeatures, npcs, seed. pcs has method='fixed',ndim OR method='computed_variance',threshold (any value strictly between 0 and 1, measured against all actually computed PCs) OR method='computed_top50',threshold (.80 or .85 only, measured against first min(50,actually computed PCs)). A threshold of .80 is an editable reference, not an established optimum. Saved candidates are unavailable before approved PCA. Computed-PC variance is not total expression variance.",
       "batch defaults to method='none',reason; manual is a blocked analyst boundary. Explicit harmony requires method,group_by_vars,theta,lambda,sigma,max_iter,nclust,reason, with optional nested_biology='reviewed_embedding_only' only for explicitly reviewed replicated donor/sample nesting. It requires declared technical provenance, audited biological roles and explicit batch/sample/donor column names. Never infer a correction covariate from condition, treatment or capture; fully confounded designs cannot establish preservation of treatment signals. Harmony changes embedding only. Subcluster actions remain unsupported.",
@@ -323,6 +360,21 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     "Available presets are keep_all, conservative_and3, low_counts3, low_features3, high_mt3 and any_quality3. keep_all is the low-risk default. AND/OR and single-indicator candidates have different measured consequences; no candidate is a universal optimum.",
     "MAD zero/near-zero, small groups, missing values and mixed distributions can make candidates unavailable. Explain uncertainties; do not treat Unknown as zero or optimize against retained cell number or cluster labels.",
     "High RNA is flag-only; ribosomal/hemoglobin percentages are diagnostic only. Only one complete human-approved strategy authorizes exact preset execution; no background rule switching or per-group approvals.")
+  if (kind == "strategy") schema <- paste(schema,
+    "Explain each QC, doublet, cycle, batch and HVG choice using the actual study goal/tissue, measured distributions, MAD impacts and declared design.",
+    "For proliferation, development or tumour goals generally preserve cycle biology with regression none; cycling_dominant evidence may justify reviewing difference regression, never automatic deletion.",
+    "A technical batch with measured composition differences may justify Harmony only after the existing confounding and rank guards; no declared technical provenance means none.",
+    "Auto/flag doublet modes propose keeping cells with diagnostic flags; remove is available only for an explicit remove setup and exact human strategy review.")
+  if(kind=="strategy"&&!is.null(evidence$cluster_diagnostics))schema<-paste(schema,
+    "cluster_diagnostics contains actual scanned resolutions and a bounded aggregate projection with explicit table column headers and omission accounting; full evidence remains local.",
+    "Choose only an actually scanned resolution, explaining native marker programs, within-parent child contrasts and potential shared/cycling/technical programs. These are same-data review cues, not biological validation or a composite optimum.",
+    "If evidence cannot justify a different resolution, 0.5 is only a rule fallback WHEN it appears in the actual scanned set. Otherwise report the fallback conflict and request author selection among scanned values; never invent or silently apply 0.5.",
+    "Never treat omitted/unsupported comparisons as zero signal or proof of stable identity.")
+  if (kind == "strategy" && !is.null(evidence$metadata_role_candidates)) schema <- paste(schema,
+    "metadata_role_candidates contains only whitelisted column names and privacy-filtered aggregate sizes/values.",
+    "If the sample role is unresolved, provide a clearly labelled sample/donor/condition mapping DRAFT with reasons in inferences, and ask the analyst to choose in the study-facts editor.",
+    "Do not turn the draft into a fact, invent missing columns, silently pool MAD, or infer technical batch/capture provenance from a column name.",
+    "When grouped MAD is unavailable, preserve cells and explicitly state that quality remains unassessed rather than inventing a threshold.")
   schema <- sub("These are independent suggestions", "These are suggestions", schema, fixed = TRUE)
   dependency <- if (kind != "annotation") "" else if (identical(evidence$reference_mode, "guided"))
     "Database candidates were supplied as guidance. This suggestion depends on that reference; agreement is not independent replication." else
@@ -340,9 +392,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     for (name in c("s_genes", "g2m_genes", "canonical_s_genes", "canonical_g2m_genes", "symbol_mapping"))
       payload_evidence$cycle_diagnostics$gene_set[[name]] <- NULL
   }
-  list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
+  request <- list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
        user_prompt = .sc_project_json(list(context = if (kind == "annotation" && !is.null(evidence$child_context)) evidence$context else config$context, evidence = payload_evidence)),
-       purpose = kind, evidence_hash = .sc_run_hash(evidence))
+       purpose = kind, evidence_hash = .sc_run_hash(evidence), prompt_version = .sc_run_prompt_version())
+  if (!is.null(config$review$transfer_consent)) request$transfer_scope <- .sc_run_transfer_scope(kind)
+  request
 }
 .sc_run_get_proposal <- function(root, state, kind, evidence, provider, chat_fn, retry, local_only = FALSE) {
   manual <- paste0("manual_", kind)
@@ -358,10 +412,29 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     state <- .sc_run_event(state, "manual_configuration_needed", list(stage = state$stage, kind = kind))
     .sc_run_save(root, state); return(list(state = state, proposal = NULL))
   }
-  request <- .sc_run_request(kind, evidence, state$config)
+  request <- tryCatch({
+    value<-.sc_run_request(kind,evidence,state$config)
+    .sc_run_transfer_check_literal_ids(value,.sc_run_get(root,state,paste0(kind,"_evidence")))
+    value
+  },sc_run_transfer_privacy_unavailable=function(error)error)
+  if (inherits(request, "sc_run_transfer_privacy_unavailable")) {
+    state$status <- "awaiting_configuration"
+    state$diagnostics$provider_privacy_notice <- conditionMessage(request)
+    state <- .sc_run_event(state, "provider_privacy_blocked", list(kind = kind, dispatch = "not_sent"))
+    .sc_run_save(root, state)
+    return(list(state = state, proposal = NULL))
+  }
   request_hash <- .sc_run_request_hash(request, provider, chat_fn)
   state <- .sc_run_put(root, state, paste0(kind, "_request"), request)
   external <- isTRUE(spec$metadata$external)
+  scope_authorized <- external && .sc_run_transfer_authorized(request, state$config)
+  if (scope_authorized && !request_hash %in% state$transfer_hashes) {
+    state$transfer_hashes <- unique(c(state$transfer_hashes, request_hash))
+    state <- .sc_run_event(state, "external_transfer_authorized", list(request_hash = request_hash,
+      consent_hash = state$config$review$transfer_consent$hash,
+      prompt_version = request$transfer_scope$prompt_version,
+      scientific_approval_required = TRUE))
+  }
   if (external && !request_hash %in% state$transfer_hashes) {
     if (!isTRUE(state$config$review$allow_external)) {
       state$status <- "awaiting_configuration"
@@ -472,6 +545,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
           proposal <- proposed$proposal
           mad <- evidence$private$mad_record
           if (!is.null(mad)) {
+            if (identical(proposal$qc$schema, "scagentkit.qc.v1")) proposal <- .sc_run_mad_bind_legacy_draft(proposal, mad)
             if (identical(proposal$qc$schema, "scagentkit.qc.mad.v1")) proposal$qc$panel_hash <- mad$panel_hash
             if (identical(proposal$qc$schema, "scagentkit.qc.rules.v1"))
               proposal$qc$rules <- lapply(proposal$qc$rules, function(rule) {
@@ -605,7 +679,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       } else if (stage == "annotation_apply") {
         .sc_run_require_approval(state, "annotation")
         .sc_run_annotation_review_verify(root, state)
-        seu <- .sc_run_annotation_apply(.sc_run_get(root, state, "analysis"), .sc_run_get(root, state, "annotation_validated"), state$config$annotation_column)
+        seu <- .sc_run_annotation_apply(.sc_run_get(root, state, "analysis"), .sc_run_get(root, state, "annotation_validated"), state$config$annotation_column, state$config$input_policy$metadata_key,
+          .sc_run_annotation_ontology_get(root,state,.sc_run_get(root,state,"annotation_validated")))
         state <- .sc_run_put(root, state, "annotated", seu)
         state <- .sc_run_checkpoint(root, state, stage, "finalize")
       } else if (stage == "finalize") {
@@ -831,7 +906,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     proposal <- parsed$content
   }
   if (isTRUE(state$config$strategy) && identical(proposal$schema, "scagentkit.strategy.v1"))
-    return(.sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason))
+    return(.sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason, review_binding))
   if (!state$stage %in% c("qc_propose", "annotation_propose")) stop("Manual proposals are only accepted at a proposal stage.", call. = FALSE)
   kind <- if (state$stage == "qc_propose") "qc" else "annotation"
   evidence <- .sc_run_get(root, state, paste0(kind, "_evidence"))
@@ -847,6 +922,10 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
         !identical(state$implementation_hash, .sc_run_implementation()))
       stop("Configuration or implementation changed; proposal review is stale.", call. = FALSE)
     .sc_run_annotation_validate(proposal, evidence)
+  }
+  if (kind == "annotation" && !isTRUE(review_binding$source %in% c("adopted_typed_suggestion", "local_rule_fallback"))) {
+    previous <- if (is.null(state$files$annotation_validated)) NULL else .sc_run_get(root, state, "annotation_validated")
+    state <- .sc_run_draft_track(root, state, kind, previous, .sc_run_annotation_validate(proposal, evidence))
   }
   state <- .sc_run_put(root, state, paste0("manual_", kind), proposal)
   previous_proposal_hash <- state$pending$hash

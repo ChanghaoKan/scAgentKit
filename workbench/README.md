@@ -61,10 +61,8 @@ measured review. At the annotation boundary, select
 **Prepare annotation table**, inspect the markers and fill in the blank rows.
 Save the complete proposal, inspect it, then select **Approve annotation and
 continue locally** to produce the saved result. These are three scientific
-approvals. Starting the service or preparing a table grants none. Published
-v0.6.0 has no default resolution scan and uses two approvals; follow its
-[version-matched protocol](../docs/RELEASE_060_PROTOCOL.md). Explicit processed
-reuse starts at annotation and has its own entry.
+approvals. Starting the service or preparing a table grants none. This guide
+targets scAgentKit 0.8.1. Explicit processed reuse starts at annotation and has its own entry.
 
 To leave populations unresolved, supply one reason and explicitly select
 **Keep all unfilled populations Unknown**. Known labels require citations from
@@ -132,7 +130,7 @@ in R. Node is used for tests, not to run the service.
 Continue does not request a model. Optional `--model-mock` or
 `--model-suggestions` enables a separate request worker for an already configured
 provider. Its exact aggregate preview, request consent and scientific approval
-are described in [model review](../docs/UNIFIED_MODEL_REVIEW.md).
+are described in [model review](../docs/dev/UNIFIED_MODEL_REVIEW.md).
 
 ## Parent and child projects
 
@@ -235,7 +233,7 @@ The complete worksheet still saves one typed proposal for separate approval.
 Local keeping is optional draft protection, not row-level scientific approval.
 Same-tab drafts restore only for exact project/input/evidence/revision bindings;
 older drafts are not silently migrated. Discard local edits explicitly to switch
-to the model path. See [the formal guide](../docs/ANNOTATION_ASSISTANCE.md).
+to the model path. See [the formal guide](../docs/dev/ANNOTATION_ASSISTANCE.md).
 
 For an already configured saved provider, enable its existing preview/authorize/
 request/adopt component through the same R entry:

@@ -1,16 +1,14 @@
 # R analysis protocol
 
-This is the **0.8.0** protocol linked from the
-[README](../README.md#one-project-workflow). Its ordinary raw-count scan has three
-scientific approvals. The published v0.6.0 default has two; use the matching
-[release protocol](RELEASE_060_PROTOCOL.md) with that archive. Do not mix versions
-when reopening projects.
+This is the **0.8.1** protocol linked from the [README](../README.md#analysis-protocol).
+The raw-count workflow has three scientific approvals. Existing projects retain
+their saved configuration and implementation identity when reopened.
 
 Choose manual or model-assisted initialization before creating the project.
 This example uses the manual default (`provider=NULL`, zero budget); you supply
 annotation labels and confidence. For a model project, initialize the immutable
-provider/model/settings/budget with `sc_analyze()` or `sc_run()` first, following
-[model configuration](UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call).
+provider/model/settings/budget directly in `sc_start()` for the browser, or in `sc_analyze()` for R-only review, following
+[model configuration](dev/UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call).
 Enabling a browser component later cannot add a provider to a manual project.
 
 ## First analysis
@@ -119,8 +117,8 @@ For example, concordant CD79A and MS4A1 evidence can support a B-cell assignment
 its worksheet entry would cite `CD79A;MS4A1` and explain that interpretation.
 Use `Unknown` with a rationale for unresolved populations. Cluster IDs and
 annotations depend on the data and analysis settings. For file-based editing,
-see the [detailed walkthrough](COMPLETE_ANALYSIS_WALKTHROUGH.md#3-read-markers-and-submit-annotations).
-The [annotation guide](ANNOTATION_REVIEW.md) describes evidence and review decisions.
+see the [detailed walkthrough](dev/COMPLETE_ANALYSIS_WALKTHROUGH.md#3-read-markers-and-submit-annotations).
+The [annotation guide](dev/ANNOTATION_REVIEW.md) describes evidence and review decisions.
 
 Save the completed worksheet, inspect the full annotation proposal returned by
 `sc_review()`, and approve it to apply the labels:

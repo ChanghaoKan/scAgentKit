@@ -1,0 +1,15 @@
+{
+  "schema": "scagentkit.fixed-reference.v1",
+  "name": "Cell Ontology",
+  "release": "v2026-06-08",
+  "asset": "cl-base-v2026-06-08.obo",
+  "source_url": "https://github.com/obophenotype/cell-ontology/releases/download/v2026-06-08/cl-base.obo",
+  "sha256": "c6274fb65cdf740b983a06b74cb678814249d7f8e580c2ec9de54bf204a2b1c7",
+  "license": "CC-BY-4.0",
+  "license_file": "CL-LICENSE-v2026-06-08.txt",
+  "license_source": "https://raw.githubusercontent.com/obophenotype/cell-ontology/v2026-06-08/LICENSE",
+  "attribution": "Cell Ontology Consortium / obophenotype cell-ontology contributors",
+  "project_url": "https://obofoundry.org/ontology/cl.html",
+  "modifications": "None. Unmodified cl-base.obo release asset; local filename identifies its release.",
+  "purpose": "Exact non-obsolete CL labels and EXACT synonyms only. Base ontology has no imports; no external ontology loading."
+}

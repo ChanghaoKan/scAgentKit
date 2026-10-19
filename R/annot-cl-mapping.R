@@ -1,6 +1,6 @@
 #' Map supplied labels to exact Cell Ontology names or synonyms
 #' @param obj Label data.frame or Seurat copy with a saved label column.
-#' @param obo_path Explicit local CL OBO path; existing documented cache is supported.
+#' @param obo_path Explicit local CL OBO path; NULL uses the bundled, checksum-pinned v2026-06-08 base ontology without downloading.
 #' @param column Label column, default label for a table or sc_annotation for Seurat.
 #' @param map_cells Whether to append IDs to the returned Seurat copy (never project state).
 #' @return Table with cl_id/cl_name, or a Seurat copy with cl_id/cl_name metadata.
@@ -14,7 +14,9 @@ annot_map_to_cl <- function(obj,obo_path=NULL,column=NULL,map_cells=TRUE) {
   if(!column %in% names(table))stop("Explicit label column is absent.",call.=FALSE)
   if(!requireNamespace("ontologyIndex",quietly=TRUE))stop("ontologyIndex is required; configure this optional dependency explicitly.",call.=FALSE)
   cl<-.get_cl_ontology(obo_path);source<-attr(cl,"scAgentKit_source")
-  matched<-lapply(as.character(table[[column]]),function(label).cl_match_one(label,cl))
+  unique_labels<-unique(as.character(table[[column]]))
+  lookup<-lapply(unique_labels,function(label).cl_match_one(label,cl))
+  matched<-lookup[match(as.character(table[[column]]),unique_labels)]
   table$cl_id<-vapply(matched,function(x)if(is.null(x$cl_id))NA_character_ else x$cl_id,"")
   table$cl_name<-vapply(matched,function(x)if(is.null(x$cl_name))NA_character_ else x$cl_name,"")
   if(seurat) {
@@ -66,32 +68,28 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
 
 # Lazy loader for the CL ontology. Caches per session.
 .get_cl_ontology <- function(obo_path = NULL) {
-  if (is.null(obo_path)) {
-    cache_dir <- tools::R_user_dir("scAgentKit", which = "cache")
-    if (!dir.exists(cache_dir)) {
-      dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-    }
-    obo_path <- file.path(cache_dir, "cl.obo")
-    if (!file.exists(obo_path)) {
-      url <- "https://purl.obolibrary.org/obo/cl.obo"
-      message("[scAgentKit] downloading Cell Ontology from ", url,
-              " to ", obo_path, " (first time only)...")
-      partial <- tempfile("cl-", tmpdir = cache_dir, fileext = ".obo")
-      on.exit(unlink(partial), add = TRUE)
-      utils::download.file(url, partial, mode = "wb", quiet = TRUE)
-      if (!file.rename(partial, obo_path)) stop("Cannot save the downloaded Cell Ontology.")
-    }
+  fixed <- is.null(obo_path)
+  provenance <- NULL
+  if (fixed) {
+    directory <- system.file("extdata", "references", package = "scAgentKit")
+    obo_path <- file.path(directory, "cl-base-v2026-06-08.obo")
+    if (!nzchar(directory) || !file.exists(obo_path))
+      stop("The fixed local Cell Ontology is unavailable. Reinstall the complete package or supply an explicit local obo_path; no network fallback is used.", call. = FALSE)
+    expected <- "c6274fb65cdf740b983a06b74cb678814249d7f8e580c2ec9de54bf204a2b1c7"
+    if (!identical(digest::digest(file = obo_path, algo = "sha256"), expected))
+      stop("The fixed Cell Ontology checksum changed. Restore the package's original reference before mapping labels.", call. = FALSE)
+    provenance <- jsonlite::read_json(file.path(directory, "CL-PROVENANCE.json"), simplifyVector = TRUE)
   }
   obo_path <- normalizePath(obo_path, mustWork = TRUE)
   sha <- digest::digest(file = obo_path, algo = "sha256")
-  key <- paste(obo_path, sha)
+  key <- paste(obo_path, sha, fixed)
   # Key the session cache by path and content: a different OBO must not
   # silently return the ontology loaded first.
   if (identical(.cl_env$key, key)) return(.cl_env$cl)
   cl <- ontologyIndex::get_ontology(obo_path,
                                      propagate_relationships = "is_a",
                                      extract_tags = "everything")
-  attr(cl, "scAgentKit_source") <- list(path = obo_path, sha256 = sha)
+  attr(cl, "scAgentKit_source") <- list(path = obo_path, sha256 = sha, mode = if (fixed) "fixed_bundled_release" else "explicit_local_file", provenance = provenance)
   .cl_env$cl <- cl; .cl_env$key <- key
   cl
 }
@@ -125,24 +123,17 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
   }
   q <- .cl_normalise(label)
   ids <- .cl_candidates(cl)
-  # 1. Exact name match
+  # Collect every exact label/synonym hit before choosing. An ambiguous
+  # dictionary entry is unresolved; iteration order must never choose its ID.
   norm_names <- vapply(unname(cl$name[ids]), .cl_normalise, character(1))
-  hit <- which(norm_names == q)
-  if (length(hit) > 0) {
-    id <- ids[hit[1]]
-    return(list(cl_id = id, cl_name = cl$name[[id]]))
-  }
-  # 2. EXACT synonym match only
+  hits <- ids[norm_names == q]
   syn <- cl$synonym
-  if (!is.null(syn)) {
-    for (id in ids) {
-      for (value in syn[[id]]) {
-        parsed <- .cl_synonym(value)
-        if (!is.null(parsed) && identical(parsed$scope, "EXACT") &&
-            identical(.cl_normalise(parsed$text), q))
-          return(list(cl_id = id, cl_name = cl$name[[id]]))
-      }
-    }
+  if (!is.null(syn)) for (id in ids) for (value in syn[[id]]) {
+    parsed <- .cl_synonym(value)
+    if (!is.null(parsed) && identical(parsed$scope, "EXACT") &&
+        identical(.cl_normalise(parsed$text), q)) hits <- c(hits, id)
   }
+  hits <- unique(hits)
+  if (length(hits) == 1L) return(list(cl_id = hits[[1L]], cl_name = cl$name[[hits[[1L]]]]))
   list(cl_id = NA_character_, cl_name = NA_character_)
 }

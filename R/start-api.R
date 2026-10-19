@@ -13,8 +13,12 @@
 #'   Set explicitly or via options(scAgentKit.checkout=...) only for development.
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
-#' @param model_suggestions Explicit operator mode: off, configured, or simulate.
-#'   Uses the saved immutable provider; preview and transfer approval remain required.
+#' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
+#' @param budget Nonnegative project USD cap; NULL selects USD1 for standard calibrated DeepSeek Flash settings. Explicit values take precedence; saved projects retain their frozen cap.
+#' @param review Creation-time transfer policy; optional explicit project scope skips repeated
+#'   transfer approvals within its provider/categories/budget. Payloads remain inspectable.
+#' @param model_suggestions Operator mode: auto, off, configured, or simulate.
+#'   Uses the saved provider; creation-time transfer scope or exact payload approval is required.
 #' @param reuse_processed Explicitly reuse processed layers/clusters. Default FALSE.
 #' @param processed_reason Required reason for processed reuse.
 #' @param cluster_column Saved cluster column for processed reuse.
@@ -23,14 +27,18 @@
 sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   python = NULL, browse = interactive(), reuse_processed = FALSE,
   processed_reason = NULL, cluster_column = "seurat_clusters",
-  model_suggestions = c("off", "configured", "simulate"),
+  model_suggestions = c("auto", "off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
-  feature_key = c("name", "id"), scientific_review = NULL) {
+  feature_key = c("name", "id"), scientific_review = NULL,
+  provider = NULL, budget = NULL, review = list(allow_external = FALSE),
+  doublet = c("auto", "off", "flag", "remove")) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
   scientific_review <- .sc_run_science_options(scientific_review)
   model_suggestions <- match.arg(model_suggestions)
+  doublet_supplied <- !missing(doublet)
+  doublet <- match.arg(doublet)
   .sc_project_string(project_dir, "project_dir")
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
   if (existing && is.null(context)) context <- .sc_run_load(.sc_run_root(project_dir))$config$context
@@ -44,10 +52,14 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   }
   .sc_project_string(input, "input RDS path")
   input <- normalizePath(path.expand(input), mustWork = TRUE)
-  if (dir.exists(input)) stop("input must be an RDS file.", call. = FALSE)
+  if (dir.exists(input)) stop("input must be an RDS file. Supply the saved counts/Seurat file path, or an explicitly declared 10x MEX directory.", call. = FALSE)
   for (flag in c("browse", "reuse_processed")) if (!is.logical(get(flag)) ||
       length(get(flag)) != 1L || is.na(get(flag))) stop(flag, " must be TRUE or FALSE.", call. = FALSE)
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
+  if (!existing && reuse_processed) {
+    if (doublet_supplied && doublet != "off") stop("Processed reuse does not run new doublet diagnostics; use doublet='off' or start a raw project.", call. = FALSE)
+    doublet <- "off"
+  }
   if (!existing && !reuse_processed && !missing(cluster_column) && !identical(cluster_column,"sc_strategy_clusters"))
     stop("cluster_column selects processed input membership; raw analysis creates sc_strategy_clusters.",call.=FALSE)
   preferences <- file.path(path.expand(project_dir), ".workbench-review-launcher", "preferences.json")
@@ -59,25 +71,33 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     if ((!missing(reuse_processed) && !identical(reuse_processed, identical(state$config$start_stage,"processed"))) ||
         (!missing(cluster_column) && !identical(cluster_column,state$config$cluster_column)) ||
         (!is.null(processed_reason) && !identical(processed_reason,state$config$processed_reason)))
-      stop("Reopening cannot replace saved entry, reuse reason or cluster column.", call. = FALSE)
+      stop("Reopening cannot replace saved entry, reuse reason or cluster column. Omit these options to use the saved choices, or create a new project.", call. = FALSE)
     context <- state$config$context
+    if (doublet_supplied && !identical(doublet, state$config$input_policy$doublet_mode))
+      stop("Reopening uses the saved doublet mode; omit doublet or create a new project.", call. = FALSE)
     if (!is.null(scientific_review) && !identical(scientific_review,state$config$scientific_review))
       stop("Reopening cannot replace saved scientific diagnostics; use the original configuration or a new project.",call.=FALSE)
     reuse_processed <- identical(state$config$start_stage, "processed")
     processed_reason <- state$config$processed_reason
     cluster_column <- state$config$cluster_column
   }
+  setup <- .sc_start_provider_setup(provider, if (!missing(budget)) budget,
+    if (!missing(review)) review, if (existing) state$config)
+  if (model_suggestions == "auto") model_suggestions <- if (identical(setup$provider$name, "manual")) "off" else
+    if (identical(setup$provider$name, "mock")) "simulate" else "configured"
+  if (model_suggestions == "simulate" && !identical(setup$provider$name, "mock"))
+    stop("Simulation requires provider='mock'; choose a new project for another provider.", call. = FALSE)
   if (!is.list(context) || anyDuplicated(names(context)) || !all(c("species", "tissue", "research_goal") %in% names(context)) ||
       length(setdiff(names(context), c("species", "tissue", "research_goal", "notes", "columns", "design"))))
-    stop("Supply named context with species, tissue, research_goal and optional notes, columns, design.", call. = FALSE)
+    stop("Supply named context with species, tissue, research_goal and optional notes, columns, design. Declare the actual study facts; omit unavailable optional roles.", call. = FALSE)
   for (field in c("species", "tissue", "research_goal")) .sc_project_string(context[[field]], field)
   if (!is.null(context$notes) && (!is.character(context$notes) || length(context$notes)!=1L || is.na(context$notes)))
-    stop("notes must be one text value.",call.=FALSE)
+    stop("notes must be one text value. Supply a single study note or omit notes.",call.=FALSE)
   if (is.null(checkout)) checkout <- getOption("scAgentKit.checkout")
   if (!is.null(checkout)) {
     checkout <- normalizePath(path.expand(checkout),mustWork=TRUE)
     runtime <- file.path(checkout,"inst","workbench")
-    if (!dir.exists(file.path(checkout,"R"))) stop("Developer checkout must contain R sources.",call.=FALSE)
+    if (!dir.exists(file.path(checkout,"R"))) stop("Developer checkout must contain R sources. Choose the matching repository root, or omit checkout to use the installed runtime.",call.=FALSE)
   } else runtime <- system.file("workbench",package="scAgentKit")
   if (!nzchar(runtime) || !file.exists(file.path(runtime,"start_analysis.py")))
     stop("Installed browser runtime missing; reinstall scAgentKit.",call.=FALSE)
@@ -113,6 +133,14 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     jsonlite::write_json(scientific_review,science_file,auto_unbox=TRUE,null="null")
     Sys.chmod(science_file,"0600")
     args <- c(args,"--scientific-review-file",shQuote(science_file))
+  }
+  if (!existing) {
+    args <- c(args, "--doublet-mode", shQuote(doublet))
+    setup_file <- tempfile("scagentkit-provider-", fileext = ".json")
+    on.exit(unlink(setup_file), add = TRUE)
+    jsonlite::write_json(setup, setup_file, auto_unbox = TRUE, null = "null")
+    Sys.chmod(setup_file, "0600")
+    args <- c(args, "--model-config-file", shQuote(setup_file))
   }
   error_file <- tempfile("scagentkit-start-error-")
   on.exit(unlink(error_file),add=TRUE)

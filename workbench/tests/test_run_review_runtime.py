@@ -340,6 +340,23 @@ class RunReviewHTTPTests(unittest.TestCase):
         return {"X-ScAgentKit-Run-Token": self.runtime.csrf_token,
                 "Origin": "http://127.0.0.1:" + str(self.port)}
 
+    def test_annotation_png_route_binds_exact_project_and_current_plot(self):
+        data = b"\x89PNG\r\n\x1a\n" + b"offline HTTP PNG fixture"
+        sha = __import__("hashlib").sha256(data).hexdigest()
+        relative = "review-evidence/annotation/" + "a" * 64 + "/citations-1.png"
+        path = self.project / relative
+        path.parent.mkdir(parents=True); path.write_bytes(data)
+        self.runtime.run["annotation_review"] = {"details": {"plot_evidence": {"plots": [{"sha256": sha, "path": relative}]}}}
+        route = "/api/run-review/annotation-plot/" + sha
+        status, headers, body = self.request("GET", route + "?project_id=literal-project")
+        self.assertEqual(status, 200); self.assertEqual(body, data)
+        self.assertEqual(headers["Content-Type"], "image/png")
+        self.assertEqual(headers["Cache-Control"], "no-store")
+        self.assertEqual(self.request("GET", route + "?project_id=foreign-project")[0], 409)
+        self.assertEqual(self.request("GET", "/api/run-review/annotation-plot/" + "0" * 64)[0], 404)
+        path.write_bytes(data + b"changed")
+        self.assertEqual(self.request("GET", route)[0], 409)
+
     def test_fresh_run_inspection_schema_token_and_security_headers(self):
         status, headers, body = self.request("GET", "/api/run-review/inspect")
         self.assertEqual(status, 200)

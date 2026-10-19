@@ -290,6 +290,10 @@
   # local. Size limits are handled by the existing approved request boundary.
   summary <- list(schema = "scagentkit.strategy.evidence.v1", start_stage = start_stage,
     background_facts = background, missing_facts = unique(missing), declared_roles = columns,
+    automatic_diagnostics = config$automatic_diagnostics, doublet_mode = config$input_policy$doublet_mode,
+    metadata_role_candidates = config$metadata_role_draft,
+    choice_reasons_required = !is.null(config$input_policy),
+    require_three_gates = isTRUE(config$input_policy$require_three_gates),
     role_sizes = lapply(roles[intersect(c("sample", "qc_group", "capture", "batch", "group", "condition", "treatment"), names(roles))], .sc_run_strategy_group_counts),
     quality = qc_evidence$summary,
     input = list(cells = length(cells), features = nrow(counts),
@@ -330,19 +334,28 @@
   }
   if (cycle_enabled) {
     summary$cycle_diagnostics <- cycle_record$summary
-    summary$capabilities$cycle <- if (processed) c("cycle_scoring", "none") else
+    if (!is.null(summary$automatic_diagnostics$cycle)) {
+      summary$automatic_diagnostics$cycle$status <- cycle_record$summary$status
+      summary$automatic_diagnostics$cycle$reasons <- cycle_record$summary$reasons
+      summary$automatic_diagnostics$cycle$scored_cells <- cycle_record$summary$cohort$scored_cells
+    }
+    summary$capabilities$cycle <- if (processed || !identical(cycle_record$summary$status, "available")) c("cycle_scoring", "none") else
       c("cycle_scoring", "none", "full", "difference")
     summary$capabilities$unsupported <- setdiff(summary$capabilities$unsupported,
       if (processed) "cycle_scoring" else c("cycle_scoring", "cycle_regression"))
   }
   if (doublet_enabled) {
     summary$doublet_diagnostics <- doublet_record$summary
+    if (!is.null(summary$automatic_diagnostics$doublet)) {
+      summary$automatic_diagnostics$doublet$status <- doublet_record$summary$status
+      summary$automatic_diagnostics$doublet$assessed <- identical(doublet_record$summary$status, "available")
+    }
     scored <- identical(doublet_record$summary$status, "available")
-    summary$capabilities$doublet <- if (!scored) "keep" else if (processed)
+    summary$capabilities$doublet <- if (!scored) "keep" else if (processed || isTRUE(config$input_policy$doublet_mode %in% c("auto", "flag")))
       c("doublet_scoring", "keep") else c("doublet_scoring", "keep", "remove_predicted")
     if (scored) {
       summary$capabilities$unsupported <- setdiff(summary$capabilities$unsupported,
-        if (processed) "doublet_scoring" else c("doublet_scoring", "doublet_removal"))
+        if (processed || isTRUE(config$input_policy$doublet_mode %in% c("auto", "flag"))) "doublet_scoring" else c("doublet_scoring", "doublet_removal"))
       for (package in c("scDblFinder", "SingleCellExperiment"))
         summary$dependencies[[package]]$strategy_supported <- TRUE
     }
@@ -451,12 +464,13 @@
   }
   proposal <- .sc_run_strategy_fields(proposal,
     c("schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap"),
-    optional = c(if (cycle_enabled) "cycle" else character(),
+    optional = c("choice_reasons", if (cycle_enabled) "cycle" else character(),
       if (doublet_enabled) "doublet" else character()), name = "Strategy proposal")
   if (!identical(proposal$schema, "scagentkit.strategy.v1")) stop("Unsupported strategy proposal schema.", call. = FALSE)
   rationale <- .sc_run_strategy_text(proposal$rationale, "strategy$rationale")
   risks <- .sc_run_strategy_array(proposal$risks, "strategy$risks")
   inferences <- .sc_run_strategy_array(proposal$inferences, "strategy$inferences")
+  choice_reasons <- .sc_run_choice_reasons(proposal$choice_reasons, isTRUE(evidence$summary$choice_reasons_required))
   batch <- .sc_run_strategy_fields(proposal$batch, c("method", "reason"),
     optional = c("group_by_vars", "theta", "lambda", "sigma", "max_iter", "nclust", "nested_biology"), name = "strategy$batch")
   method <- .sc_run_strategy_text(batch$method, "strategy$batch$method", 80L)
@@ -486,8 +500,13 @@
   qc_keep <- keep
   doublet <- NULL
   if (doublet_enabled) {
+    mode <- evidence$summary$doublet_mode
     choice <- if ("doublet" %in% names(proposal)) proposal$doublet else
-      list(method = "keep", reason = "Diagnostics only; no removal requested.")
+      if (identical(mode, "remove") && identical(evidence$private$doublet_record$summary$status, "available"))
+        list(method = "remove_predicted", reason = "Explicit remove setup; exact projected cells still require human approval.") else
+        list(method = "keep", reason = "Diagnostics only; no removal requested.")
+    if (isTRUE(mode %in% c("auto", "flag")) && identical(choice$method, "remove_predicted"))
+      stop("This doublet mode is flag-only; keep cells or start an explicit remove configuration before reviewing deletion.", call. = FALSE)
     doublet <- .sc_run_doublet_validate_choice(choice,
       evidence$private$doublet_record, qc_keep,
       cycle_record = if (cycle_enabled) evidence$private$cycle_record else NULL)
@@ -552,6 +571,8 @@
         any(!is.finite(diagnostics)) || any(diagnostics <= 0 | diagnostics > 2) || anyDuplicated(diagnostics)))
       stop("diagnostic_resolutions must be at most five unique finite resolutions in (0,2], or omitted/NULL.", call. = FALSE)
     clustering <- list(resolution = resolution, diagnostic_resolutions = if (is.null(diagnostics)) NULL else sort(unname(diagnostics)))
+    if (isTRUE(evidence$summary$require_three_gates) && !length(clustering$diagnostic_resolutions))
+      stop("This project requires measured resolution review; a model draft cannot remove the second scientific approval gate.", call. = FALSE)
     umap <- .sc_run_strategy_fields(proposal$umap, c("run", "n_neighbors"), name = "strategy$umap")
     if (!is.logical(umap$run) || length(umap$run) != 1L || is.na(umap$run))
       stop("strategy$umap$run must be TRUE or FALSE.", call. = FALSE)
@@ -588,6 +609,7 @@
   canonical <- list(schema = "scagentkit.strategy.v1", rationale = rationale,
     risks = risks, inferences = inferences, qc = if (processed) NULL else qc_validated$proposal,
     analysis = analysis, pcs = pcs, batch = batch, clustering = clustering, umap = umap)
+  if (!is.null(choice_reasons)) canonical$choice_reasons <- choice_reasons
   if (cycle_enabled) canonical$cycle <- cycle$choice
   if (doublet_enabled) canonical$doublet <- doublet$choice
   blockers <- harmony$blockers

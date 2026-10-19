@@ -40,6 +40,8 @@ def main(argv=None):
     parser.add_argument("--tenx-import", action="store_true", help="Internal R adapter: input RDS contains an exact 10x import receipt")
     parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
     parser.add_argument("--scientific-review-file", help="Explicit local optional diagnostic settings for a new raw project")
+    parser.add_argument("--doublet-mode", choices=("auto", "off", "flag", "remove"), help="New-project diagnostic/handling mode; no deletion before human review")
+    parser.add_argument("--model-config-file", help="Local creation-time provider, budget and transfer policy; never credentials")
     parser.add_argument("--source-checkout", help="Explicit matching developer source tree")
     model = parser.add_mutually_exclusive_group()
     model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
@@ -51,6 +53,8 @@ def main(argv=None):
         parser.error("port must be between 0 and 65535")
     if not all(value.strip() for value in (args.species, args.tissue, args.research_goal)):
         parser.error("Declare species, tissue and research goal")
+    if args.reuse_processed and args.doublet_mode not in (None, "off"):
+        parser.error("Processed reuse does not run new doublet diagnostics; use off or a raw project")
     if args.reuse_processed and not args.processed_reason.strip():
         parser.error("Processed reuse requires --processed-reason")
     input_path = Path(args.input).expanduser().resolve(strict=True)
@@ -72,6 +76,8 @@ def main(argv=None):
                "entry": "processed" if args.reuse_processed else "raw",
                "processed_reason": args.processed_reason, "cluster_column": args.cluster_column,
                "reopen": args.reopen, "tenx_import": args.tenx_import}
+    if args.doublet_mode is not None:
+        request["doublet_mode"] = args.doublet_mode
     if args.notes.strip():
         request["context"]["notes"] = args.notes
     if args.context_file:
@@ -91,6 +97,16 @@ def main(argv=None):
         if not isinstance(science, dict) or args.reuse_processed:
             parser.error("Scientific review settings require a JSON object and raw entry")
         request["scientific_review"] = science
+    if args.model_config_file:
+        if args.reopen:
+            parser.error("Reopening uses the saved provider policy; omit --model-config-file")
+        setup_path = Path(args.model_config_file)
+        if setup_path.stat().st_size > 65536:
+            parser.error("Provider configuration exceeds 64 KB")
+        setup = strict_json(setup_path.read_text(encoding="utf-8"))
+        if not isinstance(setup, dict) or set(setup) != {"provider", "budget", "review"}:
+            parser.error("Provider configuration requires provider, budget and review")
+        request["model_setup"] = setup
     env = scrub_secrets(dict(os.environ))
     library = args.r_library or env.get("R_LIBS_USER")
     if library:

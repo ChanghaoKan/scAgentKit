@@ -3,7 +3,7 @@
 \title{Stage a typed model suggestion with exact transfer authority}
 \usage{
 sc_run_suggest(project_dir,
-  action = c("preview", "approve", "request", "adopt", "discard"),
+  action = c("preview", "approve", "request", "adopt", "discard", "review_conflicts"),
   project_id = NULL, input_hash = NULL, expected_revision = NULL,
   suggestion_hash = NULL, reviewer = NULL, reason = NULL,
   chat_fn = NULL, simulate = FALSE)

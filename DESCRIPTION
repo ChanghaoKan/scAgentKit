@@ -1,7 +1,7 @@
 Package: scAgentKit
 Type: Package
 Title: Human-in-the-Loop, Auditable scRNA-Seq Toolkit
-Version: 0.8.0
+Version: 0.8.1
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
 Description: Experimental single-cell RNA-seq workflow with explicit scientific
@@ -10,6 +10,7 @@ Description: Experimental single-cell RNA-seq workflow with explicit scientific
     QC and clustering evidence, manual annotation, scoped child projects and
     standalone Seurat plotting, marker, reference and ontology utilities.
     Evidence and workflow completion do not establish biological accuracy.
+    Includes an offline ACT reference snapshot with fixed source provenance.
 License: MIT + file LICENSE
 Encoding: UTF-8
 SystemRequirements: Python (>= 3.9)

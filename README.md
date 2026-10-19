@@ -2,64 +2,41 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-scAgentKit is designed to help researchers with a biological background spend less time maintaining a single-cell RNA-seq workflow. Starting from counts and sample facts or an RDS file containing counts/Seurat, it guides QC, basic analysis and annotation through a saved, reviewable project.
-
-You receive a new Seurat object with counts, sample metadata, reductions and reviewed labels, plus marker tables, figures and the evidence and reasons behind decisions. QC, integration and clustering still require study judgement; default settings are starting points. FASTQ processing is upstream. Research-specific trajectory, communication and regulatory-network analyses are downstream and are not run automatically.
+scAgentKit guides researchers from single-cell counts and sample information
+through QC, basic analysis, clustering and reviewed annotation. A saved project
+contains a new Seurat object, marker tables, figures and your recorded decisions.
 
 ## Analysis workflow
 
-<img src="docs/diagrams/project-analysis-flow.svg" alt="Development raw-count workflow: automatic local analyses pause for strategy, measured clustering and annotation approvals; optional paths are explicit" width="1000">
+<img src="docs/diagrams/project-analysis-flow.svg" alt="Three review decisions: initial strategy, measured clustering and annotation" width="1000">
 
 [English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [Diagram source](docs/diagrams/generate_project_flow.py)
 
-This diagram describes version **0.8.0**. Historical v0.6.0 uses its separate
-[two-approval release protocol](docs/RELEASE_060_PROTOCOL.md); its tag/assets remain unchanged.
+This source workflow pauses for three approvals: your analysis plan, the measured
+clustering choice and the annotation proposal. Follow the steps below; the
+[operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) covers optional methods.
 
-### What runs automatically, and where you decide
-
-Automatic local work validates counts/metadata, measures QC and prepares evidence.
-After you approve the plan, it runs the approved analyses and the ordinary resolution
-scan/tree. It pauses at three separate scientific decisions:
-
-| Gate | Inspect these figures and evidence | Your decision |
+| Review 1 | Review 2 | Review 3 |
 | --- | --- | --- |
-| [**1. Initial strategy**](#gate-strategy) | QC distributions, sample/group comparisons, candidate cell retention and proposed PC/method rules. Actual PCA is still pending. | Choose QC and the complete analysis plan; **Save**, inspect the updated review, then **Approve and continue**. |
-| [**2. Measured clustering**](#gate-clustering) | Computed PC curve/crossings, cluster tree, marker contrasts and sample composition. Tree edges show shared cells, not lineage. | Select an **actually scanned resolution**. Save any edit, review it and independently approve before final membership/markers are bound. |
-| [**3. Annotation**](#gate-annotation) | Cluster markers, applicable mean/pct panels, reference support/provenance, conflicts and missing evidence. | Supply labels or **Unknown**, confidence and reasons. **Save complete proposal**, inspect all populations, then **Approve annotation and continue**. |
-
-After the third approval, the project writes the new Seurat object and exports.
-Saving a draft, correcting facts or reopening a project does not grant approval.
-Automation executes your recorded choices; it does not establish biological truth.
-
-Optional methods need explicit selection and suitable inputs. PC k±5, resampling,
-extra resolution extension, sample-consensus HVGs and experimental QC draft
-preselection are off by default; the ordinary scan/tree remains part of the raw
-workflow. Model requests need separate exact-transfer consent. SoupX/decontX are
-**separate R-only APIs** that return corrected counts for a new project, with no
-browser correction action and no replacement of original counts/checkpoints.
-See the [methods and limits](docs/SCIENTIFIC_METHODS_APPENDIX.md) and
-[operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) for detail.
+| [Initial plan](#gate-strategy) | [Measured clustering](#gate-clustering) | [Annotation](#gate-annotation) |
 
 ## Installation
 
-Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.8.0` is experimental.
+Requires R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3.9 for the browser.
+Browser resources are included in the R package.
+Supported platforms: **macOS and Linux**. **Windows is unsupported** because the
+local service and worker use [Unix `fcntl` file locks](https://docs.python.org/3/library/fcntl.html).
 
-Public Release downloads need no credential. GitHub dependency resolution can
-hit the unauthenticated API quota; `remotes` supports an existing `GITHUB_PAT`
-in that case. CI uses its existing read-only job token, not a new credential.
-
-Download [scAgentKit_0.8.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz) from the [v0.8.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release gates](docs/RELEASE_PLAN.md).
-
-Download both assets and verify the archive before installing:
+The recommended version is **0.8.1 (experimental prerelease)**. Download its
+archive and checksum, then verify the exact bytes before installation:
 
 ```sh
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/SHA256SUMS
-shasum -a 256 -c SHA256SUMS  # macOS; on Linux use: sha256sum -c SHA256SUMS
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.1.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.1/scAgentKit_0.8.1.tar.gz
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.1/SHA256SUMS
+shasum -a 256 -c SHA256SUMS  # macOS; Linux: sha256sum -c SHA256SUMS
 ```
 
-Stop on a checksum failure. In a fresh R session, allow enough time for large
-dependency downloads and check that the intended private installation loads:
+After the checksum passes, install in a fresh R session from that directory:
 
 ```r
 options(timeout=max(1800, getOption("timeout", 60)))
@@ -68,27 +45,22 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.8.0.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.1.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.1",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
 ```
 
-Run from the directory containing the downloaded archive, or give its full path.
-An installation log containing `ERROR` is not success: the explicit load,
-version and library-path assertions must pass before running the offline check.
-This installs required dependencies, including the declared
-`ChanghaoKan/agentomicsCore@v0.1.1`. Record the archive SHA256, package versions
-and `sessionInfo()` for reproducibility. Do not substitute mutable `main` or an
-older tag. Optional methods have their own verified version contracts; see
-[installation and runtime support](docs/LINUX_RUNTIME_SUPPORT.md).
-
+Expect version `0.8.1` from the selected library. Record its archive checksum,
+package versions and `sessionInfo()`. Optional dependency/version requirements
+are in [runtime support](docs/LINUX_RUNTIME_SUPPORT.md). If GitHub dependency
+downloads hit an API quota, `remotes` can use an existing `GITHUB_PAT`.
 ## Offline installation check
 
-After installing, run the bundled public-data software example in a new project:
+Run the bundled small-data example in a new project:
 
 ```r
 source(system.file("examples", "simple-analysis.R", package="scAgentKit"))
@@ -96,48 +68,58 @@ result <- simple_analysis_after(tempfile("scagentkit-offline-"))
 stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 ```
 
-This example uses `pbmc_small`, explicit software-control approvals and Unknown
-labels. It makes no provider call and does not validate biological identities.
-The release acceptance job runs the installation commands above in a fresh
-`rocker/r-ver` container with empty package libraries, then runs this example;
-its complete dependency-install and example logs are retained with the CI run.
+Expect a Seurat object with 80 cells and Unknown labels. Then use your own
+input below. The [release checks](docs/dev/archive/RELEASE_PLAN.md) record the installation
+and example logs.
 
-### Existing saved projects
-
-Execution and approval require the saved implementation hash to match the
-running functions and fingerprinted dependency versions. An older project with
-a different hash cannot continue under this release. Preserve its original
-project, inputs, package build and dependency environment; restore that exact
-environment to continue, or create a new project from the original input and
-review it again. Never edit saved hashes, approvals or checkpoints to force a
-resume. See [compatibility and deprecation details](NEWS.md).
-Author-label metadata priors default to off; using them requires explicit opt-in.
-The [v0.6.0 source recipe and restoration limits](docs/ENVIRONMENT_RESTORE.md)
-pin the release's R environment and package sources. Match the original archive
-and implementation, not just its version number; this is not an automatic
-cross-version project migration.
-
-## One project workflow
-
-Version 0.8.0 removes the old direct orchestration and AgentSeurat class. Use the
-reviewed project workflow or retained Seurat/table utilities; see the
-[complete API/type changes](docs/API_CONSOLIDATION.md). Preserve old evidence and
-rebuild development projects from original inputs with new approvals. This is a
-breaking experimental release, with no cross-version resume or compatibility facade.
+<a id="one-project-workflow"></a>
 
 ## Analysis protocol
 
-With version 0.8.0 installed, before the first `sc_start()`, choose
-manual or model-assisted initialization. The default creates a manual project:
-no provider, zero model budget; you supply labels and confidence. To use a model,
-initialize its provider/model/settings/budget with `sc_analyze()` or `sc_run()`
-first, following [configuration and consent](docs/UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call),
-then reopen that saved input with `sc_start(..., model_suggestions="configured")`.
-Those settings are immutable; the browser cannot add a provider to a manual project.
+Choose the model policy before creating the project. Keep an existing provider
+key in the analysis machine's environment (`DEEPSEEK_API_KEY` or `XAI_API_KEY`),
+never in code, study notes, browser fields or project files. `sc_start()` can
+configure the provider directly; a separate initialization call is unnecessary.
+Without a usable key it opens the manual workflow. Two detected provider keys
+require an explicit provider choice. The calibrated DeepSeek Flash default is **USD1.00 per new project**, with
+separate data/budget consent before transmission. Set a custom nonnegative finite
+cap with `budget=.73`; the preview shows your actual chosen value. Existing project
+caps stay frozen. Other models require an explicit
+cap. [Measured costs and limits](docs/MODEL_BUDGET.md).
 
-### 1. Choose counts and declare sample facts
+For model assistance, source the helper below, inspect the actual study context
+and aggregate categories, select a provider/model with verified pricing and set
+your own USD cap. Only then set `confirmed=TRUE` in your call. Sourcing sends
+nothing; the zero-cap example cannot make a paid request.
 
-For one 10x MEX directory, declare a unique sample ID and whether the source matrix is raw or filtered:
+```r
+source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
+service <- full_llm_start("input.rds", "new-project",
+  context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
+  provider=list(name="deepseek", model="deepseek-flash"), budget=1,
+  reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
+  categories=c("study_context", "aggregate_qc", "aggregate_markers",
+    "aggregate_design", "aggregate_expression"), confirmed=FALSE)
+```
+
+`confirmed=FALSE` deliberately asks you to review the setup before starting.
+Project consent permits automatic drafts only within the saved categories,
+provider/model and budget; exact payloads remain inspectable. To require separate
+permission for every payload, use `sc_start(..., provider=..., budget=...,
+review=list(allow_external=TRUE))` without project consent. Neither mode replaces
+the three scientific approvals below. Use `provider="manual"`, omit consent and keep budget zero
+for local manual review. See the [model contract](docs/dev/UNIFIED_MODEL_REVIEW.md).
+
+If a suggestion fails validation, has no usable key or exceeds its budget, the
+configured suggestion workflow saves a local rule draft and its reason without
+approval or retry. Complete suitable MAD evidence uses conservative AND3;
+otherwise QC stays unassessed with keep-all. Saved human edits take precedence.
+Review the effective draft before approving it. Usage estimates are not invoices.
+
+### 1. Choose input and declare sample facts
+
+Choose a new project directory. For one 10x MEX directory, set its sample ID and
+whether the matrix is raw or filtered:
 
 ```r
 input <- "filtered_feature_bc_matrix"
@@ -148,9 +130,10 @@ service <- sc_start(input, project_dir, context=context,
   sample_id="S1", matrix_kind="filtered")
 ```
 
-The local review page opens and R returns control. Expect an import summary and an unapproved strategy. Raw input keeps all supplied barcodes; import does not perform empty-droplet calling. Check source class, cell counts, feature-key changes and metadata alignment before proceeding.
+You will see the import summary and an unapproved plan. Check the imported
+cells, feature names and sample information, then move to step 2.
 
-For multiple samples, replace the call above with one table containing both paths and study facts:
+For multiple samples, use a table of paths and study facts instead:
 
 ```r
 input <- data.frame(sample_id=c("S1", "S2"),
@@ -160,59 +143,65 @@ input <- data.frame(sample_id=c("S1", "S2"),
 service <- sc_start(input, project_dir, context=context)
 ```
 
-Cell IDs become `sample_id::barcode`, so repeated barcodes across samples remain distinct. Optional cell metadata joins by exact sample/barcode keys. Gene Expression feature ID sets must match across samples; no feature intersection or aggregation is applied. See [10x input and sample tables](docs/TENX_INPUT.md) for file/table formats, original feature identity and alignment details.
+Sample IDs must be unique and Gene Expression feature-ID sets must match.
+The page displays cell IDs as `sample_id::barcode`. See
+[input formats and metadata matching](docs/TENX_INPUT.md).
 
-For an existing RDS file containing raw counts or a Seurat object, use the file path
-(`sc_start()` does not accept an in-memory Seurat object):
+For an RDS containing raw counts or a Seurat object, pass the **file path**;
+`sc_start()` does not take an in-memory Seurat object:
 
 ```r
 input <- "a.rds"
 service <- sc_start(input, project_dir, context=context)
 ```
 
-Use a new `project_dir` for each new analysis. Starting from counts reruns basic analysis; [processed-object reuse](workbench/README.md) is an explicit alternative.
+Declare verified sample/donor/capture/condition roles using existing metadata
+columns. Leave unknown roles unspecified. The
+[operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) covers counts/layers and
+explicit reuse of an already processed object.
 
-New raw strategy projects keep ordinary normalization/global-vst HVGs/PCA, the internal 80% PC policy, the ordinary resolution scan and cluster tree. PC k±5, 80% resampling, extra resolution extension, sample-consensus HVGs and automatic QC draft preselection are off until explicitly enabled. Applicable sample QC, elbow, citation direction and Fisher/BH evidence remain available. Classic mean/detection panels default to explicitly declared human blood/PBMC or pancreas; unsupported declarations and absent genes stay unavailable/missing, never guessed. Cross-sample/mixed-lineage expression extensions remain opt-in. SoupX/decontX stay separate optional R-only calls. See the [default and opt-in guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md).
-
-### 2. Review the strategy and run basic analysis
+### 2. Review the plan, then measured clustering
 
 <a id="gate-strategy"></a>
 
-At **gate 1**, check study facts, measured QC distributions and projected cell
-retention, grouped by sample/QC role when declared. Missing roles stay pooled or
-unavailable. The initial keep-all quality choice does not certify QC; `nCount >= 1`
-only removes all-zero input. High counts, ribosomal or haemoglobin expression do
-not authorize automatic deletion, and raw MEX import is not empty-droplet calling.
-
-**Use candidate in local draft** changes the draft only. Save the complete plan,
-inspect the rebuilt evidence, then approve. Saving facts is also separate from
-scientific approval. Missing optional doublet/batch facts or dependencies leave
-that path unexecuted and disclosed; a selected unsupported method needs revision.
+Check QC distributions, sample comparisons, proposed cell retention and the
+complete analysis plan. **Use candidate in local draft** edits the draft.
+Choose **Save**, read the updated plan and evidence, then **Approve and continue**.
+The approved local analysis runs and the page pauses for measured clustering.
 
 <a id="gate-clustering"></a>
 
-The approved foundation runs locally, then the ordinary resolution scan pauses
-at **gate 2**. Inspect the computed PC evidence, tree, marker contrasts and sample
-composition; choose an actually scanned resolution, save changes and approve the
-measured strategy. Neither the PC rule nor the resolution comparisons identify a
-biological optimum. Model assistance is optional and the default makes no request.
-You can close the page and reopen the same project later. Method definitions and
-boundaries are in [analysis strategy support](docs/ANALYSIS_STRATEGY_SUPPORT.md)
-and the [methods appendix](docs/SCIENTIFIC_METHODS_APPENDIX.md).
+Inspect the computed PC curve, cluster tree, marker contrasts and sample
+composition. Choose an **actually scanned resolution**, save edits, read the
+updated review and approve it. Next, the annotation worksheet becomes available.
+If a selected method is not ready, revise the choice or satisfy its listed
+requirements. [Method definitions](docs/SCIENTIFIC_METHODS_APPENDIX.md) explain
+the plots and PC rule.
 
-### 3. Prepare and review annotations
+### 3. Review annotations
 
 <a id="gate-annotation"></a>
 
-Open the annotation worksheet. Each row shows a saved cluster's markers and any configured local reference candidates. Conflicts and missing evidence are flagged; detailed statistics and provenance expand in place.
+Open the worksheet and read each cluster's markers, DotPlot/FeaturePlot evidence
+and reference candidates. This build loads its pinned ACT snapshot offline for new modern projects,
+with exact declared species/tissue and original PMIDs. [Source and usage](docs/ACT_LOCAL_REFERENCE.md). Missing or unmatched ACT data is visibly
+unavailable and leaves marker/Unknown review usable. The first model draft is
+marker-only; at most one separately budgeted guided difference review may follow.
+Cell Ontology IDs use the pinned exact-name/synonym dictionary; ambiguous or
+unmapped labels retain a missing CLID.
+Fill every row with a label or **Unknown**, confidence, a reason and supplied
+supporting markers. In an untouched row, selecting a reference candidate can
+copy its label and citations; fill in your own confidence and interpretation.
+The bulk Unknown action asks for a reason and preserves edited rows.
 
-Enter a label, qualitative confidence, evidence-based rationale and supporting supplied markers for each population. Explicitly selecting a reference candidate can copy its label and same-cluster citations into an untouched row; confidence and interpretation remain yours. Coverage is overlap, not a probability. Use a coarse label or **Unknown** when the evidence is insufficient. The bulk Unknown action requires an entered reason and preserves edited rows.
+Choose **Save complete proposal**, inspect all populations, then
+**Approve annotation and continue**. Expect a completed project and result page.
+For request/edit controls, see [annotation assistance](docs/dev/ANNOTATION_ASSISTANCE.md).
 
-Choose **Save complete proposal**, inspect all populations together, then **Approve annotation and continue**. Saving a draft does not apply labels. Expect the completed state and result page after approval. A model is optional; the manual path requires no provider. See [annotation assistance](docs/ANNOTATION_ASSISTANCE.md) and [configured model requests](docs/UNIFIED_MODEL_REVIEW.md) for details.
+### 4. Retrieve results
 
-### 4. Retrieve the result
-
-In the same R library environment:
+After completion, use the same R package environment. The plot line below
+requires UMAP to have been included in the plan:
 
 ```r
 result <- sc_result(project_dir)
@@ -221,11 +210,15 @@ table(result$sc_annotation)
 sc_open(project_dir)$view$output
 ```
 
-`result` is the saved final Seurat object, loaded after its recorded file-integrity checks, ready for research-specific follow-up. The project directory also holds markers, metadata, parameters, figures and decision records. Before annotation is complete, `sc_result(project_dir, stage="analysis")` explicitly returns the provisional analysis object.
+The project also contains marker tables, metadata, parameters, figures and
+review records. Before annotation finishes,
+`sc_result(project_dir, stage="analysis")` retrieves the saved provisional object.
+Next, use the final Seurat object for your study's follow-up analyses.
 
-### 5. Reopen and continue
+### 5. Reopen a saved project
 
-Use the same package/dependency environment. Repeat the relevant input call with the same project and original inputs/options, omitting context to reuse saved facts:
+Use its original package environment, input and options. Repeat the relevant
+entry call, omitting context to reuse the saved study facts:
 
 ```r
 # For the single-directory example:
@@ -235,19 +228,39 @@ sc_start("filtered_feature_bc_matrix", project_dir,
 # For the RDS example: sc_start("a.rds", project_dir)
 ```
 
-The page shows the saved stage; reopening does not approve or rerun it. Keep the original input binding unchanged for this entry. To inspect saved results independently of the original source location, use `sc_open(project_dir)`, `sc_result(project_dir)`, or `sc_run_open(project_dir)` for the read-only browser.
+The page shows the saved stage. To inspect results without the original input
+location, use `sc_open(project_dir)` in R or `sc_run_open(project_dir)` for the
+read-only browser. See [reopening and errors](docs/SCIENTIFIC_REVIEW_QUICKSTART.md#11-results-reopening-and-errors).
+
+## Limitations
+
+- Before 1.0, any version may break compatibility without a deprecation period;
+  resuming a project across versions is unsupported.
+- This experimental workflow executes your reviewed choices; completion does
+  not establish biological accuracy, optimal QC/PC/resolution settings or time
+  savings. Keep-all is a starting choice; `nCount >= 1` removes all-zero input only.
+  The small-data example and Unknown labels check software operation.
+- The 80% PC rule is a project heuristic; cluster-tree edges show shared cells,
+  not lineage. Reference overlap and qualitative confidence are not calibrated
+  probabilities. Missing genes/assessments are not measured zeros or completed
+  checks. Read the [methods and denominators](docs/SCIENTIFIC_METHODS_APPENDIX.md).
+- Raw MEX import retains supplied barcodes without empty-droplet calling.
+  FASTQ processing and study-specific trajectory, communication or regulatory
+  analyses are outside this workflow. Optional diagnostics require suitable
+  inputs and explicit selection; see the [guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md).
+- Keep each project's original input, package build and dependency environment.
+  For a new version, create a new project from the original input and review it
+  again; retain old evidence separately. **Do not edit saved checksums, approval
+  records or intermediate files to force an old project to resume.**
+  See [API changes](docs/dev/API_CONSOLIDATION.md) and [version history](NEWS.md).
 
 ## More detail
 
-- [English operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md)
-- [Version-matched v0.6.0 protocol](docs/RELEASE_060_PROTOCOL.md)
-- [R-only preview protocol with public PBMC3k](docs/R_ANALYSIS_PROTOCOL.md)
-- [10x MEX, sample tables and keyed cell metadata](docs/TENX_INPUT.md)
-- [Analysis strategy and supported methods](docs/ANALYSIS_STRATEGY_SUPPORT.md)
-- [Annotation evidence and decisions](docs/ANNOTATION_REVIEW.md)
-- [Browser and remote server setup](workbench/README.md)
-- [Researcher protocol — 中文](docs/RESEARCHER_PROTOCOL_ZH.md)
-- [Documentation index](docs/README.md)
+- [English operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) · [中文操作指南](docs/RESEARCHER_PROTOCOL_ZH.md)
+- [10x input and sample tables](docs/TENX_INPUT.md)
+- [R analysis protocol](docs/R_ANALYSIS_PROTOCOL.md)
+- [Analysis methods](docs/dev/ANALYSIS_STRATEGY_SUPPORT.md) · [Annotation review](docs/dev/ANNOTATION_REVIEW.md)
+- [Browser and remote server setup](workbench/README.md) · [Documentation index](docs/README.md)
 
 R help: `?sc_start`, `?sc_analyze`, `help(package="scAgentKit")`.
 

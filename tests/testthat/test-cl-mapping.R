@@ -37,3 +37,27 @@ test_that("the CL session cache is keyed by path and content", {
   expect_identical(scAgentKit:::.cl_match_one("test cell", other)$cl_id, NA_character_)
   expect_identical(attr(other, "scAgentKit_source")$sha256, digest::digest(file = second, algo = "sha256"))
 })
+
+
+test_that("default CL is a verified fixed local release with no imports or network", {
+  skip_if_not_installed("ontologyIndex")
+  cl <- .get_cl_ontology()
+  source <- attr(cl, "scAgentKit_source")
+  expect_identical(source$sha256, "c6274fb65cdf740b983a06b74cb678814249d7f8e580c2ec9de54bf204a2b1c7")
+  expect_identical(source$mode, "fixed_bundled_release")
+  expect_identical(source$provenance$release, "v2026-06-08")
+  expect_identical(source$provenance$license, "CC-BY-4.0")
+  expect_false(any(startsWith(readLines(source$path, warn = FALSE), "import:")))
+  expect_identical(.cl_match_one("T cell", cl)$cl_id, "CL:0000084")
+  expect_identical(.cl_match_one("T cel", cl)$cl_id, NA_character_)
+})
+
+test_that("ambiguous exact names or synonyms stay unresolved instead of picking the first ID", {
+  cl <- list(name = c("CL:0000001" = "first cell", "CL:0000002" = "second cell"),
+    synonym = list("CL:0000001" = '"shared alias" EXACT []', "CL:0000002" = '"shared alias" EXACT []'))
+  expect_identical(.cl_match_one("shared alias", cl)$cl_id, NA_character_)
+  cl$name[[2L]] <- "first cell"
+  expect_identical(.cl_match_one("first cell", cl)$cl_id, NA_character_)
+  cl$name[[2L]] <- "shared alias"
+  expect_identical(.cl_match_one("shared alias", cl)$cl_id, NA_character_)
+})

@@ -22,5 +22,5 @@ artifact/tab transitions and candidate-control actions separately. Do not count
 an automatically moved label/citation as a human edit. Do not turn developer
 walkthrough counts, runtime or automation into real-user time savings. Keep the
 same rationale/uncertainty and complete-proposal review requirement in both arms.
-Use the [offline contract](../../../docs/OFFLINE_COMPARISON_CONTRACT.md) for
+Use the [offline contract](../../../docs/dev/OFFLINE_COMPARISON_CONTRACT.md) for
 scientific comparison prerequisites; these PBMC labels are a case, not accuracy.

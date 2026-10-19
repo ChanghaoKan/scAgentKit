@@ -44,10 +44,10 @@
     stop("Configuration or implementation changed; restore the pinned environment or start a new project.", call. = FALSE)
   invisible(state)
 }
-.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL, pc_limits = NULL) {
+.sc_ui_plan <- function(edits = list(), base = NULL, dimensions = NULL, mad = NULL, pc_limits = NULL, diagnostic_policy = NULL) {
   if (!is.list(edits) || (length(edits) && (is.null(names(edits)) ||
-      anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list.", call. = FALSE)
-  allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap")
+      anyDuplicated(names(edits)) || anyNA(names(edits))))) stop("plan must be a named list. Supply the choices you want to revise, then inspect the refreshed review before approving.", call. = FALSE)
+  allowed <- c("rationale", "risks", "qc", "qc_preset", "analysis", "pcs", "batch", "resolution", "diagnostic_resolutions", "umap", "cycle", "doublet", "choice_reasons")
   if (length(setdiff(names(edits), allowed))) stop("Unknown plan fields: ", paste(setdiff(names(edits), allowed), collapse = ", "), call. = FALSE)
   new_draft <- is.null(base)
   if (new_draft) {
@@ -55,12 +55,12 @@
     npcs <- min(50L, nfeatures - 1L, dimensions[[2]] - 1L)
     base <- list(schema = "scagentkit.strategy.v1",
       rationale = "Editable software starting draft. Review input QC and study facts before approval.",
-      risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices.",
+      risks = list("Starting drafts and standard analysis parameters do not establish completed QC or scientific suitability.",
         "Resolution 0.5 is a provisional scan starting value, not a recommendation. Review the measured cluster tree before final author selection."),
       inferences = list(), qc = list(schema = "scagentkit.qc.v1",
-        rationale = "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
+        rationale = "Unfiltered keep-all starting draft: no cell is removed without a reviewed QC choice. Inspect distributions and candidate impacts before approval.",
         risks = list("No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
-        filters = list(list(op = "range", metric = "nCount", min = 1))),
+        filters = list(list(op = "range", metric = "nCount", min = 0))),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
         nfeatures = nfeatures, npcs = npcs, seed = 17L),
       pcs = list(method = "computed_top50", threshold = .80),
@@ -68,14 +68,14 @@
       clustering = list(resolution = .5, diagnostic_resolutions = c(.2, .4, .6, .8, 1)),
       umap = list(run = TRUE, n_neighbors = min(30L, dimensions[[2]] - 1L)))
   }
-  for (name in intersect(names(edits), c("rationale", "batch", "umap"))) {
+  for (name in intersect(names(edits), c("rationale", "batch", "umap", "cycle", "doublet", "choice_reasons"))) {
     if (name == "umap" && is.logical(edits[[name]]) && length(edits[[name]]) == 1L)
       base$umap$run <- edits[[name]] else base[[name]] <- edits[[name]]
   }
   if ("risks" %in% names(edits)) base$risks <- as.list(edits$risks)
   if ("analysis" %in% names(edits)) {
     if (!is.list(edits$analysis) || is.null(names(edits$analysis)) ||
-        length(setdiff(names(edits$analysis), c(names(base$analysis),"hvg_method","hvg_column")))) stop("Unknown analysis settings.", call. = FALSE)
+        length(setdiff(names(edits$analysis), c(names(base$analysis),"hvg_method","hvg_column")))) stop("Unknown analysis settings. Use the supported fields in the displayed plan and resubmit the draft.", call. = FALSE)
     base$analysis[names(edits$analysis)] <- edits$analysis
   }
   if (new_draft) {
@@ -93,7 +93,9 @@
     list(method = "fixed", ndim = edits$pcs) else edits$pcs
   if ("resolution" %in% names(edits)) base$clustering$resolution <- edits$resolution
   if ("diagnostic_resolutions" %in% names(edits)) base$clustering["diagnostic_resolutions"] <- list(edits$diagnostic_resolutions)
-  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = "keep_all", panel_hash = mad$panel_hash) else {
+  fallback <- if (new_draft) .sc_run_default_mad_choice(mad) else NULL
+  if (new_draft) base$qc$rationale <- paste(if (isTRUE(fallback$eligible)) "Conservative AND3 starting draft." else base$qc$rationale, fallback$reason)
+  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = if (new_draft) fallback$preset_id else "keep_all", panel_hash = mad$panel_hash) else {
     existing <- Filter(function(rule) identical(rule$op, "mad_preset"), base$qc$rules)
     if (length(existing)) existing[[1L]] else NULL
   }
@@ -125,18 +127,13 @@
     base$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = base$qc$rationale,
       risks = base$qc$risks, remove_if = "any", rules = c(ranges, list(mad_rule)))
   }
+  if (new_draft && !"choice_reasons" %in% names(edits)) base$choice_reasons <- .sc_run_default_choice_reasons(
+    if (length(intersect(names(edits), c("qc", "qc_preset")))) "Explicit caller QC draft; review measured applicability and exact retained cells before approval." else fallback$reason,
+    diagnostic_policy$doublet_mode)
   base
 }
-.sc_ui_mad_setup <- function(context) {
-  columns <- context$columns
-  if (is.character(columns)) columns <- as.list(columns)
-  role <- if (!is.null(columns$qc_group)) "qc_group" else if (!is.null(columns$sample)) "sample" else NULL
-  grouping <- if (is.null(role)) list(method = "single", id = "unstratified_input",
-    source = "No sample/QC-group role was declared. Pooled unstratified diagnostics, not a declared single sample; per-sample conclusions are unavailable.") else
-    list(method = "column", column = columns[[role]], declared_role = role,
-      source = paste0("Explicit context$columns$", role, " declaration; no donor or capture role inferred."))
-  list(grouping = grouping)
-}
+.sc_ui_mad_setup <- function(context) .sc_run_mad_group_defaults(context)
+
 .sc_ui_pc_limits <- function(seu, config, scale_factor) {
   scale_factor <- .sc_run_strategy_number(scale_factor, "analysis$scale_factor", 0, open_min = TRUE)
   normalized <- Seurat::NormalizeData(seu, assay = config$assay,
@@ -193,9 +190,9 @@
 #' Start an analysis with an editable strategy draft
 #' @export
 sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL,
-                       chat_fn = NULL, budget = 0, review = list(allow_external = FALSE),
+                       chat_fn = NULL, budget = NULL, review = list(allow_external = FALSE),
                        sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
-                       feature_key = c("name", "id"), ...) {
+                       feature_key = c("name", "id"), doublet = c("auto", "off", "flag", "remove"), ...) {
   imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
   input <- imported$input; context <- imported$context
   if (imported$imported) {
@@ -203,13 +200,53 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     on.exit(unlink(transport),add=TRUE)
     saveRDS(input,transport,version=2L);input<-transport
   }
+  if (is.null(budget) && !is.null(review$transfer_consent))
+    stop("Project transfer consent requires an explicit USD cap after reviewing data categories; supply budget=1 or another chosen cap.", call. = FALSE)
+  selected_budget <- .sc_run_new_budget(provider, budget, chat_fn)
+  provider <- selected_budget$provider; budget <- selected_budget$budget
+  chat_fn <- selected_budget$chat_fn
   extra <- list(...)
+  if (is.null(extra$reference_review)) extra$reference_review <- list()
+  extra$reference_review$strict_scope <- TRUE
+  # Only a new modern project gets the private default. Explicit reference=NULL
+  # remains an opt-out; the coordinator saves the selected table as an artifact.
+  if (!"reference" %in% names(extra)) {
+    extra$reference <- .sc_ui_act_default(context)
+    private_provenance <- .sc_ui_act_provenance(extra$reference)
+    if (length(private_provenance)) {
+      if (is.null(extra$reference_review$provenance)) extra$reference_review$provenance <- list()
+      extra$reference_review$provenance <- utils::modifyList(private_provenance, extra$reference_review$provenance)
+    }
+  }
+  if(identical(extra$reference_review$ai_mode,"guided"))
+    stop("The first modern annotation draft must be independent marker-only. Inspect its reference comparison before staging the optional one-time guided review.",call.=FALSE)
+  doublet <- match.arg(doublet)
+  plan_fields <- names(plan)
+  plan_fields[plan_fields %in% c("resolution", "diagnostic_resolutions")] <- "clustering"
+  plan_fields[plan_fields == "qc_preset"] <- "qc"
+  defaults <- list(require_three_gates = !("diagnostic_resolutions" %in% names(plan) && is.null(plan$diagnostic_resolutions)),
+    protected_strategy_fields = unique(plan_fields), preserve_metadata = TRUE, automatic_metadata = TRUE, automatic_mad = !"qc_mad" %in% names(extra),
+    automatic_cycle = !"cycle_diagnostics" %in% names(extra),
+    doublet_mode = if (identical(extra$doublet_diagnostics, FALSE)) "off" else doublet)
+  if ("input_policy" %in% names(extra)) {
+    invisible(.sc_run_input_policy(extra$input_policy))
+    defaults[names(extra$input_policy)] <- extra$input_policy
+  }
+  extra$input_policy <- .sc_run_input_policy(defaults)
+  source_context <- context
+  metadata_input <- if (is.character(input) && length(input) == 1L) readRDS(input) else input
+  if (inherits(metadata_input, "Seurat") && extra$input_policy$automatic_metadata)
+    context <- .sc_run_metadata_roles(metadata_input, context, select_single = TRUE)$context
   blocked <- c("strategy", "strategy_proposal", "qc_proposal", "annotation_proposal", "analysis", "start_stage")
   if (length(intersect(names(extra), blocked))) stop("Use plan for raw analysis settings; advanced entries remain available through sc_run().", call. = FALSE)
   if (!"qc_mad" %in% names(extra)) extra$qc_mad <- .sc_ui_mad_setup(context)
+  # Configuring a provider must not remove the local reviewable rule draft.
+  # Configured-provider dispatch belongs to the suggestion channel. Preserve
+  # the existing explicit in-memory chat_fn contract for advanced R callers.
+  if (is.null(plan) && is.null(chat_fn)) plan <- list()
   proposal <- NULL
   if (is.null(provider) || !is.null(plan)) {
-    object <- if (is.character(input) && length(input) == 1L) readRDS(input) else input
+    object <- metadata_input
     dimensions <- dim(object)
     if (length(dimensions) != 2L) stop("input must be a counts matrix, Seurat object or its RDS path.", call. = FALSE)
     panel <- NULL
@@ -228,7 +265,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
       panel <- .sc_run_mad_evidence(checked$seu, config, qc, prefilter_record = prefilter)
     }
     edits <- if (is.null(plan)) list() else plan
-    proposal <- .sc_ui_plan(edits, dimensions = dimensions, mad = panel)
+    proposal <- .sc_ui_plan(edits, dimensions = dimensions, mad = panel, diagnostic_policy = extra$input_policy)
     if (!is.null(panel)) {
       qc$mad_record <- panel; qc$summary$mad <- panel$summary
       qc$evidence_hash <- .sc_run_qc_hash(qc)
@@ -243,9 +280,9 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
       selected_object <- checked$seu[, selected]
     }
     limits <- .sc_ui_pc_limits(selected_object, config, proposal$analysis$scale_factor)
-    proposal <- .sc_ui_plan(edits, dimensions = dim(selected_object), mad = panel, pc_limits = limits)
+    proposal <- .sc_ui_plan(edits, dimensions = dim(selected_object), mad = panel, pc_limits = limits, diagnostic_policy = extra$input_policy)
   }
-  do.call(sc_run, c(list(input = input, project_dir = project_dir, context = context, strategy = TRUE,
+  do.call(sc_run, c(list(input = input, project_dir = project_dir, context = source_context, strategy = TRUE,
     strategy_proposal = proposal, provider = provider, chat_fn = chat_fn,
     budget = budget, review = review), extra))
   sc_open(project_dir)
@@ -293,8 +330,8 @@ sc_review <- function(project, action = c("show", "revise", "approve", "reject",
         stop("Request requires a configured, nonfailed proposal boundary; review pending science/transfer first. Retry stays explicit in sc_run_resume().", call. = FALSE)
       if (!is.null(state$config$subcluster_origin)) stop("Use sc_run_suggest() for scoped child model requests.", call. = FALSE)
       provider <- state$config$provider
-      if (identical(provider$name, "manual")) stop("This project has no configured provider.", call. = FALSE)
-      if (!identical(.sc_run_provider_spec(provider, chat_fn)$metadata, provider)) stop("Provider settings changed.", call. = FALSE)
+      if (identical(provider$name, "manual")) stop("This project has no configured provider. Continue with local manual review, or create a new project with an available provider key and explicit transfer policy.", call. = FALSE)
+      if (!identical(.sc_run_provider_spec(provider, chat_fn)$metadata, provider)) stop("Provider settings changed. Restore the saved provider/model settings or create a new project.", call. = FALSE)
       .sc_run_drive(root, .sc_run_cleanup(root, state), provider, chat_fn, retry = FALSE)
       fresh <- sc_run_inspect(root)
     }
@@ -305,14 +342,14 @@ sc_review <- function(project, action = c("show", "revise", "approve", "reject",
     if (external && continue) stop("Transfer approval cannot continue computation or dispatch; use a separate explicit request.", call. = FALSE)
     if (action == "revise") {
       if (is.null(plan) == is.null(annotations)) stop("Revise needs exactly one of plan or annotations.", call. = FALSE)
-      if (!is.null(plan) && is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry.", call. = FALSE)
+      if (!is.null(plan) && is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry. Inspect sc_review() and supply a complete supported plan before approval.", call. = FALSE)
       proposal <- if (!is.null(plan)) .sc_ui_plan(plan, base = project$plan) else .sc_ui_annotation(annotations)
       # Lock once to bind first drafts as strictly as revisions. The public
       # sc_run_propose lacks a revision argument, so never call it blindly.
       owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
       state <- .sc_run_load(root); .sc_ui_current(root, state, project)
       if (!is.null(plan)) {
-        if (is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry.", call. = FALSE)
+        if (is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry. Inspect sc_review() and supply a complete supported plan before approval.", call. = FALSE)
         .sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason)
       } else {
         .sc_run_propose_locked(root, state, proposal, reviewer, reason, drive = FALSE,

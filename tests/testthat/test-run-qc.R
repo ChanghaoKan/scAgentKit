@@ -44,14 +44,17 @@ test_that("run input validates raw matrices without repairing literal IDs or sou
   expect_error(scAgentKit:::.sc_run_input(unnamed), "unique")
 })
 
-test_that("run input rejects normalized layers and split layer ambiguity", {
+test_that("run input rejects normalized layers and joins exact disjoint split partitions", {
   seu <- run_qc_fixture()
   SeuratObject::LayerData(seu, assay = "RNA", layer = "data") <- log1p(SeuratObject::LayerData(seu, layer = "counts"))
   expect_error(scAgentKit:::.sc_run_input(seu, counts_layer = "data"), "normalized")
   expect_error(scAgentKit:::.sc_run_input(seu, counts_layer = "scale.data"), "normalized")
   split <- seu
   split[["RNA"]] <- split(split[["RNA"]], f = split$sample_id)
-  expect_error(scAgentKit:::.sc_run_input(split), "Exact layer|Split")
+  checked <- scAgentKit:::.sc_run_input(split)
+  expect_equal(scAgentKit:::.sc_project_layer(checked$seu, "RNA", "counts"),
+    scAgentKit:::.sc_project_layer(seu, "RNA", "counts"))
+  expect_true(length(checked$diagnostics$input_transforms) > 0L)
   expect_error(scAgentKit:::.sc_run_input(split, counts_layer = "counts.sample a"), "every object cell|full-cell")
 })
 
