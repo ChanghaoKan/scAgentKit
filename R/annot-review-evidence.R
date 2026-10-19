@@ -211,7 +211,3 @@ annot_review_evidence <- function(obj, label_map = NULL, rationale = NULL) {
   obj@params$annotation_evidence_review_cell_ids <- cell_ids
   obj
 }
-
-
-
-
