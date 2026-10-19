@@ -1,5 +1,12 @@
 # Development (unreleased)
 
+- ACT is the user-selected default marker reference, independent of CellMarker;
+  CL remains the exact ontology dictionary. Add explicit local ACT CSV/TSV/XLSX
+  import with source-header mapping, species/tissue filtering, observed SHA256,
+  unknown-version/date disclosure and original PMID/source-row retention. No
+  ACT database is bundled or downloaded through an invalid certificate. Missing
+  ACT data stays visibly unavailable and permits local marker/rule review.
+
 - Modern annotation starts with a marker-only independent model draft. Preserve
   that immutable response before preparing a reference-guided follow-up for
   recorded label differences. Allow at most one guided request, within the

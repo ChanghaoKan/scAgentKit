@@ -770,7 +770,7 @@ function evidenceRecord(value, keys) {
   return Object.keys(result).length ? result : null;
 }
 function evidenceSource(value) {
-  const result = evidenceRecord(value, ["kind", "name", "database", "version", "url", "status", "mode", "species", "tissue_filter", "source_md5", "source_sha256", "source_url", "requested_url", "source_url_verified", "source_version", "retrieved_at", "source_file_status", "n_input_rows", "n_scoped_rows", "n_unique_pairs", "duplicate_pair_count", "file_sha256", "sha256", "fingerprint", "marker_column", "license", "license_status", "citation", "provider", "model", "response_sha256", "source_object_sha256", "scope_status", "reference_dependency"]);
+  const result = evidenceRecord(value, ["kind", "name", "database", "version", "url", "status", "mode", "species", "tissue_filter", "source_md5", "source_sha256", "source_url", "requested_url", "source_url_verified", "source_version", "retrieved_at", "source_file_status", "n_input_rows", "n_scoped_rows", "n_unique_pairs", "duplicate_pair_count", "file_sha256", "sha256", "fingerprint", "marker_column", "license", "license_status", "citation", "provider", "model", "response_sha256", "source_object_sha256", "scope_status", "reference_dependency", "reference_source", "source_mode", "source_date", "source_sheet"]);
   if (!result) return null;
   for (const key of Object.keys(result)) if (result[key] != null && !["string", "number", "boolean"].includes(typeof result[key]) && !(Array.isArray(result[key]) && result[key].every(value => value == null || ["string", "number", "boolean"].includes(typeof value)))) delete result[key];
   return Object.keys(result).length ? result : null;
@@ -815,6 +815,8 @@ function renderJointEvidence(item) {
   jointDetail(details, "Declared database scope", "annotation-joint-scope", evidenceRecord(database.provenance?.scope, ["method", "tissue_all_rows", "unavailable_columns", "excluded_unavailable_rows"]));
   jointDetail(details, "Canonical symbols and explicit aliases", "annotation-joint-symbols", evidenceRecord(database.marker_symbols, ["original", "canonical", "unique", "duplicate_count", "alias_resolutions"]));
   jointDetail(details, "Saved candidate details, including zero overlap", "annotation-joint-all-candidates", array(database.all_candidates).map(row => evidenceRecord(row, ["label", "score", "overlap", "referenceSize", "markers", "formula", "referenceGenes", "availableGenes", "unmeasuredGenes", "notInTopMarkers", "tiedBest", "enrichment", "source"])));
+  jointDetail(details,"Original reference PMID/source records","annotation-reference-publications",array(database.all_candidates).filter(row=>array(row.publications).length).map(row=>({label:row.label,source:row.reference_source,publications:row.publications})));
+
   const savedEnrichment = database.enrichment || (array(database.all_candidates).some(row => row?.enrichment != null)
     ? {source: "Saved per-candidate native enrichment records", candidates: array(database.all_candidates).filter(row => row?.enrichment != null).map(row => ({label: row.label, enrichment: row.enrichment}))}
     : null);

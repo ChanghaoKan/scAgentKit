@@ -191,6 +191,9 @@
                         source = "default_assay_feature_ids"),
     scoring = .sc_run_reference_scoring(), symbol_aliases = as.list(options$symbol_aliases),
     marker_symbols = .sc_run_reference_symbols(marker_original$gene, options$symbol_aliases))
+  if(options$strict_scope)provenance$default_reference<-list(source="ACT",status=if(is.null(reference))"unavailable_no_verified_local_file" else "explicit_reference_supplied",
+    automatic_download=FALSE,notice="ACT is the selected default independent marker reference. No database is bundled; provide a lawfully obtained local ACT table. CL remains a separate exact-ID dictionary.")
+  publication_rows<-data.frame(cell_type=character(),marker=character(),pmid=character(),stringsAsFactors=FALSE)
   matches <- all_matches <- .empty_reference_matches()
   scoped <- data.frame(cell_type = character(), marker = character(), stringsAsFactors = FALSE)
   if (!is.null(reference)) {
@@ -204,7 +207,7 @@
                                 function(field) attr(reference, field))
     names(provenance$adapter) <- c("species", "tissue_filter", "cancer_only", "n_celltypes", "n_input_rows")
     for (field in c("source_path", "source_md5", "source_url", "requested_url",
-                    "source_url_verified", "source_version", "marker_column", "retrieved_at", "license")) {
+                    "source_url_verified", "source_version", "marker_column", "retrieved_at", "license", "reference_source", "source_mode", "source_date", "source_sheet", "imported_at")) {
       value <- attr(reference, field)
       if (!is.null(value)) provenance[[field]] <- value
     }
@@ -259,6 +262,7 @@
         "scope_mismatch" else "matched"
       if (nrow(scoped)) {
         scoped$marker <- .sc_run_reference_resolve(scoped$marker, options$symbol_aliases)
+        if("pmid"%in%names(scoped))publication_rows<-unique(scoped[,intersect(c("cell_type","marker","pmid","source_row","act_pmid_original"),names(scoped)),drop=FALSE])
         unique_pair <- !duplicated(scoped[, c("cell_type", "marker"), drop = FALSE])
         provenance$duplicate_pair_count <- sum(!unique_pair)
         scoped <- scoped[unique_pair, , drop = FALSE]
@@ -288,7 +292,9 @@
         formula = .sc_run_reference_scoring()$formula,
         tiedBest = is.finite(best) && abs(row$score - best) <= 1e-12,
         enrichment = if(identical(enrichment$status,"measured")) Filter(function(x) identical(x$label,row$cell_type),enrichment$records) else enrichment,
-        source = "local_marker_reference")
+        source = "local_marker_reference",reference_source=provenance$reference_source,
+        publications=lapply(which(publication_rows$cell_type==row$cell_type&publication_rows$marker%in%intersect(genes,ref_genes)),function(i)
+          as.list(publication_rows[i,,drop=FALSE])))
     })
     shown <- head(Filter(function(x) x$overlap > 0L, candidates), options$top_n)
     status <- provenance$status
@@ -303,7 +309,7 @@
     scope_mismatch = "No reference records match the selected species and tissue. Check those fields or import a correctly scoped table; no all-tissue fallback was used.",
     empty_reference = "The reference contains no records. Import a nonempty table for the selected species and tissue.",
     scope_unavailable = "Reference species/tissue is unavailable. Supply explicit scope fields before using its candidates.",
-    not_supplied = "No local reference is supplied. Marker-only drafts remain available; reference agreement is unassessed.",
+    not_supplied = if(options$strict_scope)"Default ACT reference unavailable: no verified local ACT file is supplied. Marker-only/rule drafts remain available; reference matching is unassessed. Import an explicitly scoped ACT file without bypassing HTTPS certificate warnings." else "No local reference is supplied. Marker-only drafts remain available; reference agreement is unassessed.",
     "Reference scope and provenance are recorded; overlap is descriptive evidence, not a validated identity.")
   list(schema = "scagentkit.reference-evidence.v1", matches = matches, all_matches = all_matches,
        provenance = provenance, per_cluster = per_cluster)
