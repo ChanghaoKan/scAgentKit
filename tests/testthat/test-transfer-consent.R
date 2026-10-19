@@ -92,12 +92,14 @@ test_that("scope consent requests a mock draft without granting a scientific app
   expect_false(sc_run_suggest(root)$can_auto_request)
 })
 
-test_that("strict mode, invalid JSON and insufficient budget preserve manual drafts", {
+test_that("strict mode and failed requests preserve unapproved draft fields", {
   for (mode in c("strict", "invalid", "budget")) {
     root <- transfer_draft_fixture(if (mode == "strict") NULL else transfer_confirmation(),
       budget = if (mode == "budget") .005 else .1)
     on.exit(unlink(root, recursive = TRUE), add = TRUE)
-    before <- .sc_run_load(root)$pending
+    before_state <- .sc_run_load(root)
+    before <- before_state$pending
+    before_draft <- .sc_run_get(root, before_state, "manual_strategy")
     view <- sc_run_suggest(root)
     calls <- 0L
     fn <- function(...) { calls <<- calls + 1L; list(content = "{invalid", cost_usd = .001) }
@@ -110,7 +112,24 @@ test_that("strict mode, invalid JSON and insufficient budget preserve manual dra
       expect_identical(value$response$status, if (mode == "budget") "budget_stop" else "invalid_response")
     }
     state <- .sc_run_load(root)
-    expect_identical(state$pending, before); expect_length(state$approvals, 0L)
+    if (mode == "strict") {
+      expect_identical(state$pending, before)
+    } else {
+      # A failed optional request now saves an identified local rule draft.
+      # Its QC rationale/hash can change; scientific approval never follows.
+      fallback <- sc_run_suggest(root)$fallback
+      expect_true(fallback$saved)
+      expect_identical(fallback$trigger_status, if (mode == "budget") "budget_stop" else "invalid_response")
+      expect_false(fallback$scientific_approval)
+      expect_identical(state$pending$kind, "strategy")
+      after_draft <- .sc_run_get(root, state, "manual_strategy")
+      unchanged_fields <- setdiff(names(before_draft), "qc")
+      # Typed validation normalizes integer/double and array storage in R.
+      # Compare every retained field's exact JSON value rather than storage type.
+      expect_identical(.sc_run_provider_json(after_draft[unchanged_fields]),
+        .sc_run_provider_json(before_draft[unchanged_fields]))
+    }
+    expect_length(state$approvals, 0L)
     expect_null(state$files$analysis)
     expect_identical(calls, if (mode == "invalid") 1L else 0L)
   }
