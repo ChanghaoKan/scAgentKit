@@ -120,7 +120,7 @@ jobs:
               '`.\nBuild and public-install acceptance: ' + receipt.workflow_url;
             const result = await github.rest.repos.createRelease({...context.repo, tag_name: tag,
               target_commitish: receipt.source_commit, name: 'scAgentKit 0.8.0 (experimental)',
-              body, draft: true, prerelease: false});
+              body, draft: true, prerelease: true});
             for (const name of ['scAgentKit_0.8.0.tar.gz','SHA256SUMS','build-receipt.json']) {
               await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: result.data.id,
                 name, data: fs.readFileSync('release-source/'+name)});
