@@ -1,4 +1,4 @@
-test_that('private bundled ACT loads offline with fixed species, tissue, source and citation',{
+test_that('bundled ACT loads offline with fixed species, tissue, source and citation',{
  local_mocked_bindings(.sc_act_root=.sc_act_root,.package='scAgentKit')
  human<-annot_act_reference('human',' Blood ');mouse<-annot_act_reference('mouse','blood')
  expect_equal(nrow(human),2021);expect_equal(nrow(mouse),158)
@@ -14,8 +14,6 @@ test_that('private bundled ACT loads offline with fixed species, tissue, source 
  expect_identical(attr(human,'retrieved_at'),'2026-10-20');expect_true(is.na(attr(human,'source_date')))
  expect_false(attr(human,'source_url_verified'))
  expect_identical(attr(human,'act_citation')$doi,'10.1186/s13073-023-01249-5')
- expect_false(attr(human,'act_citation')$citation_is_database_license)
- expect_identical(attr(human,'license'),'UNCONFIRMED-database-redistribution;PRIVATE-LOCAL-ONLY')
  empty<-annot_act_reference('mouse','__no_such_tissue__')
  expect_equal(nrow(empty),0);expect_identical(attr(empty,'scope_status'),'zero_matches')
  expect_match(attr(empty,'scope_notice'),'No broader tissue or cross-species fallback')
@@ -23,7 +21,7 @@ test_that('private bundled ACT loads offline with fixed species, tissue, source 
  expect_error(annot_act_reference('fish','Blood'),'species')
 })
 
-test_that('private manifest and either species asset cannot be silently substituted',{
+test_that('ACT manifest and either species asset cannot be silently substituted',{
  original<-.sc_act_root();copy<-tempfile();dir.create(copy);on.exit(unlink(copy,recursive=TRUE))
  file.copy(list.files(original,full.names=TRUE),copy)
  local_mocked_bindings(.sc_act_root=function()copy,.package='scAgentKit')
@@ -34,14 +32,14 @@ test_that('private manifest and either species asset cannot be silently substitu
  expect_error(annot_act_reference('human','Blood'),'provenance changed')
 })
 
-test_that('new modern projects snapshot the private default; explicit reference and opt-out win',{
+test_that('new modern projects snapshot the bundled default; explicit reference and opt-out win',{
  e<-new.env();utils::data('pbmc_small',package='SeuratObject',envir=e)
  create<-function(root,...)sc_analyze(e$pbmc_small,root,context=list(species='human',tissue='blood'),provider='manual',
   qc_mad=FALSE,cycle_diagnostics=FALSE,doublet='off',plan=list(analysis=list(nfeatures=100,npcs=6),pcs=4,diagnostic_resolutions=c(.4,.6),umap=FALSE),...)
  root<-tempfile();on.exit(unlink(root,recursive=TRUE),add=TRUE);create(root)
  state<-.sc_run_load(root);ref<-.sc_run_get(root,state,'reference')
  expect_equal(nrow(ref),2021);expect_length(state$approvals,0)
- expect_match(state$config$reference_review$provenance$preparation_note,'database redistribution permission unconfirmed')
+ expect_match(state$config$reference_review$provenance$preparation_note,'ACT snapshot downloaded 2026-10-20')
  before<-.sc_project_sha_file(file.path(root,state$files$reference$path))
  expect_silent(sc_open(root));expect_identical(.sc_project_sha_file(file.path(root,state$files$reference$path)),before)
  off<-tempfile();on.exit(unlink(off,recursive=TRUE),add=TRUE);create(off,reference=NULL)

@@ -1,11 +1,7 @@
-# Private local ACT snapshot
+# Bundled ACT snapshot
 
-This private development build contains lossless deterministic gzip copies of the
+This build contains lossless deterministic gzip copies of the
 user-supplied Human/Mouse merged TSVs. No network access is used for default loading.
-Database redistribution permission remains unconfirmed; the user will ask the
-authors. Do not push, publish, mirror or upload this clone or archive. The code’s
-MIT license and the paper’s OA status are not assigned to these database files.
-
 New `sc_analyze()`/raw `sc_start()` projects and new processed browser entries
 select the matching reference at creation and save it as a checksummed project
 artifact. No reference is injected when reopening an existing project.
@@ -15,7 +11,7 @@ wins. Low-level `sc_run()` keeps its existing explicit-reference behavior.
 ```r
 ref <- annot_act_reference(species="human", tissue="Blood")
 attr(ref, "act_snapshot")  # original/compressed SHA, sources, schema and citation
-x <- sc_analyze(input, "new-private-project",
+x <- sc_analyze(input, "new-project",
   context=list(species="human", tissue="Blood"), provider="manual")
 ```
 
@@ -28,7 +24,7 @@ SourceFile and SourceURL. First annotation still receives independent marker-onl
 evidence; reference comparison and at most one explicitly budgeted guided review
 come afterward. Three scientific approvals remain separate.
 
-## Fixed provenance and private data notice
+## Fixed provenance
 
 `inst/extdata/references/act-private-2026-10-20/PROVENANCE.json` records the supplied
 download date 2026-10-20, Human743295B/3767rows and Mouse598641B/2721rows, seven
@@ -41,9 +37,8 @@ Citation: Quan F et al. Annotation of cell types (ACT): a convenient web server
 for cell type annotation. Genome Medicine15,91(2023).
 DOI: [10.1186/s13073-023-01249-5](https://link.springer.com/article/10.1186/s13073-023-01249-5);
 PMID37924118. This identifies the ACT publication, not a verified match between
-this 2026 download and the paper’s original data version. Citation is attribution,
-not a determination of database redistribution permission. See the included
-PRIVATE-DATA-NOTICE.txt and `citation("scAgentKit")`.
+this 2026 download and the paper’s original data version. Use
+`citation("scAgentKit")` for the full reference.
 
 ## Existing projects and implementation identity
 

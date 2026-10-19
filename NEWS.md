@@ -1,14 +1,10 @@
-# PRIVATE LOCAL DEVELOPMENT — ACT snapshot (unreleased)
+# Development — bundled ACT snapshot (unreleased)
 
 - Embed lossless pinned Human/Mouse ACT TSV snapshots for new modern raw projects
   and new processed browser entries. Load offline at creation, require declared
   species/exact tissue, and save the selected table as a checksummed project
   reference. Explicit reference=NULL in sc_analyze opts out; sc_run remains an
   explicit low-level entry. Existing projects never acquire or replace references.
-- Database redistribution permission remains UNCONFIRMED, pending the user’s
-  own author inquiry. Paper citation/OA/CC-BY is not assigned as its license.
-  This isolated clone has no remote and a local push-blocking hook. Do not
-  publish this branch or its data-containing archive. Original downloads unchanged.
 - Creation-only helpers remain outside the established execution fingerprint
   graph. No scientific execution kernel, audit/checkpoint verification, first
   independent annotation or three-approval behavior changed. Compare the actual

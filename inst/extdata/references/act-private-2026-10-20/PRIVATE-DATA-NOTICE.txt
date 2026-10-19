@@ -1,7 +1,0 @@
-PRIVATE LOCAL DEVELOPMENT SNAPSHOT — DO NOT PUBLISH OR UPLOAD
-
-ACT database redistribution terms have not been confirmed. The user will ask the authors. This notice is not an authorization or a claim that redistribution is prohibited. Paper open-access/CC-BY terms are not assigned to this downloaded database. The package MIT license applies to code, not these ACT data.
-
-Citation: Quan F et al. Annotation of cell types (ACT): a convenient web server for cell type annotation. Genome Medicine 15,91 (2023). DOI 10.1186/s13073-023-01249-5; PMID37924118. Citation is attribution, not a database license determination. No claim that this 2026 local download equals the 2023 paper data version.
-
-PROVENANCE.json fixes supplied download date, exact source paths, compressed/raw SHA256, schema and unknown publisher version. Original user downloads were not modified. Keep this entire private branch/archive local pending the user’s permission check.

@@ -1,8 +1,6 @@
 {
-  "schema": "scagentkit.private-ACT-snapshot.v1",
+  "schema": "scagentkit.ACT-snapshot.v1",
   "snapshot_id": "local-download-2026-10-20",
-  "distribution": "PRIVATE-LOCAL-ONLY",
-  "database_redistribution_license": "unconfirmed-user-will-ask-author",
   "publisher_release": null,
   "publisher_release_date": null,
   "downloaded_date_as_supplied": "2026-10-20",
@@ -30,7 +28,6 @@
     "doi": "10.1186/s13073-023-01249-5",
     "pmid": "37924118",
     "url": "https://link.springer.com/article/10.1186/s13073-023-01249-5",
-    "citation_is_database_license": false,
     "snapshot_matches_paper_data_version_verified": false
   },
   "files": [

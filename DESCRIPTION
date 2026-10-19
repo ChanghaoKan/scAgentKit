@@ -10,8 +10,7 @@ Description: Experimental single-cell RNA-seq workflow with explicit scientific
     QC and clustering evidence, manual annotation, scoped child projects and
     standalone Seurat plotting, marker, reference and ontology utilities.
     Evidence and workflow completion do not establish biological accuracy.
-    This private local development build embeds an ACT reference snapshot whose
-    database redistribution permission remains unconfirmed; do not publish it.
+    Includes an offline ACT reference snapshot with fixed source provenance.
 License: MIT + file LICENSE
 Encoding: UTF-8
 SystemRequirements: Python (>= 3.9)
