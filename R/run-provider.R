@@ -65,10 +65,10 @@
   }
   if (is.null(provider)) provider <- list(name = if (is.null(chat_fn)) "manual" else "custom")
   if (is.character(provider) && length(provider) == 1L) provider <- list(name = tolower(provider))
-  fields <- c("name", "model", "generation", "external", "reservation_usd", "pricing", "api_key_env")
+  fields <- c("name", "model", "generation", "external", "reservation_usd", "pricing", "api_key_env", "base_url")
   if (!is.list(provider) || is.null(names(provider)) || anyDuplicated(names(provider)) ||
       any(!names(provider) %in% fields)) {
-    stop("Provider configuration accepts only name, model, generation, external, reservation_usd, pricing and api_key_env; credentials belong in the runtime environment.")
+    stop("Provider configuration accepts only name, model, generation, external, reservation_usd, pricing, api_key_env and base_url; credentials belong in the runtime environment.")
   }
   name <- .sc_run_provider_scalar(provider$name, "name", "^[A-Za-z0-9._-]+$")
   name <- tolower(name)
@@ -78,7 +78,19 @@
     "model", "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$")
   external <- if (is.null(provider$external)) !name %in% c("manual", "mock", "local") else provider$external
   if (!is.logical(external) || length(external) != 1L || is.na(external)) stop("`external` must be TRUE or FALSE.")
-  if (name %in% c("deepseek", "grok") && !external) stop("Built-in remote providers are external.")
+  if (name %in% c("deepseek", "grok", "openai_compatible") && !external) stop("Built-in remote providers are external.")
+  base_url <- provider$base_url
+  if (identical(name, "openai_compatible")) {
+    if (is.null(provider$model) || is.null(provider$api_key_env))
+      stop("OpenAI-compatible providers require explicit model, api_key_env and HTTPS base_url.")
+    base_url <- .sc_run_provider_scalar(base_url, "base_url")
+    # A destination is part of transmission consent. Keep credentials, queries,
+    # fragments and literal IP addresses out of saved provider configuration.
+    if (!grepl("^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?([:][0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$", base_url) ||
+        grepl("^https://[0-9.]+([:/]|$)", base_url))
+      stop("base_url needs an HTTPS hostname and optional path; omit credentials, query and fragment.")
+    base_url <- sub("/+$", "", base_url)
+  } else if (!is.null(base_url)) stop("base_url is available only for name='openai_compatible'.")
   generation <- list(temperature = 0, max_tokens = 4096, timeout_secs = 180,
     response_format = list(type = "json_object"))
   if (name == "deepseek") generation$thinking <- list(type = "disabled")
@@ -132,6 +144,7 @@
   if (!is.null(env)) env <- .sc_run_provider_scalar(env, "api_key_env", "^[A-Z][A-Z0-9_]*$")
   metadata <- list(name = name, model = model, generation = generation, external = external,
     reservation_usd = reserve, pricing = pricing, api_key_env = env)
+  if (!is.null(base_url)) metadata$base_url <- base_url
   metadata <- .sc_run_provider_plain(metadata)
   if (!identical(.sc_run_provider_json(metadata), .sc_run_provider_redact(.sc_run_provider_json(metadata), env)))
     stop("Credential-like provider metadata is forbidden.")
@@ -163,7 +176,8 @@
 .sc_run_request_hash <- function(request, provider = NULL, chat_fn = NULL) {
   spec <- .sc_run_provider_spec(provider, chat_fn)$metadata
   .sc_run_provider_hash(list(schema = "scagentkit.provider-request.v1",
-    provider = spec[c("name", "model", "generation", "external")],
+    provider = spec[c("name", "model", "generation", "external",
+      if (!is.null(spec$base_url)) c("base_url", "api_key_env"))],
     request = .sc_run_provider_request(request, spec$api_key_env)))
 }
 
@@ -347,7 +361,7 @@
 .sc_run_provider_fn <- function(spec) {
   if (is.function(spec$fn)) return(spec$fn)
   m <- spec$metadata
-  if (!m$name %in% c("deepseek", "grok")) return(NULL)
+  if (!m$name %in% c("deepseek", "grok", "openai_compatible")) return(NULL)
   if (!requireNamespace("agentomicsCore", quietly = TRUE)) stop("agentomicsCore is required for built-in providers.")
   g <- m$generation
   args <- list(model = m$model, api_key_env = m$api_key_env, max_tokens = g$max_tokens,
@@ -358,7 +372,12 @@
   structured <- "structured_response" %in% names(formals(
     getExportedValue("agentomicsCore", "make_chat_fn_openai_compatible")))
   if (structured) args$structured_response <- TRUE
-  fn <- do.call(getExportedValue("agentomicsCore", paste0("chat_", m$name)), args)
+  factory <- if (identical(m$name, "openai_compatible")) {
+    args$base_url <- m$base_url
+    args$supports_vision <- FALSE
+    "make_chat_fn_openai_compatible"
+  } else paste0("chat_", m$name)
+  fn <- do.call(getExportedValue("agentomicsCore", factory), args)
   if (structured) fn else .sc_run_provider_adapter(fn, m$api_key_env)
 }
 
@@ -474,7 +493,7 @@
   if (total + reserve > budget + 1e-12) return(result("budget_stop", "Project budget cannot cover this request reservation.", list(charged_or_held_usd = total, requested_reservation_usd = reserve)))
   # A missing built-in credential is known to precede any HTTP dispatch. Keep
   # cache reads above this check, and do not create an uncertain delivery hold.
-  if (is.null(spec$fn) && spec$metadata$name %in% c("deepseek", "grok") &&
+  if (is.null(spec$fn) && spec$metadata$name %in% c("deepseek", "grok", "openai_compatible") &&
       !nzchar(trimws(Sys.getenv(spec$metadata$api_key_env))))
     return(result("needs_provider", paste0("No provider request was sent. Set ",
       spec$metadata$api_key_env, " in the analysis machine's environment, or supply an explicit chat_fn. No reservation was charged or held.")))

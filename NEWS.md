@@ -1,3 +1,10 @@
+# Development (unreleased)
+
+- Support an explicit OpenAI-compatible HTTPS endpoint through the existing
+  agentomicsCore factory. Destination and key environment name join the exact
+  request hash; keys remain runtime-only. No agentomicsCore changes are needed.
+  Three scientific approvals, transfer consent and budget checks remain required.
+
 # scAgentKit 0.8.0 (experimental)
 
 ## Breaking API changes and rebuilding projects
