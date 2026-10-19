@@ -280,6 +280,78 @@ mad_integration_prefilter_ids <- function(object) colnames(object)[!colnames(obj
 mad_integration_conservative_ids <- function(object) colnames(object)[!colnames(object) %in%
   c("A-empty", "B-empty", "A-lowboth-highmt", "B-lowboth-highmt")]
 
+test_that("minimal prefilter and capture scoring precede one explicit sample-aware MAD decision", {
+  network <- mad_integration_sentinels(); detector <- mad_integration_detector()
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  object <- mad_integration_fixture(); original <- serialize(object, NULL, version = 2L)
+  begun <- mad_integration_begin(root, object)
+  expect_identical(begun$status, "awaiting_configuration"); expect_identical(begun$stage, "strategy_propose")
+  snapshot <- sc_run_inspect(root); state <- scAgentKit:::.sc_run_load(root)
+  expect_null(snapshot$review_node); expect_null(state$files$qc_object); expect_null(state$files$analysis)
+  expect_false(dir.exists(file.path(root, "provider")))
+  expect_identical(serialize(mad_integration_record(root, "input"), NULL, version = 2L), original)
+  qc <- mad_integration_record(root, "qc_evidence"); record <- mad_integration_record(root, "qc_mad")
+  prefilter <- mad_integration_record(root, "prefilter")
+  expect_equal(prefilter$summary$original_cells, 256L)
+  expect_equal(prefilter$summary$pre_score_cells, 254L)
+  expect_equal(prefilter$summary$excluded_cells, 2L)
+  expect_identical(prefilter$excluded_cells, c("A-empty", "B-empty"))
+  expect_identical(prefilter$keep_cells, mad_integration_prefilter_ids(object))
+  for (capture in c("capture A", "capture B")) {
+    expect_equal(prefilter$summary$per_capture[[capture]]$original_cells, 128L)
+    expect_equal(prefilter$summary$per_capture[[capture]]$pre_score_cells,
+      if (capture == "capture A") 128L else 126L)
+  }
+  expect_identical(record, qc$mad_record); expect_identical(record$summary, qc$summary$mad)
+  expect_identical(record$options$grouping$column, "sample")
+  expect_identical(record$options$grouping$declared_role, "sample")
+  expect_identical(record$cell_ids, colnames(object))
+  expect_equal(length(unique(as.character(object$sample))), 2L)
+  expect_equal(length(unique(object$capture)), 2L)
+  expect_false(identical(as.character(object$sample), object$capture))
+  expect_equal(detector$detector, 2L)
+  expected_ids <- mad_integration_prefilter_ids(object)
+  for (capture in c("capture A", "capture B")) {
+    index <- match(capture, c("capture A", "capture B"))
+    expect_identical(detector$captures[[index]]$cells,
+      sort(enc2utf8(expected_ids[object[[]][expected_ids, "capture"] == capture]), method = "radix"))
+    # Both even-indexed zero controls happen to belong to capture B. Capture
+    # counts must follow those literal declarations, not balanced sample sizes.
+    expect_equal(length(detector$captures[[index]]$cells), if (capture == "capture A") 128L else 126L)
+    expect_equal(detector$captures[[index]]$rate, .05)
+    expect_true(detector$captures[[index]]$sparse)
+  }
+  doublet <- mad_integration_record(root, "doublet_diagnostics")
+  expect_identical(doublet$cell_ids, colnames(object))
+  expect_identical(doublet$scored_cell_ids, expected_ids)
+  expect_equal(doublet$summary$cohort$pre_score_cells, 254L)
+  expect_equal(doublet$summary$cohort$prefilter_excluded_cells, 2L)
+  excluded <- match(c("A-empty", "B-empty"), doublet$scores$cell_id)
+  expect_true(all(is.na(doublet$scores$sc_doublet_score[excluded])))
+  expect_identical(doublet$scores$sc_doublet_class[excluded], c("Unknown", "Unknown"))
+  # High RNA remains in the first scoring cohort and the conservative policy.
+  expect_true(all(c("A-highRNA-only", "B-highRNA-only") %in% unlist(lapply(detector$captures, `[[`, "cells"))))
+  # The first local Continue records its provider-free boundary; repeating that
+  # exact stopped boundary must leave every project byte unchanged.
+  expect_identical(mad_integration_continue(root)$status, "awaiting_configuration")
+  bytes <- mad_integration_files(root)
+  expect_identical(mad_integration_continue(root)$status, "awaiting_configuration")
+  expect_identical(mad_integration_files(root), bytes)
+  proposal <- mad_integration_plan(root, "conservative_and3")
+  revised <- mad_integration_revise(root, proposal)
+  expect_identical(revised$status, "awaiting_review")
+  snapshot <- sc_run_inspect(root)
+  expect_identical(snapshot$review_node$kind, "strategy")
+  expect_identical(snapshot$strategy_review$details$qc_mad$panel_hash, record$panel_hash)
+  expect_identical(snapshot$strategy_review$details$qc_mad$choice$preset_id, "conservative_and3")
+  validated <- mad_integration_record(root, "qc_validated")
+  expect_identical(validated$keep_cells, mad_integration_conservative_ids(object))
+  expect_equal(validated$retention$retained, 252L)
+  expect_identical(mad_integration_record(root, "strategy_validated")$selected_cells, validated$keep_cells)
+  expect_null(scAgentKit:::.sc_run_load(root)$files$qc_object)
+  expect_identical(serialize(object, NULL, version = 2L), original)
+  expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
+})
 
 test_that("headless approval restart output and annotation undo preserve exact source identities and columns", {
   network <- mad_integration_sentinels(); detector <- mad_integration_detector()
@@ -426,6 +498,38 @@ test_that("bounded MAD proposals reject invented operations and stale concurrent
   expect_equal(detector$detector, 2L); expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
 })
 
+test_that("input panel prefilter and context changes cannot consume a whole-panel approval", {
+  network <- mad_integration_sentinels(); detector <- mad_integration_detector()
+  roots <- character(); on.exit(lapply(roots, unlink, recursive = TRUE), add = TRUE)
+  base <- tempfile(); roots <- c(roots, base)
+  mad_integration_begin(base)
+  mad_integration_revise(base, mad_integration_plan(base, "conservative_and3"))
+  mad_integration_decide(base); approved <- sc_run_inspect(base)
+  for (key in c("input", "prefilter", "qc_mad", "qc_evidence", "strategy_evidence", "strategy_validated", "strategy_review")) {
+    root <- mad_integration_copy(base); roots <- c(roots, root)
+    state <- scAgentKit:::.sc_run_load(root)
+    saveRDS(list(altered = paste("Tampered synthetic", key, "artifact")), file.path(root, state$files[[key]]$path))
+    bytes <- mad_integration_files(root)
+    expect_error(mad_integration_continue(root, approved), "[Ss]tale|changed")
+    expect_error(sc_run_resume(root), "[Ss]tale|changed")
+    expect_identical(mad_integration_files(root), bytes)
+    expect_false(dir.exists(file.path(root, ".run-lock")))
+  }
+  for (change in c("grouping", "k", "min_group_cells", "context", "prefilter")) {
+    root <- mad_integration_copy(base); roots <- c(roots, root)
+    state <- scAgentKit:::.sc_run_load(root)
+    if (change == "grouping") state$config$qc_mad$grouping$column <- "capture" else
+    if (change == "k") state$config$qc_mad$k <- 2 else
+    if (change == "min_group_cells") state$config$qc_mad$min_group_cells <- 40L else
+    if (change == "context") state$config$context$notes <- "Changed reviewed user context." else
+      state$config$prefilter$min_counts <- 2
+    state$config_hash <- scAgentKit:::.sc_run_hash(state$config)
+    scAgentKit:::.sc_run_save(root, state); bytes <- mad_integration_files(root)
+    expect_error(mad_integration_continue(root, approved), "[Ss]tale|changed|fingerprint|approval|scope|differ")
+    expect_identical(mad_integration_files(root), bytes)
+  }
+  expect_equal(detector$detector, 2L); expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
+})
 
 test_that("an interrupted approved MAD selection needs explicit retry and never repeats prefilter panel or capture scoring", {
   network <- mad_integration_sentinels(); detector <- mad_integration_detector()

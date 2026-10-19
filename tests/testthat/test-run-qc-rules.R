@@ -121,6 +121,42 @@ test_that("new typed rules reject unsupported fields operations and parameters",
   expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(list(op = "mad_preset", preset_id = "keep_all", panel_hash = strrep("0", 64)))), f$qc), "explicitly enabled")
 })
 
+test_that("saved MAD predicates combine with ranges without restoring prefilter exclusions", {
+  f <- qc_rules_mad(); cells <- colnames(f$seu)
+  mad_rule <- list(op = "mad_preset", preset_id = "conservative_and3", panel_hash = f$mad$panel_hash)
+  range <- list(op = "range", metric = "nCount", min = 0)
+  one <- scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(mad_rule)), f$qc)
+  expect_identical(one$keep_cells, f$mad$selections$conservative_and3)
+  all <- scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(mad_rule, range), "all"), f$qc)
+  expect_identical(all$keep_cells, f$prefilter$keep_cells)
+  expect_false(any(f$prefilter$excluded_cells %in% all$keep_cells))
+  range_only <- scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(range)), f$qc)
+  expect_identical(range_only$keep_cells, f$prefilter$keep_cells)
+  expect_equal(all$summary$prefilter_removed, 2L)
+  expect_null(range_only$summary$preset_id)
+  p <- qc_rules_plan(qc_rules_proposal(list(mad_rule, range), "all"))
+  valid <- scAgentKit:::.sc_run_strategy_validate(p, f$evidence)
+  expect_identical(valid$applicability$qc_mad$preset_id, "conservative_and3")
+  expect_equal(valid$applicability$qc_mad$stage_counts$post_qc_cells, 118L)
+  p$qc <- qc_rules_proposal(list(range))
+  expect_null(scAgentKit:::.sc_run_strategy_validate(p, f$evidence)$applicability$qc_mad$preset_id)
+  stale <- mad_rule; stale$panel_hash <- strrep("0", 64)
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(stale)), f$qc), "panel hash.*stale")
+  hallucinated <- mad_rule; hallucinated$preset_id <- "automatic_optimum"
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(hallucinated)), f$qc), "Unsupported MAD")
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(mad_rule, mad_rule)), f$qc), "at most one")
+  unavailable <- qc_rules_mad(unavailable_mt = TRUE)
+  bad <- mad_rule; bad$panel_hash <- unavailable$mad$panel_hash
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(bad)), unavailable$qc), "unavailable")
+  changed <- f$qc; changed$mad_record$flags$low_count[3] <- !changed$mad_record$flags$low_count[3]
+  expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(mad_rule)), changed), "changed")
+  changed <- all; changed$proposal$remove_if <- "any"
+  expect_error(scAgentKit:::.sc_run_qc_apply(f$seu, changed, f$qc), "result was changed")
+  changed <- f$seu; changed$quality <- unname(rev(as.character(changed$quality)))
+  expect_error(scAgentKit:::.sc_run_qc_apply(changed, all, f$qc), "grouping metadata changed")
+  applied <- scAgentKit:::.sc_run_qc_apply(f$seu, all, f$qc)
+  expect_identical(applied[[]][, names(f$seu[[]]), drop = FALSE], f$seu[[]][all$keep_cells, , drop = FALSE])
+})
 
 test_that("preview reports independent failures intersections and final deduplicated OR/AND sets", {
   f <- qc_rules_small()

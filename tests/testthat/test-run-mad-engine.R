@@ -57,8 +57,97 @@ mad_engine_proposal <- function(record, preset = "keep_all") {
     preset_id = preset, panel_hash = record$panel_hash)
 }
 
+test_that("MAD options require an explicit independent grouping role and finite supported settings", {
+  f <- mad_engine_fixture(); options <- scAgentKit:::.sc_run_mad_options
+  expect_null(options(list(), NULL)); expect_null(options(list(), FALSE))
+  expect_error(options(f$context, TRUE), "supported named fields")
+  expect_identical(options(f$context, f$config$qc_mad), f$config$qc_mad)
+  expect_identical(f$config$qc_mad$min_group_cells, 30L)
+  expect_identical(f$config$qc_mad$mad_constant, 1.4826)
+  expect_identical(f$config$qc_mad$k, 3)
+  roundtrip <- jsonlite::fromJSON(jsonlite::toJSON(f$config$qc_mad, auto_unbox = TRUE), simplifyVector = FALSE)
+  expect_identical(options(f$context, roundtrip), f$config$qc_mad)
+  for (field in c("k", "min_group_cells", "mad_constant")) {
+    bad <- f$supplied; bad[[field]] <- 2
+    expect_error(options(f$context, bad), "supports exactly")
+  }
+  for (role in c("capture", "donor", "batch", "condition")) {
+    bad <- f$supplied; bad$grouping$declared_role <- role
+    expect_error(options(f$context, bad), "never inferred")
+  }
+  bad <- f$supplied; bad$grouping$column <- "capture"
+  expect_error(options(f$context, bad), "must match")
+  bad <- f$supplied; bad$grouping$source <- " "
+  expect_error(options(f$context, bad), "provenance")
+  bad <- f$supplied; bad$grouping$declared_role <- NULL
+  expect_error(options(f$context, bad), "supported named fields")
+  bad <- f$supplied; bad$code <- "subset(object)"
+  expect_error(options(f$context, bad), "supported named fields")
+  sample <- f$supplied; sample$grouping$column <- "sample"; sample$grouping$declared_role <- "sample"
+  expect_identical(options(f$context, sample)$grouping$declared_role, "sample")
+  single <- options(list(), list(grouping = list(method = "single", id = "explicit whole input",
+    source = "User explicitly declares one quality group; no sample is guessed.")))
+  expect_identical(single$grouping$id, "explicit whole input")
+})
 
+test_that("MAD arithmetic records log10(x+1), raw mt, scaled constant, exact thresholds and conservative unknowns", {
+  opts <- mad_engine_fixture()$config$qc_mad
+  metric <- scAgentKit:::.sc_run_mad_metric
+  counts <- rep(c(0, 9, 99, 999, 9999), each = 12L)
+  result <- metric(counts, "nCount", opts)
+  expect_true(result$available)
+  expect_identical(result$transform, "log10(x+1)")
+  expect_identical(result$exact$median, 2)
+  expect_identical(result$exact$mad_raw, 1)
+  expect_identical(result$exact$scaled_mad, 1.4826)
+  expect_equal(result$exact$lower_transformed, 2 - 3 * 1.4826, tolerance = 0)
+  expect_equal(result$exact$upper_raw, 10^(2 + 3 * 1.4826) - 1, tolerance = 0)
+  expect_identical(result$display$upper_raw, signif(result$exact$upper_raw, 6L))
+  mt <- metric(rep(c(40, 50, 60), each = 20L), "percent_mt", opts)
+  expect_true(mt$available); expect_identical(mt$transform, "identity")
+  expect_null(mt$exact$lower_raw)
+  expect_equal(mt$exact$upper_raw, 50 + 3 * 14.826, tolerance = 1e-13)
+  expect_match(mt$tail, "upper deletion")
+  for (values in list(rep(100, 60L), 100 + seq(0, 1e-10, length.out = 60L))) {
+    zero <- metric(values, "nCount", opts)
+    expect_false(zero$available); expect_match(paste(zero$unavailable_reasons, collapse = " "), "zero or near zero")
+    expect_null(zero$exact$lower_transformed); expect_null(zero$exact$upper_transformed)
+    expect_null(zero$exact$lower_raw); expect_null(zero$exact$upper_raw)
+    expect_true(is.finite(zero$exact$median))
+  }
+  small <- metric(1:29, "nFeature", opts)
+  expect_false(small$available); expect_match(paste(small$unavailable_reasons, collapse = " "), "Fewer than 30")
+  expect_null(small$exact$lower_raw)
+  for (value in c(NA_real_, Inf, -Inf)) {
+    missing <- metric(c(1:59, value), "nCount", opts)
+    expect_false(missing$available); expect_identical(missing$missing, 1L)
+    expect_null(missing$exact$upper_raw)
+  }
+  invalid <- metric(c(rep(50, 59L), 101), "percent_mt", opts)
+  expect_false(invalid$available); expect_match(paste(invalid$unavailable_reasons, collapse = " "), "domain")
+  empty <- metric(numeric(), "percent_mt", opts)
+  expect_false(empty$available); expect_null(empty$exact$median)
+  expect_null(empty$exact$upper_raw)
+})
 
+test_that("finite panel treats strict equality, display rounding, high RNA and diagnostic percentages correctly", {
+  opts <- mad_engine_fixture()$config$qc_mad
+  baseline_mt <- rep(c(40, 50, 60), each = 20L)
+  bound <- scAgentKit:::.sc_run_mad_metric(baseline_mt, "percent_mt", opts)$exact$upper_raw
+  mt <- c(baseline_mt, bound, bound + 1e-7)
+  cells <- paste0("boundary ", seq_along(mt))
+  metrics <- data.frame(cell_id = cells, nCount = rep(c(100, 200, 300), length.out = length(mt)),
+    nFeature = rep(c(10, 20, 30), length.out = length(mt)), percent_mt = mt,
+    percent_ribo = 100, percent_hb = 100, stringsAsFactors = FALSE)
+  built <- scAgentKit:::.sc_run_mad_compute(metrics, stats::setNames(rep("same literal", length(cells)), cells), cells, opts)
+  expect_false(built$flags$high_mt[61L]); expect_true(built$flags$high_mt[62L])
+  exact <- built$groups[[1L]]$metrics$percent_mt$exact$upper_raw
+  expect_identical(signif(mt[62L], 6L), signif(exact, 6L))
+  expect_identical(built$selections$high_mt3, cells[-62L])
+  expect_identical(built$selections$keep_all, cells)
+  expect_false(any(c("percent_ribo", "percent_hb", "high_rna_count", "high_rna_feature") %in%
+    unlist(lapply(scAgentKit:::.sc_run_mad_presets(), `[[`, "required_metrics"), use.names = FALSE)))
+})
 
 test_that("MAD record preserves original sparse input and typed metadata while quality groups remain independent of captures", {
   f <- mad_engine_fixture(); before <- serialize(f$object, NULL, version = 2L)
@@ -139,6 +228,34 @@ test_that("prefilter-empty groups retain known zero, while unavailable group qua
   }
 })
 
+test_that("unavailable mitochondrial genes and MAD zero block required presets without silently discarding cells", {
+  f <- mad_engine_fixture(mitochondrial = FALSE); built <- mad_engine_reference(f)
+  record <- built$record
+  expect_true(all(is.na(record$metrics$percent_mt)))
+  expect_true(all(is.na(record$flags$high_mt)))
+  expect_identical(record$selections$keep_all, record$cell_ids)
+  expect_null(record$selections$conservative_and3)
+  expect_null(record$selections$high_mt3)
+  expect_null(record$selections$any_quality3)
+  expect_true(is.character(record$selections$low_counts3))
+  expect_error(scAgentKit:::.sc_run_mad_validate(mad_engine_proposal(record, "conservative_and3"), built$qc), "unavailable")
+  counts <- SeuratObject::LayerData(f$object, assay = "RNA", layer = "counts")
+  rownames(counts)[2:3] <- c("LiteralRibo", "LiteralHb")
+  object <- Seurat::CreateSeuratObject(counts, min.cells = 0, min.features = 0)
+  object$quality_group <- f$object$quality_group; object$sample <- f$object$sample
+  object$capture <- f$object$capture; object$donor <- f$object$donor; object$condition <- f$object$condition
+  f$object <- object; missing <- mad_engine_reference(f)$record
+  expect_true(all(is.na(missing$metrics$percent_ribo)))
+  expect_true(all(is.na(missing$metrics$percent_hb)))
+  expect_false(missing$summary$diagnostics$percent_ribo$available)
+  expect_false(missing$summary$diagnostics$percent_hb$available)
+  constant <- data.frame(cell_id = paste0("constant", 1:60), nCount = 100,
+    nFeature = 10, percent_mt = 0, percent_ribo = NA_real_, percent_hb = NA_real_)
+  computed <- scAgentKit:::.sc_run_mad_compute(constant,
+    stats::setNames(rep("constant sample", 60L), constant$cell_id), constant$cell_id, f$config$qc_mad)
+  expect_identical(computed$selections$keep_all, constant$cell_id)
+  expect_true(all(vapply(computed$presets[-1L], function(row) is.null(row$retained), logical(1))))
+})
 
 test_that("distribution warning is deterministic and does not claim majority quality or choose an optimal preset", {
   warn <- scAgentKit:::.sc_run_mad_multimodal_warning(c(seq(1, 2, length.out = 30L), seq(20, 21, length.out = 30L)))
@@ -148,4 +265,34 @@ test_that("distribution warning is deterministic and does not claim majority qua
   record <- mad_engine_reference(mad_engine_fixture())$record
   expect_match(paste(record$summary$warnings, collapse = " "), "No preset is universally best")
   expect_match(paste(record$summary$groups[[1L]]$warnings, collapse = " "), "cannot determine whether most cells are poor")
+})
+
+test_that("panel approval rejects hallucinations, stale bindings and internally inconsistent rehashed flags", {
+  f <- mad_engine_fixture(); built <- mad_engine_reference(f); record <- built$record
+  validate <- scAgentKit:::.sc_run_mad_validate
+  for (field in c("code", "filters", "genes", "threshold", "integration")) {
+    proposal <- mad_engine_proposal(record); proposal[[field]] <- "unsupported"
+    expect_error(validate(proposal, built$qc), "supported named fields")
+  }
+  proposal <- mad_engine_proposal(record, "optimize_retention")
+  expect_error(validate(proposal, built$qc), "Unsupported MAD preset")
+  proposal <- mad_engine_proposal(record); proposal$panel_hash <- paste(rep("0", 64L), collapse = "")
+  expect_error(validate(proposal, built$qc), "stale approval")
+  proposal <- mad_engine_proposal(record); proposal$risks <- list(code = "named array")
+  expect_error(validate(proposal, built$qc), "unnamed text array")
+  tampered <- record; tampered$flags$low_count[1L] <- !tampered$flags$low_count[1L]
+  expect_error(scAgentKit:::.sc_run_mad_verify(tampered), "changed")
+  tampered$flags_hash <- scAgentKit:::.sc_run_hash(tampered$flags)
+  tampered$panel_hash <- scAgentKit:::.sc_run_mad_panel_hash(tampered)
+  tampered$summary$panel_hash <- tampered$panel_hash
+  tampered$evidence_hash <- scAgentKit:::.sc_run_mad_hash(tampered)
+  expect_error(scAgentKit:::.sc_run_mad_verify(tampered), "exact thresholds, flags")
+  qc <- built$qc; qc$metrics$nCount[1L] <- qc$metrics$nCount[1L] + 1
+  qc$evidence_hash <- scAgentKit:::.sc_run_qc_hash(qc)
+  expect_error(validate(mad_engine_proposal(record), qc), "different or changed")
+  bad <- f$object; bad$quality_group[1L] <- NA
+  expect_error(scAgentKit:::.sc_run_mad_groups(bad, f$config$qc_mad, colnames(bad)), "nonmissing")
+  duplicated <- record; duplicated$cell_ids[2L] <- duplicated$cell_ids[1L]
+  duplicated$evidence_hash <- scAgentKit:::.sc_run_mad_hash(duplicated)
+  expect_error(scAgentKit:::.sc_run_mad_verify(duplicated), "unique")
 })

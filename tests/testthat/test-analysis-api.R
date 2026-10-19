@@ -78,6 +78,48 @@ test_that("high-level manual review binds drafts and preserves source and author
   writeBin(original, output)
 })
 
+test_that("offline external callbacks preserve separate exact transfer consent and science", {
+  input <- ui_input(); calls <- 0L
+  callback <- function(system_prompt, user_prompt) {
+    calls <<- calls + 1L
+    payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
+    proposal <- if (grepl("strategy.v1", system_prompt, fixed = TRUE))
+      .sc_ui_plan(ui_plan(), dimensions = dim(input), mad = payload$evidence$qc_mad) else
+      list(schema = "scagentkit.annotation.v1", annotations = lapply(payload$evidence$clusters,
+        function(cl) list(clusterId = cl$clusterId, label = "Unknown", confidence = "low",
+          rationale = "Offline fixture abstention; no scientific identity claim.", markers = list())))
+    list(content = as.character(jsonlite::toJSON(proposal, auto_unbox = TRUE, null = "null")),
+      cost_usd = .0001, usage = list(input_tokens = 10, output_tokens = 10))
+  }
+  provider <- list(name = "custom", model = "offline-callback-only", external = TRUE, reservation_usd = .001)
+  blocked <- sc_analyze(input, tempfile(), ui_context(), provider = provider, chat_fn = callback, budget = .01)
+  expect_identical(blocked$view$status, "awaiting_configuration"); expect_identical(calls, 0L)
+  x <- sc_analyze(input, tempfile(), ui_context(), provider = provider, chat_fn = callback,
+    budget = .01, review = list(allow_external = TRUE))
+  transfer <- ui_review(x)
+  expect_identical(transfer$view$pending$kind, "external_transfer")
+  expect_identical(calls, 0L)
+  expect_error(sc_review(transfer, "approve", reviewer = "test", reason = "Payload only", continue = TRUE), "separate")
+  approved <- ui_review(transfer, "approve", reviewer = "test", reason = "Reviewed exact offline payload")
+  expect_identical(calls, 0L)
+  expect_error(sc_review(transfer, "approve", reviewer = "test", reason = "Double consent"), "Stale")
+  strategy <- ui_review(approved, "request", chat_fn = callback)
+  expect_identical(calls, 1L)
+  expect_identical(strategy$view$pending$kind, "strategy")
+  expect_null(.sc_run_load(strategy$project_dir)$files$analysis)
+  annotation <- suppressWarnings(ui_review(strategy, "approve", reviewer = "test", reason = "Reviewed strategy", continue = TRUE))
+  expect_identical(calls, 1L)
+  next_transfer <- ui_review(annotation, "request", chat_fn = callback)
+  expect_identical(next_transfer$view$pending$kind, "external_transfer")
+  expect_identical(calls, 1L)
+  consent <- ui_review(next_transfer, "approve", reviewer = "test", reason = "Reviewed second payload")
+  science <- ui_review(consent, "request", chat_fn = callback)
+  expect_identical(calls, 2L)
+  done <- suppressWarnings(ui_review(science, "approve", reviewer = "test", reason = "Keep unresolved fixture labels", continue = TRUE))
+  expect_identical(done$view$status, "complete")
+  expect_identical(calls, 2L)
+  expect_true(all(sc_result(done)$sc_annotation == "Unknown"))
+})
 
 test_that("facade changes leave kernel fingerprint intact while real kernel changes invalidate", {
   before <- .sc_run_implementation()

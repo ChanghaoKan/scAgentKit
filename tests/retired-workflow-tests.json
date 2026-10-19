@@ -32,12 +32,6 @@
       "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
     },
     {
-      "file": "tests/testthat/test-analysis-api.R",
-      "case": "offline external callbacks preserve separate exact transfer consent and science",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
       "file": "tests/testthat/test-annot-apply-replay.R",
       "case": "obsolete fixture/helper",
       "retired_symbols": "AgentSeurat",
@@ -525,18 +519,6 @@
     },
     {
       "file": "tests/testthat/test-legacy-qc.R",
-      "case": "legacy qc_mad skips a zero-MAD metric instead of removing every expressing cell",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-legacy-qc.R",
-      "case": "legacy qc_mad accepts fractional nmad and keeps NA-group cells",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-legacy-qc.R",
       "case": "qc_remove_genes detects species instead of silently defaulting to mouse",
       "retired_symbols": "qc_remove_genes",
       "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
@@ -647,24 +629,6 @@
       "file": "tests/testthat/test-qc-mad.R",
       "case": "qc_mad upper-only metrics (percent.mt) stay in linear space",
       "retired_symbols": ["AgentSeurat", "qc_mad"],
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-recommend-facts.R",
-      "case": "explicit initial sample facts replace pooled MAD grouping without approval or deletion",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-recommend-qc-pc.R",
-      "case": "QC recommendations respond to actual joint flags and preserve full range logic",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-recommend-qc-pc.R",
-      "case": "QC range-only intersections disclose outer-AND re-entry and redundant flags",
-      "retired_symbols": "qc_mad",
       "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
     },
     {
@@ -785,84 +749,6 @@
       "file": "tests/testthat/test-run-cycle-engine.R",
       "case": "legacy regression defaults to a true no-op and mouse scoring fails before unsafe matching",
       "retired_symbols": ["AgentSeurat", "sc_cellcycle_regress", "sc_cellcycle_score"],
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-engine.R",
-      "case": "MAD options require an explicit independent grouping role and finite supported settings",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-engine.R",
-      "case": "MAD arithmetic records log10(x+1), raw mt, scaled constant, exact thresholds and conservative unknowns",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-engine.R",
-      "case": "finite panel treats strict equality, display rounding, high RNA and diagnostic percentages correctly",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-engine.R",
-      "case": "unavailable mitochondrial genes and MAD zero block required presets without silently discarding cells",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-engine.R",
-      "case": "panel approval rejects hallucinations, stale bindings and internally inconsistent rehashed flags",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-integration.R",
-      "case": "minimal prefilter and capture scoring precede one explicit sample-aware MAD decision",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-integration.R",
-      "case": "input panel prefilter and context changes cannot consume a whole-panel approval",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-schema.R",
-      "case": "obsolete fixture/helper",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-schema.R",
-      "case": "MAD strategy binds a local panel while provider evidence remains aggregate",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-schema.R",
-      "case": "MAD preset execution is the exact prefilter intersection with local policy flags",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-schema.R",
-      "case": "MAD evidence cannot be detached altered or rebound under a fresh outer hash",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-mad-schema.R",
-      "case": "MAD and prefilter settings bind calculation scope while disabled hashes retain old fields",
-      "retired_symbols": "qc_mad",
-      "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
-    },
-    {
-      "file": "tests/testthat/test-run-qc-rules.R",
-      "case": "saved MAD predicates combine with ranges without restoring prefilter exclusions",
-      "retired_symbols": "qc_mad",
       "replacement_coverage": ["tests/testthat/test-shared-analysis-kernels.R", "tests/testthat/test-seurat-utilities.R", "tests/testthat/test-run-annotation.R", "tests/testthat/test-run-provider.R", "tests/testthat/test-run-subcluster-integration.R"]
     },
     {
