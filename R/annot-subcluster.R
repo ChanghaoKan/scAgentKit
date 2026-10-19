@@ -554,6 +554,9 @@ annot_subcluster <- function(obj,
   annotations$proposed_cell_type_fine <- NA_character_
   annotations$raw_confidence <- NA_character_
   annotations$evidence_status <- "needs_review"
+  annotations$citation_status <- "not_assessed"
+  annotations$review_required <- TRUE
+  annotations$review_reasons <- "annotation_not_requested"
   annotations$label_usable <- FALSE
   annotations$evidence_reasons <- "annotation_not_requested"
   annotations$response_audit <- rep(list(list()),nrow(annotations))
@@ -562,6 +565,7 @@ annot_subcluster <- function(obj,
     cid <- annotations$subcluster[i]
     if (annotations$n_cells[i] < min_cells_per_subcluster) {
       annotations$evidence_reasons[i] <- "too_small_to_annotate"
+      annotations$review_reasons[i] <- "too_small_to_annotate"
       annotations$confidence[i]     <- "low"
       annotations$reasoning[i]      <- sprintf("Only %d cells; below threshold %d.",
                                                 annotations$n_cells[i],
@@ -576,6 +580,7 @@ annot_subcluster <- function(obj,
 
     if (nrow(sub_markers) == 0) {
       annotations$evidence_reasons[i] <- "no_marker_evidence"
+      annotations$review_reasons[i] <- "no_marker_evidence"
       annotations$confidence[i]     <- "low"
       annotations$reasoning[i]      <- "No positive markers found."
       annotations$followup[i]       <- ""
@@ -598,6 +603,9 @@ annot_subcluster <- function(obj,
     annotations$cell_type_fine[i] <- if (isTRUE(res$label_usable)) res$label else NA_character_
     annotations$raw_confidence[i] <- res$raw_confidence
     annotations$evidence_status[i] <- res$evidence_status
+    annotations$citation_status[i] <- res$citation_status
+    annotations$review_required[i] <- res$review_required
+    annotations$review_reasons[i] <- paste(res$review_reasons, collapse = ";")
     annotations$label_usable[i] <- res$label_usable
     annotations$evidence_reasons[i] <- paste(res$evidence_reasons, collapse = ";")
     annotations$confidence[i]     <- res$confidence
