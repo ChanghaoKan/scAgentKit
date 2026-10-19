@@ -111,20 +111,20 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 ## 开发预览
 
 已发布 v0.6.0 的默认路径需**两次审批**，请使用[匹配的发布版操作路径](docs/RELEASE_060_PROTOCOL.md)。
-本图及下方步骤对应**尚未发布的固定提交预览** `265e3263c8fa0ee9fff5bf019ceb270d08530350`。
+本图及下方步骤对应**尚未发布的固定提交预览** `ae68c12ac44187db5ab22706392f77e2641aa3fa`。
 没有预览版 release 归档。其包版本仍显示 0.6.0，须同时记录源代码提交和依赖环境。
 
 先按上方准备发布版依赖，再在独立源目录取得并检出此固定提交：
 
 ```sh
 git clone --no-checkout https://github.com/ChanghaoKan/scAgentKit.git scagentkit-preview-source
-git -C scagentkit-preview-source checkout --detach 265e3263c8fa0ee9fff5bf019ceb270d08530350
+git -C scagentkit-preview-source checkout --detach ae68c12ac44187db5ab22706392f77e2641aa3fa
 ```
 
 在**新的 R 会话**中，将源代码安装到另一私有库，使用已准备的依赖，再运行公开小数据的三次审批软件教程：
 
 ```r
-preview_sha <- "265e3263c8fa0ee9fff5bf019ceb270d08530350"
+preview_sha <- "ae68c12ac44187db5ab22706392f77e2641aa3fa"
 source_dir <- normalizePath("scagentkit-preview-source", mustWork=TRUE)
 stopifnot(identical(system2("git", c("-C", shQuote(source_dir), "rev-parse", "HEAD"),
   stdout=TRUE), preview_sha))
@@ -145,6 +145,10 @@ receipt 应显示 `complete`、三次审批（strategy、strategy、annotation�
 该教程保留常规分辨率扫描；有限 PC/特征数、关闭 UMAP 及 Unknown 标签均为明确的软件测试设置，
 不是研究建议。旧项目保留原环境；预览另建目录。参见[中文操作指南](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md)
 和[三次审批 R 路径](docs/R_ANALYSIS_PROTOCOL.md)。
+
+当前预览只保留一个审批项目工作流；旧直接编排与 AgentSeurat 对象退场，
+保留工具直接使用 Seurat 或表格。完整[API 与对象类型变化](docs/API_CONSOLIDATION.md)列明清理范围。
+仓库示例和 benchmark 已同步到同一引擎；开发测试项目可重建，不维护旧测试对象兼容 facade。
 
 ## 分析步骤
 

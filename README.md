@@ -122,7 +122,7 @@ cross-version project migration.
 
 The published v0.6.0 default uses **two approvals**; follow the
 [matching release protocol](docs/RELEASE_060_PROTOCOL.md). The diagram and steps
-below instead describe the **unreleased fixed-commit preview** at `265e3263c8fa0ee9fff5bf019ceb270d08530350`.
+below instead describe the **unreleased fixed-commit preview** at `ae68c12ac44187db5ab22706392f77e2641aa3fa`.
 No preview release archive is published. Its package version still reads
 0.6.0, so record the source commit as well as the dependency environment.
 
@@ -131,7 +131,7 @@ source directory, fetch and check out this exact commit:
 
 ```sh
 git clone --no-checkout https://github.com/ChanghaoKan/scAgentKit.git scagentkit-preview-source
-git -C scagentkit-preview-source checkout --detach 265e3263c8fa0ee9fff5bf019ceb270d08530350
+git -C scagentkit-preview-source checkout --detach ae68c12ac44187db5ab22706392f77e2641aa3fa
 ```
 
 In a **fresh R session**, install that source into a separate private library
@@ -139,7 +139,7 @@ using the already prepared dependencies, then execute the public small-data
 three-gate software tutorial:
 
 ```r
-preview_sha <- "265e3263c8fa0ee9fff5bf019ceb270d08530350"
+preview_sha <- "ae68c12ac44187db5ab22706392f77e2641aa3fa"
 source_dir <- normalizePath("scagentkit-preview-source", mustWork=TRUE)
 stopifnot(identical(system2("git", c("-C", shQuote(source_dir), "rev-parse", "HEAD"),
   stdout=TRUE), preview_sha))
@@ -163,6 +163,12 @@ explicit software controls, not study recommendations. Keep the old project's
 original environment; use new directories for this preview. See the
 [English operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) and
 [three-gate R protocol](docs/R_ANALYSIS_PROTOCOL.md).
+
+The current preview exposes one reviewed project workflow. Retired direct
+orchestration and AgentSeurat objects are replaced by Seurat/table utilities;
+see [the exact API and type changes](docs/API_CONSOLIDATION.md). Repository
+examples and benchmarks use this engine; fresh development projects replace
+old test objects, with no compatibility facade.
 
 ## Analysis protocol
 
