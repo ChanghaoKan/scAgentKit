@@ -13,4 +13,8 @@ full_llm_start <- function(input, project_dir, context, provider, budget,
 # For strict per-payload consent, call sc_start directly with
 # review=list(allow_external=TRUE), omitting transfer_consent.
 # Without an available configured key, sc_start explains the manual fallback.
+# For standard DeepSeek Flash, omitted budget in sc_start selects USD1.
+# This project-scope helper requires an explicit chosen cap, for example budget=1
+# or budget=.73; confirmed=TRUE covers that actual cap and the data categories.
+# Existing project caps stay frozen; a model cannot increase them.
 # Prices/usage need provider-specific validation; a mock is not fee calibration.

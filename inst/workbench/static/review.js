@@ -355,14 +355,25 @@ function suggestionSummary(candidate, kind) {
   if (candidate.doublet) parts.push("Doublets: " + candidate.doublet.method);
   return parts;
 }
+function renderNewProjectBudget() {
+  const input = $("new-project-budget"), configured = state.suggestion?.suggestion?.new_project_budget_default;
+  if (!input.dataset.initialized && Number.isFinite(configured) && configured >= 0) {
+    input.value = String(configured); input.dataset.initialized = "true";
+  }
+  const raw = input.value.trim(), amount = Number(raw);
+  const valid = raw !== "" && Number.isFinite(amount) && amount >= 0;
+  $("new-project-budget-message").textContent = valid ? `Chosen new-project cap: $${amount.toFixed(4)}. Current project unchanged; no request sent.` : "Enter a nonnegative finite USD cap; no project or request is created here.";
+  $("new-project-budget-command").textContent = valid ? `sc_start(input, "new-project", context=context, provider="deepseek", budget=${amount}, review=list(allow_external=TRUE))` : "";
+}
 function renderSuggestion() {
+  renderNewProjectBudget();
   const answer = state.suggestion, item = answer?.suggestion, preview = item?.preview, job = answer?.job;
   const section = $("run-suggestion"); section.setAttribute("data-connection", state.suggestionLost ? "lost" : "verified"); section.setAttribute("data-job-status", job?.status || "none");
   const disabled = state.view?.suggestion_enabled !== true;
   $("suggestion-status").textContent = state.suggestionLost ? "Connection unverified" : job && ["queued", "running", "failed", "interrupted", "timed_out"].includes(job.status) ? "Model task: " + job.status : item?.available === false ? "Unavailable at this step" : item?.status || (answer?.enabled === false || disabled ? "Unavailable" : "Not requested");
   $("suggestion-simulated").hidden = preview?.simulated !== true && answer?.simulated !== true;
   const provider = typeof preview?.provider === "string" ? preview.provider : preview?.provider?.name;
-  $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot set a key, endpoint, model or budget.";
+  $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot change the current project’s key, endpoint, model or budget.";
   if (preview) {
     const usd = value => Number.isFinite(value) ? "$" + value.toFixed(4) : "unavailable";
     $("suggestion-summary").textContent += ` Budget ${usd(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
@@ -1938,6 +1949,7 @@ $("strategy-json").addEventListener("input", () => {state.strategyDraftText = $(
 for (const [id, action] of [["strategy-save", "revise"], ["strategy-approve", "approve"], ["strategy-reject", "reject"]]) $(id).addEventListener("click", () => decideStrategy(action));
 $("strategy-approve-continue").addEventListener("click", () => decideStrategy("approve", true));
 $("annotation-approve-continue").addEventListener("click", () => decide("approve", true));
+$("new-project-budget").addEventListener("input", renderNewProjectBudget);
 $("suggestion-preview").addEventListener("click", loadSuggestion);
 $("suggestion-approve").addEventListener("click", () => suggestionAction("approve", false, true));
 for (const [id, action] of [["suggestion-request", "request"], ["suggestion-adopt", "adopt"], ["suggestion-discard", "discard"], ["suggestion-conflicts", "review_conflicts"]]) $(id).addEventListener("click", () => suggestionAction(action));

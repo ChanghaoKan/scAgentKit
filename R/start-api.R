@@ -14,7 +14,7 @@
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
 #' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
-#' @param budget Explicit project USD cap; zero until a real-provider default is calibrated.
+#' @param budget Nonnegative project USD cap; NULL selects USD1 for standard calibrated DeepSeek Flash settings. Explicit values take precedence; saved projects retain their frozen cap.
 #' @param review Creation-time transfer policy; optional explicit project scope skips repeated
 #'   transfer approvals within its provider/categories/budget. Payloads remain inspectable.
 #' @param model_suggestions Operator mode: auto, off, configured, or simulate.

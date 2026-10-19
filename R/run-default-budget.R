@@ -8,6 +8,6 @@
     metadata$generation$max_tokens <= 4096 && identical(metadata$generation$thinking$type, 'disabled') &&
     metadata$reservation_usd <= .05 && (is.null(metadata$pricing) || isTRUE(all.equal(metadata$pricing, rates)))
   if (eligible && is.null(metadata$pricing)) metadata$pricing <- rates
-  amount <- if (is.null(budget)) if (eligible) .20 else 0 else .sc_run_provider_number(budget, 'budget')
+  amount <- if (is.null(budget)) if (eligible) 1.00 else 0 else .sc_run_provider_number(budget, 'budget')
   list(provider = metadata, budget = amount, calibrated = eligible, chat_fn = spec$fn)
 }

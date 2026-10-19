@@ -112,6 +112,7 @@
     input_hash = state$input_hash, revision = state$revision, kind = context$kind,
     available = is.null(context$blocked_reason), blocked_reason = context$blocked_reason,
     suggestion_hash = context$suggestion_hash, status = "preview", preview = NULL,
+    new_project_budget_default = .sc_run_new_budget("deepseek")$budget,
     candidate = NULL, response = NULL, can_approve = FALSE, can_request = FALSE,
     can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE, can_review_conflicts = FALSE)
   if (!is.null(context$blocked_reason)) return(result)

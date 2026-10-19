@@ -1,7 +1,10 @@
 # Development (unreleased)
 
-- Calibrate three valid public-aggregate DeepSeek Flash responses and select a
-  USD0.20 cap for standard new-project settings, with explicit data/cap consent.
+- Use the user-selected USD1.00 default cap for standard new DeepSeek Flash
+  projects; explicit custom nonnegative finite budgets take precedence. Existing
+  project caps remain frozen and consent is bound to the actual chosen cap.
+  Three valid public-aggregate responses provide usage calibration; changing the
+  default does not change the shared USD2 test authorization or send a request.
   Failed suggestions save a local rule draft without approval or retry; retain
   safe original numeric usage with integrity hashes. Other model settings need
   an explicit budget. Token-rate estimates are not provider cash invoices.

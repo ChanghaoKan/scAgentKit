@@ -41,7 +41,7 @@
       message("Provider budget is zero. No paid request can run; choose an explicit USD cap after reviewing provider pricing. This provider/model/settings combination has no calibrated default; supply an explicit cap.")
   }
   if (!is.null(review$transfer_consent)) {
-    if (budget_was_default) stop("Project transfer consent requires an explicit USD cap. Review the default and data categories, then supply budget=.20 or another chosen cap.", call. = FALSE)
+    if (budget_was_default) stop("Project transfer consent requires an explicit USD cap. Review the default and data categories, then supply budget=1 or another chosen cap.", call. = FALSE)
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
     invisible(.sc_run_transfer_options(review$transfer_consent, metadata, budget))
   }

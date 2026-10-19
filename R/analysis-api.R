@@ -201,7 +201,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     saveRDS(input,transport,version=2L);input<-transport
   }
   if (is.null(budget) && !is.null(review$transfer_consent))
-    stop("Project transfer consent requires an explicit USD cap after reviewing data categories; supply budget=.20 or another chosen cap.", call. = FALSE)
+    stop("Project transfer consent requires an explicit USD cap after reviewing data categories; supply budget=1 or another chosen cap.", call. = FALSE)
   selected_budget <- .sc_run_new_budget(provider, budget, chat_fn)
   provider <- selected_budget$provider; budget <- selected_budget$budget
   chat_fn <- selected_budget$chat_fn

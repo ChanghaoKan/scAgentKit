@@ -11,7 +11,7 @@ Configure provider/model, an explicit USD cap and transfer consent directly in
 and installed `full-llm-workflow.R`. Existing environment keys only; missing keys
 leave a manual workflow. Without project-scope consent, each exact payload needs
 separate approval. Draft adoption/Save never approves science. Standard
-DeepSeek Flash has a USD0.20 default cap after real-provider calibration;
+DeepSeek Flash has a USD1.00 default cap after real-provider calibration;
 an explicit `budget=0` still blocks paid requests, and
 [data/budget consent and measured limits](MODEL_BUDGET.md) still apply.
 
@@ -75,7 +75,7 @@ service <- sc_start("input.rds", "new-review-project", context=context)
 ```
 
 Check the import summary and unapproved plan: cells, features and sample facts.
-Continue to strategy review. DeepSeek Flash defaults to a USD0.20 cap; choose provider="manual" for local-only review, or see section 6 for model setup.
+Continue to strategy review. DeepSeek Flash defaults to a USD1.00 cap; choose provider="manual" for local-only review, or see section 6 for model setup.
 
 ## 5. Review the plan and measured clustering
 
