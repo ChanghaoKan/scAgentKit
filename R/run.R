@@ -406,8 +406,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     state <- .sc_run_event(state, "manual_configuration_needed", list(stage = state$stage, kind = kind))
     .sc_run_save(root, state); return(list(state = state, proposal = NULL))
   }
-  request <- tryCatch(.sc_run_request(kind, evidence, state$config),
-    sc_run_transfer_privacy_unavailable = function(error) error)
+  request <- tryCatch({
+    value<-.sc_run_request(kind,evidence,state$config)
+    .sc_run_transfer_check_literal_ids(value,.sc_run_get(root,state,paste0(kind,"_evidence")))
+    value
+  },sc_run_transfer_privacy_unavailable=function(error)error)
   if (inherits(request, "sc_run_transfer_privacy_unavailable")) {
     state$status <- "awaiting_configuration"
     state$diagnostics$provider_privacy_notice <- conditionMessage(request)

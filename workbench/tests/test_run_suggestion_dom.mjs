@@ -386,6 +386,20 @@ await test("lost automatic request cannot repeat after explicit preview or tab r
   await reloaded.call("maybeAutoSuggestion"); assert.equal(reloaded.requests.length, 0);
 });
 
+await test("preparing guided differences stages a new strict preview without another model request or scientific approval", async () => {
+  const initial=model(7,"candidate");initial.suggestion.kind="annotation";
+  initial.suggestion.candidate={schema:"scagentkit.annotation.v1",annotations:[{clusterId:"0",label:"Independent A",confidence:"low",rationale:"Offline fixture",markers:[]}]};
+  Object.assign(initial.suggestion,{can_adopt:true,can_review_conflicts:true,reference_mode:"independent"});
+  const h=setup(annotationReview(7),initial);
+  const guided=model(8,"preview");guided.suggestion.kind="annotation";guided.suggestion.reference_mode="guided";
+  h.fetchImpl=async url=>response(url.endsWith("/inspect")?annotationReview(8):guided);
+  await h.call("suggestionAction","review_conflicts");
+  const writes=h.requests.filter(row=>row.options.method==="POST");
+  assert.equal(writes.length,1);assert.match(writes[0].url,/suggestion\/review_conflicts$/);
+  assert.equal(h.el("suggestion-approve").hidden,false);
+  assert.equal(h.requests.some(row=>row.url.endsWith("/decision")||row.url.endsWith("/suggestion/request")),false);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

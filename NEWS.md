@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Modern annotation starts with a marker-only independent model draft. Preserve
+  that immutable response before preparing a reference-guided follow-up for
+  recorded label differences. Allow at most one guided request, within the
+  same project budget and transfer rules; uncertain/failed requests do not
+  unlock another attempt. Guided agreement is not independent validation.
+
 - Save annotation DotPlot/top-five and cited-gene FeaturePlot PNG evidence
   before review, bind exact PNG hashes and selections to approval, and rebuild
   after saved citation changes. Browser reads only PNGs in the current verified

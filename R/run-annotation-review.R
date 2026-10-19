@@ -77,7 +77,7 @@
     "A configured provider alone is not evidence of a model call. Historical responses may differ from the current manual proposal.")
   actual_mode <- if (source$kind == "manual") "not_dispatched" else "unknown"
   if (!is.null(adopted) && isTRUE(adopted$matches_current))
-    actual_mode <- if (isTRUE(adopted$simulated)) "not_dispatched" else evidence$summary$reference_mode
+    actual_mode <- if (isTRUE(adopted$simulated)) "not_dispatched" else if(!is.null(adopted$reference_mode)) adopted$reference_mode else evidence$summary$reference_mode
   if ((is.null(adopted) || !isTRUE(adopted$matches_current)) &&
       source$kind %in% c("model", "mock", "provider_response") && !is.null(state$files$annotation_request)) {
     request <- .sc_run_get(root, state, "annotation_request")

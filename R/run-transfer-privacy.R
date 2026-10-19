@@ -32,3 +32,15 @@
       class = c("sc_run_transfer_privacy_unavailable", "error", "condition")))
   invisible(TRUE)
 }
+
+.sc_run_transfer_check_literal_ids <- function(request,evidence) {
+  ids<-evidence$private$input_cells$cell_id
+  if(is.null(ids))return(invisible(TRUE))
+  ids<-unique(c(ids,sub("^.*::","",ids)))
+  tokens<-unlist(strsplit(request$user_prompt,"[^[:alnum:]_.:-]+"),use.names=FALSE)
+  tokens<-sub("[.:-]+$","",tokens)
+  if(any(tokens%in%ids[nchar(ids)>=4L]))
+    stop(structure(list(message="No model request was sent: the outgoing aggregate contains a literal input cell ID. Continue with local review and correct the identifying label/reference/context before creating another project.",call=NULL),
+      class=c("sc_run_transfer_privacy_unavailable","error","condition")))
+  invisible(TRUE)
+}

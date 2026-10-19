@@ -203,6 +203,8 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   extra <- list(...)
   if (is.null(extra$reference_review)) extra$reference_review <- list()
   extra$reference_review$strict_scope <- TRUE
+  if(identical(extra$reference_review$ai_mode,"guided"))
+    stop("The first modern annotation draft must be independent marker-only. Inspect its reference comparison before staging the optional one-time guided review.",call.=FALSE)
   doublet <- match.arg(doublet)
   plan_fields <- names(plan)
   plan_fields[plan_fields %in% c("resolution", "diagnostic_resolutions")] <- "clustering"

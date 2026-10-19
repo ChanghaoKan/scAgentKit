@@ -34,7 +34,7 @@ SCHEMA = "scagentkit.run-suggestion.workbench.v1"
 JOB_SCHEMA = "scagentkit.run-suggestion.job.v1"
 ACTIVE = {"queued", "running"}
 TERMINAL = {"succeeded", "failed", "interrupted", "timed_out"}
-ACTIONS = {"preview", "approve", "request", "adopt", "discard"}
+ACTIONS = {"preview", "approve", "request", "adopt", "discard", "review_conflicts"}
 BINDING = ("project_id", "input_hash", "expected_revision", "suggestion_hash")
 MAX_RESULT = 4 * 1024 * 1024
 

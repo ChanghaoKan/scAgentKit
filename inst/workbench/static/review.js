@@ -298,7 +298,7 @@ function suggestionButtons() {
   const idle = !!state.view && !state.busy && !state.stale && !activeJob() && !activeSuggestion() && !state.suggestionBusy && !state.suggestionChaining && !state.suggestionLost && !dirty();
   const current = idle && answer?.enabled === true && item?.revision === state.view.run.revision && hash(item?.suggestion_hash);
   $("suggestion-preview").disabled = state.view?.suggestion_enabled !== true || state.busy || activeJob() || state.suggestionBusy || state.suggestionChaining || dirty();
-  for (const [id, permission] of [["suggestion-approve", "can_approve"], ["suggestion-request", "can_request"], ["suggestion-adopt", "can_adopt"], ["suggestion-modify", "can_adopt"], ["suggestion-discard", "can_discard"]]) {
+  for (const [id, permission] of [["suggestion-approve", "can_approve"], ["suggestion-request", "can_request"], ["suggestion-adopt", "can_adopt"], ["suggestion-modify", "can_adopt"], ["suggestion-discard", "can_discard"], ["suggestion-conflicts", "can_review_conflicts"]]) {
     $(id).hidden = item?.[permission] !== true;
     $(id).disabled = !current || item?.[permission] !== true;
   }
@@ -375,6 +375,8 @@ function renderSuggestion() {
   if (item?.kind === "annotation") risks.push("Marker agreement and model confidence do not establish biological identity. Use Unknown for unresolved clusters.");
   if (!risks.length) risks.push("No candidate-specific risks were supplied. Inspect the rebuilt scientific evidence before approval.");
   $("suggestion-risks").replaceChildren(...risks.map(text => element("li", text)));
+  if(array(item?.reference_comparison).length)$("suggestion-candidate").append(raw({reference_mode:item.reference_mode,comparison:item.reference_comparison,
+    notice:"Reference label differences are descriptive; agreement is not biological validation. At most one separately budgeted guided follow-up is available."}));
   const response = item?.response;
   let note = state.suggestionError || item?.blocked_reason || "";
   if (!note && activeSuggestion()) note = "The request is saved on the analysis machine. Closing or reloading the page does not submit another request. Scientific decisions are disabled while this task is active.";
@@ -489,7 +491,7 @@ function verifyApprovedSuggestion(answer, binding, revision) {
     throw new Error("The approved request or saved task changed. Inspect the exact saved preview before an explicit request.");
 }
 async function suggestionAction(action, modify = false, requestAfterApproval = false, automatic = false) {
-  const permission = {approve: "can_approve", request: "can_request", adopt: "can_adopt", discard: "can_discard"}[action];
+  const permission = {approve: "can_approve", request: "can_request", adopt: "can_adopt", discard: "can_discard", review_conflicts: "can_review_conflicts"}[action];
   const item = state.suggestion?.suggestion;
   if (!permission || !ready() || dirty() || state.suggestion?.enabled !== true || item?.revision !== state.view.run.revision || !item?.[permission]) return;
   let payload; try {payload = suggestionPayload(action, automatic);} catch (error) {state.suggestionError = error.message; renderSuggestion(); return;}
@@ -1931,7 +1933,7 @@ $("strategy-approve-continue").addEventListener("click", () => decideStrategy("a
 $("annotation-approve-continue").addEventListener("click", () => decide("approve", true));
 $("suggestion-preview").addEventListener("click", loadSuggestion);
 $("suggestion-approve").addEventListener("click", () => suggestionAction("approve", false, true));
-for (const [id, action] of [["suggestion-request", "request"], ["suggestion-adopt", "adopt"], ["suggestion-discard", "discard"]]) $(id).addEventListener("click", () => suggestionAction(action));
+for (const [id, action] of [["suggestion-request", "request"], ["suggestion-adopt", "adopt"], ["suggestion-discard", "discard"], ["suggestion-conflicts", "review_conflicts"]]) $(id).addEventListener("click", () => suggestionAction(action));
 $("suggestion-modify").addEventListener("click", () => suggestionAction("adopt", true));
 $("suggestion-form").addEventListener("submit", event => event.preventDefault());
 for (const id of ["annotation-decision-form", "strategy-decision-form", "run-undo-form"]) $(id).addEventListener("submit", event => event.preventDefault());

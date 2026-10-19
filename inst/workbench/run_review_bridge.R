@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Fixed local IPC. Browser fields are typed JSON data, never executable R.
 args <- commandArgs(trailingOnly = TRUE)
-suggestion_actions <- c("preview", "approve", "request", "adopt", "discard")
+suggestion_actions <- c("preview", "approve", "request", "adopt", "discard", "review_conflicts")
 if (length(args) != 4L || !args[[1L]] %in% c("inspect", "decision", paste0("suggestion_", suggestion_actions))) quit(status = 2L)
 operation <- args[[1L]]; project_dir <- args[[2L]]
 request_file <- args[[3L]]; response_file <- args[[4L]]
