@@ -1,5 +1,13 @@
 # Development (unreleased)
 
+- Model scan previews use a versioned compact aggregate with full graph and
+  split inventory, top-three global markers, and complete top-ten child marker
+  blocks selected largest-parent-first within an explicit byte bound. Report
+  omitted blocks and retain the complete local scan. Bump new request/consent
+  prompt version to aggregate-review.v2; existing histories are never rewritten.
+  Resolution 0.5 is a rule fallback only when actually scanned; otherwise report
+  a conflict and require a choice from measured candidates.
+
 - Compute diagnostic resolution markers with native only-positive, min.pct .25,
   logFC .25 and top-30 settings. Keep the final selected-cluster full marker
   calculation unchanged. Save literal-symbol program diagnostics and top-ten

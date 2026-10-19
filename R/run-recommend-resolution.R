@@ -89,9 +89,15 @@
   }
   step$assessment <- "assessed"
   if (!is.null(scan$scientific_diagnostics)) step$scientific_diagnostics <- scan$scientific_diagnostics
-  step$reasons <- list("Retain measured alternatives for author comparison; no composite score, ranking or default-0.5 preference is used.")
+  step$reasons <- list("Retain measured alternatives for author comparison; no composite score or ranking is used. The optional rule fallback is not an optimum and never overrides saved human choices.")
   step$completed <- list("Fixed-cell, fixed-PC/neighbor-graph resolution scan and recorded cluster transitions are available.")
   step$conflicts <- list()
+  step$fallback<-list(status=if(.5%in%resolutions)"available_scanned_rule"else"conflict_unscanned_default",
+    resolution=if(.5%in%resolutions).5 else NULL,
+    reason=if(.5%in%resolutions)"Resolution 0.5 is an available measured rule fallback, not a statistically or biologically optimal value. Author approval is still required." else
+      "The rule fallback 0.5 was not scanned. Select an actual scanned resolution or explicitly revise and recompute the scan; no value is fabricated.")
+  step$reasons<-c(step$reasons,list(step$fallback$reason))
+  if(!.5%in%resolutions)step$conflicts<-c(step$conflicts,list(step$fallback$reason))
   step$uncertainty <- list("Sample concentration can reflect biology or technical structure; more sample mixing and more marker hits are not automatic optimization targets.",
     "ARI and shared-cell transitions describe resolution sensitivity, not resampling stability, lineage or biological correctness.",
     "Same-data differential markers do not independently validate identities; missing passing markers do not establish that a population is absent.",
@@ -150,7 +156,8 @@
         sample_composition = composition, single_sample_clusters = if (measured_samples) concentrated else NULL,
         incoming_split_sources = as.integer(split_sources), incoming_merge_targets = as.integer(merge_targets),
         incoming_transitions = incoming, outgoing_transitions = outgoing, ari_vs_previous = ari,
-        equivalent_options = equivalent), conflicts = conflicts)
+        equivalent_options = equivalent,marker_programs=record$marker_programs,
+        adjacent_split_markers=Filter(function(row)identical(as.numeric(row$to_resolution),r),scan$adjacent_splits$records)), conflicts = conflicts)
     if (!measured_markers) step$missing <- c(step$missing, list(list(field = paste0("resolution.", key, ".markers"),
       label = paste0("Resolution ", key, " marker evidence"), reason = "No saved measured marker result; do not interpret missing evidence as zero expression.")))
     if (measured_samples < length(level)) step$missing <- c(step$missing, list(list(field = paste0("resolution.", key, ".samples"),

@@ -1,3 +1,5 @@
+.sc_run_prompt_version <- function() "aggregate-review.v2"
+
 # Transfer consent never grants scientific approval. The exact payload remains
 # visible and hashed even when a creation-time scope permits another dispatch.
 .sc_run_transfer_categories <- function(kind) {
@@ -8,7 +10,7 @@
 }
 
 .sc_run_transfer_scope <- function(kind) {
-  list(schema = "scagentkit.transfer-scope.v1", prompt_version = "aggregate-review.v1",
+  list(schema = "scagentkit.transfer-scope.v1", prompt_version = .sc_run_prompt_version(),
     kind = kind, categories = .sc_run_transfer_categories(kind))
 }
 
@@ -32,7 +34,7 @@
   out <- list(schema = "scagentkit.transfer-consent.v1", mode = "project", confirmed = TRUE,
     reviewer = value$reviewer, reason = value$reason, categories = sort(categories),
     provider_hash = .sc_run_provider_hash(provider), budget_usd = as.numeric(budget),
-    prompt_version = "aggregate-review.v1")
+    prompt_version = .sc_run_prompt_version())
   if (.sc_run_provider_contains_secret(out, provider$api_key_env))
     stop("Credential-like transfer consent is forbidden.", call. = FALSE)
   out$hash <- .sc_run_provider_hash(out)

@@ -25,7 +25,7 @@
     }
     scan$scientific_diagnostics <- aggregate
   }
-  scan
+  .sc_run_cluster_scan_payload(scan)
 }
 
 .sc_run_suggestion_context <- function(root, state, simulate = FALSE) {
@@ -51,7 +51,11 @@
   evidence <- .sc_run_get(root, state, evidence_name)
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
   summary <- evidence$summary
-  if (!is.null(scan)) summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan)
+  if (!is.null(scan)) {
+    summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan)
+    if(identical(summary$cluster_diagnostics$status,"unavailable_essential_aggregates_exceed_bound"))
+      return(list(kind=kind,provider=provider,blocked_reason=paste("No model request was sent.",summary$cluster_diagnostics$reason)))
+  }
   guidance<-NULL
   if(kind=="annotation") {
     guided<-.sc_run_annotation_guidance(root,state,evidence,summary)
@@ -78,7 +82,7 @@
   if (is.null(request_hash)) return(list(kind = kind, provider = provider,
     blocked_reason = paste("Aggregate provider request exceeds 100,000 bytes.",
       "Suggestions are unavailable for this snapshot; review the complete local evidence manually.",
-      "No evidence was truncated and no provider request was sent.")))
+      "No evidence was truncated to force this request under the limit; the diagnostic projection separately declares its scope and omission accounting. No provider request was sent.")))
   binding <- list(stage = state$stage, input_hash = state$input_hash,
     config_hash = state$config_hash, implementation_hash = state$implementation_hash,
     evidence = state$files[[evidence_name]], cluster_scan = state$files$cluster_scan,

@@ -364,6 +364,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     "For proliferation, development or tumour goals generally preserve cycle biology with regression none; cycling_dominant evidence may justify reviewing difference regression, never automatic deletion.",
     "A technical batch with measured composition differences may justify Harmony only after the existing confounding and rank guards; no declared technical provenance means none.",
     "Auto/flag doublet modes propose keeping cells with diagnostic flags; remove is available only for an explicit remove setup and exact human strategy review.")
+  if(kind=="strategy"&&!is.null(evidence$cluster_diagnostics))schema<-paste(schema,
+    "cluster_diagnostics contains actual scanned resolutions and a bounded aggregate projection with explicit table column headers and omission accounting; full evidence remains local.",
+    "Choose only an actually scanned resolution, explaining native marker programs, within-parent child contrasts and potential shared/cycling/technical programs. These are same-data review cues, not biological validation or a composite optimum.",
+    "If evidence cannot justify a different resolution, 0.5 is only a rule fallback WHEN it appears in the actual scanned set. Otherwise report the fallback conflict and request author selection among scanned values; never invent or silently apply 0.5.",
+    "Never treat omitted/unsupported comparisons as zero signal or proof of stable identity.")
   if (kind == "strategy" && !is.null(evidence$metadata_role_candidates)) schema <- paste(schema,
     "metadata_role_candidates contains only whitelisted column names and privacy-filtered aggregate sizes/values.",
     "If the sample role is unresolved, provide a clearly labelled sample/donor/condition mapping DRAFT with reasons in inferences, and ask the analyst to choose in the study-facts editor.",
@@ -388,7 +393,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   request <- list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
        user_prompt = .sc_project_json(list(context = if (kind == "annotation" && !is.null(evidence$child_context)) evidence$context else config$context, evidence = payload_evidence)),
-       purpose = kind, evidence_hash = .sc_run_hash(evidence), prompt_version = "aggregate-review.v1")
+       purpose = kind, evidence_hash = .sc_run_hash(evidence), prompt_version = .sc_run_prompt_version())
   if (!is.null(config$review$transfer_consent)) request$transfer_scope <- .sc_run_transfer_scope(kind)
   request
 }
