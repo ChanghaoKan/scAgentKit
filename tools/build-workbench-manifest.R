@@ -8,9 +8,9 @@ for (file in sort(list.files(file.path(root, "R"), "[.]R$", full.names = TRUE)))
       is.symbol(expr[[2]]) && is.call(expr[[3]]) && identical(expr[[3]][[1]], as.name("function")))
     definitions[[as.character(expr[[2]])]] <- eval(expr[[3]], envir = baseenv())
 }
-selected <- sort(unique(c(grep("^(sc_run|\\.sc_run_|\\.sc_ui_|\\.sc_start_)", names(definitions), value=TRUE),
+selected <- sort(unique(c(grep("^(sc_run|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)", names(definitions), value=TRUE),
   "sc_analyze", "sc_open", "sc_review", "sc_start", "sc_project_prepare", ".sc_project_layer",
-  ".sc_project_identity", "sc_select_pcs", ".adjusted_rand_index", "sc_cycle_gene_set")))
+  ".sc_project_identity", ".adjusted_rand_index", "sc_cycle_gene_set")))
 signature <- function(fn) list(formals=paste(deparse(formals(fn),width.cutoff=500L),collapse="\n"),
   body=paste(deparse(body(fn),width.cutoff=500L),collapse="\n"))
 functions <- setNames(lapply(selected,function(name) digest::digest(signature(definitions[[name]]),
