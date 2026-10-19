@@ -216,6 +216,9 @@
       stop("Provider ledger entry is invalid; dispatch refused.")
     if (!is.null(entry$raw) && !identical(entry$response_hash, .sc_run_provider_hash(entry$raw)))
       stop("Provider cached response hash mismatch; dispatch refused.")
+    if (!is.null(entry$raw_usage_hash) &&
+        !identical(entry$raw_usage_hash, .sc_run_provider_hash(entry$raw_usage)))
+      stop("Provider cached raw usage hash mismatch; dispatch refused.")
     if (!is.null(entry$response_metadata_hash) &&
         !identical(entry$response_metadata_hash, .sc_run_provider_hash(entry$response_metadata)))
       stop("Provider cached response metadata hash mismatch; dispatch refused.")
@@ -351,6 +354,10 @@
   adapted <- fn
   original <- body(fn)
   capture <- .sc_run_provider_capture_metadata
+  capture_usage <- function(frame) {
+    parsed <- if (exists("parsed",frame,inherits=FALSE)) get("parsed",frame,inherits=FALSE) else NULL
+    .sc_run_provider_raw_usage(if(is.list(parsed)) parsed$usage else NULL)
+  }
   body(adapted) <- bquote({
     .sc_response_frame <- environment()
     .sc_response_result <- tryCatch(.(original), error = function(.sc_response_error) {
@@ -359,6 +366,7 @@
         call = NULL, response_metadata = .sc_safe_metadata),
         class = c("sc_run_provider_transport_error", "error", "condition")))
     })
+    attr(.sc_response_result, "raw_usage") <- .(capture_usage)(.sc_response_frame)
     attr(.sc_response_result, "response_metadata") <- .(capture)(.sc_response_frame, .(env_names))
     .sc_response_result
   })
@@ -546,6 +554,8 @@
     # Metadata was extracted above. Strip every arbitrary character attribute
     # before returning/caching raw text, including in RDS coordinator snapshots.
     if (is.character(raw)) raw <- as.character(raw)
+    entry$raw_usage <- .sc_run_provider_raw_usage(if(is.list(value)) value$raw_usage else attr(value,"raw_usage",exact=TRUE))
+    if (!is.null(entry$raw_usage)) entry$raw_usage_hash <- .sc_run_provider_hash(entry$raw_usage)
     entry$usage <- .sc_run_provider_usage(value, records)
     parsed <- .sc_run_provider_response_result(raw, request$validator, spec$metadata$api_key_env,
       entry$response_metadata, entry$usage, spec$metadata$generation$max_tokens)
@@ -631,4 +641,22 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
     .sc_run_save(root, state)
   }
   invisible(entry)
+}
+
+# Preserve provider usage field names and nested numeric detail, never the HTTP
+# envelope, headers, arbitrary strings, key material or provider callback frame.
+.sc_run_provider_raw_usage <- function(value) {
+  allowed <- c('prompt_tokens','completion_tokens','total_tokens','input_tokens','output_tokens',
+    'prompt_cache_hit_tokens','prompt_cache_miss_tokens','cache_read_input_tokens',
+    'cache_creation_input_tokens','cached_tokens','prompt_tokens_details','completion_tokens_details',
+    'input_tokens_details','output_tokens_details','reasoning_tokens','audio_tokens',
+    'text_tokens','image_tokens','video_tokens','accepted_prediction_tokens','rejected_prediction_tokens')
+  clean <- function(x, depth=0L) {
+    if (is.numeric(x) && length(x)==1L && is.finite(x) && x>=0 && x==floor(x)) return(as.numeric(x))
+    if (!is.list(x) || is.null(names(x)) || depth>3L || anyDuplicated(names(x))) return(NULL)
+    out <- lapply(x[intersect(names(x),allowed)],clean,depth=depth+1L)
+    Filter(Negate(is.null),out)
+  }
+  if (!is.list(value)) return(NULL)
+  clean(value)
 }

@@ -100,7 +100,7 @@
 
 .sc_run_suggestion_response <- function(answer) {
   if (is.null(answer)) return(NULL)
-  answer[intersect(c("status", "cached", "cost_state", "cost_usd", "usage",
+  answer[intersect(c("status", "cached", "cost_state", "cost_usd", "usage", "raw_usage",
     "charged_or_held_usd", "reservation_usd", "accounting_issue", "error",
     "response_metadata", "response_audit", "request_hash", "attempt"), names(answer))]
 }
