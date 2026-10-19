@@ -84,7 +84,7 @@ test_that("offline external callbacks preserve separate exact transfer consent a
     calls <<- calls + 1L
     payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
     proposal <- if (grepl("strategy.v1", system_prompt, fixed = TRUE))
-      .sc_ui_plan(ui_plan(), dimensions = dim(input), mad = payload$evidence$qc_mad) else
+      .sc_ui_plan(utils::modifyList(ui_plan(), list(diagnostic_resolutions = c(.4, .6))), dimensions = dim(input), mad = payload$evidence$qc_mad) else
       list(schema = "scagentkit.annotation.v1", annotations = lapply(payload$evidence$clusters,
         function(cl) list(clusterId = cl$clusterId, label = "Unknown", confidence = "low",
           rationale = "Offline fixture abstention; no scientific identity claim.", markers = list())))
@@ -107,7 +107,11 @@ test_that("offline external callbacks preserve separate exact transfer consent a
   expect_identical(calls, 1L)
   expect_identical(strategy$view$pending$kind, "strategy")
   expect_null(.sc_run_load(strategy$project_dir)$files$analysis)
-  annotation <- suppressWarnings(ui_review(strategy, "approve", reviewer = "test", reason = "Reviewed strategy", continue = TRUE))
+  measured <- suppressWarnings(ui_review(strategy, "approve", reviewer = "test", reason = "Reviewed strategy", continue = TRUE))
+  expect_identical(measured$view$pending$kind, "strategy")
+  expect_length(.sc_run_load(measured$project_dir)$approvals, 2L)
+  measured <- ui_review(measured)
+  annotation <- suppressWarnings(ui_review(measured, "approve", reviewer = "test", reason = "Reviewed actual measured clustering", continue = TRUE))
   expect_identical(calls, 1L)
   next_transfer <- ui_review(annotation, "request", chat_fn = callback)
   expect_identical(next_transfer$view$pending$kind, "external_transfer")

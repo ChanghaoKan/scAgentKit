@@ -52,7 +52,10 @@
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
   summary <- evidence$summary
   if (!is.null(scan)) summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan)
-  request <- .sc_run_request(kind, summary, state$config)
+  request <- tryCatch(.sc_run_request(kind, summary, state$config),
+    sc_run_transfer_privacy_unavailable = function(error) error)
+  if (inherits(request, "sc_run_transfer_privacy_unavailable")) return(list(kind = kind, provider = provider,
+    blocked_reason = conditionMessage(request)))
   # Simulated responses have their own cache identity and cannot be mistaken
   # for a real or previously supplied runtime model response.
   if (simulate) request$purpose <- paste0("simulated_", kind)

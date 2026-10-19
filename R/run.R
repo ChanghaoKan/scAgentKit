@@ -131,6 +131,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     config$input_policy <- .sc_run_input_policy(input_policy)
     config$input_policy$metadata_key <- checked$diagnostics$preserved_metadata$key
     config$metadata_role_draft <- checked$diagnostics$metadata_role_candidates
+    config$metadata_transfer_policy <- .sc_run_metadata_transfer_policy(checked$seu, checked$context)
   }
   if (!is.null(scientific_review)) {
     if (!strategy || start_stage != "qc") stop("scientific_review requires raw strategy entry.",call.=FALSE)
@@ -315,6 +316,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   .sc_run_drive(root, state, provider, chat_fn, retry)
 }
 .sc_run_request <- function(kind, evidence, config) {
+  .sc_run_transfer_privacy_check(config)
   schema <- if (kind == "strategy") {
     paste("Return one JSON object with exactly schema='scagentkit.strategy.v1', rationale, risks (array), inferences (array), choice_reasons, qc, analysis, pcs, batch, clustering, umap.",
       "choice_reasons contains exactly qc, doublet, cycle, batch, hvg, pcs, clustering and umap, each a nonempty reason of at most 700 characters based on supplied evidence and study purpose.",
@@ -404,7 +406,15 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     state <- .sc_run_event(state, "manual_configuration_needed", list(stage = state$stage, kind = kind))
     .sc_run_save(root, state); return(list(state = state, proposal = NULL))
   }
-  request <- .sc_run_request(kind, evidence, state$config)
+  request <- tryCatch(.sc_run_request(kind, evidence, state$config),
+    sc_run_transfer_privacy_unavailable = function(error) error)
+  if (inherits(request, "sc_run_transfer_privacy_unavailable")) {
+    state$status <- "awaiting_configuration"
+    state$diagnostics$provider_privacy_notice <- conditionMessage(request)
+    state <- .sc_run_event(state, "provider_privacy_blocked", list(kind = kind, dispatch = "not_sent"))
+    .sc_run_save(root, state)
+    return(list(state = state, proposal = NULL))
+  }
   request_hash <- .sc_run_request_hash(request, provider, chat_fn)
   state <- .sc_run_put(root, state, paste0(kind, "_request"), request)
   external <- isTRUE(spec$metadata$external)

@@ -103,6 +103,7 @@
       unlist(context$columns[intersect(c("capture", "group", "condition", "treatment"), names(context$columns))], use.names = FALSE))
     stop("Technical batch metadata column conflicts with capture or biological roles; do not reinterpret those roles as correction targets.", call. = FALSE)
   config$context <- context
+  if (!is.null(config$input_policy)) config$metadata_transfer_policy <- .sc_run_metadata_transfer_policy(input, context)
   if (isTRUE(config$input_policy$automatic_metadata))
     config$metadata_role_draft <- .sc_run_metadata_roles(input, context, select_single = FALSE)$summary
   if (isTRUE(config$input_policy$automatic_mad) && is.null(config$qc_mad) &&

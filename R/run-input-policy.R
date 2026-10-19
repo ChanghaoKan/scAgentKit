@@ -1,7 +1,7 @@
 # The modern entry preserves prior metadata separately, without renaming roles
 # or treating old annotations as an approved result of the new analysis.
 .sc_run_input_policy <- function(value) {
-  flags <- c("preserve_metadata", "automatic_metadata", "automatic_mad", "automatic_cycle")
+  flags <- c("preserve_metadata", "automatic_metadata", "automatic_mad", "automatic_cycle", "require_three_gates")
   if (is.null(value)) return(c(stats::setNames(as.list(rep(FALSE, length(flags))), flags), list(doublet_mode = NULL, protected_strategy_fields = character())))
   if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
       length(setdiff(names(value), c(flags, "doublet_mode", "protected_strategy_fields"))) ||

@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Keep the standard raw project's measured-resolution approval mandatory for
+  model drafts. Explicit advanced no-scan setup remains separate; models cannot
+  disable a required gate. Rare declared metadata groups or literal cell-ID
+  labels/context block only the optional provider path, leaving local review
+  available and preserving the complete source evidence.
+
 - Model adoption retains explicitly supplied and later saved human strategy
   choices and annotation rows. Versioned controls and additive adoption receipts
   record which fields were retained; the raw model response is unchanged.

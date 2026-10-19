@@ -293,6 +293,7 @@
     automatic_diagnostics = config$automatic_diagnostics, doublet_mode = config$input_policy$doublet_mode,
     metadata_role_candidates = config$metadata_role_draft,
     choice_reasons_required = !is.null(config$input_policy),
+    require_three_gates = isTRUE(config$input_policy$require_three_gates),
     role_sizes = lapply(roles[intersect(c("sample", "qc_group", "capture", "batch", "group", "condition", "treatment"), names(roles))], .sc_run_strategy_group_counts),
     quality = qc_evidence$summary,
     input = list(cells = length(cells), features = nrow(counts),
@@ -570,6 +571,8 @@
         any(!is.finite(diagnostics)) || any(diagnostics <= 0 | diagnostics > 2) || anyDuplicated(diagnostics)))
       stop("diagnostic_resolutions must be at most five unique finite resolutions in (0,2], or omitted/NULL.", call. = FALSE)
     clustering <- list(resolution = resolution, diagnostic_resolutions = if (is.null(diagnostics)) NULL else sort(unname(diagnostics)))
+    if (isTRUE(evidence$summary$require_three_gates) && !length(clustering$diagnostic_resolutions))
+      stop("This project requires measured resolution review; a model draft cannot remove the second scientific approval gate.", call. = FALSE)
     umap <- .sc_run_strategy_fields(proposal$umap, c("run", "n_neighbors"), name = "strategy$umap")
     if (!is.logical(umap$run) || length(umap$run) != 1L || is.na(umap$run))
       stop("strategy$umap$run must be TRUE or FALSE.", call. = FALSE)
