@@ -3,7 +3,8 @@
 Read `docs/EVALUATION_PROTOCOL_V1.md` before execution. Inputs, cell selection,
 label mappings and references are frozen before query outcomes. No model API,
 tutorial identities, inferred donor/sample mapping or human time savings.
-Large input/reference/results remain in a private evidence directory, outside Git.
+Raw matrices, reference objects, per-cell exports and full native artifacts remain outside Git.
+Sanitized aggregate results and engineering evidence are in [results/report.md](results/report.md).
 
 Provision official bytes with `fetch_inputs.py`, sparse Baron inputs with
 `prepare_baron.py`, counts-only objects with `prepare_inputs.R`, and independent
@@ -27,7 +28,7 @@ sample-HVG is ineligible for PBMC3k/ifnb. Baron has four declared specimens and
 is eligible for sample-HVG, but remains ineligible for the five-sample outlier
 score. The baseline SingleR predictions stay the fixed reference comparison
 for every variant; author-label agreement is evaluated separately for expanded
-data. Broad HPCA islet labels cannot establish fine endocrine-subtype agreement.
+data. The actual frozen HPCA has no pancreatic-islet/alpha/beta/delta/PP/acinar/ductal target labels; nonblood annotation-quality validation did not pass. Literal mapped matches are not accuracy.
 
 `evaluate.py` rejects foreign/duplicate IDs and keeps excluded/Unknown cells in
 denominators. `--truth` means distributed author labels, not verified truth;

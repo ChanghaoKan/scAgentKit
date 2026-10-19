@@ -1,0 +1,40 @@
+{
+  "schema": "scagentkit.public-evaluation-summary.v1",
+  "scientific_engine": "5ca149d71658ec9b90d9556841d11b07e3f22cd6",
+  "eligibility_commit": "bf45805d8013215f319828b7151dc3c9cc687f8c",
+  "display_commit": "51cc4c9519ba4c71bb4fbc70dd3ae01fe4dd79f0",
+  "sources": [
+    {
+      "logical_name": "SAVED-COMPARISON-RESULTS.json",
+      "sha256": "18c206f48176c88eb52d5a2a894af4c926c8eaceace32458389a16843ba54318"
+    },
+    {
+      "logical_name": "FREEZE-INTEGRITY-FINAL.json",
+      "sha256": "fe0cbd698e89b6f1e8f1517f298bdb90043e55dc6cc8ca63963ceb9c9826c5d8"
+    },
+    {
+      "logical_name": "pbmc-qc-denominators/report.json",
+      "sha256": "db72273475e03c0133cc81af078b210480efb9551cac3e94e857d52a8a17cf53"
+    },
+    {
+      "logical_name": "comparison/baron/saved-hvg-comparison.json",
+      "sha256": "09e98efd99744c77a8a002d5da36544f2b525902f35dd793290b716da03b6c60"
+    },
+    {
+      "logical_name": "comparison/baron/hvg-candidate-change-summary.json",
+      "sha256": "d5560fb694e5024c1c938b6f5af2461544a6c0474cac1eec4ddcf2479c7b5062"
+    },
+    {
+      "logical_name": "baron-display-fix/FINAL-LOCAL-REPAIR.json",
+      "sha256": "e653ced8dde8b7fdd4321bb2f241e1be93a21e1b8e2b90f2a7a18e023af1edf2"
+    },
+    {
+      "logical_name": "baron-display-fix/lossless-real-data-proof.json",
+      "sha256": "f49375c891085778587a2d9a1ee1f7374d2e1b2d036ef0e1172fabfa8b12e227"
+    }
+  ],
+  "raw_data_published": false,
+  "scientific_rerun_for_report": false,
+  "selection": "All11eligiblevariants,allavailableclasses,allpreservedQCfailureattempts",
+  "interpretation": "No biological improvement or human time saving demonstrated; nonblood annotation validation not passed"
+}

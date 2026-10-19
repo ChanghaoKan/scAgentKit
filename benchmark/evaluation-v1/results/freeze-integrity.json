@@ -1,0 +1,370 @@
+{
+  "all_match": true,
+  "checks": [
+    {
+      "kind": "frozen_input",
+      "name": "pbmc3k",
+      "expected": "6ee2bdba9d601eebf0bf71d844468e514da0cee7717ae5cb53dead570ff19d66",
+      "actual": "6ee2bdba9d601eebf0bf71d844468e514da0cee7717ae5cb53dead570ff19d66",
+      "match": true
+    },
+    {
+      "kind": "frozen_input",
+      "name": "ifnb",
+      "expected": "eaf30ea397096444469669314102452c188121f09638af635ac2c7a774fd16ba",
+      "actual": "eaf30ea397096444469669314102452c188121f09638af635ac2c7a774fd16ba",
+      "match": true
+    },
+    {
+      "kind": "frozen_input",
+      "name": "baron",
+      "expected": "02841279fecac04a4c82766c51152bf7e3759ffd814e0c8979730c3047d131e6",
+      "actual": "02841279fecac04a4c82766c51152bf7e3759ffd814e0c8979730c3047d131e6",
+      "match": true
+    },
+    {
+      "kind": "frozen_reference",
+      "name": "blueprint-encode.rds",
+      "expected": "f50329555361c4147aa8b1ad772e9613ad567228c49c3439015c4e0ab9d36edf",
+      "actual": "f50329555361c4147aa8b1ad772e9613ad567228c49c3439015c4e0ab9d36edf",
+      "match": true
+    },
+    {
+      "kind": "frozen_reference",
+      "name": "blueprint-encode-markers.csv",
+      "expected": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+      "actual": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+      "match": true
+    },
+    {
+      "kind": "frozen_reference",
+      "name": "hpca.rds",
+      "expected": "67be8dd62aba14da27307c9150e8586fb5a22e3ac0d83108498bdc227930a2a3",
+      "actual": "67be8dd62aba14da27307c9150e8586fb5a22e3ac0d83108498bdc227930a2a3",
+      "match": true
+    },
+    {
+      "kind": "frozen_reference",
+      "name": "hpca-markers.csv",
+      "expected": "54fb67b45485f8621c5ec48f68b366b8dce40b835876090a45a77700ad016193",
+      "actual": "54fb67b45485f8621c5ec48f68b366b8dce40b835876090a45a77700ad016193",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/baseline-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/baseline-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/baseline-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/baseline-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-no-diagnostics-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-no-diagnostics-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-no-diagnostics-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/ifnb/after-no-diagnostics-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/baseline-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/baseline-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/baseline-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/baseline-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-no-diagnostics-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-no-diagnostics-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-no-diagnostics-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-no-diagnostics-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-sample-hvg-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-sample-hvg-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-sample-hvg-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/baron/after-sample-hvg-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/baseline-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/baseline-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/baseline-1/reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/baseline-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/baseline-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-no-diagnostics-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-no-diagnostics-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-no-diagnostics-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-no-diagnostics-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-qc-or-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-qc-or-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-qc-or-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-qc-or-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-snapshot-1/candidate-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-snapshot-1/singler-author-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-snapshot-1/candidate-reference-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    },
+    {
+      "kind": "frozen_scoring_map",
+      "name": "comparison/pbmc3k/after-snapshot-1/reviewed-control-agreement.json",
+      "expected": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "actual": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+      "match": true
+    }
+  ],
+  "scope": "Byte hashes of frozen inputs/references and saved evaluator map receipts; no data/criteria modifications"
+}

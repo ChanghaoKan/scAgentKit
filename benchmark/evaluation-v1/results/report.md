@@ -1,0 +1,337 @@
+# 冻结公开数据评估与工程验收报告
+
+生成时间：2026-10-19T01:56:50.439503+00:00
+
+科学流程源为冻结的 `5ca149d` 系列；`bf45805` 仅修正适用性记账，`51cc4c9` 仅修正显示及文档。本报告不改变冻结输入、映射或结果。
+
+下表均来自冻结输入、参考和标签映射。审批后的真实标签全部为显式 Unknown 软件控制；候选标签及 SingleR 比较单列。作者标签是分发的作者注释，不是经独立复核的真值；PBMC 无独立类型真值。Baron本轮HPCA标签不覆盖目标胰腺类型，非血液注释质量验证未通过验证，不能把3.94%字面匹配当accuracy。生物学准确率、人工作业节省均未测量。
+
+本试验固定策略，未安排独立参与者根据新增诊断改变参数或完成生物学定型。因此，可评价诊断的实际可用性、固定策略下的候选标签变化及计算成本；诊断是否改善人工决策仍未测量。未变化的标签指标不构成获益证据，也不能据此断言所有人工使用情境均无效。
+
+## 保存结果（缺项明确保留）
+
+| 数据 | 变体/存储 | 状态 | 保留细胞 | 簇数 | 作者标签原始分母匹配产出 | 作者标签 macro-F1 | 冻结 SingleR 原始分母一致率 | 流程 wall 秒 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| pbmc3k | baseline-1 | complete | 2700 | 8 | — | — | 0.947037 | 620.260000 |
+| pbmc3k | after-snapshot-1 | complete | 2700 | 8 | — | — | 0.947037 | — |
+| pbmc3k | after-no-diagnostics-1 | complete | 2700 | 8 | — | — | 0.947037 | 437.865000 |
+| pbmc3k | after-qc-or-1 | complete | 2526 | 8 | — | — | 0.898889 | 770.588000 |
+| ifnb | baseline-1 | complete | 5000 | 15 | 0.849600 | 0.729242 | 0.806800 | 714.528000 |
+| ifnb | after-1 | complete | 5000 | 15 | 0.849600 | 0.729242 | 0.806800 | 1382.874000 |
+| ifnb | after-no-diagnostics-1 | complete | 5000 | 15 | 0.849600 | 0.729242 | 0.806800 | 637.946000 |
+| ifnb | after-qc-or-1 | ineligible (missing MT; preserved attempt separate) | — | — | — | — | — | — |
+| baron | baseline-1 | complete | 5000 | 14 | 0.039400 | 0.196837 | 0.137600 | 2722.628000 |
+| baron | after-1 | complete | 5000 | 14 | 0.039400 | 0.196837 | 0.137600 | 3515.880000 |
+| baron | after-no-diagnostics-1 | complete | 5000 | 14 | 0.039400 | 0.196837 | 0.137600 | 1791.823000 |
+| baron | after-qc-or-1 | ineligible (missing MT; preserved attempt separate) | — | — | — | — | — | — |
+| baron | after-sample-hvg-1 | complete | 5000 | 14 | 0.039400 | 0.196836 | 0.138000 | 3611.964000 |
+
+PBMC after-snapshot 是停止态检查点的独立复制完成，不是独立生物重复。原始 after 项目也已在同一检查点安全恢复完成；其 131.385 秒仅为恢复阶段，不可作为完整运行时间。早期 PBMC 使用内存 capture.output 的总耗时不能与文件日志版本直接比较。Baron 若出现数值仅为冻结映射下的标签匹配，细亚型一致率仍不可评价。
+
+## PBMC 分母分解
+
+| 分母 | N | 基线匹配 | QC-OR匹配 | 原有参考Unknown | QC-OR排除 | QC-OR实际候选Unknown |
+| --- | --- | --- | --- | --- | --- | --- |
+| all | 2700 | 2557 | 2427 | 40 | 174 | 0 |
+| retained | 2526 | 2422 | 2427 | 7 | 0 | 0 |
+| deleted | 174 | 135 | — | 33 | — | — |
+
+174/2700 被排除（6.4444%），其中135个原来与参考匹配。同一2526个保留细胞上净增5个匹配，9个粗粒度候选标签改变。全体原始细胞匹配产出下降与保留细胞一致率改变分开报告；既不把覆盖损失当成保留细胞准确率下降，也不挑选更有利的条件分母。没有独立坏细胞真值。
+
+| 粗参考类 | 原始N | 保留N | 排除N | 保留率 | 支持N≥20 |
+| --- | --- | --- | --- | --- | --- |
+| B | 346 | 321 | 25 | 0.927746 | True |
+| Monocyte | 685 | 638 | 47 | 0.931387 | True |
+| NK | 198 | 192 | 6 | 0.969697 | True |
+| T | 1423 | 1363 | 60 | 0.957836 | True |
+| UNMAPPED:HSC | 8 | 5 | 3 | 0.625000 | False |
+| Unknown | 40 | 7 | 33 | 0.175000 | True |
+
+HSC参考预测仅8个，低于冻结N≥20支持门槛，且没有独立稀有类型真值。Unknown不当成已验证类型；没有DC预测不能证明不存在DC。完整原始参考类别及质量分布见[pbmc-denominators.json](pbmc-denominators.json)。
+
+## 所有可用作者标签类别（不据结果选类）
+
+| 数据 | 变体 | 方法 | 映射类 | 原始支持N | 召回/标签匹配 | F1 | N≥20 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ifnb | baseline-1 | candidate | B | 488 | 0.997951 | 0.689314 | True |
+| ifnb | baseline-1 | candidate | Dendritic | 228 | 0.333333 | 0.500000 | True |
+| ifnb | baseline-1 | candidate | Monocyte | 1914 | 0.998955 | 0.979257 | True |
+| ifnb | baseline-1 | candidate | NK | 224 | 0.991071 | 0.686244 | True |
+| ifnb | baseline-1 | candidate | Other | 106 | 0.566038 | 0.681818 | True |
+| ifnb | baseline-1 | candidate | T | 2040 | 0.730882 | 0.838819 | True |
+| ifnb | baseline-1 | SingleR | B | 488 | 0.807377 | 0.867841 | True |
+| ifnb | baseline-1 | SingleR | Dendritic | 228 | 0.399123 | 0.487936 | True |
+| ifnb | baseline-1 | SingleR | Monocyte | 1914 | 0.928422 | 0.933543 | True |
+| ifnb | baseline-1 | SingleR | NK | 224 | 0.901786 | 0.872570 | True |
+| ifnb | baseline-1 | SingleR | Other | 106 | 0.018868 | 0.013333 | True |
+| ifnb | baseline-1 | SingleR | T | 2040 | 0.973039 | 0.960794 | True |
+| ifnb | after-1 | candidate | B | 488 | 0.997951 | 0.689314 | True |
+| ifnb | after-1 | candidate | Dendritic | 228 | 0.333333 | 0.500000 | True |
+| ifnb | after-1 | candidate | Monocyte | 1914 | 0.998955 | 0.979257 | True |
+| ifnb | after-1 | candidate | NK | 224 | 0.991071 | 0.686244 | True |
+| ifnb | after-1 | candidate | Other | 106 | 0.566038 | 0.681818 | True |
+| ifnb | after-1 | candidate | T | 2040 | 0.730882 | 0.838819 | True |
+| ifnb | after-1 | SingleR | B | 488 | 0.807377 | 0.867841 | True |
+| ifnb | after-1 | SingleR | Dendritic | 228 | 0.399123 | 0.487936 | True |
+| ifnb | after-1 | SingleR | Monocyte | 1914 | 0.928422 | 0.933543 | True |
+| ifnb | after-1 | SingleR | NK | 224 | 0.901786 | 0.872570 | True |
+| ifnb | after-1 | SingleR | Other | 106 | 0.018868 | 0.013333 | True |
+| ifnb | after-1 | SingleR | T | 2040 | 0.973039 | 0.960794 | True |
+| ifnb | after-no-diagnostics-1 | candidate | B | 488 | 0.997951 | 0.689314 | True |
+| ifnb | after-no-diagnostics-1 | candidate | Dendritic | 228 | 0.333333 | 0.500000 | True |
+| ifnb | after-no-diagnostics-1 | candidate | Monocyte | 1914 | 0.998955 | 0.979257 | True |
+| ifnb | after-no-diagnostics-1 | candidate | NK | 224 | 0.991071 | 0.686244 | True |
+| ifnb | after-no-diagnostics-1 | candidate | Other | 106 | 0.566038 | 0.681818 | True |
+| ifnb | after-no-diagnostics-1 | candidate | T | 2040 | 0.730882 | 0.838819 | True |
+| ifnb | after-no-diagnostics-1 | SingleR | B | 488 | 0.807377 | 0.867841 | True |
+| ifnb | after-no-diagnostics-1 | SingleR | Dendritic | 228 | 0.399123 | 0.487936 | True |
+| ifnb | after-no-diagnostics-1 | SingleR | Monocyte | 1914 | 0.928422 | 0.933543 | True |
+| ifnb | after-no-diagnostics-1 | SingleR | NK | 224 | 0.901786 | 0.872570 | True |
+| ifnb | after-no-diagnostics-1 | SingleR | Other | 106 | 0.018868 | 0.013333 | True |
+| ifnb | after-no-diagnostics-1 | SingleR | T | 2040 | 0.973039 | 0.960794 | True |
+| baron | baseline-1 | candidate | Other | 15 | 1.000000 | 0.008032 | False |
+| baron | baseline-1 | candidate | PP | 158 | 0.000000 | 0 | True |
+| baron | baseline-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
+| baron | baseline-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
+| baron | baseline-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
+| baron | baseline-1 | candidate | delta | 358 | 0.000000 | 0 | True |
+| baron | baseline-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
+| baron | baseline-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
+| baron | baseline-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
+| baron | baseline-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
+| baron | baseline-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
+| baron | baseline-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
+| baron | baseline-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
+| baron | baseline-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | Other | 15 | 1.000000 | 0.008032 | False |
+| baron | after-1 | candidate | PP | 158 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | delta | 358 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
+| baron | after-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
+| baron | after-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
+| baron | after-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
+| baron | after-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
+| baron | after-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
+| baron | after-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
+| baron | after-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | Other | 15 | 1.000000 | 0.008032 | False |
+| baron | after-no-diagnostics-1 | candidate | PP | 158 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | delta | 358 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
+| baron | after-no-diagnostics-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
+| baron | after-no-diagnostics-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
+| baron | after-no-diagnostics-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
+| baron | after-no-diagnostics-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
+| baron | after-no-diagnostics-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
+| baron | after-no-diagnostics-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | Other | 15 | 1.000000 | 0.008019 | False |
+| baron | after-sample-hvg-1 | candidate | PP | 158 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | delta | 358 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
+| baron | after-sample-hvg-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
+| baron | after-sample-hvg-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
+| baron | after-sample-hvg-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
+| baron | after-sample-hvg-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
+| baron | after-sample-hvg-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
+| baron | after-sample-hvg-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
+
+以上均为固定映射的作者标签一致性；Baron参考粒度失配时不能解释成细亚型准确率。所有原始细胞、排除、未知、未映射均保留在对应保存指标中。
+
+## 软件验证与主入口覆盖
+
+- `51cc4c9` 本地完整 Python：376项，361通过、15外部夹具跳过；21个Node文件全通过，workbench DOM125项通过。两项新大显示回归先失败再通过。原16MiB上限及哈希/作用域/安全检查未改。
+- 标准归档构建、vignette构建和安装通过；46个运行时资产与源码一致，科学R函数哈希未变。此前`5ca149d`归档完整R CMD check为9469通过、2跳过、0失败/警告/NOTE；未因显示修复重跑科学R全套。两项R跳过为精确旧scDblFinder/xgboost组合未安装，以及安装包环境下源码扫描不适用。
+- `1c9c4ca` 历史CI的四项工作流均成功。其Workbench为373项：352通过、21跳过（15外部夹具+6未装完整R包用例）；Node21文件通过。本报告最终提交的托管CI须核对[PR #11 Checks](https://github.com/ChanghaoKan/scAgentKit/pull/11/checks)对应SHA，不能以历史结果代替。
+- `1c9c4ca` 标准安装归档Chrome8/8通过，4个真实R工作进程、3次独立审批；160细胞/两组各80为复制计数的软件控制，不是生物重复。样本HVG实际使用80特征。
+- 肘部候选单独浏览器点击、保存、独立确认通过：160细胞软件控制选择3PC后停在ready，未继续应用；点击不POST，保存不增加审批。
+- 真实PBMC联合页验证Fisher/BH/背景、表达/缺失TRAC和计数标志；GET200，6,568,095字节、34/34历史。
+- 真实Baron5000细胞/14簇完成结果页最初HTTP409超16MiB；`51cc4c9`对重复审阅与全体标签表做无损去重后，安装版Chrome155 GET200，12,342,881字节、40/40历史。表达/跨样本/Fisher/历史实际打开，8张截图（含关键数值可见范围断言），POST/外部请求0；48个原文件哈希不变。全部唯一证据、14个审阅行、5000标签行及完整历史可逐值还原。
+- 完成态便捷导出修改/删除后的R inspect、resume及网页一致性已验证；Seurat/checkpoint篡改仍拒绝。
+- [一页指南](../../../docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md)已含完整ambient调用模板：明确R-only，无网页校正入口；2个R代码块只解析、未执行示例或重复拟合。
+- 未运行：独立人工作业研究、兼容Baron细亚型的独立参考评分、公开队列≥5样本离群判断、5000细胞HVG编辑式网页全流程、CellTypist。完成态只读页面验收不能替代这些项目。
+
+逐项15项范围见[coverage.json](coverage.json)，工程失败/通过记录见[engineering-log-summary.md](engineering-log-summary.md)。
+
+## 适用性、失败与限制
+
+- ifnb和Baron冻结输入都缺少匹配的线粒体特征，5000/5000线粒体比例缺测。三指标QC-OR按原规则不适用，不补零、不改成两指标规则。
+- PBMC仅1实际样本；ifnb只有CTRL/STIM条件，没有可声明样本；Baron4个明确GEO样本。不得把条件/软件重复当样本；5组样本离群门槛在这些公开队列中不满足。Baron的样本共识HVG适用并已完成。
+- SoupX/decontX完整PBMC原生适配已完成，原始计数不变，输出单独保存。SingleR剪枝标签分别55/14个改变，Unknown40→42/40；没有准确率获益证据。默认关闭，显式R分支；分数计数不能直接绕过原始整数计数校验。
+- 固定80%重采样PBMC ARI范围0.6463–0.9537；存在计算不稳定性。±5PC比较ARI约0.9690/1/0.9709，不是独立生物复现或最优参数证明。
+- 全部日志保留：旧收集器打印阻塞、恢复、安装链接失败、辅助验证失败均不伪装为绿灯。仅停止旧收集器并复用已完成检查点，没有重复数值计算；原始23个检查点哈希核对未改变。
+- 峰值内存未一致采集；并发本机任务影响wall时间，不作资源改善结论。模型推理调用0、推理费用US$0；没有据此宣称未知的云账单为零。
+- 可用证据不足以支持普遍科学默认。诊断可显示额外测量，但预选默认保持关闭。
+
+ifnb 已完成基线/增强/无诊断三项对照：原始计数哈希、簇成员和候选标签完全相同；作者标签匹配产出均0.8496，macro-F1均0.729242，参考一致率均0.8068。流程wall分别714.528/1382.874/637.946秒；增强/基线比1.9354，增强/无诊断比2.1677，额外诊断没有提高这些标签指标。SingleR作者匹配产出0.8902、macro-F1 0.689336、覆盖0.9966，两个指标各有取舍；不挑其中有利者作统一优越性结论。±5PC的ARI为0.9486/1/0.8919，五次80%重采样ARI为0.8923/0.8302/0.8780/0.8333/0.8638，揭示计算敏感性；TRAC仍缺失。
+
+Baron基线候选574/5000为Unknown，3720/5000映射为Other；非Unknown覆盖0.8852不能当作相容细类型覆盖。SingleR为7个Unknown、非Unknown覆盖0.9986，同样不证明细亚型正确。候选对冻结参考的原始分母匹配为688/5000=0.1376。保存的作者标签字面映射匹配为197/5000、macro-F1 0.196837，但alpha/beta/delta/PP等参考粒度不相容，细亚型一致率为null；不把这些记账值解释为科学准确率。四个声明样本量为1131/1014/2092/763；没有补造donor/capture。
+
+Baron增强版已完整结束并评分：5000细胞/14簇/3次审批，3515.880秒；基线2722.628秒，完整流程wall比1.291355。原始计数哈希、簇成员CSV、候选标签CSV完全相同，冻结参考匹配0.1376、候选非Unknown覆盖0.8852、作者字面映射匹配0.0394及其粒度限制均未变化。完整R审阅文本单次最高约928MB，包含在流程时间中；不把渲染成本解释为纯数值内核成本，也不据此推断人工节省。
+
+Baron无诊断版也已完成并评分：5000细胞/14簇/3次审批，1791.823秒。基线/增强/无诊断三者的计数哈希、簇成员和候选标签完全相同，所有上述匹配/覆盖指标均相同；增强/无诊断完整流程wall比1.962180。只有单次观察，缓存、并发和渲染范围均影响耗时，不能把基线与无诊断的差别解释为确定的算法速度改善。
+
+| 数据 | 原始失败进程回执 | exit | 处理 |
+| --- | --- | --- | --- |
+| ifnb | after-qc-or-1-process.json | 1 | preserved; see original log |
+| baron | after-qc-or-1-process.json | 1 | preserved; see original log |
+
+## 作业终态与剩余边界
+
+11项适用的主流程变体与各自独立评分均已结束；原ifnb/Baron的QC-OR尝试各因缺测失败，原错误与失败回执保留，修正后的适用性记账明确标为不适用。它们未被改写成成功的过滤实验。保存结果汇总不重新拟合。
+冻结输入、参考与评分映射52项字节哈希核对全部匹配，见[freeze-integrity.json](freeze-integrity.json)。HVG条件原始计数与基线哈希相同；已有Seurat/checkpoint完整性校验未降低。11项完成变体、两项原失败及资源记录见[metrics.json](metrics.json)。
+非血液注释质量缺口、未测人工作业获益及未执行V2仍明确保留。这里只提交草稿PR，未合并或发布release。
+
+## Baron 保存的阶段诊断证据
+
+取自已写入检查点的实测扫描；最终项目/评分状态以结果表为准。PC和重采样ARI衡量计算分区一致性，不是生物学准确率。固定批准分辨率保持0.6，扩展未触发，provider调用0。胰腺面板无缺失基因。
+
+| PC数 | 共享细胞 | ARI | 簇数 |
+| --- | --- | --- | --- |
+| 11 | 5000 | 0.931334 | 14 |
+| 16 | 5000 | 1 | 14 |
+| 21 | 5000 | 0.867648 | 16 |
+
+| 80%重采样seed | 共享细胞 | ARI | 簇数 |
+| --- | --- | --- | --- |
+| 42 | 4000 | 0.940657 | 13 |
+| 43 | 4000 | 0.890033 | 14 |
+| 44 | 4000 | 0.948364 | 14 |
+| 45 | 4000 | 0.942343 | 15 |
+| 46 | 4000 | 0.952288 | 12 |
+
+四个声明样本的跨样本对照：12/14个簇有描述性结果，2/14不可用。不是独立donor验证；达到每簇/样本内外支持门槛与≥5样本离群判断是不同条件。
+
+## 保存的资源记录
+
+| 数据 | 变体 | 流程wall秒 | R user秒 | R system秒 | 完整审阅文本字节合计 | 只读show API秒合计 |
+| --- | --- | --- | --- | --- | --- | --- |
+| pbmc3k | baseline-1 | 620.260000 | 593.103000 | 23.444000 | — | — |
+| pbmc3k | after-snapshot-1 | — | — | — | 181130284 | — |
+| pbmc3k | after-no-diagnostics-1 | 437.865000 | 416.535000 | 17.179000 | 37859506 | 23.754000 |
+| pbmc3k | after-qc-or-1 | 770.588000 | 679.648000 | 78.583000 | 311291633 | 60.631000 |
+| ifnb | baseline-1 | 714.528000 | 666.119000 | 37.832000 | 71148097 | 27.522000 |
+| ifnb | after-1 | 1382.874000 | 1214.598000 | 150.588000 | 965353116 | 80.129000 |
+| ifnb | after-no-diagnostics-1 | 637.946000 | 606.140000 | 25.448000 | 72704605 | 21.850000 |
+| baron | baseline-1 | 2722.628000 | 2577.914000 | 108.852000 | 91729366 | 36.019000 |
+| baron | after-1 | 3515.880000 | 3245.400000 | 247.036000 | 3175156221 | 142.333000 |
+| baron | after-no-diagnostics-1 | 1791.823000 | 1745.582000 | 36.708000 | 93935876 | 24.287000 |
+| baron | after-sample-hvg-1 | 3611.964000 | 3341.546000 | 248.272000 | 3168860891 | 147.020000 |
+
+流程时间来自R脚本自身回执，不包含安装或独立SingleR比较器的全部时间；后者进程wall另存于各*-process.json。show API仍包含完整性检查、读取与文本渲染，不能称为纯打印或人工时间。早期PBMC内存收集器与后续文件收集器不能作直接速度比较。每变体仅一次执行，未测可比较峰值RSS，不作统计显著性或资源改善声明。
+
+## 实际样本HVG主流程使用证明
+
+从已保存原生basis检查点只读核实，整体消融的完成/评分状态仍以结果表为准。
+
+| 细胞 | 实际声明样本数 | 每样本HVG数 | 最终共识特征 | 与VariableFeatures一致 | PCA实际使用特征 | 计算PC数 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 5000 | 4 | 2000/2000/2000/2000 | 2000 | True | 2000 | 50 |
+
+PCA使用的特征集合与最终共识集合完全相同；这证明方法实际执行并被主流程使用，不是生物学获益证明。此次检查只读取保存结果，未重新归一化或拟合。
+
+## Baron样本HVG消融：全部保存结果
+
+| 全局/共识特征数 | 交集/并集 | 基因Jaccard | 分区ARI | 全局/共识簇数 | 保留/排除细胞 |
+| --- | --- | --- | --- | --- | --- |
+| 2000/2000 | 1565/2435 | 0.642710 | 0.898104 | 14/14 | 5000/0 |
+
+更换435/2000个HVG；原始计数哈希不变，5000细胞全部保留。原始候选标签305处变化，不代表305处改正。Unknown574→567，映射Other3720→3726；候选非Unknown比例0.8852→0.8866仍不等于类型覆盖。冻结参考匹配688→690（0.1376→0.1380），作者字面匹配197/5000不变，macro-F1 0.196837185→0.196835897。SingleR标签0处变化。参考标签不兼容，因此细类型质量仍未通过验证。
+
+流程3611.964秒；相对增强版1.027329倍、无诊断版2.015804倍，后者单次观察超过2倍且未显示标签指标获益。该流程包含额外诊断与完整审阅文本，不能当作纯HVG内核或人工时间。
+
+| 声明样本 | 细胞数 | 各样本原生HVG数 | 全局集合与该样本HVG交集 | 共识集合与该样本HVG交集 | 共识中仅该样本选中的基因 |
+| --- | --- | --- | --- | --- | --- |
+| GSM2230757 | 1131 | 2000 | 1382 | 1549 | 0 |
+| GSM2230758 | 1014 | 2000 | 1374 | 1524 | 0 |
+| GSM2230759 | 2092 | 2000 | 1404 | 1541 | 0 |
+| GSM2230760 | 763 | 2000 | 1385 | 1542 | 0 |
+
+共识特征频次分布：2样本686、3样本472、4样本842；1样本独有特征0。这描述了共享程度，不证明保留了样本特异或稀有细胞程序。下面方差在同一份已保存LogNormalize(10000)表达上计算，未重新归一化或拟合；数值更高也不是类型正确性的证据。
+
+| 范围 | 基因集合 | n基因 | q25 | median | q75 | 零方差基因数 |
+| --- | --- | --- | --- | --- | --- | --- |
+| all | baseline_hvg | 2000 | 0.013840 | 0.079379 | 0.252262 | 0 |
+| all | consensus_hvg | 2000 | 0.029255 | 0.104533 | 0.280182 | 0 |
+| GSM2230757 | baseline_hvg | 2000 | 0.011328 | 0.071836 | 0.243099 | 108 |
+| GSM2230757 | consensus_hvg | 2000 | 0.027203 | 0.095526 | 0.263971 | 20 |
+| GSM2230758 | baseline_hvg | 2000 | 0.013940 | 0.078302 | 0.253205 | 95 |
+| GSM2230758 | consensus_hvg | 2000 | 0.030388 | 0.102505 | 0.291395 | 19 |
+| GSM2230759 | baseline_hvg | 2000 | 0.008201 | 0.061819 | 0.226274 | 107 |
+| GSM2230759 | consensus_hvg | 2000 | 0.019764 | 0.086441 | 0.256748 | 15 |
+| GSM2230760 | baseline_hvg | 2000 | 0.010498 | 0.065241 | 0.254165 | 135 |
+| GSM2230760 | consensus_hvg | 2000 | 0.022263 | 0.093883 | 0.277876 | 28 |
+
+| HVG条件PC数 | 共享细胞 | ARI | 簇数 |
+| --- | --- | --- | --- |
+| 11 | 5000 | 0.888119 | 14 |
+| 16 | 5000 | 1 | 14 |
+| 21 | 5000 | 0.827163 | 16 |
+
+| HVG条件重采样seed | 共享细胞 | ARI | 簇数 |
+| --- | --- | --- | --- |
+| 42 | 4000 | 0.942410 | 13 |
+| 43 | 4000 | 0.912483 | 14 |
+| 44 | 4000 | 0.910310 | 14 |
+| 45 | 4000 | 0.942115 | 15 |
+| 46 | 4000 | 0.938534 | 12 |
+
+初始网格上界相邻分区ARI=0.896134，实际触发预定的有界扩展；批准分辨率保持0.6，未自动采用扩展候选。
+
+| 扩展分辨率 | 共享细胞 | 相对批准分区ARI | 簇数 |
+| --- | --- | --- | --- |
+| 0.100000 | 5000 | 0.625952 | 8 |
+| 1.400000 | 5000 | 0.763264 | 19 |
+| 1.600000 | 5000 | 0.708659 | 21 |
+
+HVG条件下仍有12/14个簇的描述性跨样本结果，2/14不可用，面板缺失基因为0。完整min/q25/median/q75/max、来源哈希及逐簇记录保存在 hvg-comparison.json 与原科学诊断RDS；没有选择性删除不利种子或类型。
+
+## 非血液注释质量验证缺口与只读V2评估
+
+**V1非血液注释质量验证未通过验证：参考标签覆盖不足，无法判定细粒度质量。** 软件执行完成与科学验证合格分开。实际HPCA使用36个label.main类型，缺少Pancreatic_islet及alpha/beta/delta/PP/acinar/ductal等；fine标签胰腺相关字面检索也为空。泛Epithelial_cells不能替代这些类型。V1数据、映射、指标和失败记录保持不变。
+
+公开Muraro GSE85241与Segerstolpe E-MTAB-5061可作为新参考的结构性候选，尚未验收供者独立性、逐类型标签支持和完整数据单位。未下载新表达矩阵，未训练/分类或调用新模型。若补充必须另立V2协议、版本、输出目录，在新评分前固定参考及完整标签映射，不以较高分挑参考；当前Baron已知结果只能作为明确的新版本探索，确认性结论还需未查看标签的独立供者/研究。
+
+共同粗层级最多回答另一个粗表型问题，不能用合并Other、丢弃Unknown或重命名来使V1细类型验证合格。详见 reference-feasibility-v2.md 及其中官方来源与准入条件。当前不安排新验证，额外模型调用0。
+
+## 逐项主入口与效果范围
+
+完整15项主入口、执行、网页证据和效果限制见[coverage.json](coverage.json)。
+
+## 公开范围与复核
+
+本目录仅提交公开基准的聚合结果和工程证据摘要。不包含原始矩阵、RDS、逐细胞导出、完整原生日志、本机路径、凭据或用户数据。未经筛选的本地证据仍保存，失败记录不被改写为通过。发布前仅生成文档投影，没有重跑科学基准、改变标签映射或选择较高分结果。`provenance.json`记录来源摘要的SHA256；外部保留文件不是读者运行测试的前提。

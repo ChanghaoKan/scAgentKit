@@ -1,0 +1,406 @@
+{
+  "analysis_sha": "50b56182d3778257bd8866bfc361bbcd704717ba",
+  "scientific_engine": "5ca149d71658ec9b90d9556841d11b07e3f22cd6; R sources byte-identical to50b",
+  "original_denominator": 2700,
+  "retained": 2526,
+  "deleted": 174,
+  "deletion_rate": 0.06444444444444444,
+  "reference_unknown_original": 40,
+  "sections": {
+    "all": {
+      "n": 2700,
+      "baseline_reference_matches": 2557,
+      "baseline_reference_match_fraction": 0.947037037037037,
+      "reference_unknown": 40,
+      "baseline_candidate_unknown": 0,
+      "qcor_reference_matches": 2427,
+      "qcor_reference_match_fraction": 0.8988888888888888,
+      "qcor_unassigned_including_excluded": 174,
+      "qcor_excluded": 174,
+      "qcor_actual_candidate_unknown": 0
+    },
+    "retained": {
+      "n": 2526,
+      "baseline_reference_matches": 2422,
+      "baseline_reference_match_fraction": 0.9588281868566905,
+      "reference_unknown": 7,
+      "baseline_candidate_unknown": 0,
+      "qcor_reference_matches": 2427,
+      "qcor_reference_match_fraction": 0.9608076009501187,
+      "qcor_unassigned_including_excluded": 0,
+      "qcor_excluded": 0,
+      "qcor_actual_candidate_unknown": 0
+    },
+    "deleted": {
+      "n": 174,
+      "baseline_reference_matches": 135,
+      "baseline_reference_match_fraction": 0.7758620689655172,
+      "reference_unknown": 33,
+      "baseline_candidate_unknown": 0
+    }
+  },
+  "reference_classes": [
+    {
+      "reference_class": "B",
+      "original": 346,
+      "retained": 321,
+      "deleted": 25,
+      "retention": 0.9277456647398844,
+      "support_at_least_20": true,
+      "independent_rare_type_truth_available": false,
+      "baseline_matches_all": 341,
+      "baseline_matches_retained": 317,
+      "qcor_matches_retained": 318
+    },
+    {
+      "reference_class": "Monocyte",
+      "original": 685,
+      "retained": 638,
+      "deleted": 47,
+      "retention": 0.9313868613138686,
+      "support_at_least_20": true,
+      "independent_rare_type_truth_available": false,
+      "baseline_matches_all": 652,
+      "baseline_matches_retained": 605,
+      "qcor_matches_retained": 607
+    },
+    {
+      "reference_class": "NK",
+      "original": 198,
+      "retained": 192,
+      "deleted": 6,
+      "retention": 0.9696969696969697,
+      "support_at_least_20": true,
+      "independent_rare_type_truth_available": false,
+      "baseline_matches_all": 153,
+      "baseline_matches_retained": 149,
+      "qcor_matches_retained": 149
+    },
+    {
+      "reference_class": "T",
+      "original": 1423,
+      "retained": 1363,
+      "deleted": 60,
+      "retention": 0.9578355586788475,
+      "support_at_least_20": true,
+      "independent_rare_type_truth_available": false,
+      "baseline_matches_all": 1411,
+      "baseline_matches_retained": 1351,
+      "qcor_matches_retained": 1353
+    },
+    {
+      "reference_class": "UNMAPPED:HSC",
+      "original": 8,
+      "retained": 5,
+      "deleted": 3,
+      "retention": 0.625,
+      "support_at_least_20": false,
+      "independent_rare_type_truth_available": false,
+      "baseline_matches_all": 0,
+      "baseline_matches_retained": 0,
+      "qcor_matches_retained": 0
+    },
+    {
+      "reference_class": "Unknown",
+      "original": 40,
+      "retained": 7,
+      "deleted": 33,
+      "retention": 0.175,
+      "support_at_least_20": true,
+      "independent_rare_type_truth_available": false,
+      "baseline_matches_all": 0,
+      "baseline_matches_retained": 0,
+      "qcor_matches_retained": 0
+    }
+  ],
+  "raw_reference_classes": [
+    {
+      "raw_reference_class": "B-cells",
+      "original": 346,
+      "retained": 321,
+      "deleted": 25,
+      "retention": 0.9277456647398844
+    },
+    {
+      "raw_reference_class": "CD4+ T-cells",
+      "original": 523,
+      "retained": 514,
+      "deleted": 9,
+      "retention": 0.982791586998088
+    },
+    {
+      "raw_reference_class": "CD8+ T-cells",
+      "original": 900,
+      "retained": 849,
+      "deleted": 51,
+      "retention": 0.9433333333333334
+    },
+    {
+      "raw_reference_class": "HSC",
+      "original": 8,
+      "retained": 5,
+      "deleted": 3,
+      "retention": 0.625
+    },
+    {
+      "raw_reference_class": "Monocytes",
+      "original": 685,
+      "retained": 638,
+      "deleted": 47,
+      "retention": 0.9313868613138686
+    },
+    {
+      "raw_reference_class": "NK cells",
+      "original": 198,
+      "retained": 192,
+      "deleted": 6,
+      "retention": 0.9696969696969697
+    },
+    {
+      "raw_reference_class": "Unknown",
+      "original": 40,
+      "retained": 7,
+      "deleted": 33,
+      "retention": 0.175
+    }
+  ],
+  "quality_distributions": {
+    "all": {
+      "nCount": {
+        "n": 2700,
+        "min": 548.0,
+        "q25": 1757.75,
+        "median": 2197.0,
+        "q75": 2763.0,
+        "max": 15844.0
+      },
+      "nFeature": {
+        "n": 2700,
+        "min": 212.0,
+        "q25": 690.0,
+        "median": 817.0,
+        "q75": 953.25,
+        "max": 3422.0
+      },
+      "percent_mt": {
+        "n": 2700,
+        "min": 0.0,
+        "q25": 1.5362379416464476,
+        "median": 2.029639227921925,
+        "q75": 2.64021770489758,
+        "max": 22.5690276110444
+      }
+    },
+    "retained": {
+      "nCount": {
+        "n": 2526,
+        "min": 810.0,
+        "q25": 1840.5,
+        "median": 2248.5,
+        "q75": 2804.5,
+        "max": 15844.0
+      },
+      "nFeature": {
+        "n": 2526,
+        "min": 402.0,
+        "q25": 718.0,
+        "median": 827.5,
+        "q75": 965.0,
+        "max": 3422.0
+      },
+      "percent_mt": {
+        "n": 2526,
+        "min": 0.2002002002002,
+        "q25": 1.5195300114781225,
+        "median": 1.997981163713685,
+        "q75": 2.543422196304075,
+        "max": 4.43037974683544
+      }
+    },
+    "deleted": {
+      "nCount": {
+        "n": 174,
+        "min": 548.0,
+        "q25": 701.25,
+        "median": 836.5,
+        "q75": 1288.25,
+        "max": 5193.0
+      },
+      "nFeature": {
+        "n": 174,
+        "min": 212.0,
+        "q25": 348.25,
+        "median": 389.5,
+        "q75": 560.75,
+        "max": 1509.0
+      },
+      "percent_mt": {
+        "n": 174,
+        "min": 0.0,
+        "q25": 1.9590728237417874,
+        "median": 4.507701573385216,
+        "q75": 5.358189035978842,
+        "max": 22.5690276110444
+      }
+    }
+  },
+  "reference_classifier_unknown_after_pruning": 13,
+  "reference_classifier_unknown_before_on_retained": 7,
+  "changed_candidate_labels_on_retained": 9,
+  "baseline_matches_lost_to_deletion": 135,
+  "net_match_change_on_retained": 5,
+  "preselection": [
+    {
+      "file": "strategy_review-11fb3f7d9c7436664e37085970e028a478cda0e681db52c5c9bc6d26faad5ae7.rds",
+      "review_hash": "a8e2b33cd6c403dbc355de743d37ccecfd2415354ce7e5c79c9fa14e350f8008",
+      "fact_editable": true,
+      "draft_preselection": {
+        "candidate_id": "any_quality3",
+        "automatic": true,
+        "draft_only": true,
+        "reason": "Measured joint evidence is complete and this OR comparison removes <=10% overall and <=20% of each group. These are UI risk caps, not biological optimality. Preselected draft is unsaved and unapproved."
+      },
+      "conflicts": [],
+      "missing": [],
+      "OR_candidate": [
+        {
+          "id": "any_quality3",
+          "label": "Low counts OR low features OR high mitochondrial fraction",
+          "changes": {
+            "qc": {
+              "schema": "scagentkit.qc.rules.v1",
+              "rationale": "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
+              "risks": "No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling.",
+              "remove_if": "any",
+              "rules": [
+                {
+                  "op": "range",
+                  "metric": "nCount",
+                  "min": 1,
+                  "max": null,
+                  "group": null
+                },
+                {
+                  "op": "mad_preset",
+                  "preset_id": "any_quality3",
+                  "panel_hash": "5b4eeabda0b8be04dc411f593af9245c068d9e79c7f17e2de9c39350ebd6b5a7"
+                }
+              ]
+            }
+          },
+          "available": true,
+          "reasons": [
+            "Measured any_quality3 flags implicate this saved policy; compare its exact impact, not just its name."
+          ],
+          "impact": {
+            "retained": 2526,
+            "removed": 174,
+            "additional_removed_vs_keep_all": 174,
+            "restored_vs_keep_all": 0,
+            "range_only_retained": 2700,
+            "new_removed_within_range_keep": 174,
+            "reintroduced_range_failed": 0,
+            "removed_vs_current": 174,
+            "restored_vs_current": 0,
+            "groups": [
+              {
+                "group_id": "group1",
+                "selector": {
+                  "sample": "PBMC3k"
+                },
+                "before": 2700,
+                "retained": 2526,
+                "removed": 174,
+                "fraction_retained": 0.9356
+              }
+            ],
+            "outer_logic": "any",
+            "comparison": "Exact full proposal versus keep_all under the same original ranges and outer logic; not an invented range-first intersection.",
+            "equivalent_candidates": []
+          },
+          "conflicts": []
+        }
+      ]
+    },
+    {
+      "file": "strategy_review-3d0d35b51d1c375625a504cd32f9a4e77cc9a0b34090e5d34650e9f8295b757d.rds",
+      "review_hash": "cf0b6c720dfb2d54cf6a1be11fcad50486436ec661970d56e40ca66b19e5dd5f",
+      "fact_editable": false,
+      "draft_preselection": {
+        "candidate_id": "any_quality3",
+        "automatic": true,
+        "draft_only": true,
+        "reason": "Measured joint evidence is complete and this OR comparison removes <=10% overall and <=20% of each group. These are UI risk caps, not biological optimality. Preselected draft is unsaved and unapproved."
+      },
+      "conflicts": [],
+      "missing": [],
+      "OR_candidate": [
+        {
+          "id": "any_quality3",
+          "label": "Low counts OR low features OR high mitochondrial fraction",
+          "changes": {
+            "qc": {
+              "schema": "scagentkit.qc.rules.v1",
+              "rationale": "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
+              "risks": "No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling.",
+              "remove_if": "any",
+              "rules": [
+                {
+                  "op": "range",
+                  "metric": "nCount",
+                  "min": 1,
+                  "max": null,
+                  "group": null
+                },
+                {
+                  "op": "mad_preset",
+                  "preset_id": "any_quality3",
+                  "panel_hash": "5b4eeabda0b8be04dc411f593af9245c068d9e79c7f17e2de9c39350ebd6b5a7"
+                }
+              ]
+            }
+          },
+          "available": true,
+          "reasons": [
+            "Measured any_quality3 flags implicate this saved policy; compare its exact impact, not just its name."
+          ],
+          "impact": {
+            "retained": 2526,
+            "removed": 174,
+            "additional_removed_vs_keep_all": 174,
+            "restored_vs_keep_all": 0,
+            "range_only_retained": 2700,
+            "new_removed_within_range_keep": 174,
+            "reintroduced_range_failed": 0,
+            "removed_vs_current": 174,
+            "restored_vs_current": 0,
+            "groups": [
+              {
+                "group_id": "group1",
+                "selector": {
+                  "sample": "PBMC3k"
+                },
+                "before": 2700,
+                "retained": 2526,
+                "removed": 174,
+                "fraction_retained": 0.9356
+              }
+            ],
+            "outer_logic": "any",
+            "comparison": "Exact full proposal versus keep_all under the same original ranges and outer logic; not an invented range-first intersection.",
+            "equivalent_candidates": []
+          },
+          "conflicts": []
+        }
+      ]
+    }
+  ],
+  "biological_accuracy": null,
+  "quality_truth": null,
+  "notes": [
+    "All/retained/deleted denominators are reported together, not outcome-selected.",
+    "References are frozen SingleR predictions, not biological truth. Unmapped reference labels remain explicit nonmatches, as preregistered.",
+    "Baseline-on-retained vs QCOR-on-retained separates selection from changed predictions. Exclusions count as misses in original-denominator yield.",
+    "The benchmark used explicit R policies; no browser was opened at initial PBMC review, so no JS preselection actually ran. Saved recommendation eligibility is a counterfactual UI trigger, not applied filtering."
+  ]
+}

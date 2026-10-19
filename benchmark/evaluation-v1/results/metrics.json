@@ -1,0 +1,6788 @@
+{
+  "pending": [],
+  "rows": [
+    [
+      "pbmc3k",
+      "baseline-1",
+      "complete",
+      2700,
+      8,
+      null,
+      null,
+      0.947037037037037,
+      620.26
+    ],
+    [
+      "pbmc3k",
+      "after-snapshot-1",
+      "complete",
+      2700,
+      8,
+      null,
+      null,
+      0.947037037037037,
+      null
+    ],
+    [
+      "pbmc3k",
+      "after-no-diagnostics-1",
+      "complete",
+      2700,
+      8,
+      null,
+      null,
+      0.947037037037037,
+      437.865
+    ],
+    [
+      "pbmc3k",
+      "after-qc-or-1",
+      "complete",
+      2526,
+      8,
+      null,
+      null,
+      0.8988888888888888,
+      770.588
+    ],
+    [
+      "ifnb",
+      "baseline-1",
+      "complete",
+      5000,
+      15,
+      0.8496,
+      0.7292419718220868,
+      0.8068,
+      714.528
+    ],
+    [
+      "ifnb",
+      "after-1",
+      "complete",
+      5000,
+      15,
+      0.8496,
+      0.7292419718220868,
+      0.8068,
+      1382.874
+    ],
+    [
+      "ifnb",
+      "after-no-diagnostics-1",
+      "complete",
+      5000,
+      15,
+      0.8496,
+      0.7292419718220868,
+      0.8068,
+      637.946
+    ],
+    [
+      "ifnb",
+      "after-qc-or-1",
+      "ineligible (missing MT; preserved attempt separate)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      "baron",
+      "baseline-1",
+      "complete",
+      5000,
+      14,
+      0.0394,
+      0.19683718511258688,
+      0.1376,
+      2722.628
+    ],
+    [
+      "baron",
+      "after-1",
+      "complete",
+      5000,
+      14,
+      0.0394,
+      0.19683718511258688,
+      0.1376,
+      3515.88
+    ],
+    [
+      "baron",
+      "after-no-diagnostics-1",
+      "complete",
+      5000,
+      14,
+      0.0394,
+      0.19683718511258688,
+      0.1376,
+      1791.823
+    ],
+    [
+      "baron",
+      "after-qc-or-1",
+      "ineligible (missing MT; preserved attempt separate)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      "baron",
+      "after-sample-hvg-1",
+      "complete",
+      5000,
+      14,
+      0.0394,
+      0.19683589688026704,
+      0.138,
+      3611.964
+    ]
+  ],
+  "details": [
+    {
+      "dataset": "pbmc3k",
+      "storage": "baseline-1",
+      "run": {
+        "status": "complete",
+        "variant": "baseline",
+        "dataset": "pbmc3k",
+        "started_utc": "2026-10-18 21:15:13 UTC",
+        "elapsed": 620.26,
+        "user": 593.103,
+        "system": 23.444,
+        "input_sha256": "6ee2bdba9d601eebf0bf71d844468e514da0cee7717ae5cb53dead570ff19d66",
+        "input_cells": 2700,
+        "retained_cells": 2700,
+        "unknown_reviewed": 2700,
+        "source_library_id": "frozen-reviewed-baseline-library",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 8,
+        "cluster_column": "sc_strategy_clusters",
+        "counts_hash": "c654327b1185e102f73fafc49dd304acb3923cbf3171f2be8b708329796372cc",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "not_enabled",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2700
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2700
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 2700,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 2557,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 346,
+            "predicted": 381,
+            "correct": 341,
+            "precision": 0.89501312335958,
+            "recall": 0.9855491329479769,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 685,
+            "predicted": 653,
+            "correct": 652,
+            "precision": 0.998468606431853,
+            "recall": 0.9518248175182482,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 198,
+            "predicted": 162,
+            "correct": 153,
+            "precision": 0.9444444444444444,
+            "recall": 0.7727272727272727,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 1423,
+            "predicted": 1490,
+            "correct": 1411,
+            "precision": 0.946979865771812,
+            "recall": 0.9915671117357695,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 8,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 40,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 8,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 341,
+            "reference": "B"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 31,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 652,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 153,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 45,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 5,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 7,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1411,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 3,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 4,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "B",
+            "cells": 3,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Other",
+            "cells": 8,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 28,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.947037037037037,
+        "conditional_reference_agreement": 0.947037037037037,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "reference_prediction": 2660,
+          "unknown": 40
+        },
+        "known_coverage": 0.9851851851851852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-snapshot-1",
+      "run": {
+        "status": "complete",
+        "variant": "after",
+        "dataset": "pbmc3k",
+        "started_utc": null,
+        "elapsed": null,
+        "user": null,
+        "system": null,
+        "input_sha256": "6ee2bdba9d601eebf0bf71d844468e514da0cee7717ae5cb53dead570ff19d66",
+        "input_cells": 2700,
+        "retained_cells": 2700,
+        "unknown_reviewed": 2700,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 8,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "counts_hash": "c654327b1185e102f73fafc49dd304acb3923cbf3171f2be8b708329796372cc",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "science_status": "recorded; inspect per-method status",
+        "approvals": 3,
+        "native_analysis_rerun": false,
+        "execution_mode": "Explicit finalization from exact sealed stopped snapshot; every inherited checkpoint byte hash reverified after finalization",
+        "elapsed_scope": "Full original pipeline total unavailable. Snapshot completion reused saved checkpoints; original after later safely resumed to completion. Its131.385-second receipt is resume-only. The preceding historical note describes snapshot-creation time, not current task status.",
+        "logging_policy": "Complete review output preserved in files",
+        "historical_elapsed_scope_note": "Total unavailable: original in-memory collector still running. Separate file-backed show/approve operation timings retained. Receipt-only postprocessing recovered after missing local lib variable; no approval or numerical work repeated."
+      },
+      "candidate_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2700
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2700
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 2700,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 2557,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 346,
+            "predicted": 381,
+            "correct": 341,
+            "precision": 0.89501312335958,
+            "recall": 0.9855491329479769,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 685,
+            "predicted": 653,
+            "correct": 652,
+            "precision": 0.998468606431853,
+            "recall": 0.9518248175182482,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 198,
+            "predicted": 162,
+            "correct": 153,
+            "precision": 0.9444444444444444,
+            "recall": 0.7727272727272727,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 1423,
+            "predicted": 1490,
+            "correct": 1411,
+            "precision": 0.946979865771812,
+            "recall": 0.9915671117357695,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 8,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 40,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 8,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 341,
+            "reference": "B"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 31,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 652,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 153,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 45,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 5,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 7,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1411,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 3,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 4,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "B",
+            "cells": 3,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Other",
+            "cells": 8,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 28,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.947037037037037,
+        "conditional_reference_agreement": 0.947037037037037,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "reference_prediction": 2660,
+          "unknown": 40
+        },
+        "known_coverage": 0.9851851851851852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-no-diagnostics-1",
+      "run": {
+        "status": "complete",
+        "variant": "after-no-diagnostics",
+        "dataset": "pbmc3k",
+        "started_utc": "2026-10-18 22:04:29 UTC",
+        "elapsed": 437.865,
+        "user": 416.535,
+        "system": 17.179,
+        "input_sha256": "6ee2bdba9d601eebf0bf71d844468e514da0cee7717ae5cb53dead570ff19d66",
+        "input_cells": 2700,
+        "retained_cells": 2700,
+        "unknown_reviewed": 2700,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 8,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "c654327b1185e102f73fafc49dd304acb3923cbf3171f2be8b708329796372cc",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "not_enabled",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2700
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2700
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 2700,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 2557,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 346,
+            "predicted": 381,
+            "correct": 341,
+            "precision": 0.89501312335958,
+            "recall": 0.9855491329479769,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 685,
+            "predicted": 653,
+            "correct": 652,
+            "precision": 0.998468606431853,
+            "recall": 0.9518248175182482,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 198,
+            "predicted": 162,
+            "correct": 153,
+            "precision": 0.9444444444444444,
+            "recall": 0.7727272727272727,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 1423,
+            "predicted": 1490,
+            "correct": 1411,
+            "precision": 0.946979865771812,
+            "recall": 0.9915671117357695,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 8,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 40,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 8,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 341,
+            "reference": "B"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 31,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 652,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 153,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 45,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 5,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 7,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1411,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 3,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 4,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "B",
+            "cells": 3,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Other",
+            "cells": 8,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 28,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.947037037037037,
+        "conditional_reference_agreement": 0.947037037037037,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "reference_prediction": 2660,
+          "unknown": 40
+        },
+        "known_coverage": 0.9851851851851852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-qc-or-1",
+      "run": {
+        "status": "complete",
+        "variant": "after-qc-or",
+        "dataset": "pbmc3k",
+        "started_utc": "2026-10-18 22:12:03 UTC",
+        "elapsed": 770.588,
+        "user": 679.648,
+        "system": 78.583,
+        "input_sha256": "6ee2bdba9d601eebf0bf71d844468e514da0cee7717ae5cb53dead570ff19d66",
+        "input_cells": 2700,
+        "retained_cells": 2526,
+        "unknown_reviewed": 2526,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 8,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "df8f87454fc9880b8d186a27d8de5b9f54eca6cfc2de3bfb099fdb0da77b1309",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "recorded; inspect per-method status",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2526,
+          "excluded": 174
+        },
+        "known_coverage": 0.9355555555555556,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 2700,
+        "status_counts": {
+          "candidate_only_not_reviewed": 2526,
+          "excluded": 174
+        },
+        "known_coverage": 0.9355555555555556,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 2700,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 2427,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 346,
+            "predicted": 355,
+            "correct": 318,
+            "precision": 0.895774647887324,
+            "recall": 0.9190751445086706,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 685,
+            "predicted": 608,
+            "correct": 607,
+            "precision": 0.9983552631578947,
+            "recall": 0.8861313868613139,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 198,
+            "predicted": 157,
+            "correct": 149,
+            "precision": 0.9490445859872612,
+            "recall": 0.7525252525252525,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 1423,
+            "predicted": 1406,
+            "correct": 1353,
+            "precision": 0.9623044096728307,
+            "recall": 0.9508081517919887,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 8,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 40,
+            "predicted": 174,
+            "correct": 33,
+            "precision": 0.1896551724137931,
+            "recall": 0.825,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 8,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 318,
+            "reference": "B"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 25,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 31,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 607,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 47,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 149,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 43,
+            "reference": "NK"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 6,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 4,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 6,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1353,
+            "reference": "T"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 60,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 2,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 3,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 3,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 6,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 33,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.8988888888888888,
+        "conditional_reference_agreement": 0.9608076009501187,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 2700,
+        "status_counts": {
+          "reference_prediction": 2513,
+          "excluded": 174,
+          "unknown": 13
+        },
+        "known_coverage": 0.9307407407407408,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "not_evaluated_no_truth",
+        "agreement_denominator": 0,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "baseline-1",
+      "run": {
+        "status": "complete",
+        "variant": "baseline",
+        "dataset": "ifnb",
+        "started_utc": "2026-10-18 22:25:06 UTC",
+        "elapsed": 714.528,
+        "user": 666.119,
+        "system": 37.832,
+        "input_sha256": "eaf30ea397096444469669314102452c188121f09638af635ac2c7a774fd16ba",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-reviewed-baseline-library",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 15,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "d6d839ad81a5240b2f58e0bed499a6774714830b18b701674d15baf509edad9e",
+        "runtime_manifest_sha256": "5e075143de6fa99c724903fed12db2d3c15c3d934e93fac9cfe5d5c7a62cc380",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "2aaae30d86662fa78a142c295077bdb886c94a9b5be117e91a175cce0bf2409e",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "not_enabled",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "author_label_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4248,
+        "conditional_agreement": 0.8496,
+        "end_to_end_correct_yield": 0.8496,
+        "macro_f1": 0.7292419718220868,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 488,
+            "predicted": 925,
+            "correct": 487,
+            "precision": 0.5264864864864864,
+            "recall": 0.9979508196721312,
+            "f1": 0.6893135173389949
+          },
+          {
+            "label": "Dendritic",
+            "n": 228,
+            "predicted": 76,
+            "correct": 76,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "f1": 0.5
+          },
+          {
+            "label": "Monocyte",
+            "n": 1914,
+            "predicted": 1991,
+            "correct": 1912,
+            "precision": 0.9603214465092919,
+            "recall": 0.9989550679205852,
+            "f1": 0.979257362355954
+          },
+          {
+            "label": "NK",
+            "n": 224,
+            "predicted": 423,
+            "correct": 222,
+            "precision": 0.524822695035461,
+            "recall": 0.9910714285714286,
+            "f1": 0.6862442040185471
+          },
+          {
+            "label": "Other",
+            "n": 106,
+            "predicted": 70,
+            "correct": 60,
+            "precision": 0.8571428571428571,
+            "recall": 0.5660377358490566,
+            "f1": 0.6818181818181818
+          },
+          {
+            "label": "T",
+            "n": 2040,
+            "predicted": 1515,
+            "correct": 1491,
+            "precision": 0.9841584158415841,
+            "recall": 0.7308823529411764,
+            "f1": 0.8388185654008438
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "B",
+            "prediction": "B",
+            "cells": 487
+          },
+          {
+            "author": "B",
+            "prediction": "T",
+            "cells": 1
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "B",
+            "cells": 90
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Dendritic",
+            "cells": 76
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Monocyte",
+            "cells": 55
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Other",
+            "cells": 7
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "B",
+            "cells": 1
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Monocyte",
+            "cells": 1912
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "T",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "B",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "NK",
+            "cells": 222
+          },
+          {
+            "author": "NK",
+            "prediction": "Other",
+            "cells": 1
+          },
+          {
+            "author": "Other",
+            "prediction": "Monocyte",
+            "cells": 24
+          },
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 60
+          },
+          {
+            "author": "Other",
+            "prediction": "T",
+            "cells": 22
+          },
+          {
+            "author": "T",
+            "prediction": "B",
+            "cells": 346
+          },
+          {
+            "author": "T",
+            "prediction": "NK",
+            "cells": 201
+          },
+          {
+            "author": "T",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "T",
+            "prediction": "T",
+            "cells": 1491
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4034,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 420,
+            "predicted": 925,
+            "correct": 410,
+            "precision": 0.44324324324324327,
+            "recall": 0.9761904761904762,
+            "f1": null
+          },
+          {
+            "label": "Dendritic",
+            "n": 145,
+            "predicted": 76,
+            "correct": 47,
+            "precision": 0.618421052631579,
+            "recall": 0.32413793103448274,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 1893,
+            "predicted": 1991,
+            "correct": 1845,
+            "precision": 0.9266700150678051,
+            "recall": 0.9746434231378764,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 239,
+            "predicted": 423,
+            "correct": 232,
+            "precision": 0.5484633569739953,
+            "recall": 0.9707112970711297,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 2092,
+            "predicted": 1515,
+            "correct": 1500,
+            "precision": 0.9900990099009901,
+            "recall": 0.7170172084130019,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 55,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Macrophages",
+            "n": 139,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 17,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 194,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 410,
+            "reference": "B"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "Other",
+            "cells": 4,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 5,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 93,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 47,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 5,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "B",
+            "cells": 17,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 27,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1845,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 1,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 232,
+            "reference": "NK"
+          },
+          {
+            "prediction": "Other",
+            "cells": 4,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 3,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 351,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 188,
+            "reference": "T"
+          },
+          {
+            "prediction": "Other",
+            "cells": 53,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1500,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 47,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 1,
+            "reference": "UNMAPPED:Macrophages"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 138,
+            "reference": "UNMAPPED:Macrophages"
+          },
+          {
+            "prediction": "B",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 3,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 5,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.8068,
+        "conditional_reference_agreement": 0.8068,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4983,
+          "unknown": 17
+        },
+        "known_coverage": 0.9966,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "author_label_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4451,
+        "conditional_agreement": 0.8932370058197873,
+        "end_to_end_correct_yield": 0.8902,
+        "macro_f1": 0.6893363118749146,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 488,
+            "predicted": 420,
+            "correct": 394,
+            "precision": 0.9380952380952381,
+            "recall": 0.8073770491803278,
+            "f1": 0.8678414096916298
+          },
+          {
+            "label": "Dendritic",
+            "n": 228,
+            "predicted": 145,
+            "correct": 91,
+            "precision": 0.6275862068965518,
+            "recall": 0.3991228070175439,
+            "f1": 0.48793565683646123
+          },
+          {
+            "label": "Monocyte",
+            "n": 1914,
+            "predicted": 1893,
+            "correct": 1777,
+            "precision": 0.9387216059165346,
+            "recall": 0.9284221525600836,
+            "f1": 0.9335434725505647
+          },
+          {
+            "label": "NK",
+            "n": 224,
+            "predicted": 239,
+            "correct": 202,
+            "precision": 0.8451882845188284,
+            "recall": 0.9017857142857143,
+            "f1": 0.8725701943844493
+          },
+          {
+            "label": "Other",
+            "n": 106,
+            "predicted": 194,
+            "correct": 2,
+            "precision": 0.010309278350515464,
+            "recall": 0.018867924528301886,
+            "f1": 0.013333333333333332
+          },
+          {
+            "label": "T",
+            "n": 2040,
+            "predicted": 2092,
+            "correct": 1985,
+            "precision": 0.9488527724665392,
+            "recall": 0.9730392156862745,
+            "f1": 0.9607938044530493
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "B",
+            "prediction": "B",
+            "cells": 394
+          },
+          {
+            "author": "B",
+            "prediction": "Dendritic",
+            "cells": 50
+          },
+          {
+            "author": "B",
+            "prediction": "Monocyte",
+            "cells": 2
+          },
+          {
+            "author": "B",
+            "prediction": "Other",
+            "cells": 26
+          },
+          {
+            "author": "B",
+            "prediction": "T",
+            "cells": 12
+          },
+          {
+            "author": "B",
+            "prediction": "Unknown",
+            "cells": 4
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "B",
+            "cells": 10
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Dendritic",
+            "cells": 91
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Monocyte",
+            "cells": 89
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Other",
+            "cells": 34
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "T",
+            "cells": 2
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Dendritic",
+            "cells": 4
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Monocyte",
+            "cells": 1777
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Other",
+            "cells": 130
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Unknown",
+            "cells": 3
+          },
+          {
+            "author": "NK",
+            "prediction": "Monocyte",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "NK",
+            "cells": 202
+          },
+          {
+            "author": "NK",
+            "prediction": "T",
+            "cells": 20
+          },
+          {
+            "author": "NK",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "Other",
+            "prediction": "B",
+            "cells": 4
+          },
+          {
+            "author": "Other",
+            "prediction": "Monocyte",
+            "cells": 24
+          },
+          {
+            "author": "Other",
+            "prediction": "NK",
+            "cells": 3
+          },
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "Other",
+            "prediction": "T",
+            "cells": 73
+          },
+          {
+            "author": "T",
+            "prediction": "B",
+            "cells": 12
+          },
+          {
+            "author": "T",
+            "prediction": "NK",
+            "cells": 34
+          },
+          {
+            "author": "T",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "T",
+            "prediction": "T",
+            "cells": 1985
+          },
+          {
+            "author": "T",
+            "prediction": "Unknown",
+            "cells": 7
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-1",
+      "run": {
+        "status": "complete",
+        "variant": "after",
+        "dataset": "ifnb",
+        "started_utc": "2026-10-18 22:37:20 UTC",
+        "elapsed": 1382.874,
+        "user": 1214.598,
+        "system": 150.588,
+        "input_sha256": "eaf30ea397096444469669314102452c188121f09638af635ac2c7a774fd16ba",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 15,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "2aaae30d86662fa78a142c295077bdb886c94a9b5be117e91a175cce0bf2409e",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "recorded; inspect per-method status",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "author_label_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4248,
+        "conditional_agreement": 0.8496,
+        "end_to_end_correct_yield": 0.8496,
+        "macro_f1": 0.7292419718220868,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 488,
+            "predicted": 925,
+            "correct": 487,
+            "precision": 0.5264864864864864,
+            "recall": 0.9979508196721312,
+            "f1": 0.6893135173389949
+          },
+          {
+            "label": "Dendritic",
+            "n": 228,
+            "predicted": 76,
+            "correct": 76,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "f1": 0.5
+          },
+          {
+            "label": "Monocyte",
+            "n": 1914,
+            "predicted": 1991,
+            "correct": 1912,
+            "precision": 0.9603214465092919,
+            "recall": 0.9989550679205852,
+            "f1": 0.979257362355954
+          },
+          {
+            "label": "NK",
+            "n": 224,
+            "predicted": 423,
+            "correct": 222,
+            "precision": 0.524822695035461,
+            "recall": 0.9910714285714286,
+            "f1": 0.6862442040185471
+          },
+          {
+            "label": "Other",
+            "n": 106,
+            "predicted": 70,
+            "correct": 60,
+            "precision": 0.8571428571428571,
+            "recall": 0.5660377358490566,
+            "f1": 0.6818181818181818
+          },
+          {
+            "label": "T",
+            "n": 2040,
+            "predicted": 1515,
+            "correct": 1491,
+            "precision": 0.9841584158415841,
+            "recall": 0.7308823529411764,
+            "f1": 0.8388185654008438
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "B",
+            "prediction": "B",
+            "cells": 487
+          },
+          {
+            "author": "B",
+            "prediction": "T",
+            "cells": 1
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "B",
+            "cells": 90
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Dendritic",
+            "cells": 76
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Monocyte",
+            "cells": 55
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Other",
+            "cells": 7
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "B",
+            "cells": 1
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Monocyte",
+            "cells": 1912
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "T",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "B",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "NK",
+            "cells": 222
+          },
+          {
+            "author": "NK",
+            "prediction": "Other",
+            "cells": 1
+          },
+          {
+            "author": "Other",
+            "prediction": "Monocyte",
+            "cells": 24
+          },
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 60
+          },
+          {
+            "author": "Other",
+            "prediction": "T",
+            "cells": 22
+          },
+          {
+            "author": "T",
+            "prediction": "B",
+            "cells": 346
+          },
+          {
+            "author": "T",
+            "prediction": "NK",
+            "cells": 201
+          },
+          {
+            "author": "T",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "T",
+            "prediction": "T",
+            "cells": 1491
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4034,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 420,
+            "predicted": 925,
+            "correct": 410,
+            "precision": 0.44324324324324327,
+            "recall": 0.9761904761904762,
+            "f1": null
+          },
+          {
+            "label": "Dendritic",
+            "n": 145,
+            "predicted": 76,
+            "correct": 47,
+            "precision": 0.618421052631579,
+            "recall": 0.32413793103448274,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 1893,
+            "predicted": 1991,
+            "correct": 1845,
+            "precision": 0.9266700150678051,
+            "recall": 0.9746434231378764,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 239,
+            "predicted": 423,
+            "correct": 232,
+            "precision": 0.5484633569739953,
+            "recall": 0.9707112970711297,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 2092,
+            "predicted": 1515,
+            "correct": 1500,
+            "precision": 0.9900990099009901,
+            "recall": 0.7170172084130019,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 55,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Macrophages",
+            "n": 139,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 17,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 194,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 410,
+            "reference": "B"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "Other",
+            "cells": 4,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 5,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 93,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 47,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 5,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "B",
+            "cells": 17,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 27,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1845,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 1,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 232,
+            "reference": "NK"
+          },
+          {
+            "prediction": "Other",
+            "cells": 4,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 3,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 351,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 188,
+            "reference": "T"
+          },
+          {
+            "prediction": "Other",
+            "cells": 53,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1500,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 47,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 1,
+            "reference": "UNMAPPED:Macrophages"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 138,
+            "reference": "UNMAPPED:Macrophages"
+          },
+          {
+            "prediction": "B",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 3,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 5,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.8068,
+        "conditional_reference_agreement": 0.8068,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4983,
+          "unknown": 17
+        },
+        "known_coverage": 0.9966,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "author_label_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4451,
+        "conditional_agreement": 0.8932370058197873,
+        "end_to_end_correct_yield": 0.8902,
+        "macro_f1": 0.6893363118749146,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 488,
+            "predicted": 420,
+            "correct": 394,
+            "precision": 0.9380952380952381,
+            "recall": 0.8073770491803278,
+            "f1": 0.8678414096916298
+          },
+          {
+            "label": "Dendritic",
+            "n": 228,
+            "predicted": 145,
+            "correct": 91,
+            "precision": 0.6275862068965518,
+            "recall": 0.3991228070175439,
+            "f1": 0.48793565683646123
+          },
+          {
+            "label": "Monocyte",
+            "n": 1914,
+            "predicted": 1893,
+            "correct": 1777,
+            "precision": 0.9387216059165346,
+            "recall": 0.9284221525600836,
+            "f1": 0.9335434725505647
+          },
+          {
+            "label": "NK",
+            "n": 224,
+            "predicted": 239,
+            "correct": 202,
+            "precision": 0.8451882845188284,
+            "recall": 0.9017857142857143,
+            "f1": 0.8725701943844493
+          },
+          {
+            "label": "Other",
+            "n": 106,
+            "predicted": 194,
+            "correct": 2,
+            "precision": 0.010309278350515464,
+            "recall": 0.018867924528301886,
+            "f1": 0.013333333333333332
+          },
+          {
+            "label": "T",
+            "n": 2040,
+            "predicted": 2092,
+            "correct": 1985,
+            "precision": 0.9488527724665392,
+            "recall": 0.9730392156862745,
+            "f1": 0.9607938044530493
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "B",
+            "prediction": "B",
+            "cells": 394
+          },
+          {
+            "author": "B",
+            "prediction": "Dendritic",
+            "cells": 50
+          },
+          {
+            "author": "B",
+            "prediction": "Monocyte",
+            "cells": 2
+          },
+          {
+            "author": "B",
+            "prediction": "Other",
+            "cells": 26
+          },
+          {
+            "author": "B",
+            "prediction": "T",
+            "cells": 12
+          },
+          {
+            "author": "B",
+            "prediction": "Unknown",
+            "cells": 4
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "B",
+            "cells": 10
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Dendritic",
+            "cells": 91
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Monocyte",
+            "cells": 89
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Other",
+            "cells": 34
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "T",
+            "cells": 2
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Dendritic",
+            "cells": 4
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Monocyte",
+            "cells": 1777
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Other",
+            "cells": 130
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Unknown",
+            "cells": 3
+          },
+          {
+            "author": "NK",
+            "prediction": "Monocyte",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "NK",
+            "cells": 202
+          },
+          {
+            "author": "NK",
+            "prediction": "T",
+            "cells": 20
+          },
+          {
+            "author": "NK",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "Other",
+            "prediction": "B",
+            "cells": 4
+          },
+          {
+            "author": "Other",
+            "prediction": "Monocyte",
+            "cells": 24
+          },
+          {
+            "author": "Other",
+            "prediction": "NK",
+            "cells": 3
+          },
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "Other",
+            "prediction": "T",
+            "cells": 73
+          },
+          {
+            "author": "T",
+            "prediction": "B",
+            "cells": 12
+          },
+          {
+            "author": "T",
+            "prediction": "NK",
+            "cells": 34
+          },
+          {
+            "author": "T",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "T",
+            "prediction": "T",
+            "cells": 1985
+          },
+          {
+            "author": "T",
+            "prediction": "Unknown",
+            "cells": 7
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-no-diagnostics-1",
+      "run": {
+        "status": "complete",
+        "variant": "after-no-diagnostics",
+        "dataset": "ifnb",
+        "started_utc": "2026-10-18 23:00:37 UTC",
+        "elapsed": 637.946,
+        "user": 606.14,
+        "system": 25.448,
+        "input_sha256": "eaf30ea397096444469669314102452c188121f09638af635ac2c7a774fd16ba",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 15,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "2aaae30d86662fa78a142c295077bdb886c94a9b5be117e91a175cce0bf2409e",
+        "reference_sha256": "7f620b53f2c00f5cba8de6a09064c5e38562ae90fe266987ca1dd767464a05e4",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "not_enabled",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "author_label_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4248,
+        "conditional_agreement": 0.8496,
+        "end_to_end_correct_yield": 0.8496,
+        "macro_f1": 0.7292419718220868,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 488,
+            "predicted": 925,
+            "correct": 487,
+            "precision": 0.5264864864864864,
+            "recall": 0.9979508196721312,
+            "f1": 0.6893135173389949
+          },
+          {
+            "label": "Dendritic",
+            "n": 228,
+            "predicted": 76,
+            "correct": 76,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "f1": 0.5
+          },
+          {
+            "label": "Monocyte",
+            "n": 1914,
+            "predicted": 1991,
+            "correct": 1912,
+            "precision": 0.9603214465092919,
+            "recall": 0.9989550679205852,
+            "f1": 0.979257362355954
+          },
+          {
+            "label": "NK",
+            "n": 224,
+            "predicted": 423,
+            "correct": 222,
+            "precision": 0.524822695035461,
+            "recall": 0.9910714285714286,
+            "f1": 0.6862442040185471
+          },
+          {
+            "label": "Other",
+            "n": 106,
+            "predicted": 70,
+            "correct": 60,
+            "precision": 0.8571428571428571,
+            "recall": 0.5660377358490566,
+            "f1": 0.6818181818181818
+          },
+          {
+            "label": "T",
+            "n": 2040,
+            "predicted": 1515,
+            "correct": 1491,
+            "precision": 0.9841584158415841,
+            "recall": 0.7308823529411764,
+            "f1": 0.8388185654008438
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "B",
+            "prediction": "B",
+            "cells": 487
+          },
+          {
+            "author": "B",
+            "prediction": "T",
+            "cells": 1
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "B",
+            "cells": 90
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Dendritic",
+            "cells": 76
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Monocyte",
+            "cells": 55
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Other",
+            "cells": 7
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "B",
+            "cells": 1
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Monocyte",
+            "cells": 1912
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "T",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "B",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "NK",
+            "cells": 222
+          },
+          {
+            "author": "NK",
+            "prediction": "Other",
+            "cells": 1
+          },
+          {
+            "author": "Other",
+            "prediction": "Monocyte",
+            "cells": 24
+          },
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 60
+          },
+          {
+            "author": "Other",
+            "prediction": "T",
+            "cells": 22
+          },
+          {
+            "author": "T",
+            "prediction": "B",
+            "cells": 346
+          },
+          {
+            "author": "T",
+            "prediction": "NK",
+            "cells": 201
+          },
+          {
+            "author": "T",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "T",
+            "prediction": "T",
+            "cells": 1491
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 1.0,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "external_reference_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4034,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 420,
+            "predicted": 925,
+            "correct": 410,
+            "precision": 0.44324324324324327,
+            "recall": 0.9761904761904762,
+            "f1": null
+          },
+          {
+            "label": "Dendritic",
+            "n": 145,
+            "predicted": 76,
+            "correct": 47,
+            "precision": 0.618421052631579,
+            "recall": 0.32413793103448274,
+            "f1": null
+          },
+          {
+            "label": "Monocyte",
+            "n": 1893,
+            "predicted": 1991,
+            "correct": 1845,
+            "precision": 0.9266700150678051,
+            "recall": 0.9746434231378764,
+            "f1": null
+          },
+          {
+            "label": "NK",
+            "n": 239,
+            "predicted": 423,
+            "correct": 232,
+            "precision": 0.5484633569739953,
+            "recall": 0.9707112970711297,
+            "f1": null
+          },
+          {
+            "label": "T",
+            "n": 2092,
+            "predicted": 1515,
+            "correct": 1500,
+            "precision": 0.9900990099009901,
+            "recall": 0.7170172084130019,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC",
+            "n": 55,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Macrophages",
+            "n": 139,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 17,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 194,
+        "confusion": [
+          {
+            "prediction": "B",
+            "cells": 410,
+            "reference": "B"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 1,
+            "reference": "B"
+          },
+          {
+            "prediction": "Other",
+            "cells": 4,
+            "reference": "B"
+          },
+          {
+            "prediction": "T",
+            "cells": 5,
+            "reference": "B"
+          },
+          {
+            "prediction": "B",
+            "cells": 93,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 47,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 5,
+            "reference": "Dendritic"
+          },
+          {
+            "prediction": "B",
+            "cells": 17,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 27,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 1845,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 1,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "Monocyte"
+          },
+          {
+            "prediction": "NK",
+            "cells": 232,
+            "reference": "NK"
+          },
+          {
+            "prediction": "Other",
+            "cells": 4,
+            "reference": "NK"
+          },
+          {
+            "prediction": "T",
+            "cells": 3,
+            "reference": "NK"
+          },
+          {
+            "prediction": "B",
+            "cells": 351,
+            "reference": "T"
+          },
+          {
+            "prediction": "NK",
+            "cells": 188,
+            "reference": "T"
+          },
+          {
+            "prediction": "Other",
+            "cells": 53,
+            "reference": "T"
+          },
+          {
+            "prediction": "T",
+            "cells": 1500,
+            "reference": "T"
+          },
+          {
+            "prediction": "B",
+            "cells": 47,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "T",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC"
+          },
+          {
+            "prediction": "Dendritic",
+            "cells": 1,
+            "reference": "UNMAPPED:Macrophages"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 138,
+            "reference": "UNMAPPED:Macrophages"
+          },
+          {
+            "prediction": "B",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Monocyte",
+            "cells": 3,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "NK",
+            "cells": 2,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "T",
+            "cells": 5,
+            "reference": "Unknown"
+          }
+        ],
+        "external_reference_match_fraction": 0.8068,
+        "conditional_reference_agreement": 0.8068,
+        "limitation": "External classifier predictions are comparison targets, not independent biological truth; F1 and accuracy are not reported.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4983,
+          "unknown": 17
+        },
+        "known_coverage": 0.9966,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "author_label_agreement_only",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 4451,
+        "conditional_agreement": 0.8932370058197873,
+        "end_to_end_correct_yield": 0.8902,
+        "macro_f1": 0.6893363118749146,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "B",
+            "n": 488,
+            "predicted": 420,
+            "correct": 394,
+            "precision": 0.9380952380952381,
+            "recall": 0.8073770491803278,
+            "f1": 0.8678414096916298
+          },
+          {
+            "label": "Dendritic",
+            "n": 228,
+            "predicted": 145,
+            "correct": 91,
+            "precision": 0.6275862068965518,
+            "recall": 0.3991228070175439,
+            "f1": 0.48793565683646123
+          },
+          {
+            "label": "Monocyte",
+            "n": 1914,
+            "predicted": 1893,
+            "correct": 1777,
+            "precision": 0.9387216059165346,
+            "recall": 0.9284221525600836,
+            "f1": 0.9335434725505647
+          },
+          {
+            "label": "NK",
+            "n": 224,
+            "predicted": 239,
+            "correct": 202,
+            "precision": 0.8451882845188284,
+            "recall": 0.9017857142857143,
+            "f1": 0.8725701943844493
+          },
+          {
+            "label": "Other",
+            "n": 106,
+            "predicted": 194,
+            "correct": 2,
+            "precision": 0.010309278350515464,
+            "recall": 0.018867924528301886,
+            "f1": 0.013333333333333332
+          },
+          {
+            "label": "T",
+            "n": 2040,
+            "predicted": 2092,
+            "correct": 1985,
+            "precision": 0.9488527724665392,
+            "recall": 0.9730392156862745,
+            "f1": 0.9607938044530493
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "B",
+            "prediction": "B",
+            "cells": 394
+          },
+          {
+            "author": "B",
+            "prediction": "Dendritic",
+            "cells": 50
+          },
+          {
+            "author": "B",
+            "prediction": "Monocyte",
+            "cells": 2
+          },
+          {
+            "author": "B",
+            "prediction": "Other",
+            "cells": 26
+          },
+          {
+            "author": "B",
+            "prediction": "T",
+            "cells": 12
+          },
+          {
+            "author": "B",
+            "prediction": "Unknown",
+            "cells": 4
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "B",
+            "cells": 10
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Dendritic",
+            "cells": 91
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Monocyte",
+            "cells": 89
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Other",
+            "cells": 34
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "T",
+            "cells": 2
+          },
+          {
+            "author": "Dendritic",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Dendritic",
+            "cells": 4
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Monocyte",
+            "cells": 1777
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Other",
+            "cells": 130
+          },
+          {
+            "author": "Monocyte",
+            "prediction": "Unknown",
+            "cells": 3
+          },
+          {
+            "author": "NK",
+            "prediction": "Monocyte",
+            "cells": 1
+          },
+          {
+            "author": "NK",
+            "prediction": "NK",
+            "cells": 202
+          },
+          {
+            "author": "NK",
+            "prediction": "T",
+            "cells": 20
+          },
+          {
+            "author": "NK",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "Other",
+            "prediction": "B",
+            "cells": 4
+          },
+          {
+            "author": "Other",
+            "prediction": "Monocyte",
+            "cells": 24
+          },
+          {
+            "author": "Other",
+            "prediction": "NK",
+            "cells": 3
+          },
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "Other",
+            "prediction": "T",
+            "cells": 73
+          },
+          {
+            "author": "T",
+            "prediction": "B",
+            "cells": 12
+          },
+          {
+            "author": "T",
+            "prediction": "NK",
+            "cells": 34
+          },
+          {
+            "author": "T",
+            "prediction": "Other",
+            "cells": 2
+          },
+          {
+            "author": "T",
+            "prediction": "T",
+            "cells": 1985
+          },
+          {
+            "author": "T",
+            "prediction": "Unknown",
+            "cells": 7
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103"
+      }
+    },
+    {
+      "dataset": "baron",
+      "storage": "baseline-1",
+      "run": {
+        "status": "complete",
+        "variant": "baseline",
+        "dataset": "baron",
+        "started_utc": "2026-10-18 22:25:06 UTC",
+        "elapsed": 2722.628,
+        "user": 2577.914,
+        "system": 108.852,
+        "input_sha256": "02841279fecac04a4c82766c51152bf7e3759ffd814e0c8979730c3047d131e6",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-reviewed-baseline-library",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 14,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "d6d839ad81a5240b2f58e0bed499a6774714830b18b701674d15baf509edad9e",
+        "runtime_manifest_sha256": "5e075143de6fa99c724903fed12db2d3c15c3d934e93fac9cfe5d5c7a62cc380",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "1e6482e81ac2c1f0f5941f15371108f1e019492aad52d4b4fa2dcba3969bf157",
+        "reference_sha256": "54fb67b45485f8621c5ec48f68b366b8dce40b835876090a45a77700ad016193",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "not_enabled",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 197,
+        "conditional_agreement": 0.04450971531857208,
+        "end_to_end_correct_yield": 0.0394,
+        "macro_f1": 0.19683718511258688,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3720,
+            "correct": 15,
+            "precision": 0.004032258064516129,
+            "recall": 1.0,
+            "f1": 0.008032128514056224
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 137,
+            "correct": 137,
+            "precision": 1.0,
+            "recall": 0.9647887323943662,
+            "f1": 0.982078853046595
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 47,
+            "correct": 45,
+            "precision": 0.9574468085106383,
+            "recall": 1.0,
+            "f1": 0.9782608695652174
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 15
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 157
+          },
+          {
+            "author": "PP",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 17
+          },
+          {
+            "author": "acinar",
+            "prediction": "Unknown",
+            "cells": 560
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 1331
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1464
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 357
+          },
+          {
+            "author": "delta",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 106
+          },
+          {
+            "author": "ductal",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 519
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 5
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 137
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 45
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 268
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 688,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "UNMAPPED:Astrocyte",
+            "n": 143,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:CMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Chondrocytes",
+            "n": 7,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:DC",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Embryonic_stem_cells",
+            "n": 10,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:GMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC_CD34+",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Hepatocytes",
+            "n": 409,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:MSC",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:NK_cell",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neuroepithelial_cell",
+            "n": 287,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neurons",
+            "n": 1723,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Smooth_muscle_cells",
+            "n": 108,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Tissue_stem_cells",
+            "n": 181,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:iPS_cells",
+            "n": 177,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 7,
+            "predicted": 574,
+            "correct": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "endothelial",
+            "n": 136,
+            "predicted": 137,
+            "correct": 136,
+            "precision": 0.9927007299270073,
+            "recall": 1.0,
+            "f1": null
+          },
+          {
+            "label": "epithelial_unspecified",
+            "n": 1717,
+            "predicted": 522,
+            "correct": 514,
+            "precision": 0.9846743295019157,
+            "recall": 0.2993593476994758,
+            "f1": null
+          },
+          {
+            "label": "immune",
+            "n": 40,
+            "predicted": 47,
+            "correct": 38,
+            "precision": 0.8085106382978723,
+            "recall": 0.95,
+            "f1": null
+          },
+          {
+            "label": "stellate_candidate_unspecified",
+            "n": 45,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 3055,
+        "confusion": [
+          {
+            "prediction": "Other",
+            "cells": 143,
+            "reference": "UNMAPPED:Astrocyte"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:CMP"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:Chondrocytes"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:DC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 10,
+            "reference": "UNMAPPED:Embryonic_stem_cells"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:GMP"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC_CD34+"
+          },
+          {
+            "prediction": "Other",
+            "cells": 354,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 48,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 7,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "UNMAPPED:MSC"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:NK_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 287,
+            "reference": "UNMAPPED:Neuroepithelial_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1723,
+            "reference": "UNMAPPED:Neurons"
+          },
+          {
+            "prediction": "Other",
+            "cells": 108,
+            "reference": "UNMAPPED:Smooth_muscle_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 180,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 1,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 171,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 5,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 1,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 136,
+            "reference": "endothelial"
+          },
+          {
+            "prediction": "Other",
+            "cells": 682,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 521,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 514,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "immune"
+          },
+          {
+            "prediction": "immune",
+            "cells": 38,
+            "reference": "immune"
+          },
+          {
+            "prediction": "Other",
+            "cells": 45,
+            "reference": "stellate_candidate_unspecified"
+          }
+        ],
+        "external_reference_match_fraction": 0.1376,
+        "conditional_reference_agreement": 0.15544509715318572,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4993,
+          "unknown": 7
+        },
+        "known_coverage": 0.9986,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 185,
+        "conditional_agreement": 0.03705187262167034,
+        "end_to_end_correct_yield": 0.037,
+        "macro_f1": 0.1833945145091055,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3055,
+            "correct": 13,
+            "precision": 0.00425531914893617,
+            "recall": 0.8666666666666667,
+            "f1": 0.008469055374592834
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 136,
+            "correct": 136,
+            "precision": 1.0,
+            "recall": 0.9577464788732394,
+            "f1": 0.9784172661870503
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 40,
+            "correct": 36,
+            "precision": 0.9,
+            "recall": 0.8,
+            "f1": 0.8470588235294118
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 13
+          },
+          {
+            "author": "Other",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 127
+          },
+          {
+            "author": "PP",
+            "prediction": "epithelial_unspecified",
+            "cells": 31
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 51
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 528
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 939
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 385
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 3
+          },
+          {
+            "author": "alpha",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 6
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1359
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "beta",
+            "prediction": "epithelial_unspecified",
+            "cells": 107
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 302
+          },
+          {
+            "author": "delta",
+            "prediction": "epithelial_unspecified",
+            "cells": 55
+          },
+          {
+            "author": "delta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 18
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 609
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 6
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 136
+          },
+          {
+            "author": "immune",
+            "prediction": "Other",
+            "cells": 9
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 36
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 231
+          },
+          {
+            "author": "stellate",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 37
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      }
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-1",
+      "run": {
+        "status": "complete",
+        "variant": "after",
+        "dataset": "baron",
+        "started_utc": "2026-10-18 23:11:48 UTC",
+        "elapsed": 3515.88,
+        "user": 3245.4,
+        "system": 247.036,
+        "input_sha256": "02841279fecac04a4c82766c51152bf7e3759ffd814e0c8979730c3047d131e6",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 14,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "1e6482e81ac2c1f0f5941f15371108f1e019492aad52d4b4fa2dcba3969bf157",
+        "reference_sha256": "54fb67b45485f8621c5ec48f68b366b8dce40b835876090a45a77700ad016193",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "recorded; inspect per-method status",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 197,
+        "conditional_agreement": 0.04450971531857208,
+        "end_to_end_correct_yield": 0.0394,
+        "macro_f1": 0.19683718511258688,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3720,
+            "correct": 15,
+            "precision": 0.004032258064516129,
+            "recall": 1.0,
+            "f1": 0.008032128514056224
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 137,
+            "correct": 137,
+            "precision": 1.0,
+            "recall": 0.9647887323943662,
+            "f1": 0.982078853046595
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 47,
+            "correct": 45,
+            "precision": 0.9574468085106383,
+            "recall": 1.0,
+            "f1": 0.9782608695652174
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 15
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 157
+          },
+          {
+            "author": "PP",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 17
+          },
+          {
+            "author": "acinar",
+            "prediction": "Unknown",
+            "cells": 560
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 1331
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1464
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 357
+          },
+          {
+            "author": "delta",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 106
+          },
+          {
+            "author": "ductal",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 519
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 5
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 137
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 45
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 268
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 688,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "UNMAPPED:Astrocyte",
+            "n": 143,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:CMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Chondrocytes",
+            "n": 7,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:DC",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Embryonic_stem_cells",
+            "n": 10,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:GMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC_CD34+",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Hepatocytes",
+            "n": 409,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:MSC",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:NK_cell",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neuroepithelial_cell",
+            "n": 287,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neurons",
+            "n": 1723,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Smooth_muscle_cells",
+            "n": 108,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Tissue_stem_cells",
+            "n": 181,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:iPS_cells",
+            "n": 177,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 7,
+            "predicted": 574,
+            "correct": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "endothelial",
+            "n": 136,
+            "predicted": 137,
+            "correct": 136,
+            "precision": 0.9927007299270073,
+            "recall": 1.0,
+            "f1": null
+          },
+          {
+            "label": "epithelial_unspecified",
+            "n": 1717,
+            "predicted": 522,
+            "correct": 514,
+            "precision": 0.9846743295019157,
+            "recall": 0.2993593476994758,
+            "f1": null
+          },
+          {
+            "label": "immune",
+            "n": 40,
+            "predicted": 47,
+            "correct": 38,
+            "precision": 0.8085106382978723,
+            "recall": 0.95,
+            "f1": null
+          },
+          {
+            "label": "stellate_candidate_unspecified",
+            "n": 45,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 3055,
+        "confusion": [
+          {
+            "prediction": "Other",
+            "cells": 143,
+            "reference": "UNMAPPED:Astrocyte"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:CMP"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:Chondrocytes"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:DC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 10,
+            "reference": "UNMAPPED:Embryonic_stem_cells"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:GMP"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC_CD34+"
+          },
+          {
+            "prediction": "Other",
+            "cells": 354,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 48,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 7,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "UNMAPPED:MSC"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:NK_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 287,
+            "reference": "UNMAPPED:Neuroepithelial_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1723,
+            "reference": "UNMAPPED:Neurons"
+          },
+          {
+            "prediction": "Other",
+            "cells": 108,
+            "reference": "UNMAPPED:Smooth_muscle_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 180,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 1,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 171,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 5,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 1,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 136,
+            "reference": "endothelial"
+          },
+          {
+            "prediction": "Other",
+            "cells": 682,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 521,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 514,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "immune"
+          },
+          {
+            "prediction": "immune",
+            "cells": 38,
+            "reference": "immune"
+          },
+          {
+            "prediction": "Other",
+            "cells": 45,
+            "reference": "stellate_candidate_unspecified"
+          }
+        ],
+        "external_reference_match_fraction": 0.1376,
+        "conditional_reference_agreement": 0.15544509715318572,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4993,
+          "unknown": 7
+        },
+        "known_coverage": 0.9986,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 185,
+        "conditional_agreement": 0.03705187262167034,
+        "end_to_end_correct_yield": 0.037,
+        "macro_f1": 0.1833945145091055,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3055,
+            "correct": 13,
+            "precision": 0.00425531914893617,
+            "recall": 0.8666666666666667,
+            "f1": 0.008469055374592834
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 136,
+            "correct": 136,
+            "precision": 1.0,
+            "recall": 0.9577464788732394,
+            "f1": 0.9784172661870503
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 40,
+            "correct": 36,
+            "precision": 0.9,
+            "recall": 0.8,
+            "f1": 0.8470588235294118
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 13
+          },
+          {
+            "author": "Other",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 127
+          },
+          {
+            "author": "PP",
+            "prediction": "epithelial_unspecified",
+            "cells": 31
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 51
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 528
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 939
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 385
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 3
+          },
+          {
+            "author": "alpha",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 6
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1359
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "beta",
+            "prediction": "epithelial_unspecified",
+            "cells": 107
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 302
+          },
+          {
+            "author": "delta",
+            "prediction": "epithelial_unspecified",
+            "cells": 55
+          },
+          {
+            "author": "delta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 18
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 609
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 6
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 136
+          },
+          {
+            "author": "immune",
+            "prediction": "Other",
+            "cells": 9
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 36
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 231
+          },
+          {
+            "author": "stellate",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 37
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      }
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-no-diagnostics-1",
+      "run": {
+        "status": "complete",
+        "variant": "after-no-diagnostics",
+        "dataset": "baron",
+        "started_utc": "2026-10-19 00:11:21 UTC",
+        "elapsed": 1791.823,
+        "user": 1745.582,
+        "system": 36.708,
+        "input_sha256": "02841279fecac04a4c82766c51152bf7e3759ffd814e0c8979730c3047d131e6",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 14,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "1e6482e81ac2c1f0f5941f15371108f1e019492aad52d4b4fa2dcba3969bf157",
+        "reference_sha256": "54fb67b45485f8621c5ec48f68b366b8dce40b835876090a45a77700ad016193",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "not_enabled",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 197,
+        "conditional_agreement": 0.04450971531857208,
+        "end_to_end_correct_yield": 0.0394,
+        "macro_f1": 0.19683718511258688,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3720,
+            "correct": 15,
+            "precision": 0.004032258064516129,
+            "recall": 1.0,
+            "f1": 0.008032128514056224
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 137,
+            "correct": 137,
+            "precision": 1.0,
+            "recall": 0.9647887323943662,
+            "f1": 0.982078853046595
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 47,
+            "correct": 45,
+            "precision": 0.9574468085106383,
+            "recall": 1.0,
+            "f1": 0.9782608695652174
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 15
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 157
+          },
+          {
+            "author": "PP",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 17
+          },
+          {
+            "author": "acinar",
+            "prediction": "Unknown",
+            "cells": 560
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 1331
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1464
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 357
+          },
+          {
+            "author": "delta",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 106
+          },
+          {
+            "author": "ductal",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 519
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 5
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 137
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 45
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 268
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8852,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 688,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "UNMAPPED:Astrocyte",
+            "n": 143,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:CMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Chondrocytes",
+            "n": 7,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:DC",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Embryonic_stem_cells",
+            "n": 10,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:GMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC_CD34+",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Hepatocytes",
+            "n": 409,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:MSC",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:NK_cell",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neuroepithelial_cell",
+            "n": 287,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neurons",
+            "n": 1723,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Smooth_muscle_cells",
+            "n": 108,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Tissue_stem_cells",
+            "n": 181,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:iPS_cells",
+            "n": 177,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 7,
+            "predicted": 574,
+            "correct": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "endothelial",
+            "n": 136,
+            "predicted": 137,
+            "correct": 136,
+            "precision": 0.9927007299270073,
+            "recall": 1.0,
+            "f1": null
+          },
+          {
+            "label": "epithelial_unspecified",
+            "n": 1717,
+            "predicted": 522,
+            "correct": 514,
+            "precision": 0.9846743295019157,
+            "recall": 0.2993593476994758,
+            "f1": null
+          },
+          {
+            "label": "immune",
+            "n": 40,
+            "predicted": 47,
+            "correct": 38,
+            "precision": 0.8085106382978723,
+            "recall": 0.95,
+            "f1": null
+          },
+          {
+            "label": "stellate_candidate_unspecified",
+            "n": 45,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 3055,
+        "confusion": [
+          {
+            "prediction": "Other",
+            "cells": 143,
+            "reference": "UNMAPPED:Astrocyte"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:CMP"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:Chondrocytes"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:DC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 10,
+            "reference": "UNMAPPED:Embryonic_stem_cells"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:GMP"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC_CD34+"
+          },
+          {
+            "prediction": "Other",
+            "cells": 354,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 48,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 7,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "UNMAPPED:MSC"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:NK_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 287,
+            "reference": "UNMAPPED:Neuroepithelial_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1723,
+            "reference": "UNMAPPED:Neurons"
+          },
+          {
+            "prediction": "Other",
+            "cells": 108,
+            "reference": "UNMAPPED:Smooth_muscle_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 180,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 1,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 171,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 5,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 1,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 136,
+            "reference": "endothelial"
+          },
+          {
+            "prediction": "Other",
+            "cells": 682,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 521,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 514,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "immune"
+          },
+          {
+            "prediction": "immune",
+            "cells": 38,
+            "reference": "immune"
+          },
+          {
+            "prediction": "Other",
+            "cells": 45,
+            "reference": "stellate_candidate_unspecified"
+          }
+        ],
+        "external_reference_match_fraction": 0.1376,
+        "conditional_reference_agreement": 0.15544509715318572,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4993,
+          "unknown": 7
+        },
+        "known_coverage": 0.9986,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 185,
+        "conditional_agreement": 0.03705187262167034,
+        "end_to_end_correct_yield": 0.037,
+        "macro_f1": 0.1833945145091055,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3055,
+            "correct": 13,
+            "precision": 0.00425531914893617,
+            "recall": 0.8666666666666667,
+            "f1": 0.008469055374592834
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 136,
+            "correct": 136,
+            "precision": 1.0,
+            "recall": 0.9577464788732394,
+            "f1": 0.9784172661870503
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 40,
+            "correct": 36,
+            "precision": 0.9,
+            "recall": 0.8,
+            "f1": 0.8470588235294118
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 13
+          },
+          {
+            "author": "Other",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 127
+          },
+          {
+            "author": "PP",
+            "prediction": "epithelial_unspecified",
+            "cells": 31
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 51
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 528
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 939
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 385
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 3
+          },
+          {
+            "author": "alpha",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 6
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1359
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "beta",
+            "prediction": "epithelial_unspecified",
+            "cells": 107
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 302
+          },
+          {
+            "author": "delta",
+            "prediction": "epithelial_unspecified",
+            "cells": 55
+          },
+          {
+            "author": "delta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 18
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 609
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 6
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 136
+          },
+          {
+            "author": "immune",
+            "prediction": "Other",
+            "cells": 9
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 36
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 231
+          },
+          {
+            "author": "stellate",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 37
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      }
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-sample-hvg-1",
+      "run": {
+        "status": "complete",
+        "variant": "after-sample-hvg",
+        "dataset": "baron",
+        "started_utc": "2026-10-19 00:42:44 UTC",
+        "elapsed": 3611.964,
+        "user": 3341.546,
+        "system": 248.272,
+        "input_sha256": "02841279fecac04a4c82766c51152bf7e3759ffd814e0c8979730c3047d131e6",
+        "input_cells": 5000,
+        "retained_cells": 5000,
+        "unknown_reviewed": 5000,
+        "source_library_id": "frozen-after-5ca149d",
+        "package_version": "0.6.0",
+        "R": "R version 4.6.1 (2026-06-24)",
+        "cluster_count": 14,
+        "cluster_column": "sc_strategy_clusters",
+        "implementation_hash": "6c77aae0240754381b1e7b081ea76d178a19798768ed1dca0aca0d0af3fdb0de",
+        "runtime_manifest_sha256": "6850be73089ebdce46a191ef840b2a78a0bede05d310aa41cc27443461d78034",
+        "logging_policy": "Complete public review rendering to separate file-backed sinks; no growing capture.output text vector",
+        "timing_comparability": "Do not directly compare total wall time against original PBMC baseline/after attempts using in-memory capture.output; operation timings include API checks, continuation and rendering",
+        "counts_hash": "1e6482e81ac2c1f0f5941f15371108f1e019492aad52d4b4fa2dcba3969bf157",
+        "reference_sha256": "54fb67b45485f8621c5ec48f68b366b8dce40b835876090a45a77700ad016193",
+        "provider_calls": 0,
+        "model_cost_usd": 0,
+        "human_time_seconds": null,
+        "human_time_saved": null,
+        "biological_accuracy": null,
+        "accuracy_reason": "No independent truth; author-label and shared-reference agreement scored separately",
+        "science_status": "recorded; inspect per-method status",
+        "approvals": 3,
+        "dependency_versions": {
+          "Seurat": "5.6.0",
+          "SeuratObject": "5.4.0",
+          "Matrix": "1.7.5",
+          "digest": "0.6.39"
+        }
+      },
+      "candidate_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8866,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 197,
+        "conditional_agreement": 0.04443943153620573,
+        "end_to_end_correct_yield": 0.0394,
+        "macro_f1": 0.19683589688026704,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3726,
+            "correct": 15,
+            "precision": 0.004025764895330112,
+            "recall": 1.0,
+            "f1": 0.00801924619085806
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 137,
+            "correct": 137,
+            "precision": 1.0,
+            "recall": 0.9647887323943662,
+            "f1": 0.982078853046595
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 47,
+            "correct": 45,
+            "precision": 0.9574468085106383,
+            "recall": 1.0,
+            "f1": 0.9782608695652174
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 15
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 157
+          },
+          {
+            "author": "PP",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 19
+          },
+          {
+            "author": "acinar",
+            "prediction": "Unknown",
+            "cells": 558
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 1335
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1467
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 357
+          },
+          {
+            "author": "delta",
+            "prediction": "Unknown",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 103
+          },
+          {
+            "author": "ductal",
+            "prediction": "Unknown",
+            "cells": 3
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 521
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 5
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 137
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 45
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 268
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "candidate_reference": {
+        "original_cells": 5000,
+        "status_counts": {
+          "candidate_only_not_reviewed": 5000
+        },
+        "known_coverage": 0.8866,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 690,
+        "macro_f1": null,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "UNMAPPED:Astrocyte",
+            "n": 143,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:CMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Chondrocytes",
+            "n": 7,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:DC",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Embryonic_stem_cells",
+            "n": 10,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:GMP",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:HSC_CD34+",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Hepatocytes",
+            "n": 409,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:MSC",
+            "n": 1,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:NK_cell",
+            "n": 3,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neuroepithelial_cell",
+            "n": 287,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Neurons",
+            "n": 1723,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Smooth_muscle_cells",
+            "n": 108,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:Tissue_stem_cells",
+            "n": 181,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "UNMAPPED:iPS_cells",
+            "n": 177,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "Unknown",
+            "n": 7,
+            "predicted": 567,
+            "correct": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": null
+          },
+          {
+            "label": "endothelial",
+            "n": 136,
+            "predicted": 137,
+            "correct": 135,
+            "precision": 0.9854014598540146,
+            "recall": 0.9926470588235294,
+            "f1": null
+          },
+          {
+            "label": "epithelial_unspecified",
+            "n": 1717,
+            "predicted": 523,
+            "correct": 517,
+            "precision": 0.988527724665392,
+            "recall": 0.3011065812463599,
+            "f1": null
+          },
+          {
+            "label": "immune",
+            "n": 40,
+            "predicted": 47,
+            "correct": 38,
+            "precision": 0.8085106382978723,
+            "recall": 0.95,
+            "f1": null
+          },
+          {
+            "label": "stellate_candidate_unspecified",
+            "n": 45,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": null
+          }
+        ],
+        "unmapped_truth": 3055,
+        "confusion": [
+          {
+            "prediction": "Other",
+            "cells": 143,
+            "reference": "UNMAPPED:Astrocyte"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:CMP"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "UNMAPPED:Chondrocytes"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:DC"
+          },
+          {
+            "prediction": "Other",
+            "cells": 10,
+            "reference": "UNMAPPED:Embryonic_stem_cells"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:GMP"
+          },
+          {
+            "prediction": "immune",
+            "cells": 1,
+            "reference": "UNMAPPED:HSC_CD34+"
+          },
+          {
+            "prediction": "Other",
+            "cells": 359,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 45,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 5,
+            "reference": "UNMAPPED:Hepatocytes"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "UNMAPPED:MSC"
+          },
+          {
+            "prediction": "immune",
+            "cells": 3,
+            "reference": "UNMAPPED:NK_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 287,
+            "reference": "UNMAPPED:Neuroepithelial_cell"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1723,
+            "reference": "UNMAPPED:Neurons"
+          },
+          {
+            "prediction": "Other",
+            "cells": 108,
+            "reference": "UNMAPPED:Smooth_muscle_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 179,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 2,
+            "reference": "UNMAPPED:Tissue_stem_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 171,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 5,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 1,
+            "reference": "UNMAPPED:iPS_cells"
+          },
+          {
+            "prediction": "Other",
+            "cells": 7,
+            "reference": "Unknown"
+          },
+          {
+            "prediction": "Other",
+            "cells": 1,
+            "reference": "endothelial"
+          },
+          {
+            "prediction": "endothelial",
+            "cells": 135,
+            "reference": "endothelial"
+          },
+          {
+            "prediction": "Other",
+            "cells": 683,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Unknown",
+            "cells": 517,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "epithelial_unspecified",
+            "cells": 517,
+            "reference": "epithelial_unspecified"
+          },
+          {
+            "prediction": "Other",
+            "cells": 2,
+            "reference": "immune"
+          },
+          {
+            "prediction": "immune",
+            "cells": 38,
+            "reference": "immune"
+          },
+          {
+            "prediction": "Other",
+            "cells": 45,
+            "reference": "stellate_candidate_unspecified"
+          }
+        ],
+        "external_reference_match_fraction": 0.138,
+        "conditional_reference_agreement": 0.15565080081209112,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      },
+      "singler_author": {
+        "original_cells": 5000,
+        "status_counts": {
+          "reference_prediction": 4993,
+          "unknown": 7
+        },
+        "known_coverage": 0.9986,
+        "biological_accuracy": null,
+        "scientific_accuracy_claim": false,
+        "agreement_status": "reference_granularity_mismatch",
+        "agreement_denominator": 5000,
+        "annotation_accuracy": null,
+        "human_time_seconds": null,
+        "correct": 185,
+        "conditional_agreement": 0.03705187262167034,
+        "end_to_end_correct_yield": 0.037,
+        "macro_f1": 0.1833945145091055,
+        "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+        "per_type": [
+          {
+            "label": "Other",
+            "n": 15,
+            "predicted": 3055,
+            "correct": 13,
+            "precision": 0.00425531914893617,
+            "recall": 0.8666666666666667,
+            "f1": 0.008469055374592834
+          },
+          {
+            "label": "PP",
+            "n": 158,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "acinar",
+            "n": 579,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "alpha",
+            "n": 1338,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "beta",
+            "n": 1470,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "delta",
+            "n": 358,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "ductal",
+            "n": 627,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          },
+          {
+            "label": "endothelial",
+            "n": 142,
+            "predicted": 136,
+            "correct": 136,
+            "precision": 1.0,
+            "recall": 0.9577464788732394,
+            "f1": 0.9784172661870503
+          },
+          {
+            "label": "immune",
+            "n": 45,
+            "predicted": 40,
+            "correct": 36,
+            "precision": 0.9,
+            "recall": 0.8,
+            "f1": 0.8470588235294118
+          },
+          {
+            "label": "stellate",
+            "n": 268,
+            "predicted": 0,
+            "correct": 0,
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0
+          }
+        ],
+        "unmapped_truth": 0,
+        "confusion": [
+          {
+            "author": "Other",
+            "prediction": "Other",
+            "cells": 13
+          },
+          {
+            "author": "Other",
+            "prediction": "epithelial_unspecified",
+            "cells": 2
+          },
+          {
+            "author": "PP",
+            "prediction": "Other",
+            "cells": 127
+          },
+          {
+            "author": "PP",
+            "prediction": "epithelial_unspecified",
+            "cells": 31
+          },
+          {
+            "author": "acinar",
+            "prediction": "Other",
+            "cells": 51
+          },
+          {
+            "author": "acinar",
+            "prediction": "epithelial_unspecified",
+            "cells": 528
+          },
+          {
+            "author": "alpha",
+            "prediction": "Other",
+            "cells": 939
+          },
+          {
+            "author": "alpha",
+            "prediction": "Unknown",
+            "cells": 5
+          },
+          {
+            "author": "alpha",
+            "prediction": "epithelial_unspecified",
+            "cells": 385
+          },
+          {
+            "author": "alpha",
+            "prediction": "immune",
+            "cells": 3
+          },
+          {
+            "author": "alpha",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 6
+          },
+          {
+            "author": "beta",
+            "prediction": "Other",
+            "cells": 1359
+          },
+          {
+            "author": "beta",
+            "prediction": "Unknown",
+            "cells": 2
+          },
+          {
+            "author": "beta",
+            "prediction": "epithelial_unspecified",
+            "cells": 107
+          },
+          {
+            "author": "beta",
+            "prediction": "immune",
+            "cells": 1
+          },
+          {
+            "author": "beta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "delta",
+            "prediction": "Other",
+            "cells": 302
+          },
+          {
+            "author": "delta",
+            "prediction": "epithelial_unspecified",
+            "cells": 55
+          },
+          {
+            "author": "delta",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 1
+          },
+          {
+            "author": "ductal",
+            "prediction": "Other",
+            "cells": 18
+          },
+          {
+            "author": "ductal",
+            "prediction": "epithelial_unspecified",
+            "cells": 609
+          },
+          {
+            "author": "endothelial",
+            "prediction": "Other",
+            "cells": 6
+          },
+          {
+            "author": "endothelial",
+            "prediction": "endothelial",
+            "cells": 136
+          },
+          {
+            "author": "immune",
+            "prediction": "Other",
+            "cells": 9
+          },
+          {
+            "author": "immune",
+            "prediction": "immune",
+            "cells": 36
+          },
+          {
+            "author": "stellate",
+            "prediction": "Other",
+            "cells": 231
+          },
+          {
+            "author": "stellate",
+            "prediction": "stellate_candidate_unspecified",
+            "cells": 37
+          }
+        ],
+        "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+        "fine_subtype_agreement": null,
+        "limitation": "HPCA broad labels do not resolve islet endocrine subtypes; report coverage/granularity mismatch, do not collapse alpha/beta/delta to claim subtype accuracy. Fine agreement is unavailable without compatible independent reference labels.",
+        "mapped_label_match_interpretation": "Any retained match metrics describe literal mapped-label agreement only; broad islet predictions cannot validate endocrine subtypes."
+      }
+    }
+  ],
+  "failures": [
+    [
+      "ifnb",
+      "after-qc-or-1-process.json",
+      1,
+      "preserved; see original log"
+    ],
+    [
+      "baron",
+      "after-qc-or-1-process.json",
+      1,
+      "preserved; see original log"
+    ]
+  ],
+  "resource_rows": [
+    [
+      "pbmc3k",
+      "baseline-1",
+      620.26,
+      593.103,
+      23.444,
+      null,
+      null
+    ],
+    [
+      "pbmc3k",
+      "after-snapshot-1",
+      null,
+      null,
+      null,
+      181130284,
+      null
+    ],
+    [
+      "pbmc3k",
+      "after-no-diagnostics-1",
+      437.865,
+      416.535,
+      17.179,
+      37859506,
+      23.753999999999998
+    ],
+    [
+      "pbmc3k",
+      "after-qc-or-1",
+      770.588,
+      679.648,
+      78.583,
+      311291633,
+      60.631
+    ],
+    [
+      "ifnb",
+      "baseline-1",
+      714.528,
+      666.119,
+      37.832,
+      71148097,
+      27.522
+    ],
+    [
+      "ifnb",
+      "after-1",
+      1382.874,
+      1214.598,
+      150.588,
+      965353116,
+      80.129
+    ],
+    [
+      "ifnb",
+      "after-no-diagnostics-1",
+      637.946,
+      606.14,
+      25.448,
+      72704605,
+      21.85
+    ],
+    [
+      "baron",
+      "baseline-1",
+      2722.628,
+      2577.914,
+      108.852,
+      91729366,
+      36.019
+    ],
+    [
+      "baron",
+      "after-1",
+      3515.88,
+      3245.4,
+      247.036,
+      3175156221,
+      142.333
+    ],
+    [
+      "baron",
+      "after-no-diagnostics-1",
+      1791.823,
+      1745.582,
+      36.708,
+      93935876,
+      24.287
+    ],
+    [
+      "baron",
+      "after-sample-hvg-1",
+      3611.964,
+      3341.546,
+      248.272,
+      3168860891,
+      147.02
+    ]
+  ],
+  "interpretation": {
+    "author_labels": "Distributed study author labels, not independently adjudicated truth",
+    "reference_agreement": "Frozen offline classifier agreement, not accuracy",
+    "baron": "HPCA lacks target pancreatic labels. Author literal matches are bookkeeping; nonblood annotation-quality validation NOT PASSED.",
+    "reviewed_labels": "All explicitly Unknown software controls",
+    "biological_accuracy": null,
+    "human_time_saved": null,
+    "default_gate_passed": false
+  }
+}
