@@ -8,8 +8,8 @@
       stop("Reopening uses the saved provider, budget and transfer policy; omit these settings or create a new project.", call. = FALSE)
     return(list(provider = saved$provider, budget = saved$budget, review = saved$review))
   }
-  if (is.null(budget)) budget <- 0
-  budget <- .sc_run_provider_number(budget, "budget")
+  budget_was_default <- is.null(budget)
+  if (!is.null(budget)) budget <- .sc_run_provider_number(budget, "budget")
   if (is.null(review)) review <- list(allow_external = FALSE)
   if (!is.list(review) || (length(review) && (is.null(names(review)) || anyDuplicated(names(review)))) ||
       any(!names(review) %in% c("allow_external", "transfer_consent")) ||
@@ -29,6 +29,8 @@
       "; starting manual mode. Set the key and select a new project to enable model suggestions.")
     metadata <- .sc_run_provider_spec("manual")$metadata
   }
+  selected <- .sc_run_new_budget(metadata, budget)
+  metadata <- selected$provider; budget <- selected$budget
   if (identical(metadata$name, "manual")) {
     message("Manual mode: review and edit the local strategy and annotation drafts; no model request is sent.")
     budget <- 0; review <- list(allow_external = FALSE)
@@ -36,9 +38,10 @@
     if (!isTRUE(review$allow_external))
       message("Provider configured. External transfer is disabled; set review=list(allow_external=TRUE) for a new project to enable exact-payload transfer review.")
     if (budget == 0)
-      message("Provider budget is zero. No paid request can run; choose an explicit USD cap after reviewing provider pricing. A calibrated default is not yet available.")
+      message("Provider budget is zero. No paid request can run; choose an explicit USD cap after reviewing provider pricing. This provider/model/settings combination has no calibrated default; supply an explicit cap.")
   }
   if (!is.null(review$transfer_consent)) {
+    if (budget_was_default) stop("Project transfer consent requires an explicit USD cap. Review the default and data categories, then supply budget=.20 or another chosen cap.", call. = FALSE)
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
     invisible(.sc_run_transfer_options(review$transfer_consent, metadata, budget))
   }

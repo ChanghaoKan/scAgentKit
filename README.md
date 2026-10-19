@@ -88,8 +88,9 @@ key in the analysis machine's environment (`DEEPSEEK_API_KEY` or `XAI_API_KEY`),
 never in code, study notes, browser fields or project files. `sc_start()` can
 configure the provider directly; a separate initialization call is unnecessary.
 Without a usable key it opens the manual workflow. Two detected provider keys
-require an explicit provider choice. The default budget is **USD 0**; a useful
-paid budget has not yet been calibrated with a real provider.
+require an explicit provider choice. The calibrated DeepSeek Flash default is **USD0.20 per new project**, with
+separate data/budget consent before transmission. Other models require an explicit
+cap. [Measured costs and limits](docs/MODEL_BUDGET.md).
 
 For model assistance, source the helper below, inspect the actual study context
 and aggregate categories, select a provider/model with verified pricing and set
@@ -100,7 +101,7 @@ nothing; the zero-cap example cannot make a paid request.
 source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
 service <- full_llm_start("input.rds", "new-project",
   context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
-  provider=list(name="deepseek", model="deepseek-flash"), budget=0,
+  provider=list(name="deepseek", model="deepseek-flash"), budget=.20,
   reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
   categories=c("study_context", "aggregate_qc", "aggregate_markers",
     "aggregate_design", "aggregate_expression"), confirmed=FALSE)

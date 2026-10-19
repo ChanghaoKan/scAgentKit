@@ -363,6 +363,10 @@ function renderSuggestion() {
   $("suggestion-simulated").hidden = preview?.simulated !== true && answer?.simulated !== true;
   const provider = typeof preview?.provider === "string" ? preview.provider : preview?.provider?.name;
   $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot set a key, endpoint, model or budget.";
+  if (preview) {
+    const usd = value => Number.isFinite(value) ? "$" + value.toFixed(4) : "unavailable";
+    $("suggestion-summary").textContent += ` Budget ${usd(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
+  }
   $("suggestion-notice").textContent = preview?.notice || "";
   $("suggestion-approve").textContent = preview?.simulated ? "Approve and run this exact simulated suggestion" : preview?.external ? "Approve and request this exact aggregate transfer" : "Approve and request this exact local suggestion";
   $("suggestion-request").textContent = preview?.simulated ? "Run this approved simulated suggestion" : "Request this approved suggestion";

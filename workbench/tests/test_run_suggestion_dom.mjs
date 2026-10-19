@@ -410,6 +410,15 @@ await test("failed model displays saved local rule draft without another request
  await h.call("maybeAutoSuggestion");assert.equal(h.requests.length,0);
 });
 
+await test("visible model budget separates used estimates, held cost and remaining cap", async () => {
+ const value=model(7,"preview");Object.assign(value.suggestion.preview,{budget:.20,known_cost_usd:.006,held_usd:.05,remaining_usd:.144});
+ const h=setup(scientificReview(7),value);await h.call("renderSuggestion");
+ assert.match(h.el("suggestion-summary").textContent,/Budget \$0.2000/);
+ assert.match(h.el("suggestion-summary").textContent,/estimated used \$0.0060/);
+ assert.match(h.el("suggestion-summary").textContent,/held \$0.0500/);
+ assert.match(h.el("suggestion-summary").textContent,/remaining \$0.1440/);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

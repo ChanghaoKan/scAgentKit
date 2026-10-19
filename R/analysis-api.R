@@ -190,7 +190,7 @@
 #' Start an analysis with an editable strategy draft
 #' @export
 sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL,
-                       chat_fn = NULL, budget = 0, review = list(allow_external = FALSE),
+                       chat_fn = NULL, budget = NULL, review = list(allow_external = FALSE),
                        sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
                        feature_key = c("name", "id"), doublet = c("auto", "off", "flag", "remove"), ...) {
   imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
@@ -200,6 +200,11 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     on.exit(unlink(transport),add=TRUE)
     saveRDS(input,transport,version=2L);input<-transport
   }
+  if (is.null(budget) && !is.null(review$transfer_consent))
+    stop("Project transfer consent requires an explicit USD cap after reviewing data categories; supply budget=.20 or another chosen cap.", call. = FALSE)
+  selected_budget <- .sc_run_new_budget(provider, budget, chat_fn)
+  provider <- selected_budget$provider; budget <- selected_budget$budget
+  chat_fn <- selected_budget$chat_fn
   extra <- list(...)
   if (is.null(extra$reference_review)) extra$reference_review <- list()
   extra$reference_review$strict_scope <- TRUE

@@ -67,7 +67,7 @@ service <- sc_start("input.rds", "new-review-project", context=context)
 ```
 
 页面显示导入摘要与未审批方案。核对细胞数、特征名称和样本事实，再进入策略复核。
-默认预算为零；明确 provider="manual" 可选择本地人工路径，模型设置见第 6 节。
+DeepSeek Flash 默认上限为 USD0.20；明确 provider="manual" 可选择本地人工路径，模型设置见第 6 节。
 
 ## 5. 复核方案和实测分群
 
@@ -111,6 +111,8 @@ sc_open("new-annotation-project")
 完整且合格的分组 MAD 证据使用 conservative AND3；证据不足时 keep_all，并明确 QC 尚未完成评估。
 已保存的人工修改优先保留，请查看实际生效草稿后再审批。有效模型注释不会被自动改成 Unknown；
 分析者可另行作出有记录的人工修改。
+
+DeepSeek Flash 新项目默认上限为 USD0.20；显式 `budget=0` 仍禁止付费请求。首次外传前必须确认数据范围与预算，其他模型需明确上限。详见[实测费用与限制](MODEL_BUDGET.md)。
 
 ## 7. 输入准备好后再选可选方法
 

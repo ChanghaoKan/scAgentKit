@@ -30,7 +30,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   model_suggestions = c("auto", "off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
-  provider = NULL, budget = 0, review = list(allow_external = FALSE),
+  provider = NULL, budget = NULL, review = list(allow_external = FALSE),
   doublet = c("auto", "off", "flag", "remove")) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
