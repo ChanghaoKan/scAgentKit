@@ -38,11 +38,47 @@
    denominator/coverage，Fisher 仅在记录精确可检验背景时显示，且对全部标签校正；不能把 p 值当概率。
    unresolved 保留 Unknown。保存完整注释后，还需要独立审批才能写入结果。
 
-可选 `sc_run_ambient_correction()` 要求明确的完整单 capture 声明及命名初步 clusters；SoupX
+可选 `scAgentKit::sc_run_ambient_correction()` **仅有 R API，没有网页校正入口或网页审批流程**。
+实现见 `R/run-ambient-correction.R`，完整参数见 `?sc_run_ambient_correction`。
+它要求明确的完整单 capture 声明及命名初步 clusters；SoupX
 需要严格匹配的 raw+filtered 矩阵和额外背景 droplets。decontX 可无 raw，但其背景来自其他簇的
 模型假设，可能删掉真实 RNA。返回单独 corrected counts 和前后 counts/检出/污染估计记录，
 不替换原对象或项目 checkpoints；`round_counts=TRUE` 必须明确选择。先对照经典面板、稀有群和
 原始结果，再决定是否用校正矩阵另建项目。依赖缺失时不会自动安装或换算法。
+
+以下是供实际数据使用的调用模板，本次文档验收只解析代码，**未运行模板或新增拟合**。
+准备三个自己的 RDS 文件：`filtered` 为有唯一基因/细胞名的原始整数稀疏 counts，
+`clusters` 为按 filtered 的 exact cell IDs 命名的字符向量（至少两个初步簇）；SoupX 还需要
+同一 capture 的未过滤 droplet 矩阵 `raw`。基因集合必须一致，filtered 条码及其 counts
+必须在 raw 中逐一匹配，且至少有 20 个额外背景 droplets。不能用任意子集或合并 capture
+代替完整单 capture；将模板中的来源与 ID 替换为真实实验记录后才可声明 `complete=TRUE`。
+
+```r
+library(scAgentKit)
+filtered <- readRDS("one-capture-filtered-counts.rds")
+clusters <- readRDS("one-capture-preliminary-clusters.rds")
+capture <- list(id="actual_capture_id", source="actual_experiment_manifest", complete=TRUE)
+stopifnot(is.character(clusters), !is.null(names(clusters)),
+          setequal(names(clusters), colnames(filtered)))
+clusters <- clusters[colnames(filtered)]
+
+method <- "SoupX"  # 或显式选择 "decontX"；无 raw 时由其他簇推断背景
+raw <- if (method == "SoupX") readRDS("same-capture-raw-droplets.rds") else NULL
+correction <- scAgentKit::sc_run_ambient_correction(
+  input=filtered, method=method, capture=capture, clusters=clusters,
+  raw_counts=raw, seed=42L, round_counts=FALSE,
+  output_dir=paste0("new-", method, "-output"))
+corrected <- correction$corrected_counts
+receipt <- correction$receipt
+```
+
+SoupX 使用 `SoupX` 包，decontX 使用 `celda`；需在既有获准环境中明确准备依赖。
+输出目录必须全新，内含 `corrected-counts.rds`、`comparison.json`，记录版本、seed、输入/
+校正哈希、背景来源、污染估计及前后 UMI/检出数。decontX 也可显式传入经过上述匹配验证的
+raw 矩阵，只将额外 droplets 作为背景。`round_counts=FALSE` 保留浮点估计；这些估计不能
+直接绕过新项目 raw-count 入口的整数检查。若研究设计选择取整，须在衍生运行中明确
+`round_counts=TRUE` 并保存相应 receipt，再另建输入/项目，不能改写既有检查点。
+已运行的原生 PBMC SoupX/decontX 验收与本模板是否执行是两件事，也不代表注释准确率改善。
 
 查看[方法及限制](SCIENTIFIC_METHODS_APPENDIX.md)和[冻结评估协议](EVALUATION_PROTOCOL_V1.md)。
 上述操作示例是软件路径，尚不能据此声称准确率或人工时间改善；统一效果基准和平台验收另报。

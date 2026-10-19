@@ -121,6 +121,36 @@ class RunWorkbenchRuntimeTests(unittest.TestCase):
         self.assertEqual(answer["evidence"]["umap"], [])
         self.assertIsNone(answer["evidence"]["embeddingName"])
 
+    def test_large_saved_reviews_are_transmitted_once_without_losing_records(self):
+        # A bounded R inspection can still exceed the HTTP bound when the same
+        # review is serialized both under run and under its display section.
+        record = {"hash": "d" * 64, "details": {"annotations": [
+            {"clusterId": "literal", "measured_expression": {"saved": "x" * (9 * 1024 * 1024)}}]}}
+        self.run["annotation_review"] = record
+        self.run["strategy_review"] = {"hash": "e" * 64, "details": {"saved": "full strategy"}}
+        before = copy.deepcopy(self.run)
+        answer = self.describe()
+        self.assertLess(len(canonical(answer).encode()), 16 * 1024 * 1024)
+        self.assertEqual(answer["annotation"]["review"], record)
+        self.assertEqual(answer["strategy"]["review"], before["strategy_review"])
+        self.assertNotIn("annotation_review", answer["run"])
+        self.assertEqual(answer["run"]["display_sections"]["annotation_review"], "annotation.review")
+        self.assertEqual(answer["history"]["events"], self.saved["history"]["events"])
+        self.assertFalse(answer["history"]["truncated"])
+        self.assertEqual(self.run, before)
+
+    def test_complete_label_table_is_shared_not_repeated_for_every_cluster(self):
+        self.bundle()
+        before = {p.name: sha(p) for p in (self.root / "bundle").iterdir()}
+        answer = self.describe()
+        evidence = answer["evidence"]
+        self.assertEqual(len(evidence["sourceAnnotation"]["values"]), 4)
+        for cluster in evidence["clusters"]:
+            self.assertNotIn("sourceAnnotation", cluster)
+            self.assertEqual(cluster["sourceAnnotation_ref"], "evidence.sourceAnnotation")
+            self.assertTrue(cluster["sourceAnnotations"])
+        self.assertEqual(before, {p.name: sha(p) for p in (self.root / "bundle").iterdir()})
+
     def test_foreign_changed_or_unreceipted_bundle_is_rejected(self):
         self.bundle()
         original = copy.deepcopy(self.saved)

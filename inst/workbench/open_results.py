@@ -69,7 +69,18 @@ class SavedReview:
         self.project_id = project_id
 
     def describe(self):
-        return {"run": self.runtime.describe()["run"]}
+        view = self.runtime.describe()
+        run = dict(view["run"])
+        # The legacy inspect route retains its full run shape. The unified
+        # display uses explicit section references to avoid duplicate payloads.
+        for name, section, field in (("qc_preview", "qc", "preview"),
+                                     ("strategy_review", "strategy", "review"),
+                                     ("annotation_review", "annotation", "review"),
+                                     ("computed_diagnostics", "analysis", "computed_diagnostics")):
+            if name in run.get("display_sections", {}):
+                run[name] = view[section][field]
+        run.pop("display_sections", None)
+        return {"run": run}
 
 
 class ResultsHandler(Handler):

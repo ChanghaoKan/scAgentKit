@@ -19,6 +19,20 @@ from store import scrub_secrets
 
 
 class OpenResultsTests(unittest.TestCase):
+    def test_saved_inspect_reconstructs_complete_reviews_from_display_sections(self):
+        class Runtime:
+            def describe(self):
+                return {"run": {"project_id": "literal", "display_sections": {
+                    "annotation_review": "annotation.review", "computed_diagnostics": "analysis.computed_diagnostics"}},
+                    "annotation": {"review": {"details": {"annotations": [{"clusterId": "01", "saved": "complete"}]}}},
+                    "analysis": {"computed_diagnostics": {"saved": "complete"}}}
+        runtime = Runtime()
+        runtime.project, runtime.library, runtime.rscript = Path("/fixed"), None, "Rscript"
+        run = launcher.SavedReview(runtime, "literal").describe()["run"]
+        self.assertEqual(run["annotation_review"], runtime.describe()["annotation"]["review"])
+        self.assertEqual(run["computed_diagnostics"], runtime.describe()["analysis"]["computed_diagnostics"])
+        self.assertNotIn("display_sections", run)
+
     def test_reopen_reuse_restart_and_wrong_project(self):
         rscript = shutil.which("Rscript")
         if not rscript:
