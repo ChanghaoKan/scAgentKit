@@ -89,7 +89,12 @@
   step$reasons <- as.list(paste0(names(counts), ": ", ifelse(is.na(counts), "unavailable", counts), " measured pre-score flags."))
   # Use measured joint/union impacts and nonzero marginal flags to select
   # comparisons. This is not a static list of six presets or a quality score.
-  implicated <- c("keep_all", if (isTRUE(counts["low_count"] > 0)) "low_counts3",
+  current_preset <- if(identical(qc$schema,"scagentkit.qc.mad.v1")) qc$preset_id else {
+    selector <- Filter(function(rule) identical(rule$op,"mad_preset"),qc$rules)
+    if(length(selector)==1L) selector[[1L]]$preset_id else NULL
+  }
+  fallback <- .sc_run_default_mad_choice(panel)
+  implicated <- c("keep_all", if (isTRUE(fallback$eligible) && identical(current_preset, "conservative_and3")) "conservative_and3", if (isTRUE(counts["low_count"] > 0)) "low_counts3",
     if (isTRUE(counts["low_feature"] > 0)) "low_features3", if (isTRUE(counts["high_mt"] > 0)) "high_mt3")
   for (id in c("conservative_and3", "any_quality3")) {
     entry <- Filter(function(item) identical(item$preset_id, id), panel$presets)
@@ -141,19 +146,10 @@
     which(vapply(seq_along(candidates), function(j) j != i && !is.null(selections[[i]]) && identical(selections[[i]], selections[[j]]), logical(1))),
     function(j) candidates[[j]]$id, character(1)))
   step$candidates <- candidates
-  current_preset <- if(identical(qc$schema,"scagentkit.qc.mad.v1")) qc$preset_id else {
-    selector <- Filter(function(rule) identical(rule$op,"mad_preset"),qc$rules)
-    if(length(selector)==1L) selector[[1L]]$preset_id else NULL
-  }
-  eligible <- Filter(function(item) identical(item$id,"any_quality3") && isTRUE(item$available) &&
-    isTRUE(item$impact$new_removed_within_range_keep>0) && isTRUE(item$impact$removed<=.1*baseline$retention$before) &&
-    all(vapply(item$impact$groups,function(group) isTRUE(group$retained>=.8*group$before),logical(1))),candidates)
-  # A bounded draft comparison is not a scientific default or approved deletion.
-  step$draft_preselection <- if(length(eligible)==1L && identical(current_preset,"keep_all") && !length(step$conflicts) && !length(step$missing))
-    list(candidate_id="any_quality3",automatic=TRUE,draft_only=TRUE,
-      reason="Measured joint evidence is complete and this OR comparison removes <=10% overall and <=20% of each group. These are UI risk caps, not biological optimality. Preselected draft is unsaved and unapproved.") else
-    list(candidate_id=NULL,automatic=FALSE,draft_only=TRUE,
-      reason="No preselection: preserve an explicit saved policy, incomplete/conflicting evidence, or an unavailable/nonredundant OR comparison outside the 10% total/20% group draft caps.")
+  # The saved starting draft already used the shared policy. Comparisons never
+  # overwrite a later explicit choice or independently auto-prefill an OR rule.
+  step$draft_preselection <- list(candidate_id = NULL, automatic = FALSE, draft_only = TRUE,
+    reason = paste(fallback$reason, "Load any comparison explicitly; the saved and edited QC choices are preserved."))
   step$completed <- c(step$completed, list("Computed exact candidate impacts under the unchanged range and outer-combination policy."))
   executable <- any(vapply(candidates, function(item) item$id != "keep_all" && item$available, logical(1)))
   if (!length(step$missing) && !length(step$conflicts) && executable) step$status <- "recommend_execute"

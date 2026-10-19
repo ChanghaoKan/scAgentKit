@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Use one conservative QC fallback: a complete eligible grouped MAD panel
+  starts with conservative_and3; otherwise keep all cells and explicitly mark
+  quality unassessed. Zero-count cells are not silently dropped by this draft.
+  Cancel independent OR automatic prefill; saved and edited choices remain
+  unchanged and all filtering still requires the complete human strategy approval.
+
 - Prepare a persisted sample-role draft from five whitelisted metadata columns.
   A sole complete candidate can be a documented sample fallback; multiple
   candidates require author choice and never imply a technical batch. Model

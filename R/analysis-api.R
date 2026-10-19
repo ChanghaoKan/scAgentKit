@@ -55,12 +55,12 @@
     npcs <- min(50L, nfeatures - 1L, dimensions[[2]] - 1L)
     base <- list(schema = "scagentkit.strategy.v1",
       rationale = "Editable software starting draft. Review input QC and study facts before approval.",
-      risks = list("Count-positive retention and standard analysis defaults are not scientifically optimized QC or parameter choices.",
+      risks = list("Starting drafts and standard analysis parameters do not establish completed QC or scientific suitability.",
         "Resolution 0.5 is a provisional scan starting value, not a recommendation. Review the measured cluster tree before final author selection."),
       inferences = list(), qc = list(schema = "scagentkit.qc.v1",
-        rationale = "nCount >= 1 is only an all-zero count check. Keep-all quality starting draft preserves uncertain cells until author review of distributions and candidate impacts.",
+        rationale = "Unfiltered keep-all starting draft: no cell is removed without a reviewed QC choice. Inspect distributions and candidate impacts before approval.",
         risks = list("No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
-        filters = list(list(op = "range", metric = "nCount", min = 1))),
+        filters = list(list(op = "range", metric = "nCount", min = 0))),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
         nfeatures = nfeatures, npcs = npcs, seed = 17L),
       pcs = list(method = "computed_top50", threshold = .80),
@@ -93,7 +93,9 @@
     list(method = "fixed", ndim = edits$pcs) else edits$pcs
   if ("resolution" %in% names(edits)) base$clustering$resolution <- edits$resolution
   if ("diagnostic_resolutions" %in% names(edits)) base$clustering["diagnostic_resolutions"] <- list(edits$diagnostic_resolutions)
-  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = "keep_all", panel_hash = mad$panel_hash) else {
+  fallback <- if (new_draft) .sc_run_default_mad_choice(mad) else NULL
+  if (new_draft) base$qc$rationale <- paste(if (isTRUE(fallback$eligible)) "Conservative AND3 starting draft." else base$qc$rationale, fallback$reason)
+  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = if (new_draft) fallback$preset_id else "keep_all", panel_hash = mad$panel_hash) else {
     existing <- Filter(function(rule) identical(rule$op, "mad_preset"), base$qc$rules)
     if (length(existing)) existing[[1L]] else NULL
   }
