@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Modern projects require explicit reference species/tissue fields and study
+  scope, exclude all-tissue records, and show a plain zero-match next action.
+  Existing low-level scope behavior remains explicitly recorded for legacy
+  adapters; a new modern project always selects strict scope.
+
 - Annotation query pools rank fold change first, then detection difference.
   Configurable shared ribosomal/mitochondrial symbol exclusions apply only to
   that pool; complete marker results remain intact. Save exclusion parameters

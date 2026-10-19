@@ -201,6 +201,8 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     saveRDS(input,transport,version=2L);input<-transport
   }
   extra <- list(...)
+  if (is.null(extra$reference_review)) extra$reference_review <- list()
+  extra$reference_review$strict_scope <- TRUE
   doublet <- match.arg(doublet)
   plan_fields <- names(plan)
   plan_fields[plan_fields %in% c("resolution", "diagnostic_resolutions")] <- "clustering"

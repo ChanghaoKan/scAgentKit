@@ -70,7 +70,7 @@
 
 .sc_run_reference_options <- function(value = NULL) {
   value <- .sc_run_annotation_options(value,
-    c("top_n", "symbol_aliases", "label_map", "label_relations", "ai_mode", "provenance"),
+    c("top_n", "symbol_aliases", "label_map", "label_relations", "ai_mode", "provenance", "strict_scope"),
     "reference_review")
   top_n <- if (is.null(value$top_n)) 5L else value$top_n
   if (!is.numeric(top_n) || length(top_n) != 1L || !is.finite(top_n) ||
@@ -80,6 +80,8 @@
   if (!is.character(mode) || length(mode) != 1L || is.na(mode) ||
       !mode %in% c("independent", "guided"))
     stop("reference_review$ai_mode must be independent or guided.", call. = FALSE)
+  if (!is.null(value$strict_scope) && (!is.logical(value$strict_scope) || length(value$strict_scope) != 1L || is.na(value$strict_scope)))
+    stop("reference_review$strict_scope must be TRUE or FALSE.", call. = FALSE)
   aliases <- .sc_run_reference_map(value$symbol_aliases, "symbol_aliases")
   labels <- .sc_run_reference_map(value$label_map, "label_map", TRUE)
   provenance <- .sc_run_annotation_options(value$provenance,
@@ -96,7 +98,7 @@
   }
   list(top_n = as.integer(top_n), symbol_aliases = aliases, label_map = labels,
        label_relations = .sc_run_reference_relations(value$label_relations, labels),
-       ai_mode = mode, provenance = provenance)
+       ai_mode = mode, provenance = provenance, strict_scope = isTRUE(value$strict_scope))
 }
 
 .sc_run_reference_symbols <- function(genes, aliases) {
@@ -230,6 +232,10 @@
     provenance$reference_symbols <- .sc_run_reference_symbols(reference$marker, options$symbol_aliases)
     missing <- c(setdiff(c("species", "tissue"), names(reference)),
                  names(requested)[vapply(requested, is.null, logical(1))])
+    if (options$strict_scope && length(missing))
+      stop("The custom reference needs explicit species and tissue columns and matching study context. Add the missing fields: ", paste(unique(missing), collapse=", "), ". Do not substitute all tissues.", call. = FALSE)
+    if (options$strict_scope && identical(.sc_run_reference_normalize(requested$tissue), "all"))
+      stop("Choose the actual tissue for this custom reference; 'all' cannot define the project scope.", call. = FALSE)
     if (!nrow(reference)) provenance$status <- "empty_reference" else if (length(missing)) {
       provenance$status <- "scope_unavailable"
       provenance$scope$unavailable_columns <- .sc_project_array(unique(missing))
@@ -242,8 +248,10 @@
       tissue <- .sc_run_reference_normalize(reference$tissue)
       available <- !is.na(species) & nzchar(species) & !is.na(tissue) & nzchar(tissue)
       provenance$scope$excluded_unavailable_rows <- sum(!available)
-      keep <- available & species == .sc_run_reference_normalize(requested$species) &
+      tissue_match <- if (options$strict_scope) grepl(.sc_run_reference_normalize(requested$tissue), tissue, fixed=TRUE) & tissue != "all" else
         tissue %in% c(.sc_run_reference_normalize(requested$tissue), "all")
+      keep <- available & species == .sc_run_reference_normalize(requested$species) & tissue_match
+      if (options$strict_scope) provenance$scope$method <- "explicit_species_and_literal_tissue_filter_no_all_fallback"
       scoped <- reference[keep, , drop = FALSE]
       provenance$n_scoped_rows <- nrow(scoped)
       provenance$scope$tissue_all_rows <- sum(tissue[keep] == "all")
@@ -291,6 +299,12 @@
       marker_symbols = .sc_run_reference_symbols(marker_original$gene[marker_original$cluster == id],
                                                 options$symbol_aliases))
   })
+  provenance$scope_notice <- switch(provenance$status,
+    scope_mismatch = "No reference records match the selected species and tissue. Check those fields or import a correctly scoped table; no all-tissue fallback was used.",
+    empty_reference = "The reference contains no records. Import a nonempty table for the selected species and tissue.",
+    scope_unavailable = "Reference species/tissue is unavailable. Supply explicit scope fields before using its candidates.",
+    not_supplied = "No local reference is supplied. Marker-only drafts remain available; reference agreement is unassessed.",
+    "Reference scope and provenance are recorded; overlap is descriptive evidence, not a validated identity.")
   list(schema = "scagentkit.reference-evidence.v1", matches = matches, all_matches = all_matches,
        provenance = provenance, per_cluster = per_cluster)
 }

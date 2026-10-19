@@ -848,6 +848,7 @@ function renderCluster() {
   for (const button of $("annotation-clusters").children) button.classList.toggle("selected", button.getAttribute("data-cluster-id") === item.clusterId);
   $("annotation-title").textContent = `Cluster ${item.clusterId} · ${item.cell_count} cells`;
   $("annotation-source").textContent = "Saved " + (state.view.run.annotation_review.details.source?.kind || "unclassified") + " proposal";
+  if (item.local_reference?.provenance?.scope_notice) $("annotation-source").textContent += ". " + item.local_reference.provenance.scope_notice;
   const suggestion = $("annotation-suggestion"); suggestion.replaceChildren(element("p", item.proposal.label, {class: "annotation-saved-label"}), element("p", `${item.proposal.confidence} confidence · qualitative, uncalibrated`, {class: "annotation-confidence-note"}), element("p", item.proposal.rationale, {class: "annotation-saved-rationale"}), geneParagraph("Cited genes: ", array(item.proposal.markers), {class: "annotation-confidence-note"}));
   const joint = renderJointEvidence(item); suggestion.hidden = joint; $("annotation-reference-section").hidden = joint;
   $("annotation-cell-ids").textContent = array(item.cell_ids).join("\n"); renderMarkers(item);
@@ -977,6 +978,7 @@ function renderAnnotationPreparation() {
       const status=element('span','Needs judgement',{class:'pill muted','data-testid':'prepare-status-'+cluster.clusterId});card.append(element('h3','Cluster '+cluster.clusterId+' · '+cluster.cellCount+' cells'),status);
       const markers=array(cluster.markers);card.append(geneParagraph('Supplied markers: ',markers.slice(0,5).map(marker=>marker.gene)),element('p','Reference: '+(facts.reference.status||'not supplied')+' · '+(facts.provenance?.source_url||facts.provenance?.mode||'source not recorded')+' · '+(facts.provenance?.source_version||'version not recorded'),{class:'microcopy'}));
       card.append(element('p','Coverage order is descriptive, not confidence: 1/1 exceeds 10/20 by its denominator only. Inspect absolute hits and saved avgLog2FC / pct1 / pct2. pct2 is other cells, not a negative-lineage panel; marker presence does not validate label semantics. Retain Unknown if unresolved.',{class:'microcopy'}));
+      if(facts.provenance?.scope_notice)card.append(element('p',facts.provenance.scope_notice,{class:'annotation-reference-status'}));
       const candidates=preparationCandidates(cluster),select=field(card,'Inspect a saved reference candidate','select','prepare-candidate-'+cluster.clusterId);
       select.append(element('option','Choose explicitly; none selected',{value:''}),...candidates.map((candidate,index)=>element('option',candidate.label+' · '+candidate.overlap+'/'+candidate.referenceSize+' reference genes'+(candidate.overlap===1?' · single-marker evidence (weak)':'')+(candidate.tiedBest?' · best coverage (not certainty)':''),{value:String(index)})));
       const apply=element('button','Use selected candidate and its supplied citations',{type:'button',class:'button quiet','data-testid':'prepare-candidate-use-'+cluster.clusterId});card.append(apply);
