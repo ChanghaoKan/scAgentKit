@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1628" viewBox="0 0 1200 1628" xml:lang="zh-CN" role="img" aria-labelledby="title desc">
+<title id="title">保存每一步，分三次确认科学决策</title>
+<desc id="desc">从 counts 和明确声明的事实开始自动本地计算。分析方案、实测分群和注释分别需要三次独立科学审批。可选方法须明确选择；ambient 校正是单独的 R-only API。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7c93a9"/></marker></defs>
+<style>text{font-family:Arial,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#23384b}.title{font-size:32px;font-weight:700}.subtitle{font-size:20px;fill:#51697e}.node-title{font-size:26px;font-weight:650}.node-detail{font-size:20px;fill:#425f75}.small{font-size:18px;fill:#4c667b}.side-title{font-size:21px;font-weight:650;fill:#286c67}.side-detail{font-size:17px;fill:#3d6664}</style>
+<rect width="1200" height="1628" rx="20" fill="#fbfcfe"/>
+<text x="48" y="54" class="title" text-anchor="start">保存每一步，分三次确认科学决策</text>
+<text x="48" y="89" class="subtitle" text-anchor="start">当前开发分支的原始 counts 路径 · 自动本地计算在审阅处暂停</text>
+<rect x="48" y="119" width="20" height="20" rx="4" fill="#edf4fc" stroke="#8ea5b7"/>
+<text x="78" y="136" class="small" text-anchor="start">自动本地计算</text>
+<rect x="398" y="119" width="20" height="20" rx="4" fill="#fff2d8" stroke="#8ea5b7"/>
+<text x="428" y="136" class="small" text-anchor="start">用户审阅并确认</text>
+<rect x="776" y="119" width="20" height="20" rx="4" fill="#edf8f5" stroke="#8ea5b7"/>
+<text x="806" y="136" class="small" text-anchor="start">可选 / 明确选择</text>
+<g id="input" data-box="input" data-kind="input">
+<rect x="48" y="176" width="752" height="124" rx="13" fill="#f0f4fa" stroke="#899eb6" stroke-width="1.8"/>
+<text x="424.0" y="210" class="node-title" text-anchor="middle">Counts 与研究事实</text>
+<text x="424.0" y="246" class="node-detail" text-anchor="middle">10x MEX / 样本表 / 含原始 counts 的 Seurat 或 RDS</text>
+<text x="424.0" y="277" class="node-detail" text-anchor="middle">明确样本角色、物种、组织和研究目标</text>
+</g>
+<path d="M424.0 302 L424.0 319" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="qc-evidence" data-box="qc-evidence" data-kind="auto">
+<rect x="48" y="324" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="358" class="node-title" text-anchor="middle">导入检查与 QC 实测</text>
+<text x="424.0" y="394" class="node-detail" text-anchor="middle">检查 counts、特征身份及 metadata 对齐</text>
+<text x="424.0" y="425" class="node-detail" text-anchor="middle">准备 QC 分布图和候选筛选的保留影响</text>
+</g>
+<path d="M424.0 450 L424.0 467" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-strategy" data-box="gate-strategy" data-kind="author">
+<rect x="48" y="472" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="506" class="node-title" text-anchor="middle">1 · 确认初始分析方案</text>
+<text x="424.0" y="542" class="node-detail" text-anchor="middle">看：QC 图、保留影响及拟用 PC / 方法规则</text>
+<text x="424.0" y="573" class="node-detail" text-anchor="middle">选：QC 与分析方案；先保存，再独立审批</text>
+</g>
+<path d="M424.0 598 L424.0 615" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="foundation" data-box="foundation" data-kind="auto">
+<rect x="48" y="620" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="654" class="node-title" text-anchor="middle">执行已批准的分析基础</text>
+<text x="424.0" y="690" class="node-detail" text-anchor="middle">QC → normalize / 全局 HVG → scale / PCA</text>
+<text x="424.0" y="721" class="node-detail" text-anchor="middle">应用已批准的 PC → 邻居图；选择后才运行 UMAP</text>
+</g>
+<path d="M424.0 746 L424.0 763" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="ordinary-scan" data-box="ordinary-scan" data-kind="auto">
+<rect x="48" y="768" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="802" class="node-title" text-anchor="middle">常规分辨率扫描与簇关系树</text>
+<text x="424.0" y="838" class="node-detail" text-anchor="middle">使用同一细胞、PC、邻居图及 seed</text>
+<text x="424.0" y="869" class="node-detail" text-anchor="middle">准备 marker 对照和样本组成</text>
+</g>
+<path d="M424.0 894 L424.0 911" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-clusters" data-box="gate-clusters" data-kind="author">
+<rect x="48" y="916" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="950" class="node-title" text-anchor="middle">2 · 确认实测分群</text>
+<text x="424.0" y="986" class="node-detail" text-anchor="middle">看：PC 证据、簇关系树、marker 对照和样本组成</text>
+<text x="424.0" y="1017" class="node-detail" text-anchor="middle">选：实际扫描过的分辨率；改动先保存，再审批</text>
+</g>
+<path d="M424.0 1042 L424.0 1059" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="annotation-evidence" data-box="annotation-evidence" data-kind="auto">
+<rect x="48" y="1064" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="1098" class="node-title" text-anchor="middle">准备注释证据</text>
+<text x="424.0" y="1134" class="node-detail" text-anchor="middle">Markers 与适用的面板 / 参考 / Fisher 证据</text>
+<text x="424.0" y="1165" class="node-detail" text-anchor="middle">候选标签和置信度仍是待判断的提案</text>
+</g>
+<path d="M424.0 1190 L424.0 1207" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-annotation" data-box="gate-annotation" data-kind="author">
+<rect x="48" y="1212" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="1246" class="node-title" text-anchor="middle">3 · 确认注释提案</text>
+<text x="424.0" y="1282" class="node-detail" text-anchor="middle">看：marker、表达、参考支持及证据限制</text>
+<text x="424.0" y="1313" class="node-detail" text-anchor="middle">选：标签或 Unknown 并给理由；保存全部后再审批</text>
+</g>
+<path d="M424.0 1338 L424.0 1355" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="export" data-box="export" data-kind="output">
+<rect x="48" y="1360" width="752" height="124" rx="13" fill="#eaf5ee" stroke="#719d83" stroke-width="1.8"/>
+<text x="424.0" y="1394" class="node-title" text-anchor="middle">导出并重开已保存的结果</text>
+<text x="424.0" y="1430" class="node-detail" text-anchor="middle">新 Seurat、markers、metadata、图及决策记录</text>
+<text x="424.0" y="1461" class="node-detail" text-anchor="middle">重开读取保存状态，不会重新运行分析</text>
+</g>
+<g id="optional" data-box="optional" data-kind="optional">
+<rect x="848" y="620" width="304" height="356" rx="13" fill="#edf8f5" stroke="#68a09a" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="1000.0" y="654" class="side-title" text-anchor="middle">可选 · 主动开启</text>
+<text x="1000.0" y="685" class="side-detail" text-anchor="middle">需要适用的输入和研究设计</text>
+<text x="1000.0" y="716" class="side-detail" text-anchor="middle">PC k±5 / 80% 重采样</text>
+<text x="1000.0" y="747" class="side-detail" text-anchor="middle">额外分辨率 / 样本汇总 HVG</text>
+<text x="1000.0" y="778" class="side-detail" text-anchor="middle">实验性 QC 草稿自动预选</text>
+<text x="1000.0" y="809" class="side-detail" text-anchor="middle">Harmony / 周期校正</text>
+<text x="1000.0" y="840" class="side-detail" text-anchor="middle">明确声明的 doublet 方法</text>
+<text x="1000.0" y="871" class="side-detail" text-anchor="middle">LLM 请求另需传输同意</text>
+<text x="1000.0" y="902" class="side-detail" text-anchor="middle">常规扫描 / 簇关系树保留</text>
+<text x="1000.0" y="933" class="side-detail" text-anchor="middle">输入缺失则标记不可用</text>
+</g>
+<path d="M803 682.0 L841 682.0" fill="none" stroke="#7c93a9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<g id="ambient" data-box="ambient" data-kind="optional">
+<rect x="848" y="1064" width="304" height="226" rx="13" fill="#edf8f5" stroke="#68a09a" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="1000.0" y="1098" class="side-title" text-anchor="middle">R-only ambient 校正</text>
+<text x="1000.0" y="1129" class="side-detail" text-anchor="middle">SoupX / decontX 单独 API</text>
+<text x="1000.0" y="1160" class="side-detail" text-anchor="middle">另存校正 counts 与 receipt</text>
+<text x="1000.0" y="1191" class="side-detail" text-anchor="middle">使用时另建新项目</text>
+<text x="1000.0" y="1222" class="side-detail" text-anchor="middle">保留原 counts / checkpoints</text>
+<text x="1000.0" y="1253" class="side-detail" text-anchor="middle">没有网页校正操作</text>
+</g>
+<path d="M803 1126.0 L841 1126.0" fill="none" stroke="#7c93a9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="48" y="1530" class="small" text-anchor="start">三次确认对应本图的标准 raw-count 扫描；已处理对象的显式复用走单独入口。</text>
+<text x="48" y="1565" class="small" text-anchor="start">可选模型请求还需针对实际传输内容单独同意。证据展示不保证注释准确率。</text>
+</svg>

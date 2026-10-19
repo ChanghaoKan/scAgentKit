@@ -1,17 +1,44 @@
 # scAgentKit
 
+**English** · [简体中文](README.zh-CN.md)
+
 scAgentKit is designed to help researchers with a biological background spend less time maintaining a single-cell RNA-seq workflow. Starting from counts and sample facts or a Seurat/RDS object, it guides QC, basic analysis and annotation through a saved, reviewable project.
 
 You receive a new Seurat object with counts, sample metadata, reductions and reviewed labels, plus marker tables, figures and the evidence and reasons behind decisions. QC, integration and clustering still require study judgement; default settings are starting points. FASTQ processing is upstream. Research-specific trajectory, communication and regulatory-network analyses are downstream and are not run automatically.
 
 ## Analysis workflow
 
-<img src="docs/diagrams/project-analysis-flow.svg" alt="scAgentKit analysis workflow: counts and metadata, reviewed QC and analysis, measured clustering, reviewed annotation and outputs" width="820">
+<img src="docs/diagrams/project-analysis-flow.svg" alt="Development raw-count workflow: automatic local analyses pause for strategy, measured clustering and annotation approvals; optional paths are explicit" width="1000">
 
-Current development workflow; optional diagnostics require explicit selection.
-See the [full-size diagram](docs/diagrams/project-analysis-flow.svg),
-[maintainable diagram source](docs/diagrams/generate_project_flow.py), and
-[one-page operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md).
+[English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [Diagram source](docs/diagrams/generate_project_flow.py)
+
+This is the **development raw-count workflow**. Installation below targets v0.6.0;
+unreleased recommendations and fact editing are not part of that published archive.
+
+### What runs automatically, and where you decide
+
+Automatic local work validates counts/metadata, measures QC and prepares evidence.
+After you approve the plan, it runs the approved analyses and the ordinary resolution
+scan/tree. It pauses at three separate scientific decisions:
+
+| Gate | Inspect these figures and evidence | Your decision |
+| --- | --- | --- |
+| [**1. Initial strategy**](#gate-strategy) | QC distributions, sample/group comparisons, candidate cell retention and proposed PC/method rules. Actual PCA is still pending. | Choose QC and the complete analysis plan; **Save**, inspect the updated review, then **Approve and continue**. |
+| [**2. Measured clustering**](#gate-clustering) | Computed PC curve/crossings, cluster tree, marker contrasts and sample composition. Tree edges show shared cells, not lineage. | Select an **actually scanned resolution**. Save any edit, review it and independently approve before final membership/markers are bound. |
+| [**3. Annotation**](#gate-annotation) | Cluster markers, applicable mean/pct panels, reference support/provenance, conflicts and missing evidence. | Supply labels or **Unknown**, confidence and reasons. **Save complete proposal**, inspect all populations, then **Approve annotation and continue**. |
+
+After the third approval, the project writes the new Seurat object and exports.
+Saving a draft, correcting facts or reopening a project does not grant approval.
+Automation executes your recorded choices; it does not establish biological truth.
+
+Optional methods need explicit selection and suitable inputs. PC k±5, resampling,
+extra resolution extension, sample-consensus HVGs and experimental QC draft
+preselection are off by default; the ordinary scan/tree remains part of the raw
+workflow. Model requests need separate exact-transfer consent. SoupX/decontX are
+**separate R-only APIs** that return corrected counts for a new project, with no
+browser correction action and no replacement of original counts/checkpoints.
+See the [methods and limits](docs/SCIENTIFIC_METHODS_APPENDIX.md) and
+[one-page operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md) for detail.
 
 ## Installation
 
@@ -134,19 +161,33 @@ New raw strategy projects keep ordinary normalization/global-vst HVGs/PCA, the i
 
 ### 2. Review the strategy and run basic analysis
 
-Check the displayed study facts, measured QC distributions and projected cell retention. The main entry shows the existing MAD candidates for declared sample/QC groups, with their measured thresholds, retention and unavailable reasons. With no declared group it shows pooled, unstratified evidence. The initial keep-all quality choice avoids deleting uncertain cells without study evidence; `nCount >= 1` only excludes all-zero input, not low-quality cells in general. High counts, ribosomal or haemoglobin expression do not authorize automatic deletion. Raw MEX import is not empty-droplet calling.
+<a id="gate-strategy"></a>
 
-The local recommendations use measured low-count/low-feature/mitochondrial flag combinations and exact candidate impacts to propose comparisons. They preserve declared ranges and AND/OR logic, disclose equivalent or conflicting choices, and do not rank universal QC policies. Keep-all remains a comparison or explicit deferral, not a completed quality assessment. Edit the candidate or ranges and inspect their impact before approval.
+At **gate 1**, check study facts, measured QC distributions and projected cell
+retention, grouped by sample/QC role when declared. Missing roles stay pooled or
+unavailable. The initial keep-all quality choice does not certify QC; `nCount >= 1`
+only removes all-zero input. High counts, ribosomal or haemoglobin expression do
+not authorize automatic deletion, and raw MEX import is not empty-droplet calling.
 
-The initial PC policy requests at most 50 components, with a visible smaller request for the proposed cell/feature scope, and suggests the first leading PCs reaching 80% **within the first at most 50 actually computed PCs**. The denominator is their variance sum, not total HVG or transcriptome variance. Before PCA, the panel shows a rule awaiting computation; after PCA it offers the saved actual 80%/85% crossings. An explicit author-selected fixed PC policy is retained. Inspect the computed count, shortfall, exact denominator and candidate status; a one-PC or numerically rank-deficient choice is rejected, not silently repaired. This empirical rule is editable and does not establish an optimal PC count.
+**Use candidate in local draft** changes the draft only. Save the complete plan,
+inspect the rebuilt evidence, then approve. Saving facts is also separate from
+scientific approval. Missing optional doublet/batch facts or dependencies leave
+that path unexecuted and disclosed; a selected unsupported method needs revision.
 
-Where supported, correct the declared study facts and their source in the recommendations panel. **Saving facts does not approve a scientific plan.** Missing optional doublet/batch facts or dependencies leave that path unavailable; supported work can proceed with it unexecuted, and the result records the unresolved assessment. An unsupported operation already selected in the plan still needs revision.
+<a id="gate-clustering"></a>
 
-**Use candidate in local draft** changes the editable draft only. Save the complete strategy to rebuild the exact R review, inspect the updated evidence, then choose **Approve and continue**. The main entry requests a bounded resolution grid. After computing it on the same cells, PCs, neighbour graph and seed, the worker returns to the strategy review with a cluster tree, marker contrasts and sample composition. Edges show shared cells between parameter choices; this is not a lineage tree. Adjacent ARI describes parameter sensitivity, not resampling stability or biological accuracy. Candidate explanations expose marker gaps, sample concentration, splits/merges and equivalent memberships. They supply no combined optimality score or universal winner; 0.5 remains provisional.
-
-With the default raw resolution scan, the three scientific approvals are the **initial complete strategy**, the **measured resolution selection**, and the **annotation proposal**. Select an actually scanned resolution, save any edit to rebuild its review, then approve the measured strategy and continue. This binds final memberships and markers to your choice before annotation preparation. A model may help compare the saved evidence only through the existing exact request approval; it is optional and the default makes no model request. You can close the page and reopen the same project later.
+The approved foundation runs locally, then the ordinary resolution scan pauses
+at **gate 2**. Inspect the computed PC evidence, tree, marker contrasts and sample
+composition; choose an actually scanned resolution, save changes and approve the
+measured strategy. Neither the PC rule nor the resolution comparisons identify a
+biological optimum. Model assistance is optional and the default makes no request.
+You can close the page and reopen the same project later. Method definitions and
+boundaries are in [analysis strategy support](docs/ANALYSIS_STRATEGY_SUPPORT.md)
+and the [methods appendix](docs/SCIENTIFIC_METHODS_APPENDIX.md).
 
 ### 3. Prepare and review annotations
+
+<a id="gate-annotation"></a>
 
 Open the annotation worksheet. Each row shows a saved cluster's markers and any configured local reference candidates. Conflicts and missing evidence are flagged; detailed statistics and provenance expand in place.
 

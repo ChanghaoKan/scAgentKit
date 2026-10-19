@@ -1,80 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1762" viewBox="0 0 1100 1762" role="img" aria-labelledby="title desc">
-<title id="title">scAgentKit 项目分析流程</title>
-<desc id="desc">从原始 counts 启动的当前开发分支流程，三次作者确认，可选本地科学诊断及独立 ambient 校正支路。</desc>
-<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8095aa"/></marker></defs>
-<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#24384c}.title{font-size:31px;font-weight:650}.subtitle{font-size:17px;fill:#62768b}.node-title{font-size:23px;font-weight:600}.node-detail{font-size:17px;fill:#50677d}.small{font-size:16px;fill:#526b7c}.optional-title{font-size:22px;font-weight:600;fill:#2e6d6b}.optional-detail{font-size:17px;fill:#486f70}</style>
-<rect width="1100" height="1762" rx="20" fill="#fbfcfe"/>
-<text x="64" y="58" class="title">scAgentKit 项目分析流程</text>
-<text x="64" y="91" class="subtitle">当前开发分支 · 可选方法需显式开启，并按输入与研究设计使用</text>
-<rect x="64" y="154" width="620" height="86" rx="13" fill="#eff4fb" stroke="#7c98b8" stroke-width="1.6"/>
-<text x="374.0" y="189" class="node-title" text-anchor="middle">原始 Counts（10x MEX / RDS）</text>
-<text x="374.0" y="218" class="node-detail" text-anchor="middle">样本 metadata 与研究背景</text>
-<path d="M374.0 243 L374.0 263" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="268" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="303" class="node-title" text-anchor="middle">导入检查与事实确认</text>
-<text x="374.0" y="332" class="node-detail" text-anchor="middle">分别声明样本、capture、条件及批次</text>
-<path d="M374.0 357 L374.0 377" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="382" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="417" class="node-title" text-anchor="middle">本地 QC 与可选证据</text>
-<text x="374.0" y="446" class="node-detail" text-anchor="middle">样本分布、细胞指标；可选 doublet / 周期诊断</text>
-<path d="M374.0 471 L374.0 491" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="496" width="620" height="86" rx="13" fill="#fff3dc" stroke="#d59a3d" stroke-width="1.6"/>
-<text x="374.0" y="531" class="node-title" text-anchor="middle">① 作者确认分析方案</text>
-<text x="374.0" y="560" class="node-detail" text-anchor="middle">QC、PC 规则与可选方法</text>
-<path d="M374.0 585 L374.0 605" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="610" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="645" class="node-title" text-anchor="middle">执行已确认的 QC 与细胞选择</text>
-<text x="374.0" y="674" class="node-detail" text-anchor="middle">按方案保留细胞或处理质量异常 / 预测 doublet</text>
-<path d="M374.0 699 L374.0 719" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="724" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="759" class="node-title" text-anchor="middle">Normalize → HVG</text>
-<text x="374.0" y="788" class="node-detail" text-anchor="middle">默认全局；可选样本汇总 / 周期回归</text>
-<path d="M374.0 813 L374.0 833" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="838" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="873" class="node-title" text-anchor="middle">Scale / PCA → PC 选择</text>
-<text x="374.0" y="902" class="node-detail" text-anchor="middle">top50 80/85% 与肘部候选；执行已确认的规则</text>
-<path d="M374.0 927 L374.0 947" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="952" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="987" class="node-title" text-anchor="middle">可选 Harmony → 邻居图</text>
-<text x="374.0" y="1016" class="node-detail" text-anchor="middle">明确技术设计后选择整合；UMAP 可选</text>
-<path d="M374.0 1041 L374.0 1061" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="1066" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="1101" class="node-title" text-anchor="middle">多分辨率扫描与候选 marker</text>
-<text x="374.0" y="1130" class="node-detail" text-anchor="middle">簇关系树；可选 k±5 与重采样比较</text>
-<path d="M374.0 1155 L374.0 1175" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="1180" width="620" height="86" rx="13" fill="#fff3dc" stroke="#d59a3d" stroke-width="1.6"/>
-<text x="374.0" y="1215" class="node-title" text-anchor="middle">② 作者确认最终分群</text>
-<text x="374.0" y="1244" class="node-detail" text-anchor="middle">审查实际扫描结果，选择分辨率</text>
-<path d="M374.0 1269 L374.0 1289" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="1294" width="620" height="86" rx="13" fill="#eef5fd" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="374.0" y="1329" class="node-title" text-anchor="middle">注释证据与候选标签</text>
-<text x="374.0" y="1358" class="node-detail" text-anchor="middle">marker、面板表达、参考；可选 LLM 建议</text>
-<path d="M374.0 1383 L374.0 1403" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="1408" width="620" height="86" rx="13" fill="#fff3dc" stroke="#d59a3d" stroke-width="1.6"/>
-<text x="374.0" y="1443" class="node-title" text-anchor="middle">③ 作者确认注释</text>
-<text x="374.0" y="1472" class="node-detail" text-anchor="middle">确认标签或保留 Unknown</text>
-<path d="M374.0 1497 L374.0 1517" fill="none" stroke="#8095aa" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="64" y="1522" width="620" height="86" rx="13" fill="#e9f5ee" stroke="#7caa90" stroke-width="1.6"/>
-<text x="374.0" y="1557" class="node-title" text-anchor="middle">输出可复核结果</text>
-<text x="374.0" y="1586" class="node-detail" text-anchor="middle">Seurat · markers · metadata · report</text>
-<rect x="756" y="493" width="294" height="144" rx="13" fill="#edf8f6" stroke="#71a6a2" stroke-width="1.6" stroke-dasharray="6 4"/>
-<path d="M688 539 L748 539" fill="none" stroke="#8095aa" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="903" y="525" class="optional-title" text-anchor="middle">可选 ambient 校正</text>
-<text x="903" y="555" class="optional-detail" text-anchor="middle">SoupX / decontX 单独运行</text>
-<text x="903" y="584" class="optional-detail" text-anchor="middle">另存校正 counts 与前后对照</text>
-<text x="903" y="613" class="optional-detail" text-anchor="middle">以新输入另建项目</text>
-<text x="902" y="663" class="small" text-anchor="middle">不替换原始 counts 或项目</text>
-<rect x="756" y="1286" width="294" height="110" rx="13" fill="#eff4fb" stroke="#94b5d7" stroke-width="1.6"/>
-<text x="903" y="1321" class="optional-title" text-anchor="middle">已处理 RDS：显式复用</text>
-<text x="903" y="1352" class="optional-detail" text-anchor="middle">保留现有分析基础</text>
-<text x="903" y="1379" class="optional-detail" text-anchor="middle">从当前注释证据进入</text>
-<path d="M748 1339 L692 1339" fill="none" stroke="#8095aa" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<rect x="64" y="1642" width="20" height="20" rx="4" fill="#eef5fd" stroke="#9bafc1"/>
-<text x="94" y="1659" class="small" text-anchor="start">本地处理 / 证据</text>
-<rect x="344" y="1642" width="20" height="20" rx="4" fill="#fff3dc" stroke="#9bafc1"/>
-<text x="374" y="1659" class="small" text-anchor="start">作者确认</text>
-<rect x="574" y="1642" width="20" height="20" rx="4" fill="#edf8f6" stroke="#9bafc1"/>
-<text x="604" y="1659" class="small" text-anchor="start">可选支路</text>
-<text x="64" y="1703" class="small" text-anchor="start">保存项目后可重开审查；方案、分群与注释的确认分别记录。</text>
-<text x="64" y="1729" class="small" text-anchor="start">本图展示开发分支能力；不表示所有可选方法已验证有效或默认启用。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1628" viewBox="0 0 1200 1628" xml:lang="en" role="img" aria-labelledby="title desc">
+<title id="title">A saved workflow with three scientific decisions</title>
+<desc id="desc">Counts and declared facts enter automatic local analyses. Three separate scientific approvals cover the initial strategy, measured clustering and annotation. Optional methods need explicit selection; ambient correction is a separate R-only API.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7c93a9"/></marker></defs>
+<style>text{font-family:Arial,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#23384b}.title{font-size:32px;font-weight:700}.subtitle{font-size:20px;fill:#51697e}.node-title{font-size:26px;font-weight:650}.node-detail{font-size:20px;fill:#425f75}.small{font-size:18px;fill:#4c667b}.side-title{font-size:21px;font-weight:650;fill:#286c67}.side-detail{font-size:17px;fill:#3d6664}</style>
+<rect width="1200" height="1628" rx="20" fill="#fbfcfe"/>
+<text x="48" y="54" class="title" text-anchor="start">A saved workflow with three scientific decisions</text>
+<text x="48" y="89" class="subtitle" text-anchor="start">Development raw-count path · automatic local steps pause for your review</text>
+<rect x="48" y="119" width="20" height="20" rx="4" fill="#edf4fc" stroke="#8ea5b7"/>
+<text x="78" y="136" class="small" text-anchor="start">Automatic local work</text>
+<rect x="398" y="119" width="20" height="20" rx="4" fill="#fff2d8" stroke="#8ea5b7"/>
+<text x="428" y="136" class="small" text-anchor="start">You inspect and confirm</text>
+<rect x="776" y="119" width="20" height="20" rx="4" fill="#edf8f5" stroke="#8ea5b7"/>
+<text x="806" y="136" class="small" text-anchor="start">Optional / explicit selection</text>
+<g id="input" data-box="input" data-kind="input">
+<rect x="48" y="176" width="752" height="124" rx="13" fill="#f0f4fa" stroke="#899eb6" stroke-width="1.8"/>
+<text x="424.0" y="210" class="node-title" text-anchor="middle">Counts + study facts</text>
+<text x="424.0" y="246" class="node-detail" text-anchor="middle">10x MEX / sample table / raw-count Seurat or RDS</text>
+<text x="424.0" y="277" class="node-detail" text-anchor="middle">Declare sample roles, species, tissue and research goal</text>
+</g>
+<path d="M424.0 302 L424.0 319" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="qc-evidence" data-box="qc-evidence" data-kind="auto">
+<rect x="48" y="324" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="358" class="node-title" text-anchor="middle">Validate import + measure QC</text>
+<text x="424.0" y="394" class="node-detail" text-anchor="middle">Check counts, feature identity and metadata alignment</text>
+<text x="424.0" y="425" class="node-detail" text-anchor="middle">Prepare QC plots and candidate retention impacts</text>
+</g>
+<path d="M424.0 450 L424.0 467" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-strategy" data-box="gate-strategy" data-kind="author">
+<rect x="48" y="472" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="506" class="node-title" text-anchor="middle">1 · Confirm the initial strategy</text>
+<text x="424.0" y="542" class="node-detail" text-anchor="middle">Inspect QC plots, retention and planned PC / method rules</text>
+<text x="424.0" y="573" class="node-detail" text-anchor="middle">Choose QC + analysis plan; save it, then approve</text>
+</g>
+<path d="M424.0 598 L424.0 615" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="foundation" data-box="foundation" data-kind="auto">
+<rect x="48" y="620" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="654" class="node-title" text-anchor="middle">Run the approved foundation</text>
+<text x="424.0" y="690" class="node-detail" text-anchor="middle">QC → normalize / global HVG → scale / PCA</text>
+<text x="424.0" y="721" class="node-detail" text-anchor="middle">Apply approved PCs → neighbors; UMAP when selected</text>
+</g>
+<path d="M424.0 746 L424.0 763" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="ordinary-scan" data-box="ordinary-scan" data-kind="auto">
+<rect x="48" y="768" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="802" class="node-title" text-anchor="middle">Scan resolutions + build the cluster tree</text>
+<text x="424.0" y="838" class="node-detail" text-anchor="middle">Same cells, PCs, neighbor graph and seed</text>
+<text x="424.0" y="869" class="node-detail" text-anchor="middle">Prepare marker contrasts and sample composition</text>
+</g>
+<path d="M424.0 894 L424.0 911" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-clusters" data-box="gate-clusters" data-kind="author">
+<rect x="48" y="916" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="950" class="node-title" text-anchor="middle">2 · Confirm measured clustering</text>
+<text x="424.0" y="986" class="node-detail" text-anchor="middle">Inspect PC evidence, tree, marker contrasts and samples</text>
+<text x="424.0" y="1017" class="node-detail" text-anchor="middle">Select a scanned resolution; save edits, then approve</text>
+</g>
+<path d="M424.0 1042 L424.0 1059" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="annotation-evidence" data-box="annotation-evidence" data-kind="auto">
+<rect x="48" y="1064" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
+<text x="424.0" y="1098" class="node-title" text-anchor="middle">Prepare annotation evidence</text>
+<text x="424.0" y="1134" class="node-detail" text-anchor="middle">Markers + applicable panels / references / Fisher evidence</text>
+<text x="424.0" y="1165" class="node-detail" text-anchor="middle">Candidate labels and confidence are provisional</text>
+</g>
+<path d="M424.0 1190 L424.0 1207" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="gate-annotation" data-box="gate-annotation" data-kind="author">
+<rect x="48" y="1212" width="752" height="124" rx="13" fill="#fff2d8" stroke="#bb7d28" stroke-width="1.8"/>
+<text x="424.0" y="1246" class="node-title" text-anchor="middle">3 · Confirm the annotation proposal</text>
+<text x="424.0" y="1282" class="node-detail" text-anchor="middle">Inspect markers, expression, reference support and limits</text>
+<text x="424.0" y="1313" class="node-detail" text-anchor="middle">Choose labels or Unknown + reasons; save all, then approve</text>
+</g>
+<path d="M424.0 1338 L424.0 1355" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
+<g id="export" data-box="export" data-kind="output">
+<rect x="48" y="1360" width="752" height="124" rx="13" fill="#eaf5ee" stroke="#719d83" stroke-width="1.8"/>
+<text x="424.0" y="1394" class="node-title" text-anchor="middle">Export + reopen the saved result</text>
+<text x="424.0" y="1430" class="node-detail" text-anchor="middle">New Seurat, markers, metadata, figures and decisions</text>
+<text x="424.0" y="1461" class="node-detail" text-anchor="middle">Reopening inspects saved work; it does not rerun analysis</text>
+</g>
+<g id="optional" data-box="optional" data-kind="optional">
+<rect x="848" y="620" width="304" height="356" rx="13" fill="#edf8f5" stroke="#68a09a" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="1000.0" y="654" class="side-title" text-anchor="middle">Optional · explicit opt-in</text>
+<text x="1000.0" y="685" class="side-detail" text-anchor="middle">Requires suitable inputs/design</text>
+<text x="1000.0" y="716" class="side-detail" text-anchor="middle">PC k±5 · 80% resampling</text>
+<text x="1000.0" y="747" class="side-detail" text-anchor="middle">Extra resolution / sample-HVG</text>
+<text x="1000.0" y="778" class="side-detail" text-anchor="middle">Experimental QC draft prefill</text>
+<text x="1000.0" y="809" class="side-detail" text-anchor="middle">Harmony / cycle correction</text>
+<text x="1000.0" y="840" class="side-detail" text-anchor="middle">Declared doublet methods</text>
+<text x="1000.0" y="871" class="side-detail" text-anchor="middle">LLM request: separate consent</text>
+<text x="1000.0" y="902" class="side-detail" text-anchor="middle">Ordinary scan/tree stays on</text>
+<text x="1000.0" y="933" class="side-detail" text-anchor="middle">Missing inputs → unavailable</text>
+</g>
+<path d="M803 682.0 L841 682.0" fill="none" stroke="#7c93a9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<g id="ambient" data-box="ambient" data-kind="optional">
+<rect x="848" y="1064" width="304" height="226" rx="13" fill="#edf8f5" stroke="#68a09a" stroke-width="1.6" stroke-dasharray="6 4"/>
+<text x="1000.0" y="1098" class="side-title" text-anchor="middle">R-only ambient correction</text>
+<text x="1000.0" y="1129" class="side-detail" text-anchor="middle">SoupX / decontX: separate API</text>
+<text x="1000.0" y="1160" class="side-detail" text-anchor="middle">Separate corrected counts + receipt</text>
+<text x="1000.0" y="1191" class="side-detail" text-anchor="middle">Use them in a new project</text>
+<text x="1000.0" y="1222" class="side-detail" text-anchor="middle">Original counts/checkpoints kept</text>
+<text x="1000.0" y="1253" class="side-detail" text-anchor="middle">No browser correction action</text>
+</g>
+<path d="M803 1126.0 L841 1126.0" fill="none" stroke="#7c93a9" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="48" y="1530" class="small" text-anchor="start">The three gates apply to this standard raw-count scan; processed reuse has its own entry.</text>
+<text x="48" y="1565" class="small" text-anchor="start">Optional model requests need separate exact transfer consent. Evidence is not a guarantee of accuracy.</text>
 </svg>
