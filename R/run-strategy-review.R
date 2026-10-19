@@ -356,7 +356,7 @@
     if (is.null(state$files$annotation_evidence)) "annotation_evidence" else "annotation_propose"
   .sc_run_checkpoint(root, state, "strategy_apply", next_stage)
 }
-.sc_run_strategy_propose_locked <- function(root, state, proposal, reviewer, reason) {
+.sc_run_strategy_propose_locked <- function(root, state, proposal, reviewer, reason, review_binding = NULL) {
   .sc_run_subcluster_guard(root, state)
   if (!isTRUE(state$config$strategy)) stop("Strategy mode was not enabled for this project.", call. = FALSE)
   if (state$status %in% c("complete", "running") || "annotation_apply" %in% state$completed || !is.null(state$files$annotated))
@@ -367,6 +367,8 @@
   validated <- .sc_run_strategy_validate(proposal, evidence)
   .sc_run_subcluster_strategy(state, validated, evidence)
   old <- if (is.null(state$files$strategy_validated)) NULL else .sc_run_get(root, state, "strategy_validated")
+  if (!identical(review_binding$source, "adopted_typed_suggestion"))
+    state <- .sc_run_draft_track(root, state, "strategy", old$proposal, validated$proposal)
   changed <- if (is.null(old)) names(validated$dependency_hashes) else names(validated$dependency_hashes)[vapply(names(validated$dependency_hashes), function(key)
     !identical(validated$dependency_hashes[[key]], old$dependency_hashes[[key]]), logical(1))]
   cached_runtime_changed <- FALSE

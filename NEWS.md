@@ -1,5 +1,10 @@
 # Development (unreleased)
 
+- Model adoption retains explicitly supplied and later saved human strategy
+  choices and annotation rows. Versioned controls and additive adoption receipts
+  record which fields were retained; the raw model response is unchanged.
+  A merged draft is revalidated and still grants no scientific approval.
+
 - Persist concise per-choice strategy reasons for QC, doublets, cycle, batch,
   HVGs, PCs, clustering and UMAP. Modern model drafts require all reasons.
   Each is editable without replacing other draft fields; saved proposals and

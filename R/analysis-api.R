@@ -202,7 +202,10 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   }
   extra <- list(...)
   doublet <- match.arg(doublet)
-  defaults <- list(preserve_metadata = TRUE, automatic_metadata = TRUE, automatic_mad = !"qc_mad" %in% names(extra),
+  plan_fields <- names(plan)
+  plan_fields[plan_fields %in% c("resolution", "diagnostic_resolutions")] <- "clustering"
+  plan_fields[plan_fields == "qc_preset"] <- "qc"
+  defaults <- list(protected_strategy_fields = unique(plan_fields), preserve_metadata = TRUE, automatic_metadata = TRUE, automatic_mad = !"qc_mad" %in% names(extra),
     automatic_cycle = !"cycle_diagnostics" %in% names(extra),
     doublet_mode = if (identical(extra$doublet_diagnostics, FALSE)) "off" else doublet)
   if ("input_policy" %in% names(extra)) {

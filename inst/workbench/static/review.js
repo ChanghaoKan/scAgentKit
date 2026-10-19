@@ -364,6 +364,7 @@ function renderSuggestion() {
   $("suggestion-result").hidden = !item?.candidate;
   $("suggestion-candidate").replaceChildren(...suggestionSummary(item?.candidate, item?.kind).map(text => element("p", text)));
   $("suggestion-impact").textContent = item?.kind === "annotation" ? "These labels are suggestions for the saved cluster scopes. Accepting them opens scientific review; it does not change cells or apply labels." : "R will calculate and display exact retention and operation applicability when this candidate enters scientific review. No candidate has changed the object.";
+  if (array(item?.preserved_human_fields).length) $("suggestion-impact").textContent += " Saved human choices/rows stay unchanged: " + array(item.preserved_human_fields).join(", ") + ".";
   const risks = array(item?.candidate?.risks).filter(value => typeof value === "string" && value);
   if (item?.kind === "annotation") risks.push("Marker agreement and model confidence do not establish biological identity. Use Unknown for unresolved clusters.");
   if (!risks.length) risks.push("No candidate-specific risks were supplied. Inspect the rebuilt scientific evidence before approval.");

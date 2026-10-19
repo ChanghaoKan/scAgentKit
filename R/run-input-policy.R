@@ -2,15 +2,21 @@
 # or treating old annotations as an approved result of the new analysis.
 .sc_run_input_policy <- function(value) {
   flags <- c("preserve_metadata", "automatic_metadata", "automatic_mad", "automatic_cycle")
-  if (is.null(value)) return(c(stats::setNames(as.list(rep(FALSE, length(flags))), flags), list(doublet_mode = NULL)))
+  if (is.null(value)) return(c(stats::setNames(as.list(rep(FALSE, length(flags))), flags), list(doublet_mode = NULL, protected_strategy_fields = character())))
   if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
-      length(setdiff(names(value), c(flags, "doublet_mode"))) ||
+      length(setdiff(names(value), c(flags, "doublet_mode", "protected_strategy_fields"))) ||
       !all(vapply(value[intersect(names(value), flags)], function(flag) is.logical(flag) && length(flag) == 1L && !is.na(flag), logical(1))))
     stop("input_policy needs logical preservation/automatic flags and optional doublet_mode auto/off/flag/remove.", call. = FALSE)
   mode <- value$doublet_mode
   if (!is.null(mode) && (!is.character(mode) || length(mode) != 1L || is.na(mode) || !mode %in% c("auto", "off", "flag", "remove")))
     stop("doublet_mode must be auto, off, flag or remove.", call. = FALSE)
-  c(stats::setNames(lapply(flags, function(key) isTRUE(value[[key]])), flags), list(doublet_mode = mode))
+  protected <- value$protected_strategy_fields
+  if (is.null(protected)) protected <- character()
+  if (!is.character(protected) || anyNA(protected) || any(!protected %in%
+      c("rationale", "risks", "inferences", "choice_reasons", "qc", "analysis", "pcs", "batch", "clustering", "umap", "cycle", "doublet")))
+    stop("Protected strategy fields must be supported typed choices.", call. = FALSE)
+  c(stats::setNames(lapply(flags, function(key) isTRUE(value[[key]])), flags),
+    list(doublet_mode = mode, protected_strategy_fields = unique(unname(protected))))
 }
 
 .sc_run_preserve_input_metadata <- function(seu) {

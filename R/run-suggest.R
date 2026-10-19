@@ -70,6 +70,7 @@
     evidence = state$files[[evidence_name]], cluster_scan = state$files$cluster_scan,
     scientific_proposal_hash = state$pending$hash,
     manual_proposal = state$files[[paste0("manual_", kind)]],
+    human_draft_controls = state$files$human_draft_controls,
     scope_hash = state$config$subcluster_origin$scope_hash,
     parent_scope_hash = state$config$subcluster_origin$parent_scope_hash)
   list(kind = kind, provider = provider, evidence = evidence, cluster_scan = scan, request = request,
@@ -123,6 +124,9 @@
         "Raw matrices, cell IDs and per-cell metadata are excluded. Aggregate sample/capture labels and context may identify a study.") else
         "Local runtime provider; no external transfer is authorized by this preview.",
     system_prompt = context$request$system_prompt, user_prompt = context$request$user_prompt)
+  controls <- .sc_run_draft_controls(root, state)
+  result$preserved_human_fields <- if (context$kind == "strategy") controls$strategy_fields else
+    if (context$kind == "annotation" && identical(controls$annotation_scope_hash, .sc_run_annotation_draft_scope(root, state))) controls$annotation_clusters else character()
   saved <- state$suggestion
   current <- !is.null(saved) && identical(saved$suggestion_hash, context$suggestion_hash)
   approved <- context$request_hash %in% state$suggestion_transfer_hashes ||
@@ -202,7 +206,9 @@
     stop("Adopted suggestion response or candidate changed.", call. = FALSE)
   list(kind = if (isTRUE(saved$simulated)) "simulated_mock_suggestion" else "adopted_provider_suggestion",
     simulated = isTRUE(saved$simulated), suggestion_hash = saved$suggestion_hash,
-    matches_current = identical(saved$candidate, proposal),
+    matches_current = identical(if (is.null(saved$adopted_proposal)) saved$candidate else saved$adopted_proposal, proposal),
+    provider_candidate_matches_current = identical(saved$candidate, proposal),
+    preserved_human_fields = saved$preserved_human_fields,
     request_hash = saved$request_hash, artifact_sha256 = state$files[[response_name]]$sha256,
     provider = .sc_run_annotation_review_provider(answer$provider),
     response = .sc_run_suggestion_response(answer),
@@ -214,8 +220,8 @@
 #'
 #' The immutable project provider is the only permitted provider configuration.
 #' Approving an outgoing preview authorizes that exact aggregate payload only.
-#' Request saves a validated candidate and never runs analysis. Adopt replaces
-#' the typed scientific proposal, which still needs fresh central review.
+#' Request saves a validated candidate and never runs analysis. Adopt retains saved
+#' analyst edits and stages a revalidated proposal for fresh central review.
 #' Failures are durable and repeated requests consult the existing usage ledger;
 #' this API never automatically retries a dispatched request.
 #' @param project_dir Durable local project directory.
@@ -313,15 +319,20 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
   } else {
     if (!current || !identical(saved$status, "candidate") || is.null(saved$candidate))
       stop("No current validated suggestion candidate can be adopted.", call. = FALSE)
-    proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)(saved$candidate)
+    merged <- .sc_run_merge_model_draft(root, state, context$kind, saved$candidate)
+    proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)(merged$proposal)
     # Preserve the response as scientific evidence of its actual provenance.
     # Ordinary manual edits can subsequently override it via the normal API.
     state <- .sc_run_put(root, state, paste0(context$kind, "_suggestion_response"), saved$response)
     state$suggestion$status <- "adopted"
+    state$suggestion$adopted_proposal <- proposal
+    state$suggestion$preserved_human_fields <- merged$preserved
     state <- .sc_run_put(root, state, paste0(context$kind, "_suggestion_adoption"), state$suggestion)
     state <- .sc_run_event(state, "suggestion_adopted", list(suggestion_hash = suggestion_hash,
       request_hash = context$request_hash, reviewer = reviewer, reason = reason,
-      simulated = simulate, scientific_approval_required = TRUE))
+      simulated = simulate, scientific_approval_required = TRUE,
+      preserved_human_fields = merged$preserved,
+      raw_candidate_hash = .sc_run_hash(saved$candidate), adopted_proposal_hash = .sc_run_hash(proposal)))
     .sc_run_propose_locked(root, state, proposal, reviewer, reason, drive = FALSE,
       review_binding = list(suggestion_hash = suggestion_hash, request_hash = context$request_hash,
         simulated = simulate, source = "adopted_typed_suggestion"))

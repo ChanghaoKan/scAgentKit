@@ -886,7 +886,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     proposal <- parsed$content
   }
   if (isTRUE(state$config$strategy) && identical(proposal$schema, "scagentkit.strategy.v1"))
-    return(.sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason))
+    return(.sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason, review_binding))
   if (!state$stage %in% c("qc_propose", "annotation_propose")) stop("Manual proposals are only accepted at a proposal stage.", call. = FALSE)
   kind <- if (state$stage == "qc_propose") "qc" else "annotation"
   evidence <- .sc_run_get(root, state, paste0(kind, "_evidence"))
@@ -902,6 +902,10 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
         !identical(state$implementation_hash, .sc_run_implementation()))
       stop("Configuration or implementation changed; proposal review is stale.", call. = FALSE)
     .sc_run_annotation_validate(proposal, evidence)
+  }
+  if (kind == "annotation" && !identical(review_binding$source, "adopted_typed_suggestion")) {
+    previous <- if (is.null(state$files$annotation_validated)) NULL else .sc_run_get(root, state, "annotation_validated")
+    state <- .sc_run_draft_track(root, state, kind, previous, .sc_run_annotation_validate(proposal, evidence))
   }
   state <- .sc_run_put(root, state, paste0("manual_", kind), proposal)
   previous_proposal_hash <- state$pending$hash
