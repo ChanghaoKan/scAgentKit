@@ -1,0 +1,1741 @@
+{
+  "schema": "scagentkit.frozen-prediction-status-audit.v1",
+  "status_policy_version": "scagentkit.prediction-status.v1",
+  "original_metrics_sha256": "990bd5b832c9c7a7e1fdd0c60c1931da454a1d4da6238fd809b509350bbb4d87",
+  "label_map_sha256": "fecc2b58b3b1fb0b18a02a5bf29bb22ef4d5eebd1461c325a3e4c257db7ec103",
+  "scoreable_statuses": [
+    "candidate_only_not_reviewed",
+    "reference_prediction"
+  ],
+  "files": 36,
+  "rows": 144978,
+  "status_counts": {
+    "candidate_only_not_reviewed": 48326,
+    "explicit_unknown_control": 45626,
+    "reference_prediction": 50732,
+    "unknown": 294
+  },
+  "ineligible_nonunknown_raw_labels": 0,
+  "original_raw_outputs_unchanged": true,
+  "scientific_refits": 0,
+  "model_calls": 0,
+  "changed_saved_metrics": 0,
+  "comparisons": [
+    {
+      "dataset": "pbmc3k",
+      "storage": "baseline-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "baseline-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-snapshot-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-snapshot-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-no-diagnostics-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-no-diagnostics-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-qc-or-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "pbmc3k",
+      "storage": "after-qc-or-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "baseline-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "baseline-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-no-diagnostics-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "ifnb",
+      "storage": "after-no-diagnostics-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "baseline-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "baseline-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-no-diagnostics-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-no-diagnostics-1",
+      "method": "singler_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-sample-hvg-1",
+      "method": "candidate_author",
+      "changes": {}
+    },
+    {
+      "dataset": "baron",
+      "storage": "after-sample-hvg-1",
+      "method": "singler_author",
+      "changes": {}
+    }
+  ],
+  "sources": [
+    {
+      "source": "comparison/baron/after-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "0da8173feef6ebe5c8540a45c0ad8fe3f37d3a62435f2dc512a8ddb3fe57ee5c",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/after-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "c93f79798ca78c7731c440444e1129a828b10848ccc178343d2673810e787c9f",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/after-no-diagnostics-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "0da8173feef6ebe5c8540a45c0ad8fe3f37d3a62435f2dc512a8ddb3fe57ee5c",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/after-no-diagnostics-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "c93f79798ca78c7731c440444e1129a828b10848ccc178343d2673810e787c9f",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/after-sample-hvg-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "4567efe00d4b6c3fef312955ccfc575eb74cb175b4d30a02a7de6459f25922da",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/after-sample-hvg-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "c93f79798ca78c7731c440444e1129a828b10848ccc178343d2673810e787c9f",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/baseline-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "0da8173feef6ebe5c8540a45c0ad8fe3f37d3a62435f2dc512a8ddb3fe57ee5c",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/baseline-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "c93f79798ca78c7731c440444e1129a828b10848ccc178343d2673810e787c9f",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/singler-after-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "d5f2a8f4b8b4fe0c7c8d87f53a4fd900205b96b57935c6751832d074538240ca",
+      "status_counts": {
+        "reference_prediction": 4993,
+        "unknown": 7
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/singler-after-no-diagnostics-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "d5f2a8f4b8b4fe0c7c8d87f53a4fd900205b96b57935c6751832d074538240ca",
+      "status_counts": {
+        "reference_prediction": 4993,
+        "unknown": 7
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/singler-after-sample-hvg-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "d5f2a8f4b8b4fe0c7c8d87f53a4fd900205b96b57935c6751832d074538240ca",
+      "status_counts": {
+        "reference_prediction": 4993,
+        "unknown": 7
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/baron/singler-baseline-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "d5f2a8f4b8b4fe0c7c8d87f53a4fd900205b96b57935c6751832d074538240ca",
+      "status_counts": {
+        "reference_prediction": 4993,
+        "unknown": 7
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/after-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "9079183da05ca107bee45fd63dafc535a563dd55de397e653b2d8c08acd60f98",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/after-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "17a845223cefd8d43bac2d7d9d78f84cba354095d30a1238123cd0aae3704b9c",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/after-no-diagnostics-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "9079183da05ca107bee45fd63dafc535a563dd55de397e653b2d8c08acd60f98",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/after-no-diagnostics-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "17a845223cefd8d43bac2d7d9d78f84cba354095d30a1238123cd0aae3704b9c",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/baseline-1/reference-candidates.csv",
+      "rows": 5000,
+      "sha256": "9079183da05ca107bee45fd63dafc535a563dd55de397e653b2d8c08acd60f98",
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/baseline-1/reviewed-labels.csv",
+      "rows": 5000,
+      "sha256": "17a845223cefd8d43bac2d7d9d78f84cba354095d30a1238123cd0aae3704b9c",
+      "status_counts": {
+        "explicit_unknown_control": 5000
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/singler-after-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "f2ed28bb0f91e533d8f2454c8542105d6f449500cb8726a572b451df100d2804",
+      "status_counts": {
+        "reference_prediction": 4983,
+        "unknown": 17
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/singler-after-no-diagnostics-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "f2ed28bb0f91e533d8f2454c8542105d6f449500cb8726a572b451df100d2804",
+      "status_counts": {
+        "reference_prediction": 4983,
+        "unknown": 17
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/ifnb/singler-baseline-1/predictions.csv",
+      "rows": 5000,
+      "sha256": "f2ed28bb0f91e533d8f2454c8542105d6f449500cb8726a572b451df100d2804",
+      "status_counts": {
+        "reference_prediction": 4983,
+        "unknown": 17
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-1/reference-candidates.csv",
+      "rows": 2700,
+      "sha256": "a10d117dabaa15fb7fbaaa3e83ef92ef3d77469bb1bb5e38a7c8664a159a78bf",
+      "status_counts": {
+        "candidate_only_not_reviewed": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-no-diagnostics-1/reference-candidates.csv",
+      "rows": 2700,
+      "sha256": "a10d117dabaa15fb7fbaaa3e83ef92ef3d77469bb1bb5e38a7c8664a159a78bf",
+      "status_counts": {
+        "candidate_only_not_reviewed": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-no-diagnostics-1/reviewed-labels.csv",
+      "rows": 2700,
+      "sha256": "09859ab9905abccb9530987b77ece932f3e5016144e5fcb1f4747f80d3796e5f",
+      "status_counts": {
+        "explicit_unknown_control": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-qc-or-1/reference-candidates.csv",
+      "rows": 2526,
+      "sha256": "2031a6c38588d558de47fac75bdc644fa444f5cbd745ec68b7fe3d7876b28c65",
+      "status_counts": {
+        "candidate_only_not_reviewed": 2526
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-qc-or-1/reviewed-labels.csv",
+      "rows": 2526,
+      "sha256": "9ad3df36b2798632698d102d62630f34036917e7f863925c8c249029e443ea9d",
+      "status_counts": {
+        "explicit_unknown_control": 2526
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-snapshot-1/reference-candidates.csv",
+      "rows": 2700,
+      "sha256": "a10d117dabaa15fb7fbaaa3e83ef92ef3d77469bb1bb5e38a7c8664a159a78bf",
+      "status_counts": {
+        "candidate_only_not_reviewed": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/after-snapshot-1/reviewed-labels.csv",
+      "rows": 2700,
+      "sha256": "09859ab9905abccb9530987b77ece932f3e5016144e5fcb1f4747f80d3796e5f",
+      "status_counts": {
+        "explicit_unknown_control": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/baseline-1/reference-candidates.csv",
+      "rows": 2700,
+      "sha256": "a10d117dabaa15fb7fbaaa3e83ef92ef3d77469bb1bb5e38a7c8664a159a78bf",
+      "status_counts": {
+        "candidate_only_not_reviewed": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/baseline-1/reviewed-labels.csv",
+      "rows": 2700,
+      "sha256": "09859ab9905abccb9530987b77ece932f3e5016144e5fcb1f4747f80d3796e5f",
+      "status_counts": {
+        "explicit_unknown_control": 2700
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/singler-SoupX-1/predictions.csv",
+      "rows": 2700,
+      "sha256": "0ae1bd244c0258b52ab17d849c140f65dfd35318a733ece5e315f3f7cca70f60",
+      "status_counts": {
+        "reference_prediction": 2658,
+        "unknown": 42
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/singler-after-no-diagnostics-1/predictions.csv",
+      "rows": 2700,
+      "sha256": "1e3b8042e4dc16c30a97d50d1a30e63a3d854cdf88816cc8d807e1dcd9a166c6",
+      "status_counts": {
+        "reference_prediction": 2660,
+        "unknown": 40
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/singler-after-qc-or-1/predictions.csv",
+      "rows": 2526,
+      "sha256": "e431b870c15715b926e47622a0fd7e69f3a10f18711c0c30e5e4503263c37f77",
+      "status_counts": {
+        "reference_prediction": 2513,
+        "unknown": 13
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/singler-after-snapshot-1/predictions.csv",
+      "rows": 2700,
+      "sha256": "1e3b8042e4dc16c30a97d50d1a30e63a3d854cdf88816cc8d807e1dcd9a166c6",
+      "status_counts": {
+        "reference_prediction": 2660,
+        "unknown": 40
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/singler-baseline-1/predictions.csv",
+      "rows": 2700,
+      "sha256": "1e3b8042e4dc16c30a97d50d1a30e63a3d854cdf88816cc8d807e1dcd9a166c6",
+      "status_counts": {
+        "reference_prediction": 2660,
+        "unknown": 40
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    },
+    {
+      "source": "comparison/pbmc3k/singler-decontX-1/predictions.csv",
+      "rows": 2700,
+      "sha256": "d9cf4dd934442ecdc17ba080463805e34c3cad117703889d69543cee60727a36",
+      "status_counts": {
+        "reference_prediction": 2660,
+        "unknown": 40
+      },
+      "ineligible_nonunknown_raw_labels": 0
+    }
+  ],
+  "ifnb_status_aware_scores": {
+    "baseline-1/candidate_author": {
+      "original_cells": 5000,
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "known_coverage": 1.0,
+      "status_policy_version": "scagentkit.prediction-status.v1",
+      "scoreable_statuses": [
+        "candidate_only_not_reviewed",
+        "reference_prediction"
+      ],
+      "status_policy": "Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.",
+      "unscoreable_nonunknown_raw_labels": 0,
+      "biological_accuracy": null,
+      "scientific_accuracy_claim": false,
+      "agreement_status": "author_label_agreement_only",
+      "agreement_denominator": 5000,
+      "annotation_accuracy": null,
+      "human_time_seconds": null,
+      "correct": 4248,
+      "conditional_agreement": 0.8496,
+      "end_to_end_correct_yield": 0.8496,
+      "macro_f1": 0.7292419718220868,
+      "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 925,
+          "correct": 487,
+          "precision": 0.5264864864864864,
+          "recall": 0.9979508196721312,
+          "f1": 0.6893135173389949
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 76,
+          "correct": 76,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1991,
+          "correct": 1912,
+          "precision": 0.9603214465092919,
+          "recall": 0.9989550679205852,
+          "f1": 0.979257362355954
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 423,
+          "correct": 222,
+          "precision": 0.524822695035461,
+          "recall": 0.9910714285714286,
+          "f1": 0.6862442040185471
+        },
+        {
+          "label": "Other",
+          "n": 106,
+          "predicted": 70,
+          "correct": 60,
+          "precision": 0.8571428571428571,
+          "recall": 0.5660377358490566,
+          "f1": 0.6818181818181818
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 1515,
+          "correct": 1491,
+          "precision": 0.9841584158415841,
+          "recall": 0.7308823529411764,
+          "f1": 0.8388185654008438
+        }
+      ],
+      "unmapped_truth": 0,
+      "confusion": [
+        {
+          "author": "B",
+          "prediction": "B",
+          "cells": 487
+        },
+        {
+          "author": "B",
+          "prediction": "T",
+          "cells": 1
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "B",
+          "cells": 90
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Dendritic",
+          "cells": 76
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Monocyte",
+          "cells": 55
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Other",
+          "cells": 7
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "B",
+          "cells": 1
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Monocyte",
+          "cells": 1912
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "T",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "B",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "NK",
+          "cells": 222
+        },
+        {
+          "author": "NK",
+          "prediction": "Other",
+          "cells": 1
+        },
+        {
+          "author": "Other",
+          "prediction": "Monocyte",
+          "cells": 24
+        },
+        {
+          "author": "Other",
+          "prediction": "Other",
+          "cells": 60
+        },
+        {
+          "author": "Other",
+          "prediction": "T",
+          "cells": 22
+        },
+        {
+          "author": "T",
+          "prediction": "B",
+          "cells": 346
+        },
+        {
+          "author": "T",
+          "prediction": "NK",
+          "cells": 201
+        },
+        {
+          "author": "T",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "T",
+          "prediction": "T",
+          "cells": 1491
+        }
+      ]
+    },
+    "baseline-1/singler_author": {
+      "original_cells": 5000,
+      "status_counts": {
+        "reference_prediction": 4983,
+        "unknown": 17
+      },
+      "known_coverage": 0.9966,
+      "status_policy_version": "scagentkit.prediction-status.v1",
+      "scoreable_statuses": [
+        "candidate_only_not_reviewed",
+        "reference_prediction"
+      ],
+      "status_policy": "Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.",
+      "unscoreable_nonunknown_raw_labels": 0,
+      "biological_accuracy": null,
+      "scientific_accuracy_claim": false,
+      "agreement_status": "author_label_agreement_only",
+      "agreement_denominator": 5000,
+      "annotation_accuracy": null,
+      "human_time_seconds": null,
+      "correct": 4451,
+      "conditional_agreement": 0.8932370058197873,
+      "end_to_end_correct_yield": 0.8902,
+      "macro_f1": 0.6893363118749146,
+      "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 420,
+          "correct": 394,
+          "precision": 0.9380952380952381,
+          "recall": 0.8073770491803278,
+          "f1": 0.8678414096916298
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 145,
+          "correct": 91,
+          "precision": 0.6275862068965518,
+          "recall": 0.3991228070175439,
+          "f1": 0.48793565683646123
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1893,
+          "correct": 1777,
+          "precision": 0.9387216059165346,
+          "recall": 0.9284221525600836,
+          "f1": 0.9335434725505647
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 239,
+          "correct": 202,
+          "precision": 0.8451882845188284,
+          "recall": 0.9017857142857143,
+          "f1": 0.8725701943844493
+        },
+        {
+          "label": "Other",
+          "n": 106,
+          "predicted": 194,
+          "correct": 2,
+          "precision": 0.010309278350515464,
+          "recall": 0.018867924528301886,
+          "f1": 0.013333333333333332
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 2092,
+          "correct": 1985,
+          "precision": 0.9488527724665392,
+          "recall": 0.9730392156862745,
+          "f1": 0.9607938044530493
+        }
+      ],
+      "unmapped_truth": 0,
+      "confusion": [
+        {
+          "author": "B",
+          "prediction": "B",
+          "cells": 394
+        },
+        {
+          "author": "B",
+          "prediction": "Dendritic",
+          "cells": 50
+        },
+        {
+          "author": "B",
+          "prediction": "Monocyte",
+          "cells": 2
+        },
+        {
+          "author": "B",
+          "prediction": "Other",
+          "cells": 26
+        },
+        {
+          "author": "B",
+          "prediction": "T",
+          "cells": 12
+        },
+        {
+          "author": "B",
+          "prediction": "Unknown",
+          "cells": 4
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "B",
+          "cells": 10
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Dendritic",
+          "cells": 91
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Monocyte",
+          "cells": 89
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Other",
+          "cells": 34
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "T",
+          "cells": 2
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Unknown",
+          "cells": 2
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Dendritic",
+          "cells": 4
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Monocyte",
+          "cells": 1777
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Other",
+          "cells": 130
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Unknown",
+          "cells": 3
+        },
+        {
+          "author": "NK",
+          "prediction": "Monocyte",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "NK",
+          "cells": 202
+        },
+        {
+          "author": "NK",
+          "prediction": "T",
+          "cells": 20
+        },
+        {
+          "author": "NK",
+          "prediction": "Unknown",
+          "cells": 1
+        },
+        {
+          "author": "Other",
+          "prediction": "B",
+          "cells": 4
+        },
+        {
+          "author": "Other",
+          "prediction": "Monocyte",
+          "cells": 24
+        },
+        {
+          "author": "Other",
+          "prediction": "NK",
+          "cells": 3
+        },
+        {
+          "author": "Other",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "Other",
+          "prediction": "T",
+          "cells": 73
+        },
+        {
+          "author": "T",
+          "prediction": "B",
+          "cells": 12
+        },
+        {
+          "author": "T",
+          "prediction": "NK",
+          "cells": 34
+        },
+        {
+          "author": "T",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "T",
+          "prediction": "T",
+          "cells": 1985
+        },
+        {
+          "author": "T",
+          "prediction": "Unknown",
+          "cells": 7
+        }
+      ]
+    },
+    "after-1/candidate_author": {
+      "original_cells": 5000,
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "known_coverage": 1.0,
+      "status_policy_version": "scagentkit.prediction-status.v1",
+      "scoreable_statuses": [
+        "candidate_only_not_reviewed",
+        "reference_prediction"
+      ],
+      "status_policy": "Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.",
+      "unscoreable_nonunknown_raw_labels": 0,
+      "biological_accuracy": null,
+      "scientific_accuracy_claim": false,
+      "agreement_status": "author_label_agreement_only",
+      "agreement_denominator": 5000,
+      "annotation_accuracy": null,
+      "human_time_seconds": null,
+      "correct": 4248,
+      "conditional_agreement": 0.8496,
+      "end_to_end_correct_yield": 0.8496,
+      "macro_f1": 0.7292419718220868,
+      "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 925,
+          "correct": 487,
+          "precision": 0.5264864864864864,
+          "recall": 0.9979508196721312,
+          "f1": 0.6893135173389949
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 76,
+          "correct": 76,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1991,
+          "correct": 1912,
+          "precision": 0.9603214465092919,
+          "recall": 0.9989550679205852,
+          "f1": 0.979257362355954
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 423,
+          "correct": 222,
+          "precision": 0.524822695035461,
+          "recall": 0.9910714285714286,
+          "f1": 0.6862442040185471
+        },
+        {
+          "label": "Other",
+          "n": 106,
+          "predicted": 70,
+          "correct": 60,
+          "precision": 0.8571428571428571,
+          "recall": 0.5660377358490566,
+          "f1": 0.6818181818181818
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 1515,
+          "correct": 1491,
+          "precision": 0.9841584158415841,
+          "recall": 0.7308823529411764,
+          "f1": 0.8388185654008438
+        }
+      ],
+      "unmapped_truth": 0,
+      "confusion": [
+        {
+          "author": "B",
+          "prediction": "B",
+          "cells": 487
+        },
+        {
+          "author": "B",
+          "prediction": "T",
+          "cells": 1
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "B",
+          "cells": 90
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Dendritic",
+          "cells": 76
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Monocyte",
+          "cells": 55
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Other",
+          "cells": 7
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "B",
+          "cells": 1
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Monocyte",
+          "cells": 1912
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "T",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "B",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "NK",
+          "cells": 222
+        },
+        {
+          "author": "NK",
+          "prediction": "Other",
+          "cells": 1
+        },
+        {
+          "author": "Other",
+          "prediction": "Monocyte",
+          "cells": 24
+        },
+        {
+          "author": "Other",
+          "prediction": "Other",
+          "cells": 60
+        },
+        {
+          "author": "Other",
+          "prediction": "T",
+          "cells": 22
+        },
+        {
+          "author": "T",
+          "prediction": "B",
+          "cells": 346
+        },
+        {
+          "author": "T",
+          "prediction": "NK",
+          "cells": 201
+        },
+        {
+          "author": "T",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "T",
+          "prediction": "T",
+          "cells": 1491
+        }
+      ]
+    },
+    "after-1/singler_author": {
+      "original_cells": 5000,
+      "status_counts": {
+        "reference_prediction": 4983,
+        "unknown": 17
+      },
+      "known_coverage": 0.9966,
+      "status_policy_version": "scagentkit.prediction-status.v1",
+      "scoreable_statuses": [
+        "candidate_only_not_reviewed",
+        "reference_prediction"
+      ],
+      "status_policy": "Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.",
+      "unscoreable_nonunknown_raw_labels": 0,
+      "biological_accuracy": null,
+      "scientific_accuracy_claim": false,
+      "agreement_status": "author_label_agreement_only",
+      "agreement_denominator": 5000,
+      "annotation_accuracy": null,
+      "human_time_seconds": null,
+      "correct": 4451,
+      "conditional_agreement": 0.8932370058197873,
+      "end_to_end_correct_yield": 0.8902,
+      "macro_f1": 0.6893363118749146,
+      "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 420,
+          "correct": 394,
+          "precision": 0.9380952380952381,
+          "recall": 0.8073770491803278,
+          "f1": 0.8678414096916298
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 145,
+          "correct": 91,
+          "precision": 0.6275862068965518,
+          "recall": 0.3991228070175439,
+          "f1": 0.48793565683646123
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1893,
+          "correct": 1777,
+          "precision": 0.9387216059165346,
+          "recall": 0.9284221525600836,
+          "f1": 0.9335434725505647
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 239,
+          "correct": 202,
+          "precision": 0.8451882845188284,
+          "recall": 0.9017857142857143,
+          "f1": 0.8725701943844493
+        },
+        {
+          "label": "Other",
+          "n": 106,
+          "predicted": 194,
+          "correct": 2,
+          "precision": 0.010309278350515464,
+          "recall": 0.018867924528301886,
+          "f1": 0.013333333333333332
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 2092,
+          "correct": 1985,
+          "precision": 0.9488527724665392,
+          "recall": 0.9730392156862745,
+          "f1": 0.9607938044530493
+        }
+      ],
+      "unmapped_truth": 0,
+      "confusion": [
+        {
+          "author": "B",
+          "prediction": "B",
+          "cells": 394
+        },
+        {
+          "author": "B",
+          "prediction": "Dendritic",
+          "cells": 50
+        },
+        {
+          "author": "B",
+          "prediction": "Monocyte",
+          "cells": 2
+        },
+        {
+          "author": "B",
+          "prediction": "Other",
+          "cells": 26
+        },
+        {
+          "author": "B",
+          "prediction": "T",
+          "cells": 12
+        },
+        {
+          "author": "B",
+          "prediction": "Unknown",
+          "cells": 4
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "B",
+          "cells": 10
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Dendritic",
+          "cells": 91
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Monocyte",
+          "cells": 89
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Other",
+          "cells": 34
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "T",
+          "cells": 2
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Unknown",
+          "cells": 2
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Dendritic",
+          "cells": 4
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Monocyte",
+          "cells": 1777
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Other",
+          "cells": 130
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Unknown",
+          "cells": 3
+        },
+        {
+          "author": "NK",
+          "prediction": "Monocyte",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "NK",
+          "cells": 202
+        },
+        {
+          "author": "NK",
+          "prediction": "T",
+          "cells": 20
+        },
+        {
+          "author": "NK",
+          "prediction": "Unknown",
+          "cells": 1
+        },
+        {
+          "author": "Other",
+          "prediction": "B",
+          "cells": 4
+        },
+        {
+          "author": "Other",
+          "prediction": "Monocyte",
+          "cells": 24
+        },
+        {
+          "author": "Other",
+          "prediction": "NK",
+          "cells": 3
+        },
+        {
+          "author": "Other",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "Other",
+          "prediction": "T",
+          "cells": 73
+        },
+        {
+          "author": "T",
+          "prediction": "B",
+          "cells": 12
+        },
+        {
+          "author": "T",
+          "prediction": "NK",
+          "cells": 34
+        },
+        {
+          "author": "T",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "T",
+          "prediction": "T",
+          "cells": 1985
+        },
+        {
+          "author": "T",
+          "prediction": "Unknown",
+          "cells": 7
+        }
+      ]
+    },
+    "after-no-diagnostics-1/candidate_author": {
+      "original_cells": 5000,
+      "status_counts": {
+        "candidate_only_not_reviewed": 5000
+      },
+      "known_coverage": 1.0,
+      "status_policy_version": "scagentkit.prediction-status.v1",
+      "scoreable_statuses": [
+        "candidate_only_not_reviewed",
+        "reference_prediction"
+      ],
+      "status_policy": "Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.",
+      "unscoreable_nonunknown_raw_labels": 0,
+      "biological_accuracy": null,
+      "scientific_accuracy_claim": false,
+      "agreement_status": "author_label_agreement_only",
+      "agreement_denominator": 5000,
+      "annotation_accuracy": null,
+      "human_time_seconds": null,
+      "correct": 4248,
+      "conditional_agreement": 0.8496,
+      "end_to_end_correct_yield": 0.8496,
+      "macro_f1": 0.7292419718220868,
+      "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 925,
+          "correct": 487,
+          "precision": 0.5264864864864864,
+          "recall": 0.9979508196721312,
+          "f1": 0.6893135173389949
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 76,
+          "correct": 76,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1991,
+          "correct": 1912,
+          "precision": 0.9603214465092919,
+          "recall": 0.9989550679205852,
+          "f1": 0.979257362355954
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 423,
+          "correct": 222,
+          "precision": 0.524822695035461,
+          "recall": 0.9910714285714286,
+          "f1": 0.6862442040185471
+        },
+        {
+          "label": "Other",
+          "n": 106,
+          "predicted": 70,
+          "correct": 60,
+          "precision": 0.8571428571428571,
+          "recall": 0.5660377358490566,
+          "f1": 0.6818181818181818
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 1515,
+          "correct": 1491,
+          "precision": 0.9841584158415841,
+          "recall": 0.7308823529411764,
+          "f1": 0.8388185654008438
+        }
+      ],
+      "unmapped_truth": 0,
+      "confusion": [
+        {
+          "author": "B",
+          "prediction": "B",
+          "cells": 487
+        },
+        {
+          "author": "B",
+          "prediction": "T",
+          "cells": 1
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "B",
+          "cells": 90
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Dendritic",
+          "cells": 76
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Monocyte",
+          "cells": 55
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Other",
+          "cells": 7
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "B",
+          "cells": 1
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Monocyte",
+          "cells": 1912
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "T",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "B",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "NK",
+          "cells": 222
+        },
+        {
+          "author": "NK",
+          "prediction": "Other",
+          "cells": 1
+        },
+        {
+          "author": "Other",
+          "prediction": "Monocyte",
+          "cells": 24
+        },
+        {
+          "author": "Other",
+          "prediction": "Other",
+          "cells": 60
+        },
+        {
+          "author": "Other",
+          "prediction": "T",
+          "cells": 22
+        },
+        {
+          "author": "T",
+          "prediction": "B",
+          "cells": 346
+        },
+        {
+          "author": "T",
+          "prediction": "NK",
+          "cells": 201
+        },
+        {
+          "author": "T",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "T",
+          "prediction": "T",
+          "cells": 1491
+        }
+      ]
+    },
+    "after-no-diagnostics-1/singler_author": {
+      "original_cells": 5000,
+      "status_counts": {
+        "reference_prediction": 4983,
+        "unknown": 17
+      },
+      "known_coverage": 0.9966,
+      "status_policy_version": "scagentkit.prediction-status.v1",
+      "scoreable_statuses": [
+        "candidate_only_not_reviewed",
+        "reference_prediction"
+      ],
+      "status_policy": "Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.",
+      "unscoreable_nonunknown_raw_labels": 0,
+      "biological_accuracy": null,
+      "scientific_accuracy_claim": false,
+      "agreement_status": "author_label_agreement_only",
+      "agreement_denominator": 5000,
+      "annotation_accuracy": null,
+      "human_time_seconds": null,
+      "correct": 4451,
+      "conditional_agreement": 0.8932370058197873,
+      "end_to_end_correct_yield": 0.8902,
+      "macro_f1": 0.6893363118749146,
+      "macro_classes": "all evaluable frozen truth classes; unknown/excluded count as misses",
+      "per_type": [
+        {
+          "label": "B",
+          "n": 488,
+          "predicted": 420,
+          "correct": 394,
+          "precision": 0.9380952380952381,
+          "recall": 0.8073770491803278,
+          "f1": 0.8678414096916298
+        },
+        {
+          "label": "Dendritic",
+          "n": 228,
+          "predicted": 145,
+          "correct": 91,
+          "precision": 0.6275862068965518,
+          "recall": 0.3991228070175439,
+          "f1": 0.48793565683646123
+        },
+        {
+          "label": "Monocyte",
+          "n": 1914,
+          "predicted": 1893,
+          "correct": 1777,
+          "precision": 0.9387216059165346,
+          "recall": 0.9284221525600836,
+          "f1": 0.9335434725505647
+        },
+        {
+          "label": "NK",
+          "n": 224,
+          "predicted": 239,
+          "correct": 202,
+          "precision": 0.8451882845188284,
+          "recall": 0.9017857142857143,
+          "f1": 0.8725701943844493
+        },
+        {
+          "label": "Other",
+          "n": 106,
+          "predicted": 194,
+          "correct": 2,
+          "precision": 0.010309278350515464,
+          "recall": 0.018867924528301886,
+          "f1": 0.013333333333333332
+        },
+        {
+          "label": "T",
+          "n": 2040,
+          "predicted": 2092,
+          "correct": 1985,
+          "precision": 0.9488527724665392,
+          "recall": 0.9730392156862745,
+          "f1": 0.9607938044530493
+        }
+      ],
+      "unmapped_truth": 0,
+      "confusion": [
+        {
+          "author": "B",
+          "prediction": "B",
+          "cells": 394
+        },
+        {
+          "author": "B",
+          "prediction": "Dendritic",
+          "cells": 50
+        },
+        {
+          "author": "B",
+          "prediction": "Monocyte",
+          "cells": 2
+        },
+        {
+          "author": "B",
+          "prediction": "Other",
+          "cells": 26
+        },
+        {
+          "author": "B",
+          "prediction": "T",
+          "cells": 12
+        },
+        {
+          "author": "B",
+          "prediction": "Unknown",
+          "cells": 4
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "B",
+          "cells": 10
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Dendritic",
+          "cells": 91
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Monocyte",
+          "cells": 89
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Other",
+          "cells": 34
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "T",
+          "cells": 2
+        },
+        {
+          "author": "Dendritic",
+          "prediction": "Unknown",
+          "cells": 2
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Dendritic",
+          "cells": 4
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Monocyte",
+          "cells": 1777
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Other",
+          "cells": 130
+        },
+        {
+          "author": "Monocyte",
+          "prediction": "Unknown",
+          "cells": 3
+        },
+        {
+          "author": "NK",
+          "prediction": "Monocyte",
+          "cells": 1
+        },
+        {
+          "author": "NK",
+          "prediction": "NK",
+          "cells": 202
+        },
+        {
+          "author": "NK",
+          "prediction": "T",
+          "cells": 20
+        },
+        {
+          "author": "NK",
+          "prediction": "Unknown",
+          "cells": 1
+        },
+        {
+          "author": "Other",
+          "prediction": "B",
+          "cells": 4
+        },
+        {
+          "author": "Other",
+          "prediction": "Monocyte",
+          "cells": 24
+        },
+        {
+          "author": "Other",
+          "prediction": "NK",
+          "cells": 3
+        },
+        {
+          "author": "Other",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "Other",
+          "prediction": "T",
+          "cells": 73
+        },
+        {
+          "author": "T",
+          "prediction": "B",
+          "cells": 12
+        },
+        {
+          "author": "T",
+          "prediction": "NK",
+          "cells": 34
+        },
+        {
+          "author": "T",
+          "prediction": "Other",
+          "cells": 2
+        },
+        {
+          "author": "T",
+          "prediction": "T",
+          "cells": 1985
+        },
+        {
+          "author": "T",
+          "prediction": "Unknown",
+          "cells": 7
+        }
+      ]
+    }
+  },
+  "limitation": "Status validation is a software prerequisite. Frozen candidates and reference predictions are not reviewed biological truth. Original metrics and failed attempts are retained."
+}

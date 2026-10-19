@@ -55,3 +55,15 @@ PBMC after-snapshot为恢复态复制，审批事件可能来自原始项目，�
 展示量减少，尚无本轮科学基准运行速度改善测量。
 
 [模型A/B仅方案](../../../docs/IFNB_MODEL_AB_PROTOCOL.md)：无调用、无传输、无费用；尚无模型效果结果。
+
+## 预测状态审计补充
+
+评分现仅允许实际生产者状态 `candidate_only_not_reviewed` 和 `reference_prediction` 计分。
+`unknown` / `explicit_unknown_control` 为弃权；失败、未运行、schema失败、缺失或未知状态
+即使携带正确标签也按Unknown/错误计入原分母，原始输出不改写。
+post-hoc不再信任无状态核验的旧聚合；使用与原始metrics哈希绑定、从保存CSV重算的状态审计。
+
+本轮只读检查36个保存CSV、144978行：未发现不具计分资格却携带非Unknown标签的行，
+22组已有候选/SingleR作者标签指标比较没有数值变化；ifnb共同类F1仍为0.740983/0.831083。
+这是实际审计结论，不表示该评分漏洞无害；失败却标签正确的回归证明旧代码会错误给分。
+原metrics、原失败及CSV字节保持不变，完整状态/来源hash见[prediction-status-audit.json](prediction-status-audit.json)。

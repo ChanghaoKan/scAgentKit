@@ -1,6 +1,8 @@
 {
   "schema": "scagentkit.posthoc-common-class.v1",
   "status": "exploratory_seen_data_not_confirmatory",
+  "status_policy_version": "scagentkit.prediction-status.v1",
+  "prediction_audit_sha256": "1ad687baa446ab11873fce41eb621557ddf2c7a50406fcfd7ac30b5e1af96e26",
   "source_metrics_sha256": "990bd5b832c9c7a7e1fdd0c60c1931da454a1d4da6238fd809b509350bbb4d87",
   "label_map_unchanged": true,
   "scientific_rerun": false,

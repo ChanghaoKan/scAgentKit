@@ -86,3 +86,10 @@ Post-hoc common-class and timing corrections are in [results/report-corrections.
 Reproduce common-class scores with `python3 posthoc_report.py results/metrics.json output.json`;
 optional `--timings` reads saved stage projections without rerunning analysis.
 The original metrics/failures remain unchanged. [Model A/B protocol](../../docs/IFNB_MODEL_AB_PROTOCOL.md) is protocol-only, with zero model calls.
+
+Prediction statuses are a scoring contract: only `candidate_only_not_reviewed` and
+`reference_prediction` may receive credit. Failed/not-run/schema-failed, missing
+and unrecognized statuses force Unknown without changing raw outputs. The
+post-hoc reader requires status-aware aggregates or the bundled hash-bound
+[prediction audit](results/prediction-status-audit.json). To audit existing saved
+CSVs without any refit, use `audit_prediction_status.py EVIDENCE metrics.json output.json`.

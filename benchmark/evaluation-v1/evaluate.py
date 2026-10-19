@@ -3,6 +3,16 @@ import argparse,csv,json
 from collections import Counter
 from pathlib import Path
 
+PREDICTION_STATUS_VERSION = 'scagentkit.prediction-status.v1'
+SCOREABLE_STATUSES = frozenset({'candidate_only_not_reviewed', 'reference_prediction'})
+ABSTENTION_STATUSES = frozenset({'unknown', 'explicit_unknown_control'})
+
+def prediction_status(row, present=True):
+    if not present:return 'excluded'
+    status=row.get('status')
+    if status is None or isinstance(status,str) and not status.strip():return 'missing_status'
+    return status if isinstance(status,str) else 'invalid_status'
+
 def rows(path):
     with Path(path).open(newline='') as f: data=list(csv.DictReader(f))
     result={row['cell_id']:row for row in data}
@@ -20,10 +30,16 @@ def score(universe,predictions,truth=None,prediction_map=None,truth_map=None):
     if not set(predictions)<=set(universe):raise ValueError('Foreign prediction cell IDs')
     if truth is not None and set(truth)!=set(universe):raise ValueError('Truth must cover the exact original universe')
     prediction_map=prediction_map or {};truth_map=truth_map or {}
-    labels={cell:mapped(predictions.get(cell,{}).get('label','Unknown'),prediction_map) for cell in universe}
-    counts=Counter(predictions.get(cell,{}).get('status','excluded') for cell in universe)
+    statuses={cell:prediction_status(predictions.get(cell,{}),cell in predictions) for cell in universe}
+    raw_labels={cell:mapped(predictions.get(cell,{}).get('label','Unknown'),prediction_map) for cell in universe}
+    labels={cell:raw_labels[cell] if statuses[cell] in SCOREABLE_STATUSES else 'Unknown' for cell in universe}
+    counts=Counter(statuses.values())
     coverage=sum(value!='Unknown' for value in labels.values())/len(universe) if universe else None
     out=dict(original_cells=len(universe),status_counts=dict(counts),known_coverage=coverage,
+             status_policy_version=PREDICTION_STATUS_VERSION,
+             scoreable_statuses=sorted(SCOREABLE_STATUSES),
+             status_policy='Only exact producer candidate_only_not_reviewed/reference_prediction statuses may score. Declared abstentions, failures, not-run, schema failures, missing and unrecognized statuses become Unknown; raw outputs are unchanged.',
+             unscoreable_nonunknown_raw_labels=sum(statuses[c] not in SCOREABLE_STATUSES and raw_labels[c]!='Unknown' for c in universe),
              biological_accuracy=None,scientific_accuracy_claim=False,agreement_status='not_evaluated_no_truth',agreement_denominator=0,
              annotation_accuracy=None,human_time_seconds=None)
     if truth is None:return out
@@ -38,7 +54,7 @@ def score(universe,predictions,truth=None,prediction_map=None,truth_map=None):
     for label in sorted(set(target.values())):
         n=sum(value==label for value in target.values())
         predicted=sum(labels[cell]==label for cell in evaluable)
-        correct=sum(target[cell]==label and labels[cell]==label for cell in evaluable)
+        correct=sum(target[cell]==label and labels[cell]==label and labels[cell]!='Unknown' for cell in evaluable)
         precision=correct/predicted if predicted else 0
         recall=correct/n
         f1=2*precision*recall/(precision+recall) if precision+recall else 0
