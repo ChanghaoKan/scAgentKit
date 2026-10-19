@@ -1,7 +1,7 @@
 # Transfer consent never grants scientific approval. The exact payload remains
 # visible and hashed even when a creation-time scope permits another dispatch.
 .sc_run_transfer_categories <- function(kind) {
-  switch(kind, strategy = c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression"),
+  switch(sub("^simulated_", "", kind), strategy = c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression"),
     qc = c("study_context", "aggregate_qc", "aggregate_design"),
     annotation = c("study_context", "aggregate_markers", "aggregate_design", "aggregate_expression"),
     character())
@@ -27,8 +27,8 @@
   if (!is.character(categories) || !length(categories) || anyNA(categories) ||
       anyDuplicated(categories) || any(!categories %in% allowed))
     stop("Choose explicit aggregate transfer categories; cell IDs, matrices and per-cell metadata cannot be authorized.", call. = FALSE)
-  if (!isTRUE(provider$external) || budget <= 0)
-    stop("Project transfer consent requires an external provider and an explicit positive USD cap.", call. = FALSE)
+  if ((!isTRUE(provider$external) && !identical(provider$name, "mock")) || budget <= 0)
+    stop("Project transfer consent requires an external provider (or explicit offline mock) and an explicit positive USD cap.", call. = FALSE)
   out <- list(schema = "scagentkit.transfer-consent.v1", mode = "project", confirmed = TRUE,
     reviewer = value$reviewer, reason = value$reason, categories = sort(categories),
     provider_hash = .sc_run_provider_hash(provider), budget_usd = as.numeric(budget),
@@ -49,7 +49,8 @@
       !identical(consent$provider_hash, .sc_run_provider_hash(config$provider)) ||
       !identical(consent$budget_usd, as.numeric(config$budget))) return(FALSE)
   kind <- request$purpose
-  if (!is.character(kind) || length(kind) != 1L || !kind %in% c("strategy", "qc", "annotation")) return(FALSE)
+  if (!is.character(kind) || length(kind) != 1L || !kind %in% c("strategy", "qc", "annotation", "simulated_strategy", "simulated_qc", "simulated_annotation")) return(FALSE)
+  if (startsWith(kind, "simulated_") && !identical(config$provider$name, "mock")) return(FALSE)
   scope <- .sc_run_transfer_scope(kind)
   identical(request$transfer_scope, scope) && identical(request$prompt_version, consent$prompt_version) &&
     identical(consent$prompt_version, scope$prompt_version) &&

@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- With explicit creation-time project transfer consent, stage one automatic model
+  draft per saved evidence snapshot. Strict exact-payload consent stays explicit.
+  Saved attempts, uncertain accounting, unsaved edits and unavailable budgets
+  prevent automatic requests; adoption and all scientific approvals stay human.
+  Explicit offline mock scope uses a distinct simulation request identity.
+
 - Keep the standard raw project's measured-resolution approval mandatory for
   model drafts. Explicit advanced no-scan setup remains separate; models cannot
   disable a required gate. Rare declared metadata groups or literal cell-ID

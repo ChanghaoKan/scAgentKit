@@ -70,6 +70,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
   proposal <- .sc_run_get(root, state, "manual_strategy")
   view <- sc_run_suggest(root)
   expect_true(view$can_request); expect_false(view$can_approve)
+  expect_true(view$can_auto_request)
   expect_identical(view$preview$consent_mode, "project")
   expect_equal(view$preview$remaining_usd, .1)
   calls <- 0L
@@ -78,6 +79,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
     list(content = .sc_run_provider_json(proposal), cost_usd = .01)
   })
   expect_identical(answer$status, "candidate")
+  expect_false(answer$can_auto_request)
   expect_equal(answer$preview$remaining_usd, .09)
   after <- .sc_run_load(root)
   expect_identical(after$pending, original); expect_length(after$approvals, 0L)
@@ -87,6 +89,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
   adopted <- .sc_run_load(root)
   expect_length(adopted$approvals, 0L); expect_null(adopted$files$analysis)
   expect_identical(adopted$pending$kind, "strategy")
+  expect_false(sc_run_suggest(root)$can_auto_request)
 })
 
 test_that("strict mode, invalid JSON and insufficient budget preserve manual drafts", {

@@ -318,6 +318,12 @@ function verifySuggestion(answer) {
       typeof preview.system_prompt !== "string" || typeof preview.user_prompt !== "string" || !preview.generation || typeof preview.generation !== "object" || Array.isArray(preview.generation)))
     throw new Error("The exact outgoing model payload or generation settings are unverified.");
   if (["can_approve", "can_request", "can_adopt"].some(key => item[key]) && (!preview || !item.available)) throw new Error("This model action is not available for the inspected saved boundary.");
+  if (item.can_auto_request != null && typeof item.can_auto_request !== "boolean") throw new Error("Automatic draft eligibility is unverified.");
+  if (item.can_auto_request === true && (!item.can_request || !hash(item.auto_request_key) ||
+      preview?.scope_authorized !== true || preview.consent_mode !== "project" ||
+      typeof preview.transfer_consent?.reviewer !== "string" || !preview.transfer_consent.reviewer.trim() ||
+      typeof preview.transfer_consent?.reason !== "string" || !preview.transfer_consent.reason.trim()))
+    throw new Error("Automatic draft has no confirmed project transfer identity.");
   if (item.candidate != null) {
     const schema = item.kind === "strategy" ? "scagentkit.strategy.v1" : item.kind === "qc" ? ["scagentkit.qc.v1", "scagentkit.qc.mad.v1"] : "scagentkit.annotation.v1";
     if (typeof item.candidate !== "object" || Array.isArray(item.candidate) || !array(schema).includes(item.candidate.schema)) throw new Error("The model candidate is not a supported typed proposal.");
@@ -375,6 +381,7 @@ function renderSuggestion() {
   else if (!note && response && response.status !== "ok") note = "Model result: " + response.status + ". " + (response.error || "No candidate was accepted. Inspect the saved accounting before an explicit next action.") + " No automatic retry will occur.";
   else if (!note && job && ["failed", "interrupted", "timed_out"].includes(job.status)) note = "The saved model task " + job.status + ". " + (job.error?.message || "Inspect the authoritative saved result and usage ledger.") + (job.requires_reconciliation ? " Delivery or accounting may be uncertain; explicit reconciliation is required." : "") + " No automatic retry will occur.";
   else if (!note && item?.candidate) note = response?.cached ? "This candidate came from the matching saved cache. Accept or modify it in central scientific review; it is still unapproved." : "The typed candidate is saved. Accept or modify it in central scientific review; it is still unapproved.";
+  else if (!note && item?.can_auto_request) note = "The confirmed project scope permits one automatic draft request for this saved evidence. Scientific approval remains separate.";
   else if (!note && item?.can_request) note = preview?.external ? "The exact transfer is approved. Requesting a suggestion is a separate explicit action." : "Requesting this declared local suggestion is an explicit action.";
   if (!note && item?.kind === "annotation" && !item?.candidate) note = "Prepare the local annotation worksheet on this page, or explicitly request a configured model suggestion. A complete proposal still requires separate scientific approval.";
   $("suggestion-message").textContent = note; $("suggestion-message").className = "suggestion-message" + (state.suggestionLost || response && response.status !== "ok" ? " error" : "");
@@ -422,6 +429,7 @@ async function loadSuggestion() {
     renderSuggestion();
   } catch (error) {suggestionLost(error);}
   finally {state.suggestionBusy = false; renderSuggestion(); buttons(); if (activeSuggestion() && !state.suggestionLost) scheduleSuggestionPoll();}
+  if (!state.busy) await maybeAutoSuggestion();
 }
 async function pollSuggestion(generation) {
   if (generation !== state.suggestionGeneration || !activeSuggestion() || state.suggestionPollInFlight || state.busy || state.suggestionBusy) {scheduleSuggestionPoll(); return;}
@@ -434,10 +442,14 @@ async function pollSuggestion(generation) {
   } catch (error) {if (generation === state.suggestionGeneration) suggestionLost(error);}
   finally {state.suggestionPollInFlight = false;}
 }
-function suggestionPayload(action) {
+function suggestionPayload(action, automatic = false) {
   const item = state.suggestion.suggestion;
   const payload = {project_id: item.project_id, input_hash: item.input_hash, expected_revision: item.revision, suggestion_hash: item.suggestion_hash};
   payload.reviewer = $("suggestion-reviewer").value.trim(); payload.reason = $("suggestion-reason").value.trim();
+  if (automatic && action === "request" && item.can_auto_request === true && item.preview?.scope_authorized === true) {
+    payload.reviewer = item.preview.transfer_consent.reviewer;
+    payload.reason = "Stage a draft within the confirmed project transfer scope. " + item.preview.transfer_consent.reason;
+  }
   if (!payload.reviewer || !payload.reason) throw new Error("Enter a reviewer and a reason for this exact transfer, request or candidate decision.");
   if (action === "request") {
     const key = "scagentkit.model-request.v1:" + item.project_id + ":" + item.input_hash + ":" + item.suggestion_hash;
@@ -449,6 +461,19 @@ function suggestionPayload(action) {
     try {sessionStorage.setItem(key, JSON.stringify(payload));} catch (_) {}
   }
   return payload;
+}
+async function maybeAutoSuggestion() {
+  const item = state.suggestion?.suggestion;
+  if (!ready() || dirty() || state.connectionLost || item?.can_auto_request !== true ||
+      item.can_request !== true || item.revision !== state.view.run.revision ||
+      item.preview?.scope_authorized !== true || item.preview?.consent_mode !== "project" ||
+      !hash(item.auto_request_key) || state.suggestion.job?.requires_reconciliation === true) return;
+  const key = "scagentkit.auto-draft.v1:" + item.auto_request_key;
+  // Mark before submission. A lost receipt requires an explicit saved-state
+  // inspection; reloading this tab must never silently submit another job.
+  try {if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "attempted");}
+  catch (_) {return;} // No reliable duplicate guard: retain explicit Request.
+  await suggestionAction("request", false, false, true);
 }
 function exactSuggestionBinding(item) {
   const preview = item?.preview;
@@ -463,11 +488,11 @@ function verifyApprovedSuggestion(answer, binding, revision) {
       ["queued", "running"].includes(answer.job?.status) || answer.job?.requires_reconciliation === true)
     throw new Error("The approved request or saved task changed. Inspect the exact saved preview before an explicit request.");
 }
-async function suggestionAction(action, modify = false, requestAfterApproval = false) {
+async function suggestionAction(action, modify = false, requestAfterApproval = false, automatic = false) {
   const permission = {approve: "can_approve", request: "can_request", adopt: "can_adopt", discard: "can_discard"}[action];
   const item = state.suggestion?.suggestion;
   if (!permission || !ready() || dirty() || state.suggestion?.enabled !== true || item?.revision !== state.view.run.revision || !item?.[permission]) return;
-  let payload; try {payload = suggestionPayload(action);} catch (error) {state.suggestionError = error.message; renderSuggestion(); return;}
+  let payload; try {payload = suggestionPayload(action, automatic);} catch (error) {state.suggestionError = error.message; renderSuggestion(); return;}
   const binding = exactSuggestionBinding(item), approvedRevision = payload.expected_revision + 1, approvedStage = state.view.run.stage;
   stopSuggestionPolling(); state.busy = true; state.suggestionChaining = action === "approve" && requestAfterApproval; buttons();
   try {
@@ -1823,6 +1848,7 @@ async function load() {
     message(error.message + " Refresh a verified saved state before submitting again. " + (state.continuation?.job ? "The saved task may still be running; its ID is retained." : ""), true);
     renderContinuation();
   } finally {state.busy = false; renderContinuation(); buttons(); if (activeJob() && !state.connectionLost) schedulePoll();}
+  await maybeAutoSuggestion();
 }
 function basePayload(action, reviewer, reason) {
   const run = state.view.run, current = run.review_node;

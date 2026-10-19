@@ -58,7 +58,10 @@
     blocked_reason = conditionMessage(request)))
   # Simulated responses have their own cache identity and cannot be mistaken
   # for a real or previously supplied runtime model response.
-  if (simulate) request$purpose <- paste0("simulated_", kind)
+  if (simulate) {
+    request$purpose <- paste0("simulated_", kind)
+    if (!is.null(request$transfer_scope)) request$transfer_scope <- .sc_run_transfer_scope(request$purpose)
+  }
   request_hash <- tryCatch(.sc_run_request_hash(request, provider), error = function(e) {
     if (identical(conditionMessage(e), "Aggregate provider request exceeds 100,000 bytes."))
       return(NULL)
@@ -98,7 +101,7 @@
     available = is.null(context$blocked_reason), blocked_reason = context$blocked_reason,
     suggestion_hash = context$suggestion_hash, status = "preview", preview = NULL,
     candidate = NULL, response = NULL, can_approve = FALSE, can_request = FALSE,
-    can_adopt = FALSE, can_discard = FALSE)
+    can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE)
   if (!is.null(context$blocked_reason)) return(result)
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
   entries <- ledger$entries
@@ -148,6 +151,19 @@
   }
   result$can_approve <- !approved
   result$can_request <- approved && !result$status %in% c("candidate", "adopted", "discarded")
+  # Evidence identity excludes the editable pending proposal: adoption or saving
+  # a reason must never start a second paid request on the same evidence.
+  same_evidence <- !is.null(saved) && identical(saved$kind, context$kind) &&
+    identical(saved$binding$evidence, context$binding$evidence) &&
+    identical(saved$binding$cluster_scan, context$binding$cluster_scan)
+  attempted <- same_evidence && saved$status %in% c("requesting", "candidate", "adopted", "discarded", "failed")
+  held <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
+    (!identical(entry$cost_state, "known") || isTRUE(entry$accounting_issue)), logical(1)))
+  result$can_auto_request <- isTRUE(result$preview$scope_authorized) && result$can_request &&
+    identical(state$status, "awaiting_review") && !attempted && !held &&
+    result$preview$remaining_usd >= provider$reservation_usd
+  result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
+    kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan))
   result$can_adopt <- current && identical(saved$status, "candidate") && !is.null(saved$candidate)
   result$can_discard <- current && !saved$status %in% c("adopted", "discarded")
   result

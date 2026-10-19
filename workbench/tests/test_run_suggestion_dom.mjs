@@ -350,6 +350,42 @@ await test("project transfer scope keeps exact payload, used and remaining budge
   assert.equal(h.requests.length, 0);
 });
 
+function autoModel() {
+  const value = model(7, "approved");
+  Object.assign(value.suggestion, {can_auto_request: true, auto_request_key: evidenceHash});
+  Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
+    transfer_consent: {reviewer: "creation-reviewer", reason: "Confirmed public aggregate scope."}});
+  return value;
+}
+await test("project auto draft uses creation consent once and never posts a scientific decision", async () => {
+  const storage = new Map(), h = setup(scientificReview(7), autoModel(), "", storage);
+  h.el("suggestion-reviewer").value = ""; h.el("suggestion-reason").value = "";
+  h.fetchImpl = async (url, options) => {assert.match(url, /suggestion\/request$/);
+    const payload = JSON.parse(options.body); assert.equal(payload.reviewer, "creation-reviewer");
+    const value = autoModel(); value.job = job("running", 7, payload.request_id); return response(value);};
+  await h.call("maybeAutoSuggestion"); await h.call("maybeAutoSuggestion");
+  assert.equal(h.requests.length, 1); assert.equal(h.el("strategy-approve").disabled, true);
+  const reloaded = setup(scientificReview(7), autoModel(), "", storage);
+  await reloaded.call("maybeAutoSuggestion"); assert.equal(reloaded.requests.length, 0);
+});
+for (const [name, mutate] of [["strict scope", h => h.state.suggestion.suggestion.preview.consent_mode = "strict"],
+  ["saved attempt", h => h.state.suggestion.suggestion.can_auto_request = false],
+  ["stale boundary", h => h.state.stale = true],
+  ["unsaved human draft", h => h.state.strategyDraftText = "unsaved correction"],
+  ["unknown accounting", h => h.state.suggestion.job = {...job("failed"), requires_reconciliation: true}]])
+  await test("auto draft does not submit for " + name, async () => {
+    const h = setup(scientificReview(7), autoModel()); mutate(h);
+    await h.call("maybeAutoSuggestion"); assert.equal(h.requests.length, 0);
+  });
+await test("lost automatic request cannot repeat after explicit preview or tab reload", async () => {
+  const storage = new Map(), h = setup(scientificReview(7), autoModel(), "", storage);
+  h.fetchImpl = async () => {throw new Error("Simulated lost receipt");};
+  await h.call("maybeAutoSuggestion"); assert.equal(h.requests.length, 1);
+  h.state.suggestionLost = false; await h.call("maybeAutoSuggestion"); assert.equal(h.requests.length, 1);
+  const reloaded = setup(scientificReview(7), autoModel(), "", storage);
+  await reloaded.call("maybeAutoSuggestion"); assert.equal(reloaded.requests.length, 0);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

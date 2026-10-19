@@ -170,7 +170,7 @@
     request$prompt_version, "prompt_version", "^[A-Za-z0-9._-]{1,80}$")
   if (!is.null(request$transfer_scope)) {
     if (!identical(request$transfer_scope, .sc_run_transfer_scope(purpose)) ||
-        !purpose %in% c("strategy", "qc", "annotation")) stop("Invalid aggregate transfer scope.")
+        !purpose %in% c("strategy", "qc", "annotation", "simulated_strategy", "simulated_qc", "simulated_annotation")) stop("Invalid aggregate transfer scope.")
     payload$transfer_scope <- request$transfer_scope
   }
   serialized <- .sc_run_provider_json(payload)
