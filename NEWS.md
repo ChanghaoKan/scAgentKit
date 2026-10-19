@@ -278,7 +278,14 @@ recommendation functions, `annot_match_reference()`, `annot_llm_annotate()`,
 with concrete reviewed `sc_run` migration paths. They remain exported and callable.
 The first published deprecation is **0.6.0**. The exports remain available through
 **0.6.x** and **0.7.x**; removal is planned no earlier than **0.8.0**, subject to
-the migration notice in that release. Utility accessors, reference readers, comparison helpers and current
+the migration notice in that release.
+
+> **Historical policy, superseded by 0.8.0:** the retention statement above
+> describes the 0.6.0 release. The 0.8.0 API consolidation replaced that policy.
+> Before 1.0, any version may break compatibility, no deprecation period is
+> guaranteed, and cross-version project resume is unsupported.
+
+ Utility accessors, reference readers, comparison helpers and current
 project APIs are retained. The reviewed coordinator has explicit configuration,
 proposal and approval boundaries; these are not signature-compatible replacements.
 Manual split/merge and gene-removal helpers have no one-to-one coordinator
