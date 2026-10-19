@@ -56,5 +56,5 @@ project. Model payload consent is separate from scientific approval. Inputs are
 not reinterpreted as donor/capture/batch based on names. `sc_result()` returns a
 Seurat; marker/reference utilities return tables and plot utilities return paths.
 There is no AgentSeurat analysis pipeline or automatic hybrid-score writeback.
-See `vignette("scAgentKit-pbmc_small")`, package help and the repository R protocol
+See package help and the repository R protocol
 for the complete annotation and reopening steps.

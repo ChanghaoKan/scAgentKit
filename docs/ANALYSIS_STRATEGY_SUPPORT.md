@@ -62,8 +62,7 @@ configuration list, not by a bare `TRUE` or an arbitrary doublet proposal. The
 default reviewed doublet choice is `keep`. See [DOUBLET_REVIEW.md](DOUBLET_REVIEW.md)
 for required raw-count, called-cell, loading-unit and expected-rate declarations,
 strict dependency/audit guards, and the fixed pre-QC reference. Processed reuse
-supports diagnostics and `keep` only. These declarations do not invoke the
-legacy `qc_doublet()` wrapper.
+supports diagnostics and `keep` only. All such computation belongs to this reviewed engine; the old direct wrapper is retired.
 
 New context fields are `research_goal` (text) and `design` (a named list accepting
 `type`, `technical_batch`, and `notes`). `technical_batch` is an explicit logical
@@ -365,9 +364,8 @@ the coordinator does not choose an arbitrary matching layer.
 
 Normalization reads the selected sparse counts matrix. Scaling is limited to
 selected HVGs; its scaled representation can be dense without expanding the
-full raw or normalized matrix. Legacy `sc_scale()` falls back to scaling all
-features when variable features are absent, so the strategy path must validate
-HVG availability instead of using that fallback. LogNormalize scales by each
+full raw or normalized matrix. HVG availability is validated; absent HVGs are
+not a reason to silently scale every feature. LogNormalize scales by each
 cell's total expression and applies a log transformation; this is a supported
 method, not a claim that its assumptions suit every experiment.
 [Seurat NormalizeData reference](https://satijalab.org/seurat/reference/normalizedata).
@@ -408,10 +406,8 @@ MAD-derived suggestions
 preserve declared metadata roles, materialize an inspectable typed proposal and
 exact cell impact, and require approval before changing the cell set.
 
-Harmony requires a computed PCA and declared correction variables. Existing
-`sc_harmony()` fails if the optional dependency is absent, but it does not perform
-the strategy's required biological-design validation. Guarded
-coordinator execution is described in [HARMONY_PC_REVIEW.md](HARMONY_PC_REVIEW.md).
+Harmony requires a computed PCA, explicit correction variables, supported
+dependencies and biological-design validation. Guarded execution is described in [HARMONY_PC_REVIEW.md](HARMONY_PC_REVIEW.md).
 Software checks do not establish real batch-removal efficacy.
 [Harmony RunHarmony reference](https://portals.broadinstitute.org/harmony/reference/RunHarmony.html).
 

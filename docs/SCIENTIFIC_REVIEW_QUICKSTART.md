@@ -72,7 +72,7 @@ prefill requires explicit opt-in and existing completeness/risk guards; it
 does not change the saved proposal or delete cells. Save to rebuild impact,
 inspect it and approve the whole strategy. The
 [methods appendix](SCIENTIFIC_METHODS_APPENDIX.md#reading-qc-flags-and-retention)
-distinguishes this engine from preserved legacy `qc_mad()` semantics.
+documents the measured QC rules; the old direct-filtering API is retired in this build.
 
 ## Approve measured clustering, then annotation
 
@@ -101,7 +101,7 @@ it neither continues computation nor requests a model. The public
 `examples/three-gate-analysis.R` tutorial exercises all three approvals with
 Unknown labels and no provider; it tests software, not annotation accuracy.
 
-## Optional ambient correction and legacy objects
+## Optional ambient correction
 
 `sc_run_ambient_correction()` is R-only, with no browser correction action.
 SoupX needs one explicitly complete capture, matching raw/filtered counts,
@@ -114,14 +114,15 @@ use a new project if adopted. Floating estimates are preserved unless explicit
 See [the methods and full parameter contract](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction)
 and `?sc_run_ambient_correction` before using study data.
 
-Legacy `annot_apply()` preserves prior per-cell target values for blocked/unmapped
-clusters. Nonempty old labels do not prove a successful new model result.
-`citation_status` and `review_required`/`review_reasons` are separate from
-`label_usable`: valid counterevidence is a review hint, invalid citations remain
-blocked. Raw hybrid scores/bands are retained separately from effective confidence;
-none is a calibrated probability or a reviewed-run approval. Preserve the old
-object/environment and inspect provenance before explicit manual override or a
-new reviewed project. Full saved evidence remains in `snapshot$view` despite
-bounded R print summaries. Evaluation boundaries are in the
-[frozen protocol](EVALUATION_PROTOCOL_V1.md); no universal accuracy or time-saving
-benefit is established by a completed workflow.
+## Development API consolidation
+
+This build has one saved-project workflow. Redundant direct orchestration and
+AgentSeurat objects are removed; standalone utilities use Seurat or tables and
+never grant scientific approval. See the [exact API/type changes](API_CONSOLIDATION.md).
+Development test projects can be rebuilt with this implementation. No backward
+compatibility for old test objects is promised; preserve baseline evidence and
+published history, and never edit saved hashes to force a resume.
+
+Full evidence remains in `snapshot$view` despite bounded R print summaries.
+Evaluation boundaries remain in the [frozen protocol](EVALUATION_PROTOCOL_V1.md);
+workflow completion does not establish accuracy or human-time benefit.

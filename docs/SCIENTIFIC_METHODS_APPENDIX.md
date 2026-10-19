@@ -59,10 +59,10 @@ Cell-type-specific deletion risk remains unassessed without independent
 identity evidence; QC review neither infers author labels nor requires a new
 annotation analysis.
 
-Legacy `qc_mad()` has different, preserved semantics: log10(x) for positive
+The published legacy MAD helper used different semantics (it is retired from this development build): log10(x) for positive
 counts/features, deletion at both their low and high tails, and upper-only
 MT/ribosomal/haemoglobin deletion with a one-percentage-point scaled-MAD floor.
-It can pool cells or use explicitly selected groups. The coordinator instead
+That helper could pool cells or use explicit groups. The single current engine instead
 uses log10(x+1), lower count/feature tails, flag-only high RNA and diagnostic-only
 ribosomal/haemoglobin values, without that MT floor. Its existing small-group,
 nonfinite and near-zero-MAD availability guards remain unchanged. These are

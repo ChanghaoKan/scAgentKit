@@ -1,5 +1,17 @@
 # Development (unreleased)
 
+## Single project workflow
+
+- Extract shared marker/reference/validation/ARI kernels and retire 36 redundant
+  public functions plus the AgentSeurat class. Useful standalone tools accept
+  Seurat/tables; project prepare/export/review interchange remains.
+- Development test projects may be rebuilt. The implementation hash changes;
+  saved project hashes and approvals must not be edited to force a resume.
+- Repository examples and benchmark drivers now use the reviewed engine. Published
+  Git/release artifacts and frozen baseline evidence are unchanged. See
+  docs/API_CONSOLIDATION.md and inst/api-contract.json.
+
+
 ## Optional scientific diagnostics (effect evaluation pending)
 
 - New raw strategy projects keep applicable classic mean/detection evidence for

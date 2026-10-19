@@ -62,7 +62,8 @@
     "class-AgentSeurat.R",
     "report-sections.R",
     "decision-schema.R",
-    "legacy-deprecation.R"
+    "legacy-deprecation.R",
+    "utils-retrieval.R"
   ],
   "classes": [
     "AgentSeurat"
