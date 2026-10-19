@@ -1,128 +1,183 @@
 # Scientific review: operator guide
 
-This guide describes the [0.8.0 workflow](../README.md#one-project-workflow),
-Historical v0.6.0 has a separate protocol. [简体中文](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md).
-For v0.6.0, use its [two-approval protocol](RELEASE_060_PROTOCOL.md).
-Do not resume an old project with a different implementation or dependency
-fingerprint; preserve its exact environment or review a new project.
+Use the 0.8.0 workflow on the machine holding your data. [中文操作指南](RESEARCHER_PROTOCOL_ZH.md).
+The [README](../README.md) gives installation, the pre-1.0 compatibility policy
+and [limitations](../README.md#limitations). Historical v0.6.0 has its own
+[protocol](RELEASE_060_PROTOCOL.md).
 
-## Initialize the input and model mode
+## 1. Know the three controls
 
-`sc_start()` accepts an RDS file containing raw counts/Seurat, a 10x MEX directory,
-or a declared sample table (data.frame/CSV/TSV). It does not accept an in-memory
-Seurat object. Declare only verified sample, donor, capture, condition and batch
-roles; do not infer roles from names or treat condition as technical batch.
+| Control | What you do | What happens next |
+| --- | --- | --- |
+| Edit or adopt a candidate | Change the local draft, then Save | The page rebuilds the plan and its evidence for you to read. |
+| Approve a scientific proposal | Read the whole current proposal; enter reviewer and reason | Approve and continue executes the approved local work until the next review. |
+| Optional model request | Preview the exact content, approve sending it, then Request | A candidate appears for you to edit and save before scientific approval. |
 
-Before creating the project, choose manual or model-assisted operation. The
-default is manual: no provider, no model calls, zero budget. You enter labels
-and qualitative confidence. For a model project, initialize the immutable
-provider/model/generation settings/budget in `sc_analyze()` or `sc_run()` first,
-then reopen the same input with `sc_start(..., model_suggestions="configured")`.
-See [configuration and separate transfer consent](UNIFIED_MODEL_REVIEW.md).
-The browser cannot add or change a provider on a saved manual project.
+Saving facts or a draft is separate from approval. Read the refreshed review
+after each edit. The raw-count path pauses for initial strategy, measured
+clustering and annotation.
 
-```r
-service <- sc_start("input.rds", "new-review-project",
-  context=list(species="human", tissue="Blood", research_goal="Review local evidence",
-    columns=list(sample="sample_id", condition="condition")))
-```
+## 2. Install and confirm the environment
 
-Use these columns only if they exist and their study roles are established.
-Otherwise omit them. `scientific_review` is unnecessary for the ordinary path.
-It retains LogNormalize/global vst HVGs/PCA, the internal 80% PC candidate,
-ordinary resolution scan/tree, applicable sample QC/elbow/citation/Fisher
-evidence and declared-human blood/PBMC or pancreas classic mean/detection panels.
-Species/tissue are never inferred from genes, clusters or predictions. Other
-declarations are unavailable; missing genes are not observed zero expression.
+Follow [README installation](../README.md#installation) and its offline check.
+Confirm the package version and library path before starting your study. Use the
+same package environment for R, Rscript and the local service. Supported
+platforms are macOS/Linux; see [runtime requirements](LINUX_RUNTIME_SUPPORT.md).
 
-PC k±5, five 80% resamples, extra resolution extension, sample-consensus HVGs,
-automatic QC draft preselection and cross-sample/mixed-lineage expression are
-off by default. If appropriate, request extra diagnostics in a **new project**:
+## 3. Practise with the bundled example
+
+In a new R session with scAgentKit loaded, run:
 
 ```r
-extra_review <- list(pc_sensitivity=TRUE, resampling=TRUE,
-  resolution_extension=TRUE, panels="blood", cross_sample=TRUE, mixed_lineage=TRUE)
-# sc_start(..., scientific_review=extra_review)
+source(system.file("examples", "three-gate-analysis.R", package="scAgentKit"))
+tutorial <- three_gate_analysis(tempfile("scagentkit-training-"))
+tutorial$receipt
 ```
 
-Explicit gene panels can support other species without guessing orthology.
-Sample-consensus HVGs require at least two declared samples with at least 30
-retained cells each; explicitly set analysis `hvg_method="sample_consensus"`
-and its `hvg_column`, then save and review the full plan.
+Expect complete, 80 cells, three practice approvals and zero provider calls.
+The example supplies its own practice choices. Then prepare a new directory
+for your study and make the decisions below yourself.
 
-## Inspect QC, then approve the initial plan
+## 4. Start with your input and sample information
 
-Read per-group distributions, disjoint single-metric flags/intersections and
-candidate retention. Do not add overlapping failures. Check original,
-pre-score, selected QC and separate doublet denominators. Keep_all is a starting
-proposal, not an assessed quality decision. Counts/features use low tails on
-log10(x+1); high RNA flags only. MT uses its original-scale upper tail. Positive
-MAD can imply a tiny absolute MT margin; read the percentage-point difference,
-precision, overlaps and sample comparisons. No minimum absolute difference,
-normality gate, exclusion quota or default AND rule is added.
+For the browser, use a 10x MEX directory, a sample table or an RDS **file path**.
+Counts must be finite nonnegative integers with unique gene/cell IDs. Confirm
+the RNA counts layer covers every cell; prepare split layers explicitly before
+entry. Formats and feature/metadata matching are in [10x input](TENX_INPUT.md).
 
-Sample medians and between-sample robust flags are separate from within-group
-cell MAD. Between-sample flags require at least five comparable samples,
-complete measurements and nonzero between-sample MAD; they never delete samples.
-Without independent identity evidence, cell-type-specific deletion risk is
-unassessed. Do not infer author labels or run a new annotation merely to justify QC.
+Declare species, tissue and research goal. Map sample, donor, capture, condition
+or batch roles only to verified metadata columns with a value for every cell;
+omit unknown roles. Unspecified QC grouping stays pooled or unavailable.
+For an RDS input:
 
-Manual candidate selection changes the local draft. Experimental automatic
-prefill requires explicit opt-in and existing completeness/risk guards; it
-does not change the saved proposal or delete cells. Save to rebuild impact,
-inspect it and approve the whole strategy. The
-[methods appendix](SCIENTIFIC_METHODS_APPENDIX.md#reading-qc-flags-and-retention)
-documents the measured QC rules; the old direct-filtering API is retired in this build.
+```r
+context <- list(species="human", tissue="Blood", research_goal="Study question")
+service <- sc_start("input.rds", "new-review-project", context=context)
+```
 
-## Approve measured clustering, then annotation
+You will see an import summary and an unapproved plan. Check cell counts,
+feature names and sample facts, then open the strategy review. The default is
+manual, with no provider and zero model budget; model setup is in section 6.
 
-After the first approval, inspect computed PCs, ordinary scan/tree, marker
-contrasts and sample composition. The 80/85% crossings are relative to the
-computed first at most 50 PCs, not total expression variance. Tree overlap is
-not lineage. Select an actually scanned resolution, save edits and separately
-approve this measured review. Optional k±5 and resampling are computational
-stability diagnostics, not independent donors or an optimality proof. Unsupported
-Harmony/cycle reruns remain unavailable; applicable cheap expression evidence survives.
+## 5. Review the plan and measured clustering
 
-At annotation, prepare a worksheet. Configured local references supply candidate
-labels only; on the manual path, you supply labels, confidence and reasons.
-Main citations/reference overlap use the selected top-marker pool (default
-top 30, strict FC>1 and adjusted p<0.05), not every assayed gene. Seurat's
-min.pct prefilter uses the larger of inside/outside detection; known-label
-citations separately need positive FC and inside detection greater than outside.
-Missing from the list is not absent expression. Read absolute hits, reference
-denominators and provenance; coverage is not probability. Fisher/BH requires
-the actual pre-test background and remains conditional on query/reference selection.
-These gates do not validate gene-label semantics. Retain Unknown when unresolved.
-Save the full annotation proposal, inspect it, then approve separately.
+### 5.1 Raw-count analysis
 
-Use `sc_result()` for the integrity-checked final Seurat. `sc_open()` inspects;
-it neither continues computation nor requests a model. The public
-`examples/three-gate-analysis.R` tutorial exercises all three approvals with
-Unknown labels and no provider; it tests software, not annotation accuracy.
+Read the per-group QC distributions, candidate retention and complete plan.
+Check optional methods' prerequisites; revise an unsupported selected method
+or leave it off. Save changes, read the refreshed review, then approve and
+continue. You will next see computed PCs, the scanned resolution grid, cluster
+tree, marker contrasts and sample composition.
 
-## Optional ambient correction
+Select an actually scanned resolution. Save any edit, read the new review and
+approve again. Next, open the annotation worksheet. Calculations and plot
+interpretation are in the [methods appendix](SCIENTIFIC_METHODS_APPENDIX.md).
 
-`sc_run_ambient_correction()` is R-only, with no browser correction action.
-SoupX needs one explicitly complete capture, matching raw/filtered counts,
-at least 20 extra background droplets and named preliminary clusters.
-decontX can infer background from other clusters without raw droplets; that
-assumption may remove real RNA. Neither replaces input counts/checkpoints.
-Inspect separate corrected counts and version/seed/hash/comparison receipts;
-use a new project if adopted. Floating estimates are preserved unless explicit
-`round_counts=TRUE` is chosen. Dependencies are never installed automatically.
-See [the methods and full parameter contract](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction)
-and `?sc_run_ambient_correction` before using study data.
+### 5.2 Reuse an already processed Seurat object
 
-## Development API consolidation
+Prepare genuine counts, a selected normalized layer, existing clusters and a
+reason for reusing the previous processing. Use the explicit R entry:
 
-This build has one saved-project workflow. Redundant direct orchestration and
-AgentSeurat objects are removed; standalone utilities use Seurat or tables and
-never grant scientific approval. See the [exact API/type changes](API_CONSOLIDATION.md).
-Development test projects can be rebuilt with this implementation. No backward
-compatibility for old test objects is promised; preserve baseline evidence and
-published history, and never edit saved hashes to force a resume.
+```r
+processed <- sc_run("processed.rds", "new-annotation-project", context=context,
+  start_stage="processed", processed_reason="Reuse documented QC, normalization and clusters.",
+  assay="RNA", counts_layer="counts", normalized_layer="data",
+  cluster_column="seurat_clusters", provider=NULL, budget=0)
+sc_open("new-annotation-project")
+```
 
-Full evidence remains in `snapshot$view` despite bounded R print summaries.
-Evaluation boundaries remain in the [frozen protocol](EVALUATION_PROTOCOL_V1.md);
-workflow completion does not establish accuracy or human-time benefit.
+This reuses the supplied processing and clusters, prepares markers and stops
+for annotation; to recompute clustering, start a raw-count project instead.
+Continue with the [processed-object example](../inst/examples/server_processed.R)
+and annotation review in section 9.
+
+## 6. Optional model assistance
+
+Before opening the page, initialize a **new** project in R with its provider,
+model, generation settings and budget. These settings stay fixed for that
+project. Supply its key through the actual execution process's environment.
+`Rscript --vanilla` needs an inherited environment; it does not read `.Renviron`.
+Follow [configuration and consent](UNIFIED_MODEL_REVIEW.md).
+
+Preview the content and destination, approve that transfer, then explicitly
+request the candidate. Inspect/adopt/edit it, Save, and separately approve the
+scientific proposal. If a request's outcome is unclear, inspect its saved job
+and usage record before requesting again. Use the R procedure in the linked
+guide for an external-transfer stop not offered by the page.
+
+## 7. Choose optional methods only when their inputs are ready
+
+| Choice | Required preparation | Details |
+| --- | --- | --- |
+| Sample-consensus HVGs | At least 2 declared samples, each with at least 30 retained cells; set hvg_method=sample_consensus and hvg_column, Save and review | [HVG and diagnostics](SCIENTIFIC_METHODS_APPENDIX.md) |
+| Harmony | A verified technical-batch column and a design meeting the supported checks; review the complete plan | [Harmony/PC](HARMONY_PC_REVIEW.md) |
+| Doublet scoring | Appropriate droplet raw counts, declared capture units and an accepted runtime version | [Doublet prerequisites](DOUBLET_REVIEW.md) |
+| Cell-cycle options | Declared species and a measured, sourced gene set; select keep/full/supported difference | [Cell-cycle review](CELL_CYCLE_REVIEW.md) |
+| Ambient correction | Separate R API; SoupX needs a complete capture, matching raw/filtered counts, ≥20 extra droplets and named clusters; decontX needs explicit preliminary clusters | [Ambient inputs and versions](SCIENTIFIC_METHODS_APPENDIX.md#ambient-estimation-and-correction) |
+
+Extra PC sensitivity, resampling, resolution extension, sample-consensus HVGs,
+automatic QC draft preselection and cross-sample/mixed-lineage extensions are
+initially off. Choose them explicitly for a new project. For ambient correction,
+inspect the separate returned counts and start a new project if adopting them.
+
+## 8. Open the page on a remote machine
+
+Run on the machine holding the data, using the same R library/Rscript. Keep the
+service on 127.0.0.1 and use your existing institution-approved SSH access to
+forward its port. Follow [remote access](../workbench/README.md#remote-access)
+for the commands and job setup. The page shows the saved project; next, resume
+the review at its displayed stage.
+
+## 9. Enter and approve annotations
+
+Read each cluster's markers and any configured reference candidates. Fill all
+rows with a label or Unknown, confidence, reason and supplied supporting markers.
+Selecting a reference in an untouched row copies its label/citations; fill in
+your interpretation. Bulk Unknown asks for a reason and preserves edited rows.
+Save complete proposal, read all populations together, then approve annotation
+and continue. You will see the completed result page.
+[Reference setup](CM2_EVIDENCE_REVIEW.md) and [marker definitions](SCIENTIFIC_METHODS_APPENDIX.md#main-annotation-marker-pool)
+provide the detailed procedures.
+
+## 10. Optional child analysis and a new parent output
+
+Start from a completed parent. Select the actual cluster IDs and inspect the
+selected cells; the child currently needs at least 21 cells and its own new
+directory. Review its new raw-count strategy and annotation. After completion,
+review the target column and selected cells, then explicitly apply the labels
+into a **new** parent RDS. Outside cells and child-QC exclusions are NA in the
+new column. The original parent file stays in place. Child-of-child creation
+and automatic merging of overlapping children are unsupported.
+
+Context edits are offered only at the stopped annotation stages before
+writeback; save an offered edit, read the regenerated proposal and approve it
+again. Exact R calls, edit prerequisites and undo are in [child review](SUBCLUSTER_REVIEW.md)
+and [context controls](PARAMETER_CONTEXT_CONTROLS.md).
+
+## 11. Results, reopening and errors
+
+After completion, inspect and retrieve the final object:
+
+```r
+project_dir <- "new-review-project"
+saved <- sc_open(project_dir)
+saved$view$output
+result <- sc_result(project_dir)
+sc_run_open(project_dir)
+```
+
+`sc_open()` shows saved results in R; `sc_run_open()` opens a read-only browser.
+Before completion, use `sc_result(project_dir, stage="analysis")` for the saved
+provisional object. To continue review, repeat the original `sc_start()` call
+with the same input/options and project environment, omitting context to reuse
+saved facts. See [project reuse limits](../README.md#limitations).
+
+| What you see | Next action |
+| --- | --- |
+| awaiting_configuration | Complete the manual plan/annotation, or use the configured model procedure. |
+| awaiting_review | Read the current proposal, Save edits, then approve. |
+| A busy job or uncertain response | Inspect the saved job/receipt and wait for the worker before submitting again. |
+| Input/layer mismatch or changed project environment | Check the input and recorded environment; use the original environment or a new project. |
+
+For help, retain the package/OS versions, input type, displayed stage, exact
+error and job/receipt. Remove private data and credentials from shared reports.
