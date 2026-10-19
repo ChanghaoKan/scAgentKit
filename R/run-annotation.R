@@ -319,14 +319,17 @@
   .sc_project_string(column, "annotation_column")
   fields <- c(label = column, confidence = paste0(column, "_confidence"),
               rationale = paste0(column, "_rationale"))
-  if (!is.null(preserve_key)) .sc_run_preserved_metadata_verify(seu, preserve_key)
+  if (!is.null(preserve_key)) {
+    .sc_run_preserved_metadata_verify(seu, preserve_key)
+    fields <- c(fields,cl_id=paste0(column,"_cl_id"))
+  }
   if ((is.null(preserve_key) && any(unname(fields) %in% names(seu[[]]))) ||
       (!is.null(cluster_column) && cluster_column %in% unname(fields)))
     stop("Annotation output columns already exist or conflict with the cluster column; choose a new annotation_column to preserve prior annotations.", call. = FALSE)
   fields
 }
 
-.sc_run_annotation_apply <- function(seu, proposal, column = "sc_annotation", preserve_key = NULL) {
+.sc_run_annotation_apply <- function(seu, proposal, column = "sc_annotation", preserve_key = NULL, ontology = NULL) {
   seu <- .sc_project_unwrap(seu)
   .sc_project_string(column, "annotation column")
   if (!inherits(proposal, "sc_run_annotation_proposal") ||
@@ -343,11 +346,18 @@
     stop("Approved annotation cell IDs or cluster assignments differ from the current object.", call. = FALSE)
   fields <- .sc_run_annotation_target(seu, column, cluster_column, preserve_key)
   ids <- vapply(proposal$annotations, function(x) x$clusterId, character(1))
-  for (field in names(fields)) {
+  for (field in intersect(names(fields),c("label","confidence","rationale"))) {
     mapping <- stats::setNames(vapply(proposal$annotations, function(x) x[[field]], character(1)), ids)
     values <- unname(mapping[current$cluster])
     if (anyNA(values)) stop("Approved annotation does not cover every current cell.", call. = FALSE)
     seu[[fields[[field]]]] <- stats::setNames(values, cells)
+  }
+  if (!is.null(preserve_key)) {
+    ontology <- .sc_run_annotation_ontology_check(ontology,proposal)
+    values <- ontology$rows$cl_id[match(current$cluster,ontology$rows$clusterId)]
+    seu[[fields[["cl_id"]]]] <- stats::setNames(values,cells)
+    key <- tail(make.unique(c(names(seu@misc),"scagentkit_annotation_ontology")),1L)
+    seu@misc[[key]] <- ontology
   }
   if (!identical(colnames(seu), cells)) stop("Annotation changed the cell universe.", call. = FALSE)
   seu

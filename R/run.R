@@ -670,7 +670,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       } else if (stage == "annotation_apply") {
         .sc_run_require_approval(state, "annotation")
         .sc_run_annotation_review_verify(root, state)
-        seu <- .sc_run_annotation_apply(.sc_run_get(root, state, "analysis"), .sc_run_get(root, state, "annotation_validated"), state$config$annotation_column, state$config$input_policy$metadata_key)
+        seu <- .sc_run_annotation_apply(.sc_run_get(root, state, "analysis"), .sc_run_get(root, state, "annotation_validated"), state$config$annotation_column, state$config$input_policy$metadata_key,
+          .sc_run_annotation_ontology_get(root,state,.sc_run_get(root,state,"annotation_validated")))
         state <- .sc_run_put(root, state, "annotated", seu)
         state <- .sc_run_checkpoint(root, state, stage, "finalize")
       } else if (stage == "finalize") {

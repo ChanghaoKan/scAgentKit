@@ -145,6 +145,8 @@
   }
   output_columns <- list(label = target, confidence = paste0(target, "_confidence"),
                          rationale = paste0(target, "_rationale"))
+  ontology <- .sc_run_annotation_ontology_get(root,state,checked)
+  if (!is.null(ontology)) output_columns$cl_id <- paste0(target,"_cl_id")
   rows <- lapply(seq_along(ids), function(i) {
     id <- ids[i]
     cluster <- evidence$summary$clusters[[i]]
@@ -189,7 +191,7 @@
        cluster_column = cluster_column,
        details = list(input_cells = input, cell_count = nrow(input), cluster_count = length(ids),
          output_columns = output_columns, canonical_proposal = .sc_run_annotation_review_plain(checked),
-         annotations = rows, source = source,
+         annotations = rows, source = source, ontology = ontology,
          marker_pool = evidence$summary$marker_pool,
          child_context = evidence$summary$child_context,
          parent_context_database = evidence$private$child_context,
@@ -206,6 +208,8 @@
            "Writeback adds fresh label, confidence and rationale columns; existing annotation columns are preserved.")))
 }
 .sc_run_annotation_review_publish <- function(root, state, validated, evidence) {
+  if (!is.null(state$config$input_policy))
+    state <- .sc_run_put(root,state,"annotation_ontology",.sc_run_annotation_ontology(validated))
   record <- .sc_run_annotation_review_build(root, state, validated, evidence)
   record$hash <- .sc_run_annotation_review_hash(record)
   .sc_run_put(root, state, "annotation_review", record)
@@ -264,7 +268,7 @@
        review_hash = record$hash, parameters_hash = record$parameters_hash,
        rules_hash = record$rules_hash, cell_scope_hash = record$cell_scope_hash,
        target_column = record$target_column, review_path = state$files$annotation_review$path,
-       revision_reviewed = state$revision)
+       revision_reviewed = state$revision, ontology_hash = record$details$ontology$hash)
 }
 .sc_run_annotation_review_view <- function(root, state) {
   if (is.null(state$files$annotation_review)) return(NULL)

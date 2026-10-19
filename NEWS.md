@@ -1,5 +1,11 @@
 # Development (unreleased)
 
+- Modern annotation review saves fixed-ontology mappings against the exact
+  draft before approval. Approved writeback adds sc_annotation_cl_id (or the
+  chosen label-prefix equivalent); unresolved or ambiguous labels stay blank.
+  The sealed mapping is reused on application, with additive audit evidence
+  and no new dictionary lookup while reading an approved review.
+
 - Modern projects require explicit reference species/tissue fields and study
   scope, exclude all-tissue records, and show a plain zero-match next action.
   Existing low-level scope behavior remains explicitly recorded for legacy

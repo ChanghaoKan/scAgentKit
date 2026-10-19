@@ -849,6 +849,8 @@ function renderCluster() {
   $("annotation-title").textContent = `Cluster ${item.clusterId} · ${item.cell_count} cells`;
   $("annotation-source").textContent = "Saved " + (state.view.run.annotation_review.details.source?.kind || "unclassified") + " proposal";
   if (item.local_reference?.provenance?.scope_notice) $("annotation-source").textContent += ". " + item.local_reference.provenance.scope_notice;
+  const ontology=state.view.run.annotation_review.details.ontology;
+  if(ontology){const row=array(ontology.rows).find(row=>row.clusterId===item.clusterId);$("annotation-source").textContent+=". Cell Ontology: "+(row?.cl_id||"unresolved / blank")+". "+ontology.notice;}
   const suggestion = $("annotation-suggestion"); suggestion.replaceChildren(element("p", item.proposal.label, {class: "annotation-saved-label"}), element("p", `${item.proposal.confidence} confidence · qualitative, uncalibrated`, {class: "annotation-confidence-note"}), element("p", item.proposal.rationale, {class: "annotation-saved-rationale"}), geneParagraph("Cited genes: ", array(item.proposal.markers), {class: "annotation-confidence-note"}));
   const joint = renderJointEvidence(item); suggestion.hidden = joint; $("annotation-reference-section").hidden = joint;
   $("annotation-cell-ids").textContent = array(item.cell_ids).join("\n"); renderMarkers(item);

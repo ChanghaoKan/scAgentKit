@@ -14,7 +14,9 @@ annot_map_to_cl <- function(obj,obo_path=NULL,column=NULL,map_cells=TRUE) {
   if(!column %in% names(table))stop("Explicit label column is absent.",call.=FALSE)
   if(!requireNamespace("ontologyIndex",quietly=TRUE))stop("ontologyIndex is required; configure this optional dependency explicitly.",call.=FALSE)
   cl<-.get_cl_ontology(obo_path);source<-attr(cl,"scAgentKit_source")
-  matched<-lapply(as.character(table[[column]]),function(label).cl_match_one(label,cl))
+  unique_labels<-unique(as.character(table[[column]]))
+  lookup<-lapply(unique_labels,function(label).cl_match_one(label,cl))
+  matched<-lookup[match(as.character(table[[column]]),unique_labels)]
   table$cl_id<-vapply(matched,function(x)if(is.null(x$cl_id))NA_character_ else x$cl_id,"")
   table$cl_name<-vapply(matched,function(x)if(is.null(x$cl_name))NA_character_ else x$cl_name,"")
   if(seurat) {
