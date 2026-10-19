@@ -358,7 +358,7 @@ print.sc_analysis <- function(x, ...) {
 
 # Bounded presentation only: the sealed snapshot and saved records stay complete.
 .sc_ui_print_summary <- function(value) {
-  text <- capture.output(utils::str(value, max.level = 2L, list.len = 6L,
+  text <- utils::capture.output(utils::str(value, max.level = 2L, list.len = 6L,
     vec.len = 4L, give.attr = FALSE, width = 100L, strict.width = "cut"))
   cat(paste(substr(head(text, 40L), 1L, 160L), collapse = "\n"), "\n", sep = "")
   if (length(text) > 40L) cat("[Summary limited to 40 lines; inspect the full snapshot field.]\n")
