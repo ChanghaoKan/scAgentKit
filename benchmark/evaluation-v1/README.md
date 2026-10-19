@@ -81,3 +81,8 @@ still run. Existing failed attempts and their logs are preserved separately.
 `--only-variant after-qc-or` or `--only-variant after-sample-hvg` can finish one
 preregistered ablation after a preserved driver failure. This mode verifies the
 complete frozen baseline and does not repeat completed numerical variants.
+
+Post-hoc common-class and timing corrections are in [results/report-corrections.md](results/report-corrections.md).
+Reproduce common-class scores with `python3 posthoc_report.py results/metrics.json output.json`;
+optional `--timings` reads saved stage projections without rerunning analysis.
+The original metrics/failures remain unchanged. [Model A/B protocol](../../docs/IFNB_MODEL_AB_PROTOCOL.md) is protocol-only, with zero model calls.

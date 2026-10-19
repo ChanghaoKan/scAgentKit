@@ -58,6 +58,11 @@
       "sha256": "db72273475e03c0133cc81af078b210480efb9551cac3e94e857d52a8a17cf53"
     },
     {
+      "name": "posthoc-common-class.json",
+      "bytes": 74995,
+      "sha256": "06013cd514fd2d0b0bf8802258e584e70eacb40c269bb35efe0d13b955739e86"
+    },
+    {
       "name": "provenance.json",
       "bytes": 1685,
       "sha256": "e961e3e87838770788d340ac11c3628cfda9c51d7e38d8836489c902e47b672a"
@@ -68,9 +73,19 @@
       "sha256": "0ae400bff7c5aeefdc5eb70560485fe34ad2fd00d9f19def021dd5b3531c803f"
     },
     {
-      "name": "report.md",
+      "name": "report-corrections.md",
+      "bytes": 4330,
+      "sha256": "8390c85bebfd3e261592a2e64c4835f64392a4f56cd653c9f114bc11807d41e9"
+    },
+    {
+      "name": "report-original-v1.md",
       "bytes": 29160,
       "sha256": "2e621e096258de798e96cbb8e2f9cb5bce3ffde2af22ab5522a21b78ca42a2e8"
+    },
+    {
+      "name": "report.md",
+      "bytes": 23497,
+      "sha256": "48413fce17867d99aa8fb747727fc07e07c86e38cb1c7bf2eea8d1b734c53d2f"
     },
     {
       "name": "test-results.json",

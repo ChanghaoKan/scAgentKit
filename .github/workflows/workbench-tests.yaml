@@ -31,6 +31,8 @@ jobs:
         run: install.packages(c("jsonlite", "digest"))
       - name: Python unit tests
         run: python -B -m unittest discover -s workbench/tests -p 'test_*.py' -v
+      - name: Frozen report evaluator tests
+        run: python -B -m unittest discover -s benchmark/evaluation-v1 -p 'test_*.py' -v
       - name: Node DOM tests
         run: |
           set -e

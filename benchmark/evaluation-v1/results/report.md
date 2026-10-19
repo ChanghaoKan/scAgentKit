@@ -1,5 +1,8 @@
 # 冻结公开数据评估与工程验收报告
 
+**修正说明：** 请同时阅读[共同类别、Baron不适用及阶段计时补充](report-corrections.md)。
+[修正前报告](report-original-v1.md)与原始聚合数字保留；共同类别结果为post-hoc探索，未执行模型A/B。
+
 生成时间：2026-10-19T01:56:50.439503+00:00
 
 科学流程源为冻结的 `5ca149d` 系列；`bf45805` 仅修正适用性记账，`51cc4c9` 仅修正显示及文档。本报告不改变冻结输入、映射或结果。
@@ -20,11 +23,11 @@
 | ifnb | after-1 | complete | 5000 | 15 | 0.849600 | 0.729242 | 0.806800 | 1382.874000 |
 | ifnb | after-no-diagnostics-1 | complete | 5000 | 15 | 0.849600 | 0.729242 | 0.806800 | 637.946000 |
 | ifnb | after-qc-or-1 | ineligible (missing MT; preserved attempt separate) | — | — | — | — | — | — |
-| baron | baseline-1 | complete | 5000 | 14 | 0.039400 | 0.196837 | 0.137600 | 2722.628000 |
-| baron | after-1 | complete | 5000 | 14 | 0.039400 | 0.196837 | 0.137600 | 3515.880000 |
-| baron | after-no-diagnostics-1 | complete | 5000 | 14 | 0.039400 | 0.196837 | 0.137600 | 1791.823000 |
-| baron | after-qc-or-1 | ineligible (missing MT; preserved attempt separate) | — | — | — | — | — | — |
-| baron | after-sample-hvg-1 | complete | 5000 | 14 | 0.039400 | 0.196836 | 0.138000 | 3611.964000 |
+| baron | baseline-1 | complete | 5000 | 14 | 不适用（HPCA） | 不适用（HPCA） | 不适用（HPCA） | 2722.628000 |
+| baron | after-1 | complete | 5000 | 14 | 不适用（HPCA） | 不适用（HPCA） | 不适用（HPCA） | 3515.880000 |
+| baron | after-no-diagnostics-1 | complete | 5000 | 14 | 不适用（HPCA） | 不适用（HPCA） | 不适用（HPCA） | 1791.823000 |
+| baron | after-qc-or-1 | ineligible (missing MT; preserved attempt separate) | — | — | 不适用（HPCA） | 不适用（HPCA） | 不适用（HPCA） | — |
+| baron | after-sample-hvg-1 | complete | 5000 | 14 | 不适用（HPCA） | 不适用（HPCA） | 不适用（HPCA） | 3611.964000 |
 
 PBMC after-snapshot 是停止态检查点的独立复制完成，不是独立生物重复。原始 after 项目也已在同一检查点安全恢复完成；其 131.385 秒仅为恢复阶段，不可作为完整运行时间。早期 PBMC 使用内存 capture.output 的总耗时不能与文件日志版本直接比较。Baron 若出现数值仅为冻结映射下的标签匹配，细亚型一致率仍不可评价。
 
@@ -49,7 +52,9 @@ PBMC after-snapshot 是停止态检查点的独立复制完成，不是独立生
 
 HSC参考预测仅8个，低于冻结N≥20支持门槛，且没有独立稀有类型真值。Unknown不当成已验证类型；没有DC预测不能证明不存在DC。完整原始参考类别及质量分布见[pbmc-denominators.json](pbmc-denominators.json)。
 
-## 所有可用作者标签类别（不据结果选类）
+## ifnb 所有可用作者标签类别（不据结果选类）
+
+Baron HPCA不适用于胰腺准确率；原字面匹配表保留于修正前报告。
 
 | 数据 | 变体 | 方法 | 映射类 | 原始支持N | 召回/标签匹配 | F1 | N≥20 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -89,86 +94,6 @@ HSC参考预测仅8个，低于冻结N≥20支持门槛，且没有独立稀有�
 | ifnb | after-no-diagnostics-1 | SingleR | NK | 224 | 0.901786 | 0.872570 | True |
 | ifnb | after-no-diagnostics-1 | SingleR | Other | 106 | 0.018868 | 0.013333 | True |
 | ifnb | after-no-diagnostics-1 | SingleR | T | 2040 | 0.973039 | 0.960794 | True |
-| baron | baseline-1 | candidate | Other | 15 | 1.000000 | 0.008032 | False |
-| baron | baseline-1 | candidate | PP | 158 | 0.000000 | 0 | True |
-| baron | baseline-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
-| baron | baseline-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
-| baron | baseline-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
-| baron | baseline-1 | candidate | delta | 358 | 0.000000 | 0 | True |
-| baron | baseline-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
-| baron | baseline-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
-| baron | baseline-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
-| baron | baseline-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
-| baron | baseline-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
-| baron | baseline-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
-| baron | baseline-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
-| baron | baseline-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | Other | 15 | 1.000000 | 0.008032 | False |
-| baron | after-1 | candidate | PP | 158 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | delta | 358 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
-| baron | after-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
-| baron | after-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
-| baron | after-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
-| baron | after-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
-| baron | after-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
-| baron | after-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
-| baron | after-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | Other | 15 | 1.000000 | 0.008032 | False |
-| baron | after-no-diagnostics-1 | candidate | PP | 158 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | delta | 358 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
-| baron | after-no-diagnostics-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
-| baron | after-no-diagnostics-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
-| baron | after-no-diagnostics-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
-| baron | after-no-diagnostics-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
-| baron | after-no-diagnostics-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
-| baron | after-no-diagnostics-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | Other | 15 | 1.000000 | 0.008019 | False |
-| baron | after-sample-hvg-1 | candidate | PP | 158 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | acinar | 579 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | alpha | 1338 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | beta | 1470 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | delta | 358 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | ductal | 627 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | candidate | endothelial | 142 | 0.964789 | 0.982079 | True |
-| baron | after-sample-hvg-1 | candidate | immune | 45 | 1.000000 | 0.978261 | True |
-| baron | after-sample-hvg-1 | candidate | stellate | 268 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | Other | 15 | 0.866667 | 0.008469 | False |
-| baron | after-sample-hvg-1 | SingleR | PP | 158 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | acinar | 579 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | alpha | 1338 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | beta | 1470 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | delta | 358 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | ductal | 627 | 0.000000 | 0 | True |
-| baron | after-sample-hvg-1 | SingleR | endothelial | 142 | 0.957746 | 0.978417 | True |
-| baron | after-sample-hvg-1 | SingleR | immune | 45 | 0.800000 | 0.847059 | True |
-| baron | after-sample-hvg-1 | SingleR | stellate | 268 | 0.000000 | 0 | True |
 
 以上均为固定映射的作者标签一致性；Baron参考粒度失配时不能解释成细亚型准确率。所有原始细胞、排除、未知、未映射均保留在对应保存指标中。
 
