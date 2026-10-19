@@ -780,58 +780,6 @@ annot_llm_annotate <- function(obj,
 # Validate parsed JSON with simplification disabled so a JSON scalar cannot
 # masquerade as a one-element array. Optional cluster echoes are accepted for
 # backwards compatibility, but cannot override the requested cluster ID.
-.validate_annotation_response <- function(parsed, expected_cluster = NULL,
-                                          vocabulary = NULL) {
-  required <- c("primary_annotation", "confidence", "supporting_markers",
-                "contradicting_markers", "alternative_annotations",
-                "proportion_assessment", "recommended_action", "reasoning")
-  if (!is.list(parsed) || is.null(names(parsed)) ||
-      anyNA(names(parsed)) || anyDuplicated(names(parsed)) ||
-      (!setequal(names(parsed), required) &&
-       !setequal(names(parsed), c(required, "cluster")))) {
-    stop("Annotation JSON must be one object with exactly the eight required fields and optional cluster.")
-  }
-  scalar <- function(value, field) {
-    if (!is.character(value) || length(value) != 1L || is.na(value) ||
-        !nzchar(trimws(value))) {
-      stop(sprintf("Annotation field '%s' must be a non-empty scalar string.", field))
-    }
-    value
-  }
-  for (field in c("primary_annotation", "confidence", "proportion_assessment",
-                  "recommended_action", "reasoning")) {
-    parsed[[field]] <- scalar(parsed[[field]], field)
-  }
-  enums <- list(confidence = c("high", "medium", "low"),
-                proportion_assessment = c("reasonable", "suspicious", "abnormal"),
-                recommended_action = c("accept", "flag_for_review", "reject", "mark_unknown"))
-  for (field in names(enums)) {
-    if (!parsed[[field]] %in% enums[[field]]) {
-      stop(sprintf("Annotation field '%s' has an invalid enum value.", field))
-    }
-  }
-  for (field in c("supporting_markers", "contradicting_markers", "alternative_annotations")) {
-    value <- parsed[[field]]
-    if (!is.list(value) || !is.null(names(value)) ||
-        !all(vapply(value, function(x) {
-          is.character(x) && length(x) == 1L && !is.na(x) && nzchar(trimws(x))
-        }, logical(1)))) {
-      stop(sprintf("Annotation field '%s' must be a JSON array of non-empty strings.", field))
-    }
-    parsed[[field]] <- if (length(value)) unlist(value, use.names = FALSE) else character(0)
-  }
-  if ("cluster" %in% names(parsed)) {
-    parsed$cluster <- scalar(parsed$cluster, "cluster")
-    if (!is.null(expected_cluster) && !identical(parsed$cluster, as.character(expected_cluster))) {
-      stop("Annotation cluster ID does not match the requested cluster.")
-    }
-  }
-  if (!is.null(vocabulary) &&
-      !parsed$primary_annotation %in% c(vocabulary, "Unknown")) {
-    stop("Annotation primary_annotation is outside the strict vocabulary.")
-  }
-  parsed
-}
 
 # Call chat_fn with JSON/schema retry. The validator is task-specific; other
 # workflows keep their existing parser behaviour when none is supplied.
@@ -984,32 +932,6 @@ annot_llm_annotate <- function(obj,
 # Returns a list:
 #   hallucinated : character vector of cited genes not in input
 #   rate         : hallucination rate over supporting_markers (NA if empty)
-.validate_cited_markers <- function(parsed, cluster_top_genes) {
-  cited_support     <- as.character(parsed$supporting_markers    %||% character(0))
-  cited_contradict  <- as.character(parsed$contradicting_markers %||% character(0))
-  all_cited         <- unique(c(cited_support, cited_contradict))
-
-  if (length(all_cited) == 0) {
-    return(list(hallucinated = character(0), rate = NA_real_))
-  }
-
-  input_upper  <- toupper(trimws(cluster_top_genes))
-  cited_upper  <- toupper(trimws(all_cited))
-  is_halluc    <- !(cited_upper %in% input_upper)
-  hallucinated <- all_cited[is_halluc]
-
-  # Rate is over supporting_markers (the affirmative claims that matter
-  # most). Contradicting hallucinations are still recorded but not
-  # counted in the rate.
-  rate <- if (length(cited_support) == 0) {
-    NA_real_
-  } else {
-    sup_upper <- toupper(trimws(cited_support))
-    mean(!(sup_upper %in% input_upper))
-  }
-
-  list(hallucinated = hallucinated, rate = rate)
-}
 
 
 # Compute an uncalibrated hybrid confidence score from heuristic signals.

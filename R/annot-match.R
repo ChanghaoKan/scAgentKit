@@ -213,35 +213,8 @@ annot_match_reference <- function(obj,
   obj
 }
 
-.reference_filter_input <- function(x, name) {
-  if (!is.null(x) && (!is.character(x) || !length(x) || anyNA(x) ||
-                     any(!nzchar(trimws(x))))) {
-    stop("`", name, "` must contain non-empty character values or NULL.")
-  }
-}
 
-.validate_marker_reference <- function(reference) {
-  required <- c("cell_type", "marker")
-  if (!is.data.frame(reference) || !all(required %in% names(reference))) {
-    stop("Reference must be a data frame containing cell_type and marker columns.")
-  }
-  for (name in required) {
-    x <- reference[[name]]
-    if ((length(x) && !is.character(x) && !is.factor(x)) || anyNA(x) ||
-        any(!nzchar(trimws(as.character(x))))) {
-      stop("Reference ", name, " must contain non-empty character values.")
-    }
-    reference[[name]] <- trimws(as.character(x))
-  }
-  reference
-}
 
-.empty_reference_matches <- function() {
-  data.frame(cluster = character(), cell_type = character(),
-             overlap_count = integer(), celltype_size = integer(),
-             score = numeric(), matched_markers = character(),
-             stringsAsFactors = FALSE)
-}
 
 .reference_input_cells <- function(obj) {
   if (!methods::is(obj@data, "Seurat") ||

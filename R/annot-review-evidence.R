@@ -212,56 +212,6 @@ annot_review_evidence <- function(obj, label_map = NULL, rationale = NULL) {
   obj
 }
 
-.review_label_normalizer <- function(label_map) {
-  if (!is.null(label_map)) {
-    if (!is.character(label_map) || !length(label_map) || is.null(names(label_map)) ||
-        anyNA(label_map) || anyNA(names(label_map)) ||
-        any(!nzchar(trimws(label_map))) || any(!nzchar(trimws(names(label_map))))) {
-      stop("`label_map` must be a named character vector with non-empty labels and targets.")
-    }
-    keys <- tolower(trimws(names(label_map)))
-    if (anyDuplicated(keys)) stop("`label_map` names must be unique after normalization.")
-    label_map <- stats::setNames(tolower(trimws(label_map)), keys)
-  }
-  function(x) {
-    out <- tolower(trimws(as.character(x)))
-    out[is.na(out) | !nzchar(out)] <- NA_character_
-    if (!is.null(label_map)) {
-      hit <- !is.na(out) & out %in% names(label_map)
-      out[hit] <- unname(label_map[out[hit]])
-    }
-    out
-  }
-}
 
-.review_genes <- function(x) {
-  x <- unlist(x, use.names = FALSE)
-  if (!length(x)) return(character())
-  genes <- trimws(unlist(strsplit(as.character(x[!is.na(x)]), "[,;]+", perl = TRUE),
-                         use.names = FALSE))
-  unique(genes[nzchar(genes)])
-}
 
-.review_cluster_ids <- function(x, source) {
-  if (anyNA(x) || any(!nzchar(trimws(as.character(x))))) {
-    stop(source, " cluster IDs must be non-empty and non-missing.")
-  }
-}
 
-.review_input_alignment <- function(saved, current) {
-  if (is.null(saved) || is.null(current)) return("unverified")
-  if (!is.data.frame(saved) || !all(c("cell_id", "cluster") %in% names(saved))) {
-    return("mismatch")
-  }
-  saved <- saved[, c("cell_id", "cluster"), drop = FALSE]
-  saved$cell_id <- as.character(saved$cell_id)
-  saved$cluster <- as.character(saved$cluster)
-  if (anyNA(saved) || any(!nzchar(trimws(saved$cell_id))) ||
-      any(!nzchar(trimws(saved$cluster))) || anyDuplicated(saved$cell_id)) {
-    return("mismatch")
-  }
-  saved <- saved[order(saved$cell_id), , drop = FALSE]
-  current <- current[order(current$cell_id), , drop = FALSE]
-  rownames(saved) <- rownames(current) <- NULL
-  if (identical(saved, current)) "verified" else "mismatch"
-}
