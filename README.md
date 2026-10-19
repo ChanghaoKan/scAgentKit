@@ -12,9 +12,8 @@ You receive a new Seurat object with counts, sample metadata, reductions and rev
 
 [English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [Diagram source](docs/diagrams/generate_project_flow.py)
 
-This diagram describes the **fixed-commit developer preview**, installed separately below.
-The published v0.6.0 archive uses the [two-approval release protocol](docs/RELEASE_060_PROTOCOL.md);
-it does not include the preview's default measured-clustering gate or new controls.
+This diagram describes version **0.8.0**. Historical v0.6.0 uses its separate
+[two-approval release protocol](docs/RELEASE_060_PROTOCOL.md); its tag/assets remain unchanged.
 
 ### What runs automatically, and where you decide
 
@@ -43,19 +42,19 @@ See the [methods and limits](docs/SCIENTIFIC_METHODS_APPENDIX.md) and
 
 ## Installation
 
-Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.6.0` is experimental.
+Requires R ≥ 4.2, Seurat ≥ 5 and an existing Python ≥ 3.9 for the browser. Browser resources ship inside the R package. Version `0.8.0` is experimental.
 
 Public Release downloads need no credential. GitHub dependency resolution can
 hit the unauthenticated API quota; `remotes` supports an existing `GITHUB_PAT`
 in that case. CI uses its existing read-only job token, not a new credential.
 
-Download [scAgentKit_0.6.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz) from the [v0.6.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.6.0), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release gates](docs/RELEASE_PLAN.md).
+Download [scAgentKit_0.8.0.tar.gz](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz) from the [v0.8.0 Release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.0), then install that archive into your own R library. The asset becomes available only after release publication; a prepared archive or successful CI run does not publish it. See the [release gates](docs/RELEASE_PLAN.md).
 
 Download both assets and verify the archive before installing:
 
 ```sh
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.6.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/scAgentKit_0.6.0.tar.gz
-curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.6.0/SHA256SUMS
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o scAgentKit_0.8.0.tar.gz https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/scAgentKit_0.8.0.tar.gz
+curl -fL --retry 3 --connect-timeout 30 --max-time 1800 -o SHA256SUMS https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.8.0/SHA256SUMS
 shasum -a 256 -c SHA256SUMS  # macOS; on Linux use: sha256sum -c SHA256SUMS
 ```
 
@@ -69,10 +68,10 @@ dir.create(lib, recursive=TRUE, showWarnings=FALSE)
 .libPaths(c(lib, .libPaths()))
 if (!requireNamespace("remotes", quietly=TRUE))
   install.packages("remotes", repos="https://cloud.r-project.org")
-remotes::install_local("scAgentKit_0.6.0.tar.gz", lib=lib,
+remotes::install_local("scAgentKit_0.8.0.tar.gz", lib=lib,
   dependencies=c("Depends", "Imports"), upgrade="never", build=FALSE)
 library(scAgentKit, lib.loc=lib)
-stopifnot(as.character(packageVersion("scAgentKit")) == "0.6.0",
+stopifnot(as.character(packageVersion("scAgentKit")) == "0.8.0",
   identical(normalizePath(find.package("scAgentKit")),
     normalizePath(file.path(lib, "scAgentKit"))))
 packageVersion("scAgentKit")
@@ -118,55 +117,17 @@ pin the release's R environment and package sources. Match the original archive
 and implementation, not just its version number; this is not an automatic
 cross-version project migration.
 
-## Developer preview
+## One project workflow
 
-The published v0.6.0 default uses **two approvals**; follow the
-[matching release protocol](docs/RELEASE_060_PROTOCOL.md). The diagram and steps
-below instead describe the **unreleased fixed-commit preview** at `265e3263c8fa0ee9fff5bf019ceb270d08530350`.
-No preview release archive is published. Its package version still reads
-0.6.0, so record the source commit as well as the dependency environment.
-
-For the preview, first prepare the release dependencies above. In a separate
-source directory, fetch and check out this exact commit:
-
-```sh
-git clone --no-checkout https://github.com/ChanghaoKan/scAgentKit.git scagentkit-preview-source
-git -C scagentkit-preview-source checkout --detach 265e3263c8fa0ee9fff5bf019ceb270d08530350
-```
-
-In a **fresh R session**, install that source into a separate private library
-using the already prepared dependencies, then execute the public small-data
-three-gate software tutorial:
-
-```r
-preview_sha <- "265e3263c8fa0ee9fff5bf019ceb270d08530350"
-source_dir <- normalizePath("scagentkit-preview-source", mustWork=TRUE)
-stopifnot(identical(system2("git", c("-C", shQuote(source_dir), "rev-parse", "HEAD"),
-  stdout=TRUE), preview_sha))
-preview_lib <- path.expand("~/R/scagentkit-preview-library")
-dir.create(preview_lib, recursive=TRUE, showWarnings=FALSE)
-.libPaths(c(preview_lib, path.expand("~/R/scagentkit-library"), .libPaths()))
-remotes::install_local(source_dir, lib=preview_lib,
-  dependencies=FALSE, upgrade="never", build=FALSE)
-library(scAgentKit, lib.loc=preview_lib)
-stopifnot(identical(normalizePath(find.package("scAgentKit")),
-  normalizePath(file.path(preview_lib, "scAgentKit"))))
-source(system.file("examples", "three-gate-analysis.R", package="scAgentKit"))
-checked <- three_gate_analysis(tempfile("scagentkit-three-gates-"))
-checked$receipt
-```
-
-The receipt must report `complete`, three approval kinds (strategy, strategy,
-annotation), 80 cells and zero provider calls. This fixture retains the ordinary
-resolution scan; its limited PCs/features, disabled UMAP and Unknown labels are
-explicit software controls, not study recommendations. Keep the old project's
-original environment; use new directories for this preview. See the
-[English operator guide](docs/SCIENTIFIC_REVIEW_QUICKSTART.md) and
-[three-gate R protocol](docs/R_ANALYSIS_PROTOCOL.md).
+Version 0.8.0 removes the old direct orchestration and AgentSeurat class. Use the
+reviewed project workflow or retained Seurat/table utilities; see the
+[complete API/type changes](docs/API_CONSOLIDATION.md). Preserve old evidence and
+rebuild development projects from original inputs with new approvals. This is a
+breaking experimental release, with no cross-version resume or compatibility facade.
 
 ## Analysis protocol
 
-This section requires the fixed preview above. Before the first `sc_start()`, choose
+With version 0.8.0 installed, before the first `sc_start()`, choose
 manual or model-assisted initialization. The default creates a manual project:
 no provider, zero model budget; you supply labels and confidence. To use a model,
 initialize its provider/model/settings/budget with `sc_analyze()` or `sc_run()`

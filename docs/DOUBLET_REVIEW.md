@@ -105,8 +105,8 @@ later quality filtering uses the existing typed ranges. The explicitly enabled
 [MAD workflow](MAD_REVIEW.md) adds a default `none` or explicitly preapproved
 minimal count prefilter before scoring, followed by one reviewed quality preset.
 These prerequisites apply to the resulting scoring-eligible pool; prefilter
-exclusions remain unscored with recorded provenance. Legacy `qc_mad()` helpers
-and legacy range semantics remain separate. High RNA content,
+exclusions remain unscored with recorded provenance. The project engine owns the
+explicit range/MAD rule; retired direct helpers are not a second execution path. High RNA content,
 cell-cycle scores or a high doublet score alone do not authorize removal.
 
 The strict adapter accepts exactly two declared combinations: scDblFinder

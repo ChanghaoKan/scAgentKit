@@ -7,7 +7,7 @@ on:
       tag:
         description: Merged release tag to build and publish
         required: true
-        default: v0.6.0
+        default: v0.8.0
 
 permissions:
   contents: read
@@ -44,10 +44,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(Rscript -e 'cat(read.dcf("DESCRIPTION")[1,"Version"])')" = 0.6.0
+          test "$(Rscript -e 'cat(read.dcf("DESCRIPTION")[1,"Version"])')" = 0.8.0
           source_commit=$(git rev-parse HEAD)
           if [ "$RELEASE_EVENT" = workflow_dispatch ]; then
-            test "$RELEASE_TAG" = v0.6.0
+            test "$RELEASE_TAG" = v0.8.0
             test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$source_commit"
             git merge-base --is-ancestor "$source_commit" origin/main
             test "$(git show -s --format=%P "$source_commit" | wc -w)" -eq 2
@@ -55,12 +55,12 @@ jobs:
           test -z "$(git status --porcelain --untracked-files=no)"
           R CMD build .
           test -z "$(git status --porcelain --untracked-files=no)"
-          sha256sum scAgentKit_0.6.0.tar.gz > SHA256SUMS
+          sha256sum scAgentKit_0.8.0.tar.gz > SHA256SUMS
           echo "commit=$source_commit" >> "$GITHUB_OUTPUT"
           echo "sha256=$(cut -d ' ' -f1 SHA256SUMS)" >> "$GITHUB_OUTPUT"
           python3 - <<'PY'
           import hashlib,json,os,pathlib,subprocess,tarfile
-          source=pathlib.Path('scAgentKit_0.6.0.tar.gz')
+          source=pathlib.Path('scAgentKit_0.8.0.tar.gz')
           with tarfile.open(source) as t:
               description=t.extractfile('scAgentKit/DESCRIPTION').read()
               assert b'Packaged:' in description
@@ -79,7 +79,7 @@ jobs:
         with:
           name: release-source
           path: |
-            scAgentKit_0.6.0.tar.gz
+            scAgentKit_0.8.0.tar.gz
             SHA256SUMS
             build-receipt.json
           if-no-files-found: error
@@ -109,19 +109,19 @@ jobs:
             const fs = require('fs');
             const crypto = require('crypto');
             const tag = process.env.RELEASE_TAG;
-            if (tag !== 'v0.6.0') throw new Error('Unexpected release tag');
+            if (tag !== 'v0.8.0') throw new Error('Unexpected release tag');
             const receipt = JSON.parse(fs.readFileSync('release-source/build-receipt.json'));
-            const archiveHash = crypto.createHash('sha256').update(fs.readFileSync('release-source/scAgentKit_0.6.0.tar.gz')).digest('hex');
+            const archiveHash = crypto.createHash('sha256').update(fs.readFileSync('release-source/scAgentKit_0.8.0.tar.gz')).digest('hex');
             if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified ||
                 receipt.sha256 !== process.env.RELEASE_SHA256 || archiveHash !== receipt.sha256)
               throw new Error('Source provenance mismatch');
-            const body = fs.readFileSync('docs/RELEASE_NOTES_0.6.0.md','utf8') +
+            const body = fs.readFileSync('docs/RELEASE_NOTES_0.8.0.md','utf8') +
               '\n\nSource commit: `' + receipt.source_commit + '`. SHA256: `' + receipt.sha256 +
               '`.\nBuild and public-install acceptance: ' + receipt.workflow_url;
             const result = await github.rest.repos.createRelease({...context.repo, tag_name: tag,
-              target_commitish: receipt.source_commit, name: 'scAgentKit 0.6.0 (experimental)',
+              target_commitish: receipt.source_commit, name: 'scAgentKit 0.8.0 (experimental)',
               body, draft: true, prerelease: false});
-            for (const name of ['scAgentKit_0.6.0.tar.gz','SHA256SUMS','build-receipt.json']) {
+            for (const name of ['scAgentKit_0.8.0.tar.gz','SHA256SUMS','build-receipt.json']) {
               await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: result.data.id,
                 name, data: fs.readFileSync('release-source/'+name)});
             }

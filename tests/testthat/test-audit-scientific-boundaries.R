@@ -53,28 +53,6 @@ test_that("nesting exception cannot hide aliasing, unreplicated groups or redund
   expect_true(crossed$audit$joint_rank$full_rank)
 })
 
-test_that("reference coverage exposes 1/1 versus 10/20 without assigning an identity", {
-  withr::local_options(lifecycle_verbosity="quiet")
-  counts <- Matrix::Matrix(matrix(1, 20, 4,
-    dimnames = list(paste0("G", 1:20), paste0("C", 1:4))), sparse = TRUE)
-  obj <- AgentSeurat(Seurat::CreateSeuratObject(counts))
-  obj@params$markers_filtered <- data.frame(cluster = "0", gene = paste0("G", 1:10))
-  reference <- data.frame(cell_type = c("single", rep("broad", 20)),
-    marker = c("G1", paste0("G", 1:20)))
-  before <- obj@data
-  out <- annot_match_reference(obj, reference)
-  matches <- out@params$reference_matches
-  expect_identical(matches$cell_type, c("single", "broad"))
-  expect_equal(matches$overlap_count, c(1, 10))
-  expect_equal(matches$celltype_size, c(1, 20))
-  expect_equal(matches$score, c(1, .5))
-  expect_identical(out@data, before)
-  expect_match(out@params$reference_match_interpretation$single_marker, "weak evidence")
-  expect_match(out@params$reference_match_interpretation$annotation, "not an assigned identity")
-  records <- scAgentKit:::.sc_run_annotation_candidate_records(matches)
-  expect_equal(records[[1]]$overlap, 1)
-  expect_equal(records[[2]]$referenceSize, 20)
-})
 
 test_that("cell-cycle defaults explicitly report small pools and score a larger synthetic pool", {
   withr::local_options(lifecycle_verbosity="quiet")

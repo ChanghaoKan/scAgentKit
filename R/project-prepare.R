@@ -3,7 +3,7 @@
 #' Runs standard analysis only when requested, retains every cell, and records
 #' both requested and effective settings. Matrix IDs and genuine counts are
 #' checked before any Seurat constructor can repair feature names.
-#' @param object Seurat, a single-object AgentSeurat, or a named counts matrix.
+#' @param object Seurat or a named counts matrix.
 #' @param assay,counts_layer Explicit assay and genuine raw counts layer.
 #' @param cluster_column Column for computed cluster membership.
 #' @param normalization_method,scale_factor Normalization settings.
@@ -105,11 +105,6 @@ sc_project_prepare <- function(object, assay = "RNA", counts_layer = "counts",
   requested$effective <- list(nfeatures = length(features), npcs = available, dims = .sc_project_array(dims_use),
                               umap_neighbors = if (run_umap) effective_neighbors else NULL, cell_count = length(cells))
   seu@misc$sc_project_prepare <- requested
-  if (!matrix_input && methods::is(object, "AgentSeurat")) {
-    output <- object
-    if (is.list(output@data) && !inherits(output@data, "Seurat")) output@data[[1L]] <- seu else output@data <- seu
-    output@params$project_prepare <- requested
-    return(output)
-  }
+
   seu
 }

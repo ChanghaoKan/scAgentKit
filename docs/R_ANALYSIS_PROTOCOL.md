@@ -1,7 +1,7 @@
 # R analysis protocol
 
-This is the **fixed-commit developer preview** protocol linked from the
-[README](../README.md#developer-preview). Its ordinary raw-count scan has three
+This is the **0.8.0** protocol linked from the
+[README](../README.md#one-project-workflow). Its ordinary raw-count scan has three
 scientific approvals. The published v0.6.0 default has two; use the matching
 [release protocol](RELEASE_060_PROTOCOL.md) with that archive. Do not mix versions
 when reopening projects.

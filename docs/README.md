@@ -1,11 +1,17 @@
 # Documentation
 
-For a first project, follow the [README analysis walkthrough](../README.md#analysis-protocol).
-Then use the [完整中文操作指南](RESEARCHER_PROTOCOL_ZH.md) for installation,
-your own data, approvals, results, recovery and server use. The README uses the four high-level R entries; the protocol retains the
-advanced `sc_run()` workflow. The [complete previous walkthrough](COMPLETE_ANALYSIS_WALKTHROUGH.md)
-is preserved for manual schemas, model setup and detailed editing. The [workbench guide](../workbench/README.md)
-explains optional browser review and local computation.
+For a first project, use the [README](../README.md#analysis-protocol),
+[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md),
+[中文操作指南](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md) or [three-gate R protocol](R_ANALYSIS_PROTOCOL.md).
+R and browser clients share one saved-project engine. The high-level interface
+is `sc_start`/`sc_analyze`/`sc_open`/`sc_review`/`sc_result`; advanced `sc_run_*`
+operations use the same state, approvals and integrity checks.
+
+[Development API consolidation](API_CONSOLIDATION.md) records the removed
+orchestration, retained Seurat/table utilities and changed object types.
+Published v0.6.0 uses its [version-matched protocol](RELEASE_060_PROTOCOL.md).
+The [workbench guide](../workbench/README.md) explains the same project's local
+browser and computation workers.
 
 ## Analysis and review
 

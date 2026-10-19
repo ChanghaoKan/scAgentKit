@@ -256,16 +256,3 @@ test_that("declared directed expression also requires the exact source and cell 
   f$journal$bundleDigest <- manifest$bundleDigest
   review_expect_invalid(f, code = "scope_mismatch")
 })
-
-test_that("AgentSeurat wrapping a single object keeps all wrapper history", {
-  f <- review_fixture(); on.exit(unlink(f$root, recursive = TRUE))
-  f <- review_append(f, review_event(f, "NA", "my label")); wrapper <- AgentSeurat(f$seu, initial_script = "original load")
-  before <- wrapper; out <- sc_review_apply(wrapper, review_write(f), f$project)
-  expect_s4_class(out, "AgentSeurat"); expect_identical(wrapper, before)
-  for (slot in setdiff(methods::slotNames(wrapper), "data")) expect_identical(methods::slot(out, slot), methods::slot(wrapper, slot))
-  expect_identical(unname(out@data$review_type), c("my label", NA_character_, NA_character_, "my label"))
-  wrapper <- AgentSeurat(list(single = f$seu)); before <- wrapper
-  out <- sc_review_apply(wrapper, review_write(f), f$project)
-  expect_identical(names(out@data), "single"); expect_identical(wrapper, before)
-  expect_identical(unname(out@data[[1]]$review_type), c("my label", NA_character_, NA_character_, "my label"))
-})

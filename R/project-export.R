@@ -2,7 +2,7 @@
 #'
 #' Expression identity covers the complete object and explicit layers. Export
 #' performs no analysis, cell deletion, annotation decision, network call, or RDS save.
-#' @param object A Seurat or AgentSeurat wrapping exactly one Seurat.
+#' @param object A Seurat object.
 #' @param path New project directory. Existing paths are never overwritten.
 #' @param project_id Nonempty literal project ID, never a path.
 #' @param assay,counts_layer,normalized_layer Explicit assay and layer names.

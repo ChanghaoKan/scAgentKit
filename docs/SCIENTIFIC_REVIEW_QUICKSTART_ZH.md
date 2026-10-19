@@ -1,7 +1,7 @@
 # 科学诊断：一页操作指南
 
-本指南对应 README 的[固定提交开发预览](../README.zh-CN.md#开发预览)，
-不适用于已发布归档的默认路径；v0.6.0 使用[两次审批发布路径](RELEASE_060_PROTOCOL.md)。
+本指南对应 README 的[0.8.0 工作流](../README.zh-CN.md#一个项目工作流)，
+历史 v0.6.0 使用[两次审批发布路径](RELEASE_060_PROTOCOL.md)。
 [English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
 
 新 raw strategy 项目默认保留适用的基础证据；额外重计算须主动开启。结果可能不变或变差，审批成功不代表生物学结论正确。
@@ -121,23 +121,12 @@ raw 矩阵，只将额外 droplets 作为背景。`round_counts=FALSE` 保留浮
 未保存、未批准的比较草稿；手动候选比较始终可用。PBMC 评估未提供独立细胞质量
 真值，不能把 OR 作为普遍更优的默认策略。保存与审批仍然分开。
 
-## 旧工作流标签与升级
+## 开发 API 收敛
 
-`annot_apply()` 对被阻止或没有映射的簇保留每个细胞原有的目标列值；只替换有效映射或明确
-`manual_overrides` 指定的细胞。目标列原本不存在时，未替换细胞为 `Unannotated`。
-因此非空旧标签不等于此次模型成功。人工覆盖单独记账，不证明模型引用有效。
+当前构建只保留一个可保存、可审批的项目工作流。冗余直接编排入口和 AgentSeurat 对象已退场；
+保留的绘图、marker/reference、ontology 和精确 ID 对照工具使用 Seurat 或表格，不授予科学审批。
+完整[导出与对象类型变化](API_CONSOLIDATION.md)列明退场和保留能力。
 
-旧工作流中，`citation_status` 记录引用核验，`review_required`/`review_reasons` 记录审阅提示，
-`label_usable` 记录最低本地写回条件。有效支持及 `accept` 存在时，如实报告有效反证不会单独
-否决标签；无效/伪造引用仍被阻止。负 fold change 不是自动语义反证。这些字段均不授予
-reviewed `sc_run` 的独立人工审批，也不能替代该流程对支持引用的数值检查。
-
-`hybrid_confidence` 是保留的原始加权数值，`hybrid_confidence_raw_label` 是原始分档；
-有效 `confidence`/`hybrid_confidence_label` 和 `label_usable` 受证据门槛约束。
-即使原始值为 0.710，也可能因伪造支持而有效分档为 low、不可写回；数值不是校准概率。
-
-升级前保存原对象/项目及准确的旧包、依赖环境。检查旧标签来源、引用及审阅字段，再决定
-明确人工覆盖还是从原输入另建 reviewed 项目。新项目须重新审阅审批；旧项目指纹不匹配时
-恢复原环境，不修改 hashes、历史审批或权威 checkpoints。R 摘要不再递归输出全部证据；
-将 `snapshot <- sc_review(x)` 返回值保留，按需检查 `snapshot$view`、
-`snapshot$view$annotation_review$details`、`snapshot$annotations`，完整证据仍在原对象中。
+开发测试项目可以按新实现重建，不为旧测试对象维护兼容 facade；baseline 证据、发布历史及
+无关研究数据保留。不要修改保存的 hashes、审批或 checkpoints 强行恢复。
+R 摘要受长度约束，但完整证据仍可在 `snapshot$view` 中检查；完成流程不证明准确率或省时收益。

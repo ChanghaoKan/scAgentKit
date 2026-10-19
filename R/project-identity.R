@@ -10,14 +10,7 @@
 
 .sc_project_unwrap <- function(object) {
   if (inherits(object, "Seurat")) return(object)
-  if (methods::is(object, "AgentSeurat")) {
-    value <- object@data
-    if (inherits(value, "Seurat")) return(value)
-    if (is.list(value) && length(value) == 1L && inherits(value[[1L]], "Seurat"))
-      return(value[[1L]])
-    .sc_project_fail("AgentSeurat must wrap exactly one Seurat object; select or merge explicitly first.")
-  }
-  .sc_project_fail("`object` must be a Seurat object or an AgentSeurat wrapping exactly one Seurat.")
+  .sc_project_fail("`object` must be a Seurat object; use the project/raw-count entry for matrices.")
 }
 
 .sc_project_ids <- function(ids, name) {

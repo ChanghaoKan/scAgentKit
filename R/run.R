@@ -195,7 +195,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   # its environment must never redirect discovery away from package bindings.
   ns <- asNamespace("scAgentKit")
   selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE), method = "radix")
-  selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", "sc_select_pcs", ".adjusted_rand_index", "sc_cycle_gene_set"))
+  selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", ".adjusted_rand_index", "sc_cycle_gene_set"))
   # Coordinator wrappers call scientific helpers outside the sc_run prefix.
   # Follow their package-local references transitively, without executing any
   # helper/provider or fingerprinting unrelated legacy workflows. External

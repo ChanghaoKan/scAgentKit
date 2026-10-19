@@ -75,7 +75,7 @@
     input_type <- "counts_matrix"
   } else {
     seu <- .sc_project_unwrap(input)
-    input_type <- if (inherits(input, "Seurat")) "Seurat" else "AgentSeurat"
+    input_type <- "Seurat"
   }
   if (is.null(source$type)) source$type <- input_type
   .sc_project_ids(colnames(seu), "Complete object cell IDs")

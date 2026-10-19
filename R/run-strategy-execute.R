@@ -344,7 +344,7 @@
     scale_scope = "approved HVGs only", regressors = regressors,
     pca = pca, batch_method = "none", batch_reason = settings$batch$reason,
     primitives = c("Seurat::NormalizeData", "Seurat::FindVariableFeatures", "Seurat::ScaleData", "Seurat::RunPCA"),
-    reuse = "Same computed-PC cumulative variance rule as sc_select_pcs, with runtime bounds and finite-variance validation.")
+    reuse = "Computed-PC cumulative variance rule with explicit runtime bounds and finite-variance validation.")
   if (isTRUE(preprocessed)) {
     record$preprocessed <- TRUE
     record$primitives <- c("Seurat::ScaleData", "Seurat::RunPCA")

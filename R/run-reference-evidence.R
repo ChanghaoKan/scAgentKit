@@ -255,11 +255,8 @@
         provenance$duplicate_pair_count <- sum(!unique_pair)
         scoped <- scoped[unique_pair, , drop = FALSE]
         provenance$n_unique_pairs <- nrow(scoped)
-        local <- seu
-        local$seurat_clusters <- stats::setNames(membership, cells)
-        agent <- AgentSeurat(local); agent@params$markers_filtered <- table
-        agent <- annot_match_reference(agent, scoped, top_n_candidates = options$top_n)
-        matches <- agent@params$reference_matches; all_matches <- agent@params$reference_matches_all
+        matched <- .sc_reference_match(table, scoped, top_n_candidates=options$top_n)
+        matches <- matched$matches; all_matches <- matched$all_matches
         if (!nrow(matches)) provenance$status <- "no_overlap"
       }
     }

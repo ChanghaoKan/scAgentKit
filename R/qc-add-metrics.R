@@ -1,107 +1,27 @@
-#' Add standard QC metrics to the underlying Seurat data
-#'
-#' Computes `percent.mt`, `percent.ribo`, and `percent.hb` based on gene-name
-#' regex patterns. Applies to either a single Seurat object or every element
-#' of a Seurat list, depending on the current `data_type`. Species-specific
-#' defaults are provided; pass `mt_pattern`, `ribo_pattern`, or `hb_pattern`
-#' to override.
-#'
-#' @param obj An AgentSeurat object.
-#' @param species Character, one of `"auto"`, `"mouse"`, or `"human"`.
-#'   Defaults to `"auto"`, which infers mouse versus human from gene-name
-#'   conventions and asks for an explicit choice when detection is ambiguous.
-#'   Ignored if all three custom patterns are supplied.
-#' @param mt_pattern Optional custom regex for mitochondrial genes.
-#' @param ribo_pattern Optional custom regex for ribosomal genes.
-#' @param hb_pattern Optional custom regex for hemoglobin genes.
-#' @param rationale Optional LLM-supplied explanation of why this species
-#'   choice was made. Defaults to a templated string.
-#'
-#' @return Updated AgentSeurat object with three new metadata columns on
-#'   the underlying Seurat data and a new entry in the decision log.
+#' Add explicitly declared count-based QC measurements to a Seurat copy
+#' @param obj Seurat object with a single explicit counts layer.
+#' @param species Declared human/mouse; required unless all patterns are explicit.
+#' @param mt_pattern,ribo_pattern,hb_pattern Optional explicit gene regexes.
+#' @param assay,counts_layer Exact source assay/layer.
+#' @return Seurat copy with percent.mt, percent.ribo and percent.hb; no filtering.
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#'   obj <- AgentSeurat(seurat)
-#'   obj <- qc_add_metrics(obj, species = "human")
-#' }
-qc_add_metrics <- function(obj,
-                           species      = c("auto", "mouse", "human"),
-                           mt_pattern   = NULL,
-                           ribo_pattern = NULL,
-                           hb_pattern   = NULL,
-                           rationale    = NULL) {
-  .legacy_workflow_warn("qc_add_metrics")
-
-
-  stopifnot(methods::is(obj, "AgentSeurat"))
-  species <- match.arg(species)
-
-  # Auto-detect species from gene-name conventions (^MT- vs ^mt-). Skip it
-  # when every pattern is supplied, as documented: species is then unused.
-  all_custom <- !is.null(mt_pattern) && !is.null(ribo_pattern) && !is.null(hb_pattern)
-  if (species == "auto" && !all_custom) {
-    detected <- .detect_species(obj@data)
-    if (is.na(detected)) {
-      stop("Could not auto-detect species from gene names. ",
-           "Pass species = 'human' or 'mouse' explicitly.")
-    }
-    species <- detected
-    message(sprintf("[qc_add_metrics] auto-detected species: %s", species))
+qc_add_metrics <- function(obj,species=NULL,mt_pattern=NULL,ribo_pattern=NULL,hb_pattern=NULL,
+  assay="RNA",counts_layer="counts") {
+  obj<-.sc_project_unwrap(obj)
+  custom<-!is.null(mt_pattern)&&!is.null(ribo_pattern)&&!is.null(hb_pattern)
+  if(!custom) species<-.sc_run_species(species)
+  if(is.null(mt_pattern))mt_pattern<-if(species=="mouse")"^mt-" else "^MT-"
+  if(is.null(ribo_pattern))ribo_pattern<-.sc_run_ribo_pattern(species)
+  if(is.null(hb_pattern))hb_pattern<-if(species=="mouse")"^Hb[ab]" else "^HB[AB]"
+  patterns<-list(percent.mt=mt_pattern,percent.ribo=ribo_pattern,percent.hb=hb_pattern)
+  for(key in names(patterns)) .sc_project_string(patterns[[key]],key)
+  counts<-.sc_project_layer(obj,assay,counts_layer,raw_counts=TRUE)
+  total<-as.numeric(Matrix::colSums(counts))
+  for(key in names(patterns)) {
+    selected<-grepl(patterns[[key]],rownames(counts))
+    value<-100*as.numeric(Matrix::colSums(counts[selected,,drop=FALSE]))/total
+    value[total==0]<-NA_real_;obj[[key]]<-stats::setNames(value,colnames(counts))
   }
-
-  if (is.null(mt_pattern))   mt_pattern   <- if (species == "mouse") "^mt-"   else "^MT-"
-  if (is.null(ribo_pattern)) ribo_pattern <- .sc_run_ribo_pattern(species)
-  if (is.null(hb_pattern))   hb_pattern   <- if (species == "mouse") "^Hb[ab]" else "^HB[AB]"
-
-  add_metrics <- function(seu) {
-    seu[["percent.mt"]]   <- Seurat::PercentageFeatureSet(seu, pattern = mt_pattern)
-    seu[["percent.ribo"]] <- Seurat::PercentageFeatureSet(seu, pattern = ribo_pattern)
-    seu[["percent.hb"]]   <- Seurat::PercentageFeatureSet(seu, pattern = hb_pattern)
-    seu
-  }
-
-  obj <- .apply_to_data(obj, add_metrics)
-
-  # Generate reproducible script. If we are working with a list, wrap in
-  # lapply to mirror the per-sample pattern.
-  if (obj@data_type == "seurat") {
-    script <- sprintf(
-'# ---- Add QC metrics (species: %s) ----
-seurat_obj[["percent.mt"]]   <- PercentageFeatureSet(seurat_obj, pattern = "%s")
-seurat_obj[["percent.ribo"]] <- PercentageFeatureSet(seurat_obj, pattern = "%s")
-seurat_obj[["percent.hb"]]   <- PercentageFeatureSet(seurat_obj, pattern = "%s")',
-      species, mt_pattern, ribo_pattern, hb_pattern
-    )
-  } else {
-    script <- sprintf(
-'# ---- Add QC metrics per sample (species: %s) ----
-seurat_list <- lapply(seurat_list, function(seu) {
-  seu[["percent.mt"]]   <- PercentageFeatureSet(seu, pattern = "%s")
-  seu[["percent.ribo"]] <- PercentageFeatureSet(seu, pattern = "%s")
-  seu[["percent.hb"]]   <- PercentageFeatureSet(seu, pattern = "%s")
-  seu
-})',
-      species, mt_pattern, ribo_pattern, hb_pattern
-    )
-  }
-
-  if (is.null(rationale)) {
-    rationale <- sprintf(
-      "Added mitochondrial / ribosomal / hemoglobin gene percentages using %s-species default patterns.",
-      species
-    )
-  }
-
-  .record_step(
-    obj            = obj,
-    step_name      = "qc_add_metrics",
-    function_name  = "qc_add_metrics",
-    params         = list(species = species, mt_pattern = mt_pattern,
-                          ribo_pattern = ribo_pattern, hb_pattern = hb_pattern),
-    rationale      = rationale,
-    script_snippet = script,
-    new_stage      = "qc_metrics_added"
-  )
+  obj@misc$qc_metric_source<-list(species=species,assay=assay,counts_layer=counts_layer,patterns=patterns)
+  obj
 }

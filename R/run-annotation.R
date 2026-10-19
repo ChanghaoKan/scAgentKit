@@ -80,24 +80,22 @@
   SeuratObject::LayerData(working, assay = assay, layer = "data") <- identity$data
   working$seurat_clusters <- unname(identity$membership)
   SeuratObject::Idents(working) <- working$seurat_clusters
-  agent <- AgentSeurat(working)
-  agent <- sc_find_markers(agent, only_pos = settings$only_pos,
-    min_pct = settings$min_pct, logfc_threshold = settings$logfc_threshold)
-  if (!nrow(agent@params$all_markers)) agent@params$all_markers <- .sc_run_empty_markers()
+  markers <- .sc_marker_test(working, only_pos=settings$only_pos,
+    min_pct=settings$min_pct, logfc_threshold=settings$logfc_threshold)
+  if (!nrow(markers)) markers <- .sc_run_empty_markers()
   # Some Wilcoxon implementations produce tiny floating roundoff outside [0,1].
   # Preserve exact returned values and clamp only bounded numerical noise.
   for (field in c("p_val", "p_val_adj")) {
-    raw <- agent@params$all_markers[[field]]
+    raw <- markers[[field]]
     if (any(!is.finite(raw)) || any(raw < -1e-10 | raw > 1 + 1e-10))
       stop("Marker p-values outside numerical tolerance; no evidence was accepted.", call. = FALSE)
-    agent@params$all_markers[[paste0(field, "_raw")]] <- raw
-    agent@params$all_markers[[field]] <- pmax(0, pmin(1, raw))
+    markers[[paste0(field, "_raw")]] <- raw
+    markers[[field]] <- pmax(0, pmin(1, raw))
   }
 
-  agent <- sc_markers_summary(agent, top_n = settings$top_n,
-    log2fc_cut = settings$log2fc_cut, padj_cut = settings$padj_cut, output_path = NULL)
-  markers <- agent@params$all_markers
-  summary <- as.data.frame(agent@params$markers_filtered)
+  computed <- .sc_marker_summary(markers, top_n=settings$top_n,
+    log2fc_cut=settings$log2fc_cut, padj_cut=settings$padj_cut)
+  summary <- as.data.frame(computed$filtered)
   markers$cluster <- as.character(markers$cluster)
   summary$cluster <- as.character(summary$cluster)
   attr(markers, "cluster_column") <- attr(summary, "cluster_column") <- cluster_column
@@ -131,8 +129,8 @@
     attr(summary,"expression_review") <- expression_review
   }
   list(markers = markers, marker_summary = summary, tested_background = tested_background,
-       summary_lines = agent@params$markers_summary,
-       cycling_score = agent@params$cluster_cycling_score,
+       summary_lines = computed$summary_lines,
+       cycling_score = computed$cycling_score,
        cluster_column = cluster_column, parameters = settings)
 }
 
