@@ -52,12 +52,19 @@ python3 workbench/start_analysis.py a.rds --project pbmc-analysis \
 # Add --r-library /path/to/private/R-library when needed.
 ```
 
-Use the printed loopback URL. Review and edit the strategy, then select
-**Approve strategy and continue locally**. At the annotation boundary, select
+Use the printed loopback URL. In the developer preview's default raw-count path,
+review and edit the strategy, then select **Approve strategy and continue locally**.
+The computed PC evidence and ordinary resolution scan then require a second
+strategy approval: inspect the tree, marker contrasts and sample composition,
+select an actually scanned resolution, save any edit, and approve the fresh
+measured review. At the annotation boundary, select
 **Prepare annotation table**, inspect the markers and fill in the blank rows.
 Save the complete proposal, inspect it, then select **Approve annotation and
-continue locally** to produce the saved result. These are two scientific
-approvals; starting the service and preparing a table grant neither approval.
+continue locally** to produce the saved result. These are three scientific
+approvals. Starting the service or preparing a table grants none. Published
+v0.6.0 has no default resolution scan and uses two approvals; follow its
+[version-matched protocol](../docs/RELEASE_060_PROTOCOL.md). Explicit processed
+reuse starts at annotation and has its own entry.
 
 To leave populations unresolved, supply one reason and explicitly select
 **Keep all unfilled populations Unknown**. Known labels require citations from

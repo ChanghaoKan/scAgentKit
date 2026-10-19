@@ -3,7 +3,7 @@
 [English](README.md) · **简体中文**
 
 scAgentKit 面向有生物学背景的研究者，帮助减少维护单细胞 RNA-seq 工作流的精力。
-从 counts 与样本事实，或 Seurat/RDS 对象开始，在可保存、可审阅的项目中完成 QC、基础分析与注释。
+从 counts 与样本事实，或含 counts/Seurat 的 RDS 文件开始，在可保存、可审阅的项目中完成 QC、基础分析与注释。
 
 你会得到包含 counts、样本 metadata、降维及已审阅标签的新 Seurat 对象，以及 marker 表、图、
 决策证据与理由。QC、整合和分群仍需研究判断；默认值只是起点。FASTQ 处理在本流程上游；
@@ -15,8 +15,8 @@ scAgentKit 面向有生物学背景的研究者，帮助减少维护单细胞 RN
 
 [English diagram](docs/diagrams/project-analysis-flow.svg) · [中文流程图](docs/diagrams/project-analysis-flow.zh-CN.svg) · [流程图生成源](docs/diagrams/generate_project_flow.py)
 
-本图对应**当前开发分支的 raw-count 路径**。下方安装命令针对 v0.6.0；
-未发布的新推荐及事实编辑控件不属于该发布归档。
+本图对应**单独安装的固定提交开发预览**。已发布 v0.6.0 请用[两次审批发布路径](docs/RELEASE_060_PROTOCOL.md)；
+该归档不包含预览的默认实测分群审批及新控件。
 
 ### 哪些自动运行，哪里需要你决定
 
@@ -108,9 +108,52 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 [v0.6.0 源码环境配方及恢复边界](docs/ENVIRONMENT_RESTORE.md)固定发布时的 R 环境和包来源。
 应匹配原归档与实现，而不只是版本号；这不是自动的跨版本项目迁移。
 
+## 开发预览
+
+已发布 v0.6.0 的默认路径需**两次审批**，请使用[匹配的发布版操作路径](docs/RELEASE_060_PROTOCOL.md)。
+本图及下方步骤对应**尚未发布的固定提交预览** `265e3263c8fa0ee9fff5bf019ceb270d08530350`。
+没有预览版 release 归档。其包版本仍显示 0.6.0，须同时记录源代码提交和依赖环境。
+
+先按上方准备发布版依赖，再在独立源目录取得并检出此固定提交：
+
+```sh
+git clone --no-checkout https://github.com/ChanghaoKan/scAgentKit.git scagentkit-preview-source
+git -C scagentkit-preview-source checkout --detach 265e3263c8fa0ee9fff5bf019ceb270d08530350
+```
+
+在**新的 R 会话**中，将源代码安装到另一私有库，使用已准备的依赖，再运行公开小数据的三次审批软件教程：
+
+```r
+preview_sha <- "265e3263c8fa0ee9fff5bf019ceb270d08530350"
+source_dir <- normalizePath("scagentkit-preview-source", mustWork=TRUE)
+stopifnot(identical(system2("git", c("-C", shQuote(source_dir), "rev-parse", "HEAD"),
+  stdout=TRUE), preview_sha))
+preview_lib <- path.expand("~/R/scagentkit-preview-library")
+dir.create(preview_lib, recursive=TRUE, showWarnings=FALSE)
+.libPaths(c(preview_lib, path.expand("~/R/scagentkit-library"), .libPaths()))
+remotes::install_local(source_dir, lib=preview_lib,
+  dependencies=FALSE, upgrade="never", build=FALSE)
+library(scAgentKit, lib.loc=preview_lib)
+stopifnot(identical(normalizePath(find.package("scAgentKit")),
+  normalizePath(file.path(preview_lib, "scAgentKit"))))
+source(system.file("examples", "three-gate-analysis.R", package="scAgentKit"))
+checked <- three_gate_analysis(tempfile("scagentkit-three-gates-"))
+checked$receipt
+```
+
+receipt 应显示 `complete`、三次审批（strategy、strategy、annotation）、80 个细胞和零 provider 请求。
+该教程保留常规分辨率扫描；有限 PC/特征数、关闭 UMAP 及 Unknown 标签均为明确的软件测试设置，
+不是研究建议。旧项目保留原环境；预览另建目录。参见[中文操作指南](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md)
+和[三次审批 R 路径](docs/R_ANALYSIS_PROTOCOL.md)。
+
 ## 分析步骤
 
-本节描述开发分支工作流。新的候选推荐与事实修正控件尚未发布，不包含在已发布的 v0.6.0 归档内。
+本节要求先安装上方固定提交预览；不是已发布 v0.6.0 归档的操作步骤。
+
+首次 `sc_start()` 前先决定人工或模型辅助初始化。默认创建人工项目：无 provider、模型预算为零，
+标签和置信度由用户填写。若需模型，先按[配置与传输同意](docs/UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call)
+用 `sc_analyze()` 或 `sc_run()` 初始化 provider、model、设置及预算，再用
+`sc_start(..., model_suggestions="configured")` 重开相同输入。配置不可变；网页不能给人工项目后加 provider。
 
 ### 1. 选择 counts，声明样本事实
 
@@ -144,12 +187,14 @@ service <- sc_start(input, project_dir, context=context)
 不同样本的 Gene Expression feature ID 集合必须相同；不取特征交集，也不合并特征。
 文件/表格式、原始特征身份及对齐细节见[10x 输入与样本表](docs/TENX_INPUT.md)。
 
-若使用含原始 counts 的 RDS 或 Seurat 对象：
+若使用含原始 counts 矩阵或 Seurat 对象的 RDS 文件，传入文件路径：
 
 ```r
 input <- "a.rds"
 service <- sc_start(input, project_dir, context=context)
 ```
+
+这里传 RDS 文件路径，文件内可含原始 counts 或 Seurat；`sc_start()` 不直接接受内存 Seurat。
 
 每次新分析使用新的 `project_dir`。从 counts 启动会重新运行基础分析；
 [已处理对象的显式复用](workbench/README.md)是另一条入口。
@@ -230,7 +275,9 @@ sc_start("filtered_feature_bc_matrix", project_dir,
 
 ## 更多资料
 
-- [公开PBMC3k的R-only分析步骤](docs/R_ANALYSIS_PROTOCOL.md)
+- [中文操作指南](docs/SCIENTIFIC_REVIEW_QUICKSTART_ZH.md)
+- [匹配的 v0.6.0 发布路径](docs/RELEASE_060_PROTOCOL.md)
+- [公开PBMC3k的R-only预览步骤](docs/R_ANALYSIS_PROTOCOL.md)
 - [10x MEX、样本表与keyed cell metadata](docs/TENX_INPUT.md)
 - [分析策略及受支持方法](docs/ANALYSIS_STRATEGY_SUPPORT.md)
 - [注释证据与决策](docs/ANNOTATION_REVIEW.md)

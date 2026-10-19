@@ -10,7 +10,7 @@ draft preselection remain off by default. Cross-sample/mixed-lineage expression
 extensions and R-only SoupX/decontX also remain explicit choices. No evidence
 display authorizes a data transfer, chooses optimal settings or certifies labels. See the registered
 [evaluation protocol](EVALUATION_PROTOCOL_V1.md) and
-[operator guide](SCIENTIFIC_REVIEW_QUICKSTART_ZH.md). Preset and diagnostic
+[operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md). Preset and diagnostic
 eligibility are software rules; no biological default benefit is assumed.
 
 | Method | Calculation | Applicability and interpretation |

@@ -15,7 +15,7 @@
 <g id="input" data-box="input" data-kind="input">
 <rect x="48" y="176" width="752" height="124" rx="13" fill="#f0f4fa" stroke="#899eb6" stroke-width="1.8"/>
 <text x="424.0" y="210" class="node-title" text-anchor="middle">Counts 与研究事实</text>
-<text x="424.0" y="246" class="node-detail" text-anchor="middle">10x MEX / 样本表 / 含原始 counts 的 Seurat 或 RDS</text>
+<text x="424.0" y="246" class="node-detail" text-anchor="middle">10x MEX / 样本表 / 含 counts 或 Seurat 的 RDS 文件</text>
 <text x="424.0" y="277" class="node-detail" text-anchor="middle">明确样本角色、物种、组织和研究目标</text>
 </g>
 <path d="M424.0 302 L424.0 319" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
@@ -58,7 +58,7 @@
 <rect x="48" y="1064" width="752" height="124" rx="13" fill="#edf4fc" stroke="#7699bd" stroke-width="1.8"/>
 <text x="424.0" y="1098" class="node-title" text-anchor="middle">准备注释证据</text>
 <text x="424.0" y="1134" class="node-detail" text-anchor="middle">Markers 与适用的面板 / 参考 / Fisher 证据</text>
-<text x="424.0" y="1165" class="node-detail" text-anchor="middle">候选标签和置信度仍是待判断的提案</text>
+<text x="424.0" y="1165" class="node-detail" text-anchor="middle">已配置参考仅提供候选；标签和置信度由用户填写</text>
 </g>
 <path d="M424.0 1190 L424.0 1207" fill="none" stroke="#7c93a9" stroke-width="2" marker-end="url(#arrow)"/>
 <g id="gate-annotation" data-box="gate-annotation" data-kind="author">

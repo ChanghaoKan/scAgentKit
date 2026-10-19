@@ -1,11 +1,21 @@
 # 科学诊断：一页操作指南
 
+本指南对应 README 的[固定提交开发预览](../README.zh-CN.md#开发预览)，
+不适用于已发布归档的默认路径；v0.6.0 使用[两次审批发布路径](RELEASE_060_PROTOCOL.md)。
+[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
+
 新 raw strategy 项目默认保留适用的基础证据；额外重计算须主动开启。结果可能不变或变差，审批成功不代表生物学结论正确。
 旧项目需保留原包和依赖环境，不要修改其 hashes、审批或 checkpoints 来强行恢复。
 
 1. **明确输入和样本角色，再打开新项目。** 使用原始 counts；sample、donor、capture、condition
    分别按实际元数据声明，不从名字猜测，不把处理条件当作技术批次或样本重复。
    默认路径不需要传入 `scientific_review`：
+
+   首次 `sc_start()` 前先决定人工或模型辅助初始化。默认为人工项目：无 provider、模型预算为零，
+   标签和定性置信度由用户填写。模型项目先用 `sc_analyze()` 或 `sc_run()` 初始化 provider、model、
+   设置及预算，再用 `sc_start(..., model_suggestions="configured")` 重开相同输入。
+   配置不可变，网页不能后加 provider；见[模型配置与独立传输同意](UNIFIED_MODEL_REVIEW.md)。
+   `sc_start()` 接受含 counts/Seurat 的 RDS **文件路径**、MEX 路径或样本表，不能直接传内存 Seurat。
 
    ```r
    service <- sc_start("input.rds", "new-review-project",
@@ -32,6 +42,10 @@
    ```
 
 2. **审查 QC 草稿和样本比较。** 分布、每样本中位数、跨样本异常提示与组内细胞 MAD 分开显示。
+   查看单指标独有命中、交集及原始/预评分/筛选后分母，不把重叠失败数相加。keep_all 只是起始提案，
+   不是完成 QC 评估。counts/features 在 log10(x+1) 下只按低尾筛选，高 RNA 仅提示；MT 按原尺度上尾。
+   正 MAD 也可能对应极小绝对差，须看百分比点差、技术精度、重叠及样本比较，不新增普遍最小差值、
+   正态门槛、删除配额或默认 AND。无独立身份信息时不评估细胞类型删除风险，不猜作者标签或另跑注释。
    跨样本稳健异常需要至少五个可比较样本和非零 MAD。仅主动勾选实验自动预选且满足完整证据及风险上限时，页面可预填
    `any_quality3` 比较草稿，并显著标记未保存/未批准；可修改或弃用。预填不会改变 saved proposal
    或删细胞。先点保存重建影响，再单独审批，最后继续计算；缺失条件会显示不适用原因。
@@ -49,6 +63,13 @@
    已知标签的支持引用必须有正 FC 和正检出率差；仍不验证基因与标签的语义。参考页保留 hits/
    denominator/coverage，Fisher 仅在记录精确可检验背景时显示，且对全部标签校正；不能把 p 值当概率。
    unresolved 保留 Unknown。保存完整注释后，还需要独立审批才能写入结果。
+
+   初始审批之后须先查看实测 PC、常规 scan/tree、marker 对照及样本组成，选择实际扫描过的分辨率，
+   保存编辑后再独立批准实测方案，随后才进入注释；簇树不是谱系。主流程引用和参考匹配基于筛选后的
+   marker 池：默认每簇最多 30 个、严格 FC>1、校正 p<0.05，并按 pct.1−pct.2 排序，不是全测量基因。
+   Seurat 的 min.pct 用两侧检出率较大值，非两侧都须过线；已知标签引用另要求正 FC、簇内检出高于簇外。
+   不在列表不代表无表达，Fisher/coverage 仍受 query/参考选择限制；本轮未放宽规则。
+   公开 `examples/three-gate-analysis.R` 以 Unknown、无 provider 实测三次审批，只验证软件路径。
 
 可选 `scAgentKit::sc_run_ambient_correction()` **仅有 R API，没有网页校正入口或网页审批流程**。
 实现见 `R/run-ambient-correction.R`，完整参数见 `?sc_run_ambient_correction`。
