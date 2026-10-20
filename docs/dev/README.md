@@ -12,16 +12,23 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [DOUBLET REVIEW](DOUBLET_REVIEW.md)
 - [ENVIRONMENT RESTORE](ENVIRONMENT_RESTORE.md)
 - [EVALUATION PROTOCOL V1](EVALUATION_PROTOCOL_V1.md)
-- [Proposed evaluation v2: annotation and human effort](EVALUATION_PROTOCOL_V2.md) — not executed or preregistered
+- [Evaluation protocol v2](EVALUATION_PROTOCOL_V2.md) — approved engineering design; formal experiments not frozen or executed
+- [Positioning v2](SCAGENTKIT_POSITIONING_V2.md)
+- [Paper milestone and 1.0 plan](PAPER_MILESTONE_PLAN.md)
+- [Evaluation v2 framework contract](../../benchmark/evaluation-v2/README.md) — E0 documents only
 - [HARMONY PC REVIEW](HARMONY_PC_REVIEW.md)
 - [MAD REVIEW](MAD_REVIEW.md)
 - [OFFLINE COMPARISON CONTRACT](OFFLINE_COMPARISON_CONTRACT.md)
 - [PARAMETER CONTEXT CONTROLS](PARAMETER_CONTEXT_CONTROLS.md)
 - [QC-review](QC-review.md)
 - [ReAct implementation plan](REACT_IMPLEMENTATION_PLAN.md)
+- [Accepted 1.0 gap audit](reports/2026-10-20-1.0-gap-audit.md)
+- [E0 stage report](reports/2026-10-20-e0.md)
 - [UNIFIED MODEL REVIEW](UNIFIED_MODEL_REVIEW.md)
 - [annotation-response-recovery](annotation-response-recovery.md)
 
 ## Archived versions and past plans
 
 [Archive index](archive/README.md) retains historical release protocols, notes and past benchmark/model plans. These are history, not the current 0.8.1 operating instructions.
+
+The [superseded annotation/human-effort v2 proposal](archive/EVALUATION_PROTOCOL_V2_ANNOTATION_EFFORT_PROPOSAL.md) was not executed or preregistered. Its preservation does not change historical v1 results.
