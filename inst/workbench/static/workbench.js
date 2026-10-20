@@ -412,6 +412,12 @@ function wbRenderResultSummary() {
 }
 function wbRenderAnnotation() {
   const value = wbState.view.annotation || {}, target = wb$("wb-annotation-content"), review = value.review, rows = wbArray(review?.details?.annotations); target.replaceChildren();
+  const audit = wbState.view.react, summary = audit?.summary;
+  if (summary) {
+    target.append(wbCard("Evidence checks", wbNode("p", summary.target_clusters + " clusters · " + summary.tool_calls + " tool calls · recorded cost $" + Number(summary.known_cost_usd || 0).toFixed(4) + (summary.unknown_cost_turns ? " · cost unavailable for " + summary.unknown_cost_turns + " turns" : ""))));
+    for (const fallback of wbArray(summary.fallbacks))
+      target.append(wbNode("p", "Cluster " + fallback.cluster_id + ": baseline draft retained · " + fallback.fallback_reason));
+  }
   if (!rows.length) wbEmpty(target, "No saved per-cluster annotation review was supplied. Unavailable labels stay unavailable; a marker or cluster count is not an identity decision.");
   for (const row of rows) {
     const proposal = row.proposal || {}, card = wbNode("section", null, {class: "wb-annotation-row", "data-cluster-id": row.clusterId});
@@ -419,6 +425,31 @@ function wbRenderAnnotation() {
     const joint = row.joint_evidence;
     if (joint) card.append(wbRecord("Saved database / model joint evidence", joint)); else if (row.local_reference) card.append(wbRecord("Saved local reference evidence", row.local_reference));
     if (row.measured_expression) card.append(wbRecord("Saved measured expression and cross-sample evidence", row.measured_expression));
+    const trace = wbArray(audit?.clusters).find(item => item.cluster_id === row.clusterId);
+    if (trace) {
+      const details = wbNode("details", null, {class: "wb-react-trace"}), steps = new Map();
+      details.append(wbNode("summary", "Evidence checks · " + trace.tool_calls + " tool calls"));
+      for (const step of wbArray(trace.tools)) {
+        const item = wbNode("section", null, {id: "react-" + encodeURIComponent(row.clusterId) + "-" + step.sequence});
+        item.append(wbNode("h4", step.sequence + ". " + step.tool),
+          wbNode("pre", step.arguments?.text || "Arguments unavailable"),
+          wbNode("p", step.evidence_status === "untested_background" ? "Untested background expression · does not qualify as a supporting gene" : step.success ? "Saved evidence" : "Tool returned an error"),
+          wbNode("pre", step.preview?.text || "Result unavailable"));
+        if (step.preview?.truncated) item.append(wbNode("p", "Preview shortened; the complete result remains in the saved checkpoint."));
+        item.append(wbNode("small", "Result hash: " + (step.result_hash || "unavailable")));
+        steps.set(step.source, item); details.append(item);
+      }
+      details.append(wbRecord("Original checked draft and risk flags", {conclusion: trace.conclusion, risks: trace.risk_flags}));
+      card.append(details);
+      // Only retained genes get links. Historical evidence remains in the trace.
+      for (const citation of wbArray(trace.active_citations)) {
+        const step = steps.get(citation.source);
+        if (!step || !wbArray(proposal.markers).includes(citation.gene)) continue;
+        const link = wbNode("a", citation.gene + " · " + citation.source, {href: "#" + step.getAttribute("id"), class: "wb-inline-link"});
+        link.addEventListener("click", () => {details.open = true;});
+        card.append(link);
+      }
+    }
     card.append(wbRecord("Supplied marker statistics and scope facts", {supplied_marker_stats: row.supplied_marker_stats, cited_marker_stats: row.cited_marker_stats, cell_ids: row.cell_ids})); target.append(card);
   }
   if (review) target.append(wbCard("Annotation provenance and decision lifecycle", wbRecord("Saved annotation review", {source: review.details?.source, limitations: review.details?.limitations, lifecycle: review.lifecycle, output_columns: review.details?.output_columns})));

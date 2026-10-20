@@ -69,6 +69,26 @@ function harness(search = "", hash = "") {
 }
 const results = [];
 async function check(name, action) {try {await action(); results.push({name, passed: true});} catch (error) {results.push({name, passed: false, error: error.stack});}}
+await check("ReAct trace links open saved evidence without reviving removed citations", async () => {
+  const h = harness(), value = view();
+  value.annotation.review.details.annotations = [{clusterId: "01", proposal: {label: "T", markers: ["CD3D"], rationale: "Saved draft"}}];
+  value.react = {summary: {target_clusters: 1, tool_calls: 1, known_cost_usd: 0, unknown_cost_turns: 2, fallbacks: []},
+    clusters: [{cluster_id: "01", tool_calls: 1, tools: [{sequence: 1, source: "tool:1", tool: "gene_expression", success: true,
+      evidence_status: "untested_background", arguments: {text: "{}"}, preview: {text: "<script>not HTML</script>", truncated: true}, result_hash: h64("a")}],
+      citations: [{gene: "DELETED", source: "tool:1"}], active_citations: [{gene: "CD3D", source: "tool:1"}]}]};
+  h.wire("parent", value); await h.call("wbLoad");
+  assert.equal(h.state.failed, false);
+  const content = h.el("wb-annotation-content"), elements = descend(content);
+  assert.match(content.textContent, /Untested background expression/);
+  assert.match(content.textContent, /cost unavailable for 2 turns/);
+  assert.match(content.textContent, /<script>not HTML<\/script>/);
+  assert.doesNotMatch(content.textContent, /DELETED/);
+  const link = elements.find(el => el.tagName === "A" && el.textContent === "CD3D · tool:1");
+  assert.equal(link.getAttribute("href"), "#react-01-1");
+  link.listeners.click[0]();
+  assert.equal(elements.find(el => el.tagName === "DETAILS").open, true);
+  assert(h.requests.every(request => request.options.method === "GET"));
+});
 await check("first entry resolves parent then reads exact scoped snapshot by GET only", async () => {const h = harness(); h.wire(); await h.call("wbLoad"); assert.equal(h.state.failed, false); assert.deepEqual(h.requests.map(request => request.url), ["/api/run-review/scopes", "/api/run-review/workbench?project_id=parent"]); assert.equal(h.requests[1].options.headers["X-ScAgentKit-Run-Project"], "parent"); assert(h.requests.every(request => request.options.method === "GET"));});
 await check("candidate workflow navigation follows the verified child and performs no mutation", async () => {const h = harness("?child_id=child-A&project_id=child-A"); h.wire("child-A"); await h.call("wbLoad"); assert.equal(h.el("wb-header-review").getAttribute("href"), "/review?child_id=child-A&project_id=child-A"); assert.equal(h.el("wb-header-scope").getAttribute("href"), "/subclusters?child_id=child-A&project_id=child-A"); assert.equal(h.el("wb-header-review").hidden, false); assert.equal(h.requests.every(request => request.options.method === "GET"), true);});
 await check("candidate navigation disappears after an unverified saved response", async () => {const h = harness(); h.wire(); await h.call("wbLoad"); const invalid = view(); invalid.binding.input_hash = h64("0"); h.wire("parent", invalid); await h.call("wbLoad"); assert.equal(h.el("wb-header-review").hidden, true); assert.equal(h.el("wb-header-scope").hidden, true);});

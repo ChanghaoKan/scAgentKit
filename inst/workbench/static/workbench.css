@@ -144,3 +144,6 @@ body.wb-compact footer {font-size: 12px; padding: 24px 0;}
 }
 /* Preserve semantic hidden state when compact layout rules set display. */
 body.wb-compact [hidden] {display: none !important;}
+.wb-react-trace { min-width: 0; max-width: 100%; }
+.wb-react-trace pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 24rem; overflow: auto; }
+.wb-react-trace small { overflow-wrap: anywhere; }
