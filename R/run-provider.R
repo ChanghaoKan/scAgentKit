@@ -758,7 +758,8 @@
 #' becomes known-cost; nothing is resent. An entry that never produced a
 #' response becomes `reconciled_no_response` and can then be retried only by
 #' an explicit `retry = TRUE` resume on the legacy text path. Structured turns
-#' never resend. Their reconciliation commits a new receipt with the confirmed
+#' never resend; recording a charge does not resolve uncertain delivery.
+#' Their reconciliation commits a new receipt with the confirmed
 #' invoice cost; their post-hoc cost record does not impose a monetary cap.
 #'
 #' @param project_dir Run directory.

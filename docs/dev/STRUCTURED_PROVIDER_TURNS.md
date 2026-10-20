@@ -70,8 +70,10 @@ is marked as an estimate, not an invoice. Missing/contradictory usage or absent
 pricing remains unknown; it is not represented as a zero cost and does not block
 a later received-response continuation. A confirmed `not_sent` request and an
 offline mock have zero cost. Uncertain **delivery** still prevents automatic
-resending, even after process restart. Tool/step/time/output limits, privacy and
-scientific approvals remain enforced independently of money.
+resending, even after process restart. This transport enforces dispatch step,
+per-call timeout, byte and output limits independently of money. Tool execution
+and cumulative cluster deadlines belong to 2B. Privacy and scientific approval
+boundaries remain unchanged.
 
 `provider_turn_dispatched` and `provider_turn_completed` reuse existing state
 history. The durable dispatch entry is written before calling the provider. A
