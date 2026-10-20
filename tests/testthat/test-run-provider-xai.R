@@ -134,3 +134,41 @@ test_that("native unknown delivery is durable and never automatically repeated",
   expect_identical(turn_call(f, fn = fn)$status, "delivery_uncertain")
   expect_equal(calls, 1L)
 })
+
+test_that("native ReAct loop retains complete output items and stages verified drafts", {
+  f <- react_loop_fixture(); on.exit(unlink(f$root, recursive = TRUE))
+  state <- .sc_run_load(f$root)
+  provider <- .sc_run_provider_spec(list(name = "grok", model = "grok-4.7",
+    generation = list(max_tokens = 2048, reasoning_effort = "high")))$metadata
+  state$config$provider <- provider
+  state$config$budget <- 1
+  state$config$review <- list(allow_external = TRUE, transfer_consent =
+    .sc_run_transfer_options(list(mode = "project", confirmed = TRUE, reviewer = "fixture",
+      reason = "Synthetic native loop.", react = state$config$react,
+      categories = c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression")),
+      provider, state$config$budget))
+  state$config_hash <- .sc_run_hash(state$config); .sc_run_save(f$root, state)
+  histories <- list()
+  fn <- function(input, ...) {
+    histories[[length(histories) + 1L]] <<- input
+    cluster <- jsonlite::fromJSON(input[[2]]$content, simplifyVector = FALSE)$cluster_id
+    first <- !any(vapply(input, function(x) identical(x$type, "function_call_output"), logical(1)))
+    out <- xai_session_reply(first)
+    if (first) {
+      args <- .sc_project_json(list(cluster_id = cluster, n = 50L))
+      out$message$tool_calls[[1]]$`function`$arguments <- args
+      out$protocol$output[[2]]$arguments <- args
+    } else {
+      out$message$content <- .sc_project_json(react_final(cluster))
+      out$protocol$output[[2]]$content[[1]]$text <- out$message$content
+    }
+    out
+  }
+  out <- .sc_run_react_refine(f$root, f$baseline, fn)
+  expect_identical(out$status, "completed")
+  expect_identical(out$proposal$annotations[[1]]$label, "T cell")
+  expect_length(histories, 4L)
+  expect_identical(histories[[2]][[3]]$encrypted_content, "opaque/bytes/do-not-rewrite")
+  expect_identical(tail(histories[[2]], 1L)[[1]]$type, "function_call_output")
+  expect_null(.sc_run_load(f$root)$approved)
+})
