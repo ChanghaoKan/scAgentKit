@@ -132,7 +132,9 @@
 .sc_run_pending <- function(state, kind, proposal, evidence_hash, next_stage = NULL, file_names = NULL) {
   if (is.null(file_names) && kind == "annotation" && isTRUE(state$config$strategy))
     file_names <- intersect(c("input", "analysis", "markers", "reference", "annotation_history_input",
-      "annotation_evidence", "manual_annotation", "annotation_validated", "annotation_review"), names(state$files))
+      "annotation_evidence", "manual_annotation", "annotation_validated", "annotation_review",
+      "annotation_react_run", "annotation_react_citations", "annotation_baseline_risks",
+      grep("^(react_cluster_|react_session_|provider_turn_)", names(state$files), value = TRUE)), names(state$files))
   if (is.null(file_names)) file_names <- names(state$files)
   pending <- list(kind = kind, stage = state$stage, proposal = proposal, evidence_hash = evidence_hash,
                   revision_created = state$revision, next_stage = next_stage, binding = .sc_run_binding(state, file_names))

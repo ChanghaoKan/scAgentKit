@@ -65,6 +65,10 @@
 }
 
 .sc_run_react_read <- function(context, name) {
+  if (is.environment(context$objects) && environmentIsLocked(context$objects)) {
+    if (!exists(name, context$objects, inherits = FALSE)) return(NULL)
+    return(get(name, context$objects, inherits = FALSE))
+  }
   record <- context$binding$files[[name]]
   if (is.null(record)) return(NULL)
   readRDS(file.path(context$root, record$path))

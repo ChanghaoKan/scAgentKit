@@ -49,6 +49,7 @@
   if (is.null(state$files[[evidence_name]]))
     stop("Saved aggregate suggestion evidence is missing.", call. = FALSE)
   evidence <- .sc_run_get(root, state, evidence_name)
+  if (kind == "annotation") evidence <- .sc_run_react_reference_view(evidence, state)
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
   summary <- evidence$summary
   if (!is.null(scan)) {
@@ -60,6 +61,10 @@
   if(kind=="annotation") {
     guided<-.sc_run_annotation_guidance(root,state,evidence,summary)
     summary<-guided$summary;guidance<-guided$guidance
+    if (!is.null(state$config$react) && !isTRUE(state$config$react$act_enabled)) {
+      summary$reference_candidates <- NULL; summary$reference_comparison <- NULL
+      summary$reference_mode <- "independent"; guidance <- NULL
+    }
   }
   request <- tryCatch({
     value<-.sc_run_request(kind,summary,state$config)
@@ -205,7 +210,7 @@
   result
 }
 
-.sc_run_suggestion_validator <- function(kind, evidence, state, cluster_scan = NULL) {
+.sc_run_suggestion_validator <- function(kind, evidence, state, cluster_scan = NULL, model_response = FALSE) {
   if (kind == "qc") return(function(value) .sc_run_qc_validate(value, evidence)$proposal)
   if (kind == "strategy") return(function(value) {
     validated <- .sc_run_strategy_validate(value, evidence)
@@ -214,6 +219,8 @@
     validated$proposal
   })
   function(value) {
+    if (model_response && !is.null(state$config$react))
+      return(.sc_run_react_baseline(value, evidence)$proposal)
     validated <- .sc_run_annotation_response_validate(value, evidence)
     list(schema = validated$schema, annotations = validated$annotations)
   }
@@ -238,7 +245,15 @@
     proposal$risks <- unique(c(proposal$risks, list("SIMULATED; requires independent scientific review.")))
   }
   # Fail before dispatch if a simulated template is not supported on this scope.
-  .sc_run_suggestion_validator(kind, context$evidence, state, context$cluster_scan)(proposal)
+  if (kind == "annotation" && !is.null(state$config$react)) {
+    risks <- lapply(proposal$annotations, function(row) {
+      record <- .sc_run_react_risks(NULL, row$clusterId, character(), legacy = TRUE)
+      record$fields <- lapply(record$fields, function(x) { x$source <- "model"; x })
+      record
+    })
+    proposal <- list(schema = "scagentkit.annotation-draft.v1", proposal = proposal, risk_flags = risks)
+  }
+  .sc_run_suggestion_validator(kind, context$evidence, state, context$cluster_scan, model_response = TRUE)(proposal)
   raw <- .sc_project_json(proposal)
   function(system_prompt, user_prompt) list(content = raw, cost_usd = 0,
     model = "SIMULATED-software-control", response_metadata = list(finish_reason = "stop"))
@@ -324,6 +339,12 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     context$request_hash %in% state$transfer_hashes ||
     .sc_run_transfer_authorized(context$request, state$config)
   if (action == "review_conflicts") {
+    if (!is.null(state$config$react) && !is.null(state$files$annotation_react_run)) {
+      state <- .sc_run_event(state, "react_session_reused", list(reviewer = reviewer, reason = reason,
+        checkpoint = state$files$annotation_react_run, provider_dispatch = "not_sent"))
+      .sc_run_save(root, state)
+      return(.sc_run_suggestion_view(root, state, simulate))
+    }
     state<-.sc_run_annotation_guidance_prepare(root,state,context,reviewer,reason)
     .sc_run_save(root,state)
   } else if (action == "approve") {
@@ -347,7 +368,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     if(!is.null(context$guidance))state$annotation_guided_attempted<-TRUE
     request <- context$request
     request$approved_payload_hash <- context$request_hash
-    request$validator <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)
+    request$validator <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan, model_response = TRUE)
     state$suggestion <- list(schema = "scagentkit.suggestion.v1", suggestion_hash = suggestion_hash,
       request_hash = context$request_hash, binding = context$binding, kind = context$kind,
       status = "requesting", simulated = simulate, reference_mode=context$reference_mode, candidate = NULL, response = NULL)
@@ -362,6 +383,23 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       error = function(error) list(status = "interrupted", content = NULL, cached = FALSE,
         error = "Suggestion request interrupted; inspect the durable ledger. No automatic retry.",
         request_hash = context$request_hash))
+    if (identical(answer$status, "ok") && context$kind == "annotation" && !is.null(state$config$react)) {
+      state <- .sc_run_react_record_baseline(root, state, answer)
+      .sc_run_save(root, state)
+      if (!simulate) {
+        refined <- .sc_run_react_refine(root, answer$content, project_lock_owner = owner)
+        state <- .sc_run_load(root, verify = FALSE)
+        answer$baseline_content <- answer$content
+        answer$content <- refined$proposal
+        answer$react_run <- state$files$annotation_react_run
+        if (identical(refined$status, "awaiting_external_approval")) {
+          answer$status <- refined$status
+          answer$content <- NULL
+        }
+        state$diagnostics$react <- list(status = refined$status, clusters = length(refined$targets),
+          tool_calls = refined$tool_calls, fallback_reason = refined$fallback_reason)
+      }
+    }
     state$suggestion$response <- answer
     state$suggestion$candidate <- if (identical(answer$status, "ok")) answer$content else NULL
     state$suggestion$status <- if (identical(answer$status, "ok")) "candidate" else "failed"
@@ -383,6 +421,8 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     if (!current || !identical(saved$status, "candidate") || is.null(saved$candidate))
       stop("No current validated suggestion candidate can be adopted.", call. = FALSE)
     merged <- .sc_run_merge_model_draft(root, state, context$kind, saved$candidate)
+    if (context$kind == "annotation")
+      context$evidence <- .sc_run_react_review_evidence(root, state, context$evidence)
     proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)(merged$proposal)
     # Preserve the response as scientific evidence of its actual provenance.
     # Ordinary manual edits can subsequently override it via the normal API.

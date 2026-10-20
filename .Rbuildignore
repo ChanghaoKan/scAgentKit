@@ -17,3 +17,5 @@
 ^tools/environment$
 ^tools/benchmark-react-tools\.R$
 
+
+^tools/benchmark-react-session\.R$

@@ -461,7 +461,7 @@
 # is never sent again automatically, even in a fresh R process.
 .sc_run_call <- function(project_dir, request, provider = NULL, chat_fn = NULL,
                          budget = 0, allow_external = FALSE, retry = FALSE,
-                         project_lock_owner = NULL) {
+                         project_lock_owner = NULL, react_runtime = NULL) {
   spec <- .sc_run_provider_spec(provider, chat_fn)
   turn <- identical(request$schema, "scagentkit.provider-turn.v1")
   prepared <- if (turn) tryCatch(.sc_run_turn_prepare(request, spec$metadata), error = function(e) e) else NULL
@@ -496,7 +496,7 @@
     created_at = format(Sys.time(), tz = "UTC", usetz = TRUE)), file.path(lock, "owner.json"))
   path <- file.path(base, "ledger.json")
   ledger <- .sc_run_provider_read(path)
-  guard <- if (turn) .sc_run_turn_guard(project_dir, request, spec$metadata, prepared) else NULL
+  guard <- if (turn) .sc_run_turn_guard(project_dir, request, spec$metadata, prepared, react_runtime) else NULL
   if (turn) ledger <- .sc_run_turn_recover_ledger(project_dir, guard$state, ledger, path)
   if (turn && (!identical(as.numeric(budget), as.numeric(guard$state$config$budget)) ||
       (isTRUE(allow_external) && !isTRUE(guard$state$config$review$allow_external))))
@@ -660,7 +660,16 @@
   value <- tryCatch(if (turn) {
     again <- .sc_run_turn_prepare(request, spec$metadata)
     if (!identical(again$json, prepared$json)) .sc_run_turn_error("invalid_request", "Prepared turn changed before dispatch.")
-    do.call(fn, prepared$args)
+    args <- prepared$args
+    if (!is.null(request$deadline)) {
+      remaining <- request$deadline - as.numeric(Sys.time())
+      if (remaining <= .001) stop(structure(list(message = "The cluster deadline expired before dispatch.",
+        call = NULL, code = "cluster_timeout", delivery = "not_sent"),
+        class = c("agentomics_turn_error", "error", "condition")))
+      args$timeout_secs <- min(args$timeout_secs, remaining)
+    }
+    entry$effective_timeout_seconds <- args$timeout_secs
+    do.call(fn, args)
   } else fn(request$system_prompt, request$user_prompt), error = function(e) e)
   if (identical(getOption("scAgentKit.provider_crash"), "after_response"))
     stop("Injected provider interruption after response; reservation remains held.")

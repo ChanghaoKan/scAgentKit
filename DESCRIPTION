@@ -17,7 +17,7 @@ SystemRequirements: Python (>= 3.9)
 Depends:
     R (>= 4.2.0)
 Imports:
-    agentomicsCore (>= 0.2.0),
+    agentomicsCore (>= 0.3.0),
     callr,
     methods,
     Seurat (>= 5.0.0),
@@ -29,7 +29,7 @@ Imports:
     jsonlite,
     digest
 Remotes:
-    ChanghaoKan/agentomicsCore@v0.2.0
+    ChanghaoKan/agentomicsCore@v0.3.0
 Suggests:
     SoupX,
     celda,

@@ -1,5 +1,9 @@
 # Development changes (unreleased)
 
+- Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
+- Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
+- Require released agentomicsCore v0.3.0, including DeepSeek tool-call index compatibility. The user-facing `sc_start` default, trace UI and offline replay remain later stages.
+
 - Upgrade agentomicsCore to v0.2.0 and add the internal single-turn annotation
   transport foundation: state-bound read-only scope, complete-conversation
   privacy checks, exact-payload receipts and delivery-aware audit recovery.

@@ -451,6 +451,9 @@
       reason <- if (ambiguous) "explicitly_related_best_label_tie" else "label_comparison"
     }
   }
+  if (identical(local$status, "unassessed")) {
+    status <- "unassessed"; reason <- "ACT_disabled_by_configuration"
+  }
   counter <- supplied$counterevidence
   if (is.null(counter)) counter <- list()
   if (!is.list(counter) || !is.null(names(counter)))
