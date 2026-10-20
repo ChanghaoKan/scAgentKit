@@ -5,6 +5,12 @@ scientific approval. The first implementation contains four internal read-only
 tools. It does not enable model tool calling or change the public annotation
 workflow. Each subsequent stage has its own pull request.
 
+The approved 2026-10-20 [paper milestone plan](PAPER_MILESTONE_PLAN.md)
+integrates this first release with B1/B2 and evaluation E0–E5. It records the
+paper/1.0 split and provider-specific M1 work. The [evaluation protocol](EVALUATION_PROTOCOL_V2.md)
+is the authority for scoring definitions and experiment gates; its engineering
+approval is not a formal experiment freeze.
+
 ## Scope and sequence
 
 | Stage | Deliverable | Dependency |
@@ -25,7 +31,9 @@ resumed. The stage 1 PR must retain this baseline in its description.
 Stage 1 performance acceptance uses 50,000-cell synthetic sparse Seurat fixtures,
 with machine configuration and separate cold/hot cache timings. It measures the
 four tools, not biological accuracy or full marker discovery performance.
-`compare_clusters`, `cl_lookup` and Grok support are deferred.
+`compare_clusters` and `cl_lookup` are deferred to the post-paper R2 work.
+DeepSeek remains the first-release provider; primary Anthropic qualification
+and descriptive OpenAI/xAI extensions each have separate M1 pull requests.
 
 Every PR description must name its new abstractions, explain whether existing
 checkpoints, the provider ledger and events can serve the same purpose, and
@@ -48,6 +56,11 @@ Expected change areas (new file names after stage 1 remain provisional):
 
 The existing `annotation.v1` proposal remains intact. A versioned outer record
 will bind citations and tool results to that proposal and its scientific review.
+The same outer draft record includes the five required structured risk fields;
+the existing `annotation.v1` payload and strategy free-text risk field remain
+unchanged. Production validators check format, enumerations and binding. Missing
+legacy assessments are explicitly unassessed, not negative. See the protocol for
+the scope, source and assessment-status contract.
 
 Pool citations retain the existing rules. An additional tool citation must come
 from the current session's `cluster_markers` result for the same cluster. The
@@ -75,7 +88,10 @@ The default `react="auto"` session scope is included in creation-time aggregate
 transfer confirmation. Strict mode requires approval of each exact outgoing
 payload. Every turn has a separate payload hash and ledger entry. Before sending,
 the coordinator reserves a conservative worst-case cost calculated from the
-complete message length, output bound and recorded pricing. An unaffordable turn
+complete message, output bound and recorded pricing. The input-token bound
+uses a verified tokenizer/framing bound or a conservative official model context
+limit; a characters-per-token estimate cannot guarantee the reservation.
+Unknown limits/pricing cause no send and an explicit fallback. An unaffordable turn
 is not sent. Uncertain delivery retains its reservation and is never
 automatically resent.
 
@@ -88,6 +104,20 @@ model turns per cluster, sixty turns for the annotation session, three minutes
 per cluster, and sequential cluster execution. Tool execution has a sixty-second
 maximum and must also respect the cluster's remaining deadline. Background
 worker deadlines leave time to persist progress and fallback status.
+
+Stage 2B replaces per-tool process startup/full checkpoint hashing with a
+session-lived worker. Under the existing project lock, verify and deserialize the
+same bytes (or a verified worker-private immutable copy) and pin all four tools'
+inputs in memory. Per-turn regular-file/symlink, size, mtime, inode and scientific
+binding checks are early alarms only. Before publishing a final draft, fully
+verify checkpoint SHA and current scientific/history bindings again, allowing
+legitimate ledger/event appends. A hash-before/read-original/hash-after sequence
+alone is not a sufficient loading guarantee. Cache content must be verified
+against the same identity. The external controller still kills timed-out workers;
+recovery fully verifies inputs and never automatically resends uncertain delivery.
+Citation, risk and session-verification records join the existing approval-bound
+evidence file set. Integrity errors block rather than becoming fallback. Measure
+session setup, cold/hot tools, final verification and memory separately.
 
 The recorded configuration also includes an explicit allowed tool list
 (`config$react$tools`) and an ACT-evidence switch. Disabling ACT evidence must
@@ -138,8 +168,11 @@ predictions. For each cohort, report exact CL matches, ancestor matches along
 one or more `is_a` edges, Unknown proportion, and unmapped-label counts.
 Unmapped labels are excluded from the scored denominator rather than counted
 as errors; export denominator and mapping coverage to make this visible.
-Document the direction and depth of ancestor matching and how Unknown labels
-are handled. Costs and tokens are annotation-level totals; also export
+Also report strict accuracy beside it, retaining unmapped predictions in the
+denominator as errors. Ancestor distance is capped at three; cluster truth
+requires 80% valid-label coverage and 80% dominance within valid labels.
+The protocol fixes matching direction, allowed ancestors, Unknown handling and
+all denominators. Costs and tokens are annotation-level totals; also export
 per-cluster steps, fallback rate, fallback reason counts and effective ablation
 configuration. Baseline and additional ReAct costs must be distinguishable.
 
@@ -151,14 +184,11 @@ the saved tool results and draft without replacing the originals. Missing or
 corrupt records produce explicit diagnostics. The trace format must therefore
 be versioned, exportable and sufficient for both replay and evaluation.
 
-## Deferred 1.0 gap audit and stage reporting
+## Confirmed 1.0 audit and stage reporting
 
-The 1.0 gap audit begins only after the stage 1 PR is submitted. It is a report,
-not permission to implement additional features. Evaluate all 18 user-specified
-criteria against files, tests or PRs, mark each satisfied/partial/not started,
-and describe the missing work, expected files, and overlap/dependencies with
-ReAct v1 and v2. Only after the report is confirmed may its gaps change the
-implementation scope.
+The 1.0 gap audit was performed after stage 1 was submitted and was confirmed
+by the maintainer. Its gaps are now assigned in the paper milestone plan;
+confirmation does not imply those gaps have been implemented or validated.
 
 The audit covers one-line startup and input normalization; startup estimates
 and graceful fallback; evidence-backed drafts at all three approvals;
@@ -172,9 +202,14 @@ and simple installation; and concise user documentation.
 The stage 1 synthetic tool benchmark is distinct from the future 1.0 public
 50,000-cell full-workflow benchmark. Neither substitutes for the other.
 The audit report must end with a consolidated v1/v2/independent-release
-roadmap and its critical path.
+roadmap and its critical path. ReAct v1, B1/B2, E0–E5 and the primary M1 provider
+are the paper milestone (tentatively 0.10); U1/U2/O1/C1/P1/V1/V2/R2 follow it
+as 1.0 work. The unpublished final holdout is a primary E5 paper result.
 
 Each completed stage must provide a stage report containing PR links and
 commit ranges, changes in the relevant 1.0 acceptance criteria, test and CI
 results, known limitations, and deviations with reasons. Before 1.0, combine
 the verified evidence in a readiness report suitable for external review.
+Each report also states positioning-evidence changes and paper milestone
+progress. E0 records its engineering protocol commit; E5 separately records
+the formal experiment-freeze receipt and protocol revision.

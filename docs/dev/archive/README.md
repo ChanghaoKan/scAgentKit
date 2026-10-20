@@ -8,3 +8,5 @@ Current researcher instructions are in the [0.8.1 guide](../../SCIENTIFIC_REVIEW
 - [RELEASE PLAN](RELEASE_PLAN.md)
 - [BENCHMARK PROTOCOL DRAFT](BENCHMARK_PROTOCOL_DRAFT.md)
 - [IFNB MODEL AB PROTOCOL](IFNB_MODEL_AB_PROTOCOL.md)
+
+- [Superseded evaluation v2 annotation/human-effort proposal](EVALUATION_PROTOCOL_V2_ANNOTATION_EFFORT_PROPOSAL.md) — unexecuted historical proposal, replaced by the approved 2026-10-20 engineering protocol.

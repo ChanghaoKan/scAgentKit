@@ -1,139 +1,239 @@
-# Evaluation v2: proposed annotation and human-effort study
+# scAgentKit 生物学决策与评估协议 v2
 
-**Status: PROPOSED — NOT EXECUTED — NOT PREREGISTERED.**
-This document is a plan, not authorization for model calls, data transfer or spending.
-No v2 observations, accuracy estimates, time savings or biological benefits exist.
-The target is scAgentKit 0.8.1; the reviewed starting source is
-`1a856d6d65542479f62d4ad78403b07ad1d101e9`. Before execution, freeze the exact
-installed revision and artifact hashes; the version string alone is insufficient.
+日期：2026-10-20。状态：**E0 工程协议已获维护者确认；正式实验尚未冻结或运行。** 本版纳入四份草案审阅后的十二项决定。工程边界、CL 祖先距离 3、簇级真值 80/80 已确定；仍需开发试跑才能确定的参数和精确模型写入冻结清单，不把占位项称为已验证配置。
 
-## Question and smallest useful scope
+本文替代[旧的注释与人力研究提案](archive/EVALUATION_PROTOCOL_V2_ANNOTATION_EFFORT_PROPOSAL.md)，该旧提案未执行、未注册；历史 v1 结果保持原样。定位见[定位 v2](SCAGENTKIT_POSITIONING_V2.md)，阶段与关键路径见[论文里程碑计划](PAPER_MILESTONE_PLAN.md)。论文里程碑暂定 0.10，范围为 ReAct v1（含 4E）、B1、B2、E0–E5 及主矩阵 M1；完整 1.0 的其他工作在论文里程碑之后。本文不是已完成生物学验证的声明。
 
-Does the review interface help analysts produce defensible annotations, and does
-adding a model improve those annotations or reduce active analyst time?
-Begin with **annotation-only tasks on identical frozen cells and clusters**.
-This isolates annotation and review from QC, PC, resolution and integration choices.
-It cannot establish better QC, clustering, batch correction or complete-pipeline time.
-A later study allowing those decisions needs a separate protocol and new cases.
+目标是验证从原始计数到注释对象的生物学决策、可核对证据和可复现性。脚本评估不能证明真人审批省时，也不能替代外部长期使用证据。功能仍限基础分析；不加入高级下游分析、MCP 入口或本地模型。
 
-[V1](EVALUATION_PROTOCOL_V1.md) evaluated offline computation and reference
-candidates, with final Unknown controls and no model calls or human-time experiment.
-The [archived ifnb A/B plan](archive/IFNB_MODEL_AB_PROTOCOL.md) compares model
-evidence packages on already-seen data; it remains an unexecuted exploratory plan.
-Neither is replaced or retrospectively relabeled by v2. Preserve all V1 results.
+## 执行顺序与冻结
 
-## Three arms and equal information
+1. 继续已批准的 ReAct v1。E0 先作为文档 PR 提交；其后的 A–C（E1–E3）可与 ReAct v1 并行实施，复用现有机制。
+2. 两个生物学功能在 ReAct v1 完成后实施。A–C 遇到尚未支持的功能开关必须返回 `unsupported_feature`，不静默忽略或自行模拟包行为。
+3. 框架完成时，在公开开发集上做 N=3 的 `accept_drafts` 试跑：mock 一组、已验证真实 provider 一组。记录费用上限与真实结果，真实 API 不进 CI。这些是开发试跑，不是正式实验。
+4. E5 正式实验必须同时满足：ReAct v1 完成；B1、B2 完成；E0–E4 的框架、协议、数据资格、主矩阵模型和分析脚本冻结。DeepSeek 加一个合格前沿模型构成主矩阵并阻塞正式实验；其余两家的扩展矩阵不阻塞。任何主矩阵前置项未满足，不启动正式基准。
+5. 最终留出集只由维护者在论文里程碑的包功能完成、真值冻结之后首次运行，作为 E5 的主要结果之一，而不是推迟到论文之后的独立 E6。开发和调参期间不读取该数据或其标签；后续 1.0 安装/兼容等工作不构成首次留出运行的额外前置条件。
 
-| Arm | Analyst task | Evidence and assistance |
+冻结清单保存：协议 commit、包/Core commit、依赖环境、输入/真值/映射/ACT/CL hash、模型配置、价格版本、种子、注入参数、发现规则、评分版本和外部工具版本。先提交协议，再用后续 receipt 提交记录它的 commit；不要求文件包含自身最终 commit。E0 阶段报告记录本次工程协议 commit，E5 的 `experiment-freeze` receipt 记录正式实验采用的协议与所有配置 commit，两者不能混称。未经全部门槛核实，`experiment_freeze_status` 必须保持 `not_frozen`。
+
+版本化指标并存，不覆盖历史模式；只放行已证明科学等价的项目环境变化并追加环境差异 receipt。完整性破坏和科学代码变化仍阻断，旧 hash、批准和历史结果不得重写。后者的实现属于论文之后 C1，E0 只固定边界。
+
+基准结果解盲后的修改只能进入标明探索性的分析或新协议版本，不能回写原结果。模型别名变化、输入或协议变化时创建新运行批次，不拼成同一组重复实验。
+
+## 生物学功能 1：诊断簇 QC
+
+新增的粗聚类只用于诊断，存为独立、不可变的诊断检查点，界面明确标注“仅用于诊断”，绑定原始计数、已声明的 called-cell/最小预筛范围、固定参数、种子和实现 hash。它不覆盖最终聚类，不自动删除细胞，也不自动放宽阈值。原始液滴没有可靠 called-cell 范围时明确说明限制；不能偷偷加 `nFeature>=200` 再宣称保留低 RNA 类型。
+
+开发起点拟为 LogNormalize 10,000、最多 2,000 HVG、最多 20 PCs、低分辨率 0.2、固定种子，不进行批次或周期校正。这些是待开发集验证的初值，不是通用最优参数。小样本、退化数据、资源不足或超时均可退回已有 QC 证据和警告。
+
+复用现有 MAD：counts/features 使用 log10(x+1)，线粒体使用原百分比，MAD 缩放 1.4826、k=3；少于 30 个细胞、MAD 为零、MT 不可测等保持 unavailable。比较全局、按样本和按诊断簇三份明确的候选策略，记录每簇原数量、删除数量/比例、比例差；超过 50% 删除作为筛查警告。样本深度差异明显时同时展示样本×诊断簇分布。
+
+每簇 top 5 marker 带实际统计量。LLM 根据 marker、QC 分布和研究目的提出类型假说及是否值得放宽阈值，不能仅凭“高 MT”认定健康心肌/肝细胞，也不能把低计数损伤簇自动救回。规则兜底只给比较和警告。
+
+**放宽资格由 R 确定性执行**：该簇 top 5 中至少 N 个不同基因不属于线粒体、核糖体或应激排除列表，且同时满足 `padj < 0.05`、`avg_log2FC > 0`、`pct.1 > pct.2`。统计量来自绑定的诊断 marker 检查点，不能相信模型自报数值。排除列表按物种/基因 ID 规范化并版本化、保存 hash；无法可靠识别排除列表或统计缺失时不具备放宽资格。N=3 是维护者同意的开发起点，在开发集验证后、正式实验前冻结；不得在留出集调 N。资格仅允许提交需用户批准的放宽建议，不代表该簇健康，也不自动改变阈值。收紧同样须逐项理由和批准，但不受“救回细胞”的放宽资格门槛限制。
+
+簇阈值绑定 `(诊断检查点 hash, 成员集合 hash, 诊断簇 ID)`。采用版本化 typed QC 操作，粒度为 **(诊断簇, 指标)**：明确替换该簇该指标的 baseline 边界，其他指标的 baseline 和最小预筛照常生效。放宽与收紧都允许，每项必须填写理由；替换不能越过最小预筛下限或绕过任何最小预筛保护。第一关逐簇展示最终有效阈值表、替换前后保留数量和差值。范围重叠或矛盾覆盖直接拒绝；成员或诊断绑定变化使草稿及既有批准失效。执行前用现有机制重验输入、成员、诊断配置/算法和有效阈值。现有 `remove_if="any"` 追加宽松规则不会抵消原严格规则，因此不能只加 selector 而不定义替换语义。
+
+维护者已批准把“审批前不运行 PCA”改为“审批前只运行不参与决策的诊断计算”，并在 B1 同步修改 UI、文档和实现 hash。这里“不参与决策”指诊断没有自动执行、删除、批准或成为最终分析结果的效力；诊断证据仍供 LLM 起草和研究者审阅。批准后必须按批准的方案重新计算最终 PCA 和聚类，不能复用诊断结果冒充最终分析。
+
+方法附录引用 [Subramanian 等的 ddqc 原始论文](https://doi.org/10.1186/s13059-022-02820-w)。ddqc 已包含按簇 MAD 和人工探索；scAgentKit 的区别限定为完整证据绑定的决策草稿、确定性核验和执行前强制审批，不声称首创按簇 QC。
+
+## 生物学功能 2：批次校正必要性
+
+复用现有设计秩检查、nested_biology 约束、Harmony 和 before/after kNN 诊断。第一版不另加 LISI 依赖。与功能 1 共用诊断检查点时，必须具有相同细胞范围和设置。
+
+第一关展示样本级 batch×condition 列联表、每条件样本/供者数、交叉或嵌套关系和缺失事实。细胞数不能充当生物学重复数。混合度除全体统计外，还报告有支持的条件/诊断簇内结果，避免把细胞组成差异当批次效应；诊断簇本身也可能按批次分裂，这种分层不能消除所有混杂。
+
+拟用 same-batch kNN 比例及超出随机组成的部分。对层 s 中细胞 i，参考值为 `(该层同批次细胞数−1)/(该层细胞数−1)`；同时输出实际值、参考值、差值、支持数量和抽样 hash。固定近邻设置、抽样方式及记录范围。现有 512 细胞有界统计可复用，但不能直接宣称具有 50k 数据上的检出能力。效应阈值和最低支持量仅在开发集选择，定稿前冻结。
+
+这里的数量必须对应实际近邻候选池：若先均衡抽样，就不能继续用原总体不均衡比例作为随机参考。候选池、查询子集和 before/after 的相同范围分别记录。
+
+冻结的 `batch_status` 枚举为 `not_applicable`、`insufficient_evidence`、`fully_confounded`、`no_effect_detected`、`effect_detected_design_supported`。规则在不可测、完全混杂或未检出效应时推荐不校正；仅在观测效应且设计允许时建议 Harmony。未检出不等于证明不存在。已有 replicated nested donor 的显式例外继续按原约束处理，不能用它绕过 batch 与 condition 一一对应的混杂。
+
+第二关在相同保留细胞、查询/候选池和 k 上比较最终未校正 PCA 与 Harmony 实际使用的嵌入和图。诊断阶段与最终阶段细胞范围不同，分开报告。包内使用现有矩阵/kNN 机制，不新增依赖：
+
+- **技术混合**：报告前后的 same-batch kNN 超额比例，即实际比例减上述对应候选池的随机参考，同时保留两项原值、支持量及变化。
+- **类型结构**：以固定的诊断簇标签为主，或在可比且已批准的分析中以冻结的批准簇标签，计算邻居中与查询细胞同标签的比例，报告校正前后纯度。不能对两套嵌入分别重新聚类后把自证纯度当保留证据；标签来源、成员 hash 和选择规则必须固定。
+- **条件信号**：仅在每个条件至少两个独立生物学样本、且相应类型内各条件也有至少两个具备支持量的样本时计算。先在每个类型内按样本计算嵌入质心（样本等权），再对每个条件对计算“条件质心间距离 / 条件内样本质心离散度”。离散度采用两个条件合并的样本质心相对本条件质心的均方根距离；零分母、缺失条件或支持不足返回 unavailable，不制造无穷大信号。比较前后比值及比值变化，不能以细胞作为独立重复。多个条件逐对报告，不选择结果最好的一对。
+
+诊断簇是可审核的类型代理，不是已知真值，结论同时标注该限制。支持量、近邻设置、距离标准化及信号下降警告阈值只用开发集确定，在正式实验前冻结。技术混合与生物学保留各自报告，不合成总分。无重复样本时条件信号标“未能评估”。信号减弱显示风险，由现有修订路径决定是否调整，不自动撤销或批准。
+
+Harmony 保持 RNA counts/data 不变，所以 RNA DE 不变只是完整性检查。过度校正需在实际使用的嵌入/图上评估；包外 evaluator 另报告 scIB 风格的真值 ARI/NMI、类型保留和适用的条件信号指标，相关评估依赖不进入包。不向包中加入新的条件 DE 分析功能。技术混合与生物学保留分开报告，依据 [Harmony](https://doi.org/10.1038/s41592-019-0619-0) 和 [scIB](https://doi.org/10.1038/s41592-021-01336-8) 的多方面评价思路。
+
+## 草稿中的结构化风险与 ReAct 会话完整性
+
+第一关和第三关的模型草稿返回契约包含版本化 `risk_flags.v1` 记录。它属于已有的草稿外层记录（第三关与引用证明共用外层），**内层 `annotation.v1` 保持原样**；第一关同样使用既有策略草稿外层，不建立另一套草稿/批准状态库。生产校验器校验枚举、作用范围和证据引用格式，不能把模型写出的风险直接当作已证明的生物学事实。
+
+| 字段 | 允许值与范围 |
+| --- | --- |
+| `doublet_risk` | `not_assessed`, `not_detected`, `suspected`；第一关项目/诊断簇或第三关簇，作用范围显式绑定 |
+| `batch_status` | 上文 B2 的五项枚举；缺少可用证据时为 `insufficient_evidence`，不能默认为 `no_effect_detected` |
+| `qc_celltype_concern` | `not_assessed`, `not_detected`, `suspected`；包括可能被 baseline 不成比例删除的类型证据 |
+| `cycle_concern` | `not_assessed`, `not_detected`, `suspected` |
+| `ambient_suspected` | `not_assessed`, `not_detected`, `suspected`；阴性表达背景可以支持风险描述，不能充作已检验 marker 引用 |
+
+新第一关/第三关模型请求都要求返回上述五个字段；不能以“不适用”为由省略键。各字段同时记录 `assessment_status`（`assessed`、`not_assessed`、`not_applicable`）和 `source`（`model`、`rule`、`human`、`legacy_unassessed`），并校验与 value 的组合。旧草稿/手动草稿缺字段时由读取投影显式标 `not_assessed`（batch value 为 `insufficient_evidence`），其 assessment 必须为 `not_assessed`，source 为 `legacy_unassessed`，不得改写原记录或混同“测过但证据不足”。不适用字段的 assessment 为 `not_applicable`，一般 risk value 为 `not_assessed`，batch value 为 `not_applicable`。记录风险依据的证据 ID、阶段、簇/项目绑定和来源；生产校验通过只证明格式合法。已有 `strategy.v1$risks` 自由文字字段保留，不当作结构化主评分。第三关实现并入 2B，第一关 QC/周期/双细胞相关部分并入 B1，batch 部分并入 B2；ACT、Unknown 和已有提示仍按原语义保留。
+
+2B 性能设计采用会话期间常驻的只读 worker：开始时持有现有项目锁，完整验证科学检查点及绑定，并保证反序列化的是**已核验的同一份字节**。可读取一次字节后核验并反序列化，或先创建 worker 私有不可变副本、核验该副本再从副本加载；“先 SHA 原路径、再 readRDS 原路径、最后再 SHA”不足以排除读取期间被换入后又换回的内容。全部四工具所需对象及参考快照加载到私有内存并固定，工具各 turn 不再读取可变路径。
+
+会话中各 turn 对原文件检查普通文件/非符号链接、大小、修改时间、inode（可增加 device/ctime）和科学绑定状态，仅作提前报警。提交最终草稿前，在现有写入协调下再次完整核验检查点 SHA、科学绑定以及合法的当前历史链。账本/event 自身的预期追加是合法状态变化，不能用“整个 state hash 必须永远不变”阻止逐轮记账；仍须拒绝未授权科学输入变更。已完成簇可以按既有机制保存暂存检查点，最终发布草稿必须通过最终核验。引用、风险及会话验证记录都要纳入现有待批准文件集合和 evidence hash，不能只写附件而不绑定批准。完整性失败废弃未提交结果并阻断，不能退回 baseline 掩盖损坏；模型/预算/时间失败仍按既定回退边界处理。
+
+文件 stat 仅是提前报警：它不能检测所有同大小/时间复原的替换，也不是面向恶意本地管理员的安全隔离。科学结果来自开始时验证并固定的内存快照，最终提交再完整校验；缓存结果也须验证与同一绑定一致，不能让常驻 worker 读取未验证的新缓存。复用项目写入协调和既有 state/checkpoint，模型工具仍无写权限。worker 的每工具 60 秒和每簇剩余时间由外部控制器执行；超时终止 worker，不能因 worker 崩溃自动重发模型请求。恢复时完整验证后才复用已提交簇记录，未完成工作按既定回退/恢复状态处理，不重发投递不明的请求。重放不依赖内存存活，仍用完整轨迹和保存检查点重建。会话开始/最终核验和常驻内存成本单列，重新测量冷/热耗时及 60 步总成本，不把免除每次完整 SHA 等同于免除验证。
+
+## A 批量运行与本地结果契约
+
+`run_pipeline(input, context, policy, provider, replicate_id, out_dir)` 放在 `benchmark/evaluation-v2/`，不作为包内批准 API。复用 evaluation-v1 的 counts-only 准备、ID 对齐、label-map、导出和评分机制。复用公开 suggestion 请求/采纳路径及 `sc_review(..., "approve")`；reviewer 统一为 `benchmark-policy:<策略名>`，每关保存原始草稿、实际采纳来源和批准记录。
+
+| 策略 | 固定行为 |
+| --- | --- |
+| accept_drafts | 请求、采纳当前合法模型草稿，再用现有脚本接口明确批准。失败可按产品规则回退，但记录 `rule_fallback`，不声称三关都成功采用 LLM。 |
+| rule_defaults | 禁用 LLM，API 调用数为零，采用包已有规则。没有充分注释支持时保留 Unknown，不为基线临时增加自动 ACT 标注。 |
+| fixed | 使用预先冻结、typed JSON 决策及 hash。分辨率必须在实际扫描内，簇身份必须绑定成员；不匹配直接报不适用/失败，不能选择最近值。单因素实验明确唯一解锁因素。 |
+
+每次新运行创建新项目；续跑仍是原运行。保留 delivery uncertain 的账本状态，不为完成实验自动重发。
+
+配置记录 react off/auto/all、工具白名单、ACT 可见性、两功能开关、provider/精确模型、解码设置、种子、prompt/schema/reference 版本和固定方案 hash。ACT-off 必须覆盖所有模型可见 ACT 内容、lookup、比较提示和 ACT 自动触发，不能只隐藏工具名。ACT-off 的产品状态为 unassessed；评估器可独立计算 ACT 对照但不得回流模型。
+
+逐 turn 的预算预留必须是真正的保守上界：使用经核验的模型 tokenizer 及消息/工具 framing 上界，或官方固定型号的上下文 token 上限作为保守输入上界，再加计费输出上限与价格。字符数除以 4 等经验估算不是保证上界，不能承担授权预算约束。模型限额、计费推理/缓存规则或价格无法确认时不发送；保留结构化原因并走既定回退。实验费用可同时报告估算与实付，但不能用较乐观估算替代发送前预留。
+
+`run_summary.json` 是现有 state/checkpoint/event/账本的只读投影，不是新权威状态库。至少包含：
+
+- 原输入及保留集合的数量/hash，完整本地 `cells.csv` 的路径/hash；每个原始细胞一行，含 retained、cluster、label、CL ID、状态。删除与缺失/失败分开。
+- 三关全部决策，包括 QC 预设/簇阈值、双细胞、周期、批次、HVG、PC 和分辨率；草稿来源、reviewer、理由、事件 ID。
+- 每簇 baseline/final、ACT 一致/冲突/未评估、ReAct 触发/尝试/完成/回退原因。
+- tokens、费用、耗时、内存及其测量范围；已知费用、估算费用、预留额度和未知交付费用分列，不能互相替代。
+- 配置、版本、原始响应、轨迹和证据 hash。大型内容通过已有产物引用，不重复复制整个项目状态。
+
+细胞 ID 仅存在本地分析/评估产物中，不能进入任何外发会话。公开发布可用汇总和 hash，但须保留可审核的本地明细。
+
+## B 重复运行与外部结果
+
+默认 N=5；只改变 replicate_id 和输出目录，固定分析种子、注入种子、输入与参数。replicate_id 不进入 prompt。每次是新的 provider 调用，不用模型响应缓存伪装独立重复；离线重放另计。temperature 0 不保证线上重复输出相同。
+
+对 N(N−1)/2 对运行，输出：
+
+| 指标 | 定义和缺失处理 |
+| --- | --- |
+| 决策一致率 | 每个 typed 字段规范化后完全相等的有效对数/可比较对数；另报全 N 次一致和缺失对数。两个缺失不算一致。 |
+| 保留 Jaccard | 同一原始细胞全集上交集/并集；两者都空返回 null，不给“全部删除”满分。 |
+| 聚类 ARI | 共同保留细胞上计算，报告共同数量/比例；不足或不可定义时为 null。 |
+| 原标签/CL 一致 | 同一共同细胞上原标签、CL exact 分开；Unknown-Unknown 和已知标签一致另报，映射覆盖率必报。 |
+| 层级一致 | 一方是另一方的允许祖先才计父类可比，作为对称稳定性指标；不同于准确率的有向父类匹配。 |
+| 资源 | 所有尝试与完成运行分别给费用、token、耗时均值/最小/最大；缺失标记，未知费用不填零。 |
+
+运行对和细胞互相依赖。正式不确定性以研究/供者/独立案例为单位，不把细胞或所有配对当独立重复。
+
+外部格式：`cell_id, retained, cluster, label` CSV，附 JSON 的工具/版本/参数、来源 commit 或服务 build、输入/输出 hash、模型、费用/时间可用性、列转换和状态。保留完整原始 ID 全集并验证唯一性；不存在的结果是失败，不是成功的空保留集。外部没有某项决策记录就标 unavailable，不能伪造“相同”。
+
+CellAgent 对照以 [原始论文](https://arxiv.org/abs/2407.09811) 对应的作者确认版本为准。正式 `external/README.md` 需记录维护者实际验证的安装/调用命令和转换列；目前不能从同名第三方项目推断官方命令。确认准确代码 commit 或托管 build 是该对照运行的前置条件，不妨碍先实现通用导入器。实际运行由维护者完成。描述外部工具时，只在核实版本后使用“未将 X 作为显式、可审阅的决策”，不写“不考虑 X”。
+
+对照清单分层冻结：SingleR、CellTypist 为参考分类基线，连同参考训练数据/版本一起记录；GPTCelltype、CASSIA、CellTypeAgent、mLLMCelltype 是拟筛选的 LLM 注释对照候选，精确官方版本、许可和可用 provider 尚待核实，不能先宣称全部可运行。至少冻结一个能使用相同底座模型的合格注释对照。固定细胞/聚类/marker 信息的注释比较与从 raw counts 开始的 CellAgent 端到端比较分别报告；无法使用同模型或相同信息的组合只能作描述性比较，不能归因于 ReAct 或界面本身。
+
+## C 注入与发现规则
+
+所有计数保持非负整数和稀疏结构，固定随机种子/RNG 版本，保存原/新矩阵 hash、受影响细胞/基因、来源父细胞及参数。真值与注入明细只在 evaluator 中。主分析一次注入一种因素，未注入配对共享输入和其他设置。
+
+除用户指定的 5/10%、10/20% 外，下表的强度是**开发初值**；只在开发集检查可测性，正式实验前锁定，不能按基准结果选难度。
+
+| 类型 | 生成方法 | 主要处理终点 |
 | --- | --- | --- |
-| A: conventional Seurat manual | Review ordinary exported tables/plots and save labels in a structured form | Fixed marker, expression, reference and metadata packet; no model |
-| B: scAgentKit manual | Review the same evidence in scAgentKit and explicitly approve labels | Same packet and reference version; no model |
-| C: scAgentKit plus model | Review model proposals, correct or abstain, then approve labels | Same scAgentKit evidence as B plus one frozen model configuration |
+| 异型双细胞 5%、10% | 加入不同真值类型细胞计数之和。若 r 指最终占比，新增数为 round(r×n/(1−r))，记录父细胞复用。 | 双细胞检出/精确率、删除或明确 mixed/doublet 标注；原 singlet 的误删和准确率另报。合成双细胞保留组分真值。 |
+| 低质量 | 分层选择 10%，binomial p=.25 下采样，再按冻结整数规则增加 MT 计数；没有可靠 MT 映射则不适用。 | 受影响细胞检出/删除，以及未受影响误删；提高 MT 不被直接当成真实损伤的正交证据。 |
+| 环境 RNA 10%、20% | 由原矩阵构造背景比例，每细胞增加 round(r/(1−r)×library_size) 个 multinomial 背景计数。 | 污染警告、身份正确率和稳健性；删除所有污染细胞不是成功，当前任务不增加去污染算法。 |
+| 真实伪批次 | 样本×真值类型内分配伪批次；候选初值为 10% 基因 2/.5 倍、文库 1.5 倍，用整数抽样实现；排除评分面板基因。 | 正确建议校正、技术混合改善和类型/条件信号保留同时报告。 |
+| 假批次 | 同样分组但计数完全不改，要求 hash 相等。 | 不必要校正建议/执行率，及生物学损失；这是阴性对照。 |
+| 完全混杂 | 批次等于独立声明条件，保留条件来源；不能用模型簇产生条件真值。 | 混杂警告、不校正建议、条件信号保留。不能从完全混杂数据辨认技术/生物学因果贡献。 |
+| 多样本深度 | 固定样本 thinning 1/.5/.25，保持原生物学组成与角色声明。 | 各样本/类型保留率和最终正确产出；固定非 QC 因素比较 global/sample/cluster。 |
+| 自然低 RNA 类型 | 使用真实含低 RNA 类型数据，不人工把普通细胞改成中性粒细胞。 | 三种 QC 下真实类型保留率、损伤细胞误保留、最终身份产出；已被原作者删掉的细胞不能声称救回。 |
+| 周期混杂 | 优先独立增殖状态；合成时用冻结的 S/G2M 基因集添加整数计数，保留谱系真值。 | 第一关提示或 cycling 标签，以及谱系/条件保留。回归或删除并非统一正确答案。 |
+| 可见参考留出类型 | 删除 ACT 和 prompt 可见的该类型及别名，冻结过滤快照；不默认移除生物数据里的 marker。 | Unknown 或预先允许的正确父类；精确恢复留出类型另列。移除参考不能移除模型预训练知识，不称“模型从未见过”。 |
 
-All arms receive the same cluster membership, label vocabulary, permissible reference
-material and information content. Record presentation differences as the intervention.
-Disable external searches, chat assistants and extra references during timed sessions;
-record protocol deviations. This tests a controlled workflow, not unrestricted practice.
-Preserve the initial model proposal and the analyst's final labels separately.
-Neither model output nor database overlap is automatically promoted to accepted truth.
+发现规则在实验冻结时逐项固定 stage、外层 schema 版本、字段路径、作用范围、阳性枚举及适用性。**主发现率只使用生产校验器接受的结构化风险字段**；不允许自由文字覆盖结构化阴性。各机制预定阳性映射：双细胞→`doublet_risk=suspected`；低质量/多样本深度/自然低 RNA→`qc_celltype_concern=suspected`；环境 RNA→`ambient_suspected=suspected`；真实批次→`batch_status=effect_detected_design_supported`；完全混杂→`fully_confounded`；周期→`cycle_concern=suspected`。假批次以 `no_effect_detected` 为正确阴性，另报误阳性。可见参考留出类型以第三关 schema 中的 Unknown/允许父类标签作为预定结构化终点，而不是新增任意风险字符串。没有到达阶段、非法枚举、风险未评估及未产生合格草稿均不获“已发现”记分，分别报告原因。
 
-## Cases, reference coverage and no-leakage scope
+关键词发现只作辅助指标，单独冻结正/否定表达式和语言范围，不得用另一个 LLM 判分。关键词 “batch” 本身不算阳性，“无批次效应”不能误算检出。结构化发现是工具是否发出提示的测量，不是对风险真实存在的第二层认证。
 
-Use public or explicitly authorized data with verifiable specimen/donor provenance.
-The planning envelope is two tissue settings, one blood and one non-blood, with
-approximately three independent donor cases per setting. **This is a feasibility
-proposal, not a locked sample size or a powered confirmatory design.**
-Use small cases manageable in one session; select cells without using evaluation labels.
-Record whole-capture versus subset status, original cells and all exclusions.
+分别报告 `structured_detected`（主指标）、`evidence_detected` 和 `keyword_detected`（辅助），保留命中字段/枚举或文字；不以两者任一取代结构化主指标。主“发现率”以全部计划运行的适用注入案例为分母；未到目标阶段作为未交付发现，并另报到达阶段后的条件率。处理率按上表机制定义，不把不同处理合成一个总删除率。
 
-Choose query studies not used in V1 or in method/prompt development. Separate pilot
-and evaluation donors, preferably studies; multiple cells or clusters are not replicates.
-Reference donors and studies must be distinct from query donors and studies.
-Audit target-type coverage before accepting a tissue/reference combination; HPCA
-must not be reused as a pancreas subtype reference without demonstrated coverage.
-Freeze accessions, donor evidence, IDs, selection rules, label granularity, complete
-mapping and reference hashes before inspecting held-out method outcomes.
+准确率变化使用相同固定真值、评分版本和未注入对照。新增双细胞时原 singlet 与合成部分分列。外部结果使用同一原始注入数据与最终影响评分，内部发现率无记录则不可评估。
 
-Evaluator labels, author annotations, tutorial identities, adjudication notes and
-prior scores remain outside analysis objects, filenames shown to analysts, prompts
-and tool context. Separate the evaluator workspace and access from execution.
-Audit final payloads offline for prohibited fields and preserve exact hashes.
-An existing public dataset may have entered model pretraining; this cannot be ruled
-out by removing its accession. Disclose that uncertainty; stronger unseen-data claims
-require independently collected, demonstrably unavailable evaluation data.
+## D 统一评分、证据和消融
 
-## Analysts, assignment and independent assessment
+复用已有 CL exact 名称/精确同义词/is_a 映射及冻结快照。evaluation-v1 旧模式保留；新增版本化评分模式，供 `sc_react_eval` 与 v2 共用，不能分别实现两套有差异的指标。
 
-Plan a feasibility pilot with at least three analysts spanning recorded experience
-levels and two independent biological assessors. Analysts and assessors have distinct
-roles; assessors must not evaluate their own annotations or see arm identity.
-Give all analysts the same training on separate pilot cases before measurement.
+**分母**：每表先输出 total、truth_ambiguous、truth_unmapped、pred_unmapped、Unknown、failed/missing、scoreable。未映射标签按用户要求单列、排除准确率分母。无效 schema/空输出是失败，不能借“未映射”排除；Unknown 和失败在已知可评分真值上不获正确匹配。并列给映射覆盖率、原始真值全集上的正确产出率、各类型保留率。正确产出率不给未解析结果成功记分，不将未映射标签宣判为生物学错误。分母为零返回 null 和原因。
 
-Each held-out case is completed in all three arms by different analysts. Each analyst
-sees a given case only once. Rotate case-to-arm assignment and session order using
-a saved randomization schedule, balancing experience and tissue where feasible.
-With only three analysts, analyst-by-arm interactions remain poorly estimated;
-use the pilot to decide how many analysts and cases the subsequent study needs.
+**严格版准确率并列报告**：在相同已知且可评分的真值集合上，将未映射预测保留在分母并计为错误；Unknown、失败/缺失同样不获正确记分。真值不明/未映射/预定歧义仍单列，不借严格版制造不存在的真值。主版分母 = 该真值集合减未映射预测；严格版分母 = 该真值集合。两版使用相同正确匹配分子、exact/允许祖先规则和保留/失效口径，并列输出分母、覆盖与正确产出率，防止以映射失败改善主版分数。评分版本必须区分主/严格模式。
 
-Before seeing method outputs, two assessors independently establish target annotations
-from documented source annotations and independent evidence where available.
-They record resolution, uncertainty, evidence provenance and disagreements; adjudicate
-disagreements while blinded to arms. Unresolved cases remain ambiguous.
-Source-label agreement and expert-adjudicated agreement are separate endpoints;
-expert agreement without orthogonal evidence is not biological ground truth.
-For mixed clusters, assess composition or a prespecified ambiguity rule; do not force
-a single label merely because the software emits one label per cluster.
+**CL 层级**：分别报 exact、直接父类、距离 2–3 的允许祖先及最短路径。方向是“预测为真实亚型的父类”；预测更细而真值过粗标 `over_specific_unverifiable`，不自动判正确。兄弟标签共享父类不能算有向父类匹配，cell 等普适根节点不计分。按组织/标注粒度在解盲前冻结有意义祖先清单及 hash；CL 是多父 DAG，沿全部 is_a 边处理。维护者已确认距离上限为 3；各组织有意义祖先清单在模型输出解盲前冻结。
 
-## Outcomes and denominators to freeze after the pilot
+准确率主分析在预定报告粒度上，将真值和预测都映射到同一层级；细分真值不足的细胞在运行前就标为不适合细粒度准确率，不能看到预测更细后临时改变分母。`over_specific_unverifiable` 是原始标签层面的诊断状态；原始 exact 一致度可单列，但不将其直接解释为细分类生物学错误。
 
-Primary comparisons are B versus A (interface) and C versus B (added model).
-Select one primary quality endpoint and one primary time endpoint, multiplicity rule,
-minimum meaningful differences and any noninferiority margin before held-out execution.
-Do not choose the winning endpoint after seeing held-out results.
+**簇级真值**：优先直接给定且绑定成员 hash 的簇真值。由细胞真值聚合时，要求至少 80% 成员有有效真值，其中同一 exact CL 占至少 80%；否则为 mixed_or_insufficient_truth，保留组成并报告。外部细胞预测聚合使用同一覆盖/优势阈值，同时保留细胞级结果。独立重聚类的相同数字 cluster_id 不能直接对齐。80/80 为已确认阈值，分母分别是全部簇成员与有效真值成员。
 
-- Annotation: per-case macro-F1 over fixed evaluable target classes, per-type recall,
-  full confusion tables, known-label coverage and correct-label yield over the fixed
-  evaluable cell universe. Report broad and fine levels separately.
-- Unknown and failure: preserve abstention, missing, timeout, schema and citation
-  failures separately. They receive no correct-label credit on known targets and
-  remain in denominators. Ambiguous target cells have a frozen separate evaluation
-  stratum; retain their count and report appropriate abstention without inventing truth.
-- Rare groups: freeze a prevalence definition and minimum evaluable support from
-  the pilot, then report every eligible type's recall, support and Unknown fraction.
-  Low-support groups remain visible. Fixed cells cannot test QC retention benefit.
-- Confidence: collect the same ordinal confidence scale in all arms; report empirical
-  agreement and support per level and high-confidence errors. Treat these categories
-  as ordinal, not calibrated probabilities. Model and final-human confidence stay separate.
-- Human time: measure active review/edit time from opening the prepared packet to
-  saved final annotation. Pause recorded interruptions and compute/API waits; report
-  preparation, training, waiting and end-to-end elapsed time separately. Record corrections,
-  rejected suggestions and requests for extra evidence. Never substitute API time for labor.
-- Resources: save calls, input/output tokens, observed charges, wall time, hardware,
-  dependency versions and measured peak memory; unavailable values remain null.
+**难簇**：每次注释报告实际进入 ReAct 的簇及全部簇；baseline、final、外部预测在该项目上使用同一簇集合。比较 off/auto/all 时另冻结 baseline 可触发集合，不能用最终标签定义难度。ACT-off 的共同选择信息仅留 evaluator，不回流该 arm。完整流程若产生不同细胞/簇，以原始细胞全集作为主要比较单位。
 
-Show every case and arm, including failures. Use paired case-level comparisons;
-account for analyst and study dependence. Do not bootstrap cells as independent units.
-The small pilot is descriptive. Lock the final sample-size rationale, uncertainty
-method and analysis script before unblinding a separate evaluation cohort.
-Any time-saving claim must be accompanied by quality and abstention results.
+| 指标 | 预定分析 |
+| --- | --- |
+| 引用有效率 | 分母为校验前原始草稿中的唯一引用声明，分子为生产校验器通过的声明；非法 JSON/整稿失败、重复引用另列。不能只统计已接受草稿。pool/tool 分开，gene_expression 标未检验，不算支持基因。 |
+| 置信度 | high/medium/low 的准确率、覆盖、Unknown、unmapped、样本量；baseline/final 分开。不把三个序数随意换成概率计算 Brier/ECE。 |
+| 弃权 | 可见参考留出实验中 Unknown 或允许父类比例，精确类型恢复另报；同时报告正常已知类型上的误弃权。 |
+| ACT 价值 | 同一模型内 ACT on/off 准确率、覆盖和成本；conflict/consistent 各自错误率、计数及可定义时的风险差/比，unassessed 单列。冲突关联不是因果证明。 |
+| LLM/ReAct 价值 | accept_drafts vs rule_defaults；同一模型/输入/种子下 react off/auto/all；每次注释 baseline 和额外 ReAct 的 tokens/费用、每簇 turns/tool calls、回退率及原因分布。 |
+| 配置消融 | 导出有效工具列表、ACT 开关、功能 1/2 开关和参数 hash；先固定底座研究单因素，再独立报告端到端效果。 |
+| 重放 | `sc_react_replay` 无 key、无网络，复算工具、核对引用、重建草稿并报告差异；失败/损坏不得改写原记录。 |
 
-## Pilot, freeze and execution gates
+回退同时记录 planned/eligible、attempted、completed 数量。主回退率为“恢复合法 baseline 的簇/计划查证的适用簇”，包括发送前预算不足或能力不支持导致的回退；另报 attempted 条件下回退率。`baseline_unavailable` 单列未能产生可用结果的失败率，不能伪称成功回退。完整性阻断单列，回退原因可多项、另保存一个确定性主原因，避免分布求和含义不清。分母为零时为 null。
 
-1. Run an offline dry run on development/pilot cases only: verify equal evidence,
-   target coverage, label joins, output schema, timers and failure bookkeeping.
-2. Lock exact software/dependencies, donors/cases, analyst allocation, preprocessing,
-   marker settings, packet construction, labels, endpoints, sample size and analysis.
-   Fill all unresolved choices in a dated manifest; record departures from this proposal.
-3. If an authorized model arm is planned, freeze provider, exact model identifier,
-   endpoint, prompt, supported decoding settings, context/output bounds, repetition
-   count, timeout/retry policy and price basis. Validate complete payloads offline.
-4. Establish explicit authorization covering that provider, transmitted fields and
-   maximum spend before external calls. This document grants none; its executable
-   inference budget is **zero**. Use only authorized credentials and a hard request,
-   token and currency cap; stop on drift or cap exhaustion and retain incomplete arms.
-5. Timestamp the final protocol/manifest before held-out execution and outcome inspection.
-   Only then describe it as prospectively frozen; do not call this draft preregistered.
-6. Execute into a new `benchmark/evaluation-v2/` evidence directory, preserve raw
-   responses and decisions, and publish sanitized summaries with reproducible scoring.
-   Do not overwrite historical results, change scientific defaults, or tune against
-   held-out labels. Any change after unblinding creates a declared exploratory analysis.
+脚本 accept_drafts 固定 100% 采纳，不能据此报告真人采纳率。用户审阅时间、纠错能力和一致性需要后续独立用户研究；正式方案应同时衡量质量和时间。真实论文应用及外部验证者记录仍是长期使用证据。
+
+## E 数据、模型与留出集
+
+开发集可用 `pbmc_small` 和旧公开开发案例；已有 v1/调试中见过的数据不再包装成未见基准。正式基准至少 3 套可信真值公开数据，须覆盖低 RNA 与增殖类型。至少一套晚于所用模型训练截止日期公开是优先项，不再是正式实验准入硬条件。模型未见数据的主要证据由维护者的未公开留出集及其不可获得性/未用于开发的来源记录承担，并作为主要结果之一报告；这不等于证明模型未见过相同生物学知识。公开数据的预训练污染风险逐模型披露，不能把删去 accession 当作消除泄漏。数据集名称、accession、公开日期、原始计数可用性、真值等级、独立供者和许可在正式冻结表逐一核实。候选不等于已合格数据，不在本轮下载或运行基准数据。
+
+真值分实验/正交、独立盲注释、作者标签三类；作者标签分析明确称作者注释一致度。参考数据库、模型或 SingleR 预测不是自动真值。模型执行只读 counts-only 对象和声明设计，真值、数据集暗示标签和评估结果与执行器隔离。
+
+以下仅经论文/数据记录的元数据调研，未下载候选矩阵，**尚未构成合格的三套正式基准**：
+
+| 候选 | 作用与真值来源 | 准入限制 |
+| --- | --- | --- |
+| [Zheng 纯化免疫群](https://www.nature.com/articles/ncomms14049)，2017，SRP073767 | 分选支持的主要免疫类型；用于多类型注释 | 选择互不重叠分选门；文库和类型可能混杂。不能把 68k RNA 转移标签称为独立真值；不满足新近公开要求。 |
+| [Hao CITE-seq PBMC](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378)，2021，GSE164378 | RNA 输入；ADT/HTO 留 evaluator，预定义蛋白门支持主要类型 | 作者标签结合 RNA/蛋白，不全部是独立正交真值。需分别报告作者一致度和蛋白支持部分。 |
+| [Tabula Sapiens 非血组织](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE201333)，2022，GSE201333 | 专家/CL 作者标签，检查非血组织和层级表现 | 冻结组织与供者，核实原始 counts 和先前 QC。作者 RNA 注释不等于实验真值，不把同研究各组织充作独立研究。 |
+| [NeuMap 小鼠 scRNA](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE266518)，2025，GSE266518 | 低 RNA 中性粒细胞及前体专项；相关样本有分选来源 | 只选 scRNA 与相应门，骨髓样本门不同；精细亚型来自 RNA。不能把单谱系数据独自当通用注释基准；是否晚于模型 cutoff 待定。 |
+| [FUCCI iPSC](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE121265)，2020，GSE121265 | 独立荧光周期证据，补充增殖/周期压力测试 | 是专项辅助集；离散周期门和供者/板信息需冻结，不能替代多类型注释数据集。 |
+
+另保留 Tabula Sapiens v2 新供者为候选。但其 [2024 年预印本](https://www.biorxiv.org/content/10.1101/2024.12.03.626516v1) 早于 2026 年期刊发表，不能用后者证明训练后首次公开；必须逐供者检查原数据日期和 v1 重复。正式最低组合仍待真值、低 RNA/增殖覆盖和独立研究资格核实；逐模型时间核实记录为优先项及局限，不阻塞符合其他条件的正式基准。
+
+模型矩阵包括 **DeepSeek、OpenAI（ChatGPT 对应 API 模型）、Anthropic Claude、xAI Grok**。逐模型冻结 API 型号/版本、endpoint、工具能力、max_tokens、thinking/推理设置、可用解码参数、价格、生效时间、用量字段和训练截止日期来源。不同 API 的相同参数名不代表相同语义；Claude 不假定兼容 OpenAI 协议。不能把网页产品名当作可复现模型 ID。
+
+模型分两层：**主矩阵为 DeepSeek + 一个前沿模型**，前沿模型须有至少一个合格 LLM 注释对照可使用同一精确 API 型号；此资格与原始代码/许可/信息可比性一并核实后冻结。**建议选择 Anthropic `claude-opus-5-5` 与 CASSIA 1.4.0，commit `c01f573caf25c5ef471e8afefd035c05becfab08`**：官方型号/工具能力说明、MIT 许可、原生 Messages 和精确型号传递路径已核实，隔离假 SDK 请求探针通过；完整安装、真实 API 冒烟和全流程输出仍未核实，故当前是源码合格候选，不是正式运行合格。**扩展矩阵为 OpenAI 与 xAI**，仅作描述性结果，不阻塞正式实验。完整来源和限制见[模型资格记录](../../benchmark/evaluation-v2/manifests/model-qualification.md)；实际配置与价格在 M1/E5 冻结，不把候选默认值冒充已完成验证。
+
+DeepSeek 延续 thinking disabled、temperature 0。Anthropic 当前候选的 adaptive thinking 不能关闭，不发送其不支持的 temperature；effort 候选为 medium，计费推理输出计入预算。两方法必须冻结相同的精确型号及支持的推理设置，不能强行宣称四家都使用相同解码语义。CASSIA 的 annotation/validator/formatter 等参与模型均固定同一底座，额外 score/boost/merge 如启用须预先冻结 preset 和总预算；其算法自身的验证 agent 不改变 scAgentKit 生产引用校验器必须确定性的要求。
+
+第一版产品正式支持 DeepSeek 的既定范围继续有效；M1 按 provider 拆分 PR，先实现主矩阵中的前沿 provider，再实现另外两家的扩展适配。其他 provider 的结构化协议、费用/工具能力验证在各自 PR 完成，测试通过后才进入相应正式评估 arm。每个模型内部比较 ReAct/ACT 开关，跨模型差异单独报告。工具能力缺失的模型只能作为明确标注的一次性基线，不伪装完整 ReAct arm。
+
+“晚于训练截止日期”逐模型判断，不能把某旧模型的知识日期套给可变 API 别名。未公开的 cutoff 记 unknown；发布日期与首次数据公开日期都记录，预印本/仓库先公开也计入。对没有可证 cutoff 的模型不能声称满足训练后公开优先项；记录 unknown 与限制，不靠推测补日期，也不据此阻塞已满足主矩阵资格的正式实验。
+
+### 维护者最终留出集的双标签协议
+
+维护者已说明：两份独立人工细胞类型标签均在 scAgentKit 开发之前产生，注释者未见任何工具结果；该数据此前未被任何版本的 scAgentKit 分析。两份标签均基于 marker，没有实验分选正交验证。这是维护者的来源声明，日期证据尚未核验。
+
+物种、组织、样本数、细胞数、平台、公开状态、两次注释日期、分析流程/注释者身份、粒度和日期证明类型均为**待补齐字段**，不推断具体值。维护者保留论文、提交/实验室记录等证据；文件时间戳可辅助，单独存在不足以证明独立性。
+
+框架接受 `cell_id,label_author,label_independent` CSV，可附两者 CL ID 列。先由同一冻结规则映射 CL，记录两标签及映射表 SHA256，首次正式运行前完成并不再修改。给定 CL ID 也核验快照存在性和映射一致性。
+
+先报告两标签 exact、允许父类可比程度及分歧。它是人工注释一致度的参照，不是工具准确率的严格上限。
+
+主真值采用两标签在**预定、有意义的报告层级**上一致的细胞，预测也先映射到同一层级评分。例如双方只支持 T cell 时，CD4/CD8 预测可按 T cell 层级核对，亚型是否正确仍不可验证。对一粗一细或不同亚型，只有在预先允许的层级能得到唯一共同标签才形成该层级真值；不事后向 cell 根节点上推来制造一致。共同祖先多重歧义、粒度不足和真实分歧分别标记，后者为“注释者分歧”，不计主要准确率，但报告工具在其中的预测/Unknown/分歧结构。主要一致细胞 mask 与报告粒度随真值一起冻结 hash。工具分别对两份原标签评分作为补充结果。
+
+维护者虽了解数据，不在开发、调参、prompt 设计或调试中使用其类型组成。论文里程碑的包功能完成后，在 E5 仅运行 accept_drafts 和 rule_defaults；fixed 如需使用，决策 JSON 必须提前冻结。维护者不手动修改运行中的科学决策。首次运行前记录“未被工具分析”的声明及日期，运行后保持全量原始记录。
+
+## CI、阶段交付与仍待冻结的事项
+
+CI 使用 pbmc_small + mock，覆盖运行器三关、所有生成器的正常/非法/退化输入、整数性/ID/hash、全指标的已知手算结果、外部错配、CL 分母和层级边界、无网络重放。pbmc_small 不具备全部生物学场景，用明确合成小夹具覆盖机制测试，不声称真实生物学有效。两个功能的正常/兜底测试随各自包 PR 落地，之前测试 unsupported。
+
+每阶段报告 PR/commit、18 项 1.0 验收变化、实际执行测试/CI、定位各项证明的进展、**论文里程碑进度**、限制和偏离。E0 报告注明工程协议 commit，E5 报告注明正式实验冻结 receipt 及其引用的协议 commit。正式结果 PR 保存成功与失败运行、配置、脚本、汇总及可审核原始记录。任何 mock 费用、稳定性或开发集准确率都不作为正式性能结论。
+
+E0 之后、正式冻结之前仍需完成：至少三套公开数据真值与覆盖资格；主矩阵精确模型 ID、价格/能力及同模型注释对照；CellAgent 官方版本和真实运行命令（相应端到端 arm）；留出集占位元数据/日期证据/双标签和 mask 冻结；开发集选定的诊断参数、N、批次效应/支持量/生物学保留阈值；各注入精确整数算法和结构化发现路径；已授权真实运行预算。模型 cutoff 和公开数据训练后时间关系如不可核实记 unknown，是报告的优先项/限制，不是硬性准入门槛。扩展矩阵两家可晚于主矩阵，不阻塞正式实验。
+
+尚未运行的框架、B1/B2、M1、正式实验和真人研究不得标为完成。E0 不新增可执行运行器，不改变包科学语义、实现 hash 或审批结构；历史 v1 指标和结果保持原样。
