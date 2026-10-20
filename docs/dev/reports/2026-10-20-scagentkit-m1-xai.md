@@ -80,3 +80,7 @@ structured turns; the existing one-shot baseline still uses its legacy text
 provider route. This stage does not claim every approval-stage request has
 migrated to native Responses. That distinction is explicit in the provider
 contract and remains part of full product qualification.
+
+## Authorized release integration
+
+Core #4/#5 are merged and v0.3.0 is published at `53b9faddd2fc37dd027f85823b364b928d145e62`. This PR now requires >=0.3.0 and uses Remotes @v0.3.0. Maintainer accepted the engineering report and authorized merge after all exact-head checks pass. Formal public-data/CASSIA qualification remains separate.

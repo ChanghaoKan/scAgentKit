@@ -48,4 +48,3 @@ react_local <- function(fixture, tool, arguments, cache_dir = FALSE) {
   .sc_run_react_dispatch_local(fixture$context, tool,
     .sc_run_react_arguments(definition, arguments), cache_dir)
 }
-

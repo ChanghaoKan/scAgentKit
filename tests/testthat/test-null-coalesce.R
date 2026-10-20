@@ -8,9 +8,14 @@ test_that("the package has exactly one %||% with NULL, empty and scalar-NA fallb
   expect_identical(f("x", "d"), "x")
   expect_identical(f(c(NA, "x"), "d"), c(NA, "x"))
   expect_identical(f(list(NA), "d"), list(NA))
+})
+
+test_that("package sources define %||% exactly once", {
   pkg_r <- testthat::test_path("..", "..", "R")
   skip_if_not(dir.exists(pkg_r), "package sources unavailable")
-  defs <- unlist(lapply(list.files(pkg_r, "[.]R$", full.names = TRUE), function(p)
+  sources <- list.files(pkg_r, "[.]R$", full.names = TRUE)
+  skip_if_not(length(sources) > 0L, "installed package has lazy-loaded R code, not source files")
+  defs <- unlist(lapply(sources, function(p)
     grep("^`%\\|\\|%` <-", readLines(p, warn = FALSE), value = TRUE)))
   expect_length(defs, 1L)
 })
