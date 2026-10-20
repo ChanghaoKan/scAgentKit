@@ -17,8 +17,8 @@ approval is not a formal experiment freeze.
 | --- | --- | --- |
 | 1 | `cluster_markers`, `gene_expression`, `act_lookup`, `cluster_context`; strict arguments, bounded aggregate results, frozen evidence, caching and time limits | PR #14 merged; rebase on the resulting main; record baseline commit in the PR |
 | 2A Core | agentomicsCore v0.2.0 structured turn protocol and offline tests, retaining old text interfaces | May proceed alongside stage 1 |
-| 2A scAgentKit | Adopt the published Core release; session consent, complete payload hashes, per-turn accounting and worst-case reservations | Core v0.2.0 release |
-| 2B | Bounded sequential ReAct, baseline fallback, durable cluster progress, citation proofs and recorded tool/ACT ablations | Stages 1 and 2A |
+| 2A scAgentKit | Adopt the published Core release; session consent, complete payload hashes, per-turn usage/cost records and delivery status | Core v0.2.0 release |
+| 2B | Bounded sequential ReAct, baseline fallback, durable cluster progress, citation proofs, third-gate outer risk enums with production format validation, and tool/ACT ablations | Stages 1 and 2A |
 | 3 | Verified audit projections, per-row trace display, citation links and run statistics | Stage 2B authority records |
 | 4E | Mandatory first-release evaluation, external baseline import, hierarchical CL scoring and offline replay | Stage 2B records and stage 3 audit projections; complete before or alongside stage 4 |
 | 4 | Public `react` option, bilingual guidance including reviewer replay, examples, mock end-to-end tests and a manual real-provider smoke script | All earlier stages, including 4E |
@@ -32,8 +32,20 @@ Stage 1 performance acceptance uses 50,000-cell synthetic sparse Seurat fixtures
 with machine configuration and separate cold/hot cache timings. It measures the
 four tools, not biological accuracy or full marker discovery performance.
 `compare_clusters` and `cl_lookup` are deferred to the post-paper R2 work.
-DeepSeek remains the first-release provider; primary Anthropic qualification
-and descriptive OpenAI/xAI extensions each have separate M1 pull requests.
+DeepSeek remains the initial implementation. Product support targets all four
+providers, chosen by the user: DeepSeek, OpenAI, Anthropic and xAI. Each has a
+separate M1 PR. Paper experiments use DeepSeek plus Grok; M1-xAI is first,
+using Responses with grok-4.7 as the documented candidate. Anthropic/OpenAI
+remain formal product targets and may follow the paper milestone. Exact model
+and comparator settings require development qualification, not a cost quote.
+
+Once 2B merges, B1/B2 proceed in parallel with stage 3 UI, 4E evaluation/replay
+and stage 4 documentation work; they do not wait for every ReAct v1 stage to
+finish. B2 integration still needs the shared B1 diagnostic checkpoint. Final
+release acceptance retains its stated prerequisites. E3 injectors can develop
+earlier, but first-gate discovery-rate integration requires B1/B2 production
+risk fields, and third-gate discovery requires 2B fields. Until available, those
+capabilities are unsupported rather than scored through keyword substitutes.
 
 Every PR description must name its new abstractions, explain whether existing
 checkpoints, the provider ledger and events can serve the same purpose, and
@@ -56,7 +68,10 @@ Expected change areas (new file names after stage 1 remain provisional):
 
 The existing `annotation.v1` proposal remains intact. A versioned outer record
 will bind citations and tool results to that proposal and its scientific review.
-The same outer draft record includes the five required structured risk fields;
+Stage 2B must deliver all five required third-gate outer risk fields, including
+`doublet_risk` and `ambient_suspected`, and their production format validation.
+E3 uses these records for the primary discovery metric; the UI/evaluator must
+not create them later. The same outer draft record includes those risk fields;
 the existing `annotation.v1` payload and strategy free-text risk field remain
 unchanged. Production validators check format, enumerations and binding. Missing
 legacy assessments are explicitly unassessed, not negative. See the protocol for
@@ -79,21 +94,35 @@ rules; an unverified `tool:` string grants no authority.
 
 ## Session, accounting and recovery contract
 
-The first release formally supports DeepSeek with thinking disabled and
-temperature zero. A successful independent one-shot draft is saved before
+The initial DeepSeek adapter uses thinking disabled and temperature zero.
+The planned four-provider product has a user-selected provider and a dated
+validated-model list; support must be earned per adapter/model, not inferred
+from a configurable name. A successful independent one-shot draft is saved before
 ReAct. The former single guided request becomes one bounded multi-turn session,
 without adding a scientific approval or granting the model approval authority.
 
 The default `react="auto"` session scope is included in creation-time aggregate
 transfer confirmation. Strict mode requires approval of each exact outgoing
-payload. Every turn has a separate payload hash and ledger entry. Before sending,
-the coordinator reserves a conservative worst-case cost calculated from the
-complete message, output bound and recorded pricing. The input-token bound
-uses a verified tokenizer/framing bound or a conservative official model context
-limit; a characters-per-token estimate cannot guarantee the reservation.
-Unknown limits/pricing cause no send and an explicit fallback. An unaffordable turn
-is not sent. Uncertain delivery retains its reservation and is never
-automatically resent.
+payload. Every turn has a separate payload hash and ledger entry. New structured
+turns have no monetary cap: record provider usage and costs after each response,
+without added token counters, safety factors, pre-send estimates or reservation
+prerequisites. Preserve the legacy one-shot budget behavior for compatibility;
+do not create a generic billing-mode framework. Unknown price or usage remains
+unknown rather than zero and does not itself prevent a new structured request.
+Uncertain delivery is never automatically resent. Reuse the existing ledger,
+consent and events. The [provider contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
+defines model qualification, complete protocol history, refusals and post-run
+cost reporting. No pre-run total-cost estimate gates model choice or a stage.
+
+M1-xAI uses Responses and preserves the ordered response output items, including
+encrypted reasoning, in the same session. Use store=false and explicitly request
+reasoning.encrypted_content; this avoids relying on stored response IDs but is
+not a blanket zero-log-retention promise. Opaque content is protocol state, not
+biological evidence. Grok reasoning cannot be disabled; effort and sampling are
+provider-specific and remain unfrozen until matched-comparator qualification.
+CASSIA's native Grok path uses legacy Chat and the default high effort; it does
+not forward a requested effort. This endpoint difference is disclosed. Existing
+180-second cluster deadlines remain, despite vendor advice for longer requests.
 
 Failure falls back to the saved one-shot row. If no valid baseline exists, the
 status is `baseline_unavailable` and the existing local/manual draft remains.
@@ -190,7 +219,7 @@ The 1.0 gap audit was performed after stage 1 was submitted and was confirmed
 by the maintainer. Its gaps are now assigned in the paper milestone plan;
 confirmation does not imply those gaps have been implemented or validated.
 
-The audit covers one-line startup and input normalization; startup estimates
+The audit covers one-line startup and input normalization; startup behavior
 and graceful fallback; evidence-backed drafts at all three approvals;
 annotation and CL mapping; draft/approval separation; portable Seurat audit and
 researcher-facing outputs; evaluation on three public truth-labelled datasets;

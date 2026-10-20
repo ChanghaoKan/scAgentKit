@@ -15,6 +15,9 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [Evaluation protocol v2](EVALUATION_PROTOCOL_V2.md) — approved engineering design; formal experiments not frozen or executed
 - [Positioning v2](SCAGENTKIT_POSITIONING_V2.md)
 - [Paper milestone and 1.0 plan](PAPER_MILESTONE_PLAN.md)
+- [Provider model and usage contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
+- [E5 post-run cost reporting](../../benchmark/evaluation-v2/manifests/E5_COST_REPORTING.md)
+- [Grok official capability and protocol qualification](../../benchmark/evaluation-v2/manifests/xai-qualification.md)
 - [Evaluation v2 framework contract](../../benchmark/evaluation-v2/README.md) — E0 documents only
 - [HARMONY PC REVIEW](HARMONY_PC_REVIEW.md)
 - [MAD REVIEW](MAD_REVIEW.md)

@@ -1,0 +1,184 @@
+{
+  "date": "2026-10-20",
+  "cassia_commit": "c01f573caf25c5ef471e8afefd035c05becfab08",
+  "python": "3.9.6",
+  "openai_sdk": "2.48.0",
+  "httpx": "0.28.1",
+  "network_calls": 0,
+  "actual_provider_calls": 0,
+  "actual_cost_usd": null,
+  "coverage": "Actual resolver, annotation/validator/formatter, SDK JSON serialization; in-memory HTTP. Does not install full CASSIA, execute batch validation, test provider acceptance, or establish annotation accuracy.",
+  "source_sha256": {
+    "settings": "9f32cfc4dd857212fdffe5504ee45269a3727a7bec69f8ebbc21d3eb2c9bd325",
+    "config": "285d786a29a5918924791f32c41c7b2194112ec481d11aadf1fb0cd9570e4343",
+    "llm": "3d644ca2fb7f494d1b1e8488cd87a1b8cdb49c33186e4a0c2fbf53fdcf08ed7d",
+    "engine": "db10fc6181e918eab49b7d3ed84411a721203dcedf9ce0b1730b214e6ad8f023",
+    "tools": "d2508a5378228170a520230b9e3bbb8c48f0aae59ae157128f97ab67198c16cd"
+  },
+  "results": [
+    {
+      "scenario": "deepseek_flash_none",
+      "requested_model": "deepseek-flash",
+      "resolved_model": "deepseek-flash",
+      "provider": "https://api.deepseek.com",
+      "requested_effort": "none",
+      "temperature": 0,
+      "calls": 3,
+      "iterations": 1,
+      "all_wire_models_identical": true,
+      "wire_keys": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "wire_max_tokens": 4096,
+      "wire_thinking": null,
+      "wire_reasoning_effort": null,
+      "wire_urls": [
+        "https://api.deepseek.com/chat/completions"
+      ],
+      "full_wire_body_hashes": [
+        "8fe376946eabe9ff8f0ff56fadcce4a021f29d16e7bb91aac5a875922872f527",
+        "0dfe8f0b98d4bf092ca8cb6bcf133a9030d36696b993bfcb230108ceb14c32d9",
+        "233019555b7f66f9c779d06b93045c0deae8f9493e79b20d1c7e7e07c32d2a74"
+      ],
+      "recorded_usage_requests": 3
+    },
+    {
+      "scenario": "deepseek_pro_none",
+      "requested_model": "deepseek-v4-pro",
+      "resolved_model": "deepseek-v4-pro",
+      "provider": "https://api.deepseek.com",
+      "requested_effort": "none",
+      "temperature": 0,
+      "calls": 3,
+      "iterations": 1,
+      "all_wire_models_identical": true,
+      "wire_keys": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature",
+        "thinking"
+      ],
+      "wire_max_tokens": 16384,
+      "wire_thinking": {
+        "type": "disabled"
+      },
+      "wire_reasoning_effort": null,
+      "wire_urls": [
+        "https://api.deepseek.com/chat/completions"
+      ],
+      "full_wire_body_hashes": [
+        "ca9ba01592e979a8a7013b3c23f6d449139f641df602c06fc534561bba2c0421",
+        "980d8a7d2a02f971adcd1fed771ccd0f3e54a32292774c37bccbfd716f94b2af",
+        "24d353ab86bb910de4f31a3a6fa2cee0693f5b5c522865e1da5909ebe5e62bdb"
+      ],
+      "recorded_usage_requests": 3
+    },
+    {
+      "scenario": "grok_medium",
+      "requested_model": "grok-4.7",
+      "resolved_model": "grok-4.7",
+      "provider": "https://api.x.ai/v1",
+      "requested_effort": "medium",
+      "temperature": 0.7,
+      "calls": 3,
+      "iterations": 1,
+      "all_wire_models_identical": true,
+      "wire_keys": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "wire_max_tokens": 4096,
+      "wire_thinking": null,
+      "wire_reasoning_effort": null,
+      "wire_urls": [
+        "https://api.x.ai/v1/chat/completions"
+      ],
+      "full_wire_body_hashes": [
+        "4d2d91aad2161fe67a84543e81f5bf89110addd6f7eb10670e69b94906a2f779",
+        "52f19e4617e07e6a730dc7910d99d813363129e1220f61adfbc3e944b64efb37",
+        "7928b97391b11b1e9ca06a5f25cae96678bff0468830a48e27c467bc37707440"
+      ],
+      "recorded_usage_requests": 3
+    },
+    {
+      "scenario": "grok_high",
+      "requested_model": "grok-4.7",
+      "resolved_model": "grok-4.7",
+      "provider": "https://api.x.ai/v1",
+      "requested_effort": "high",
+      "temperature": 0.7,
+      "calls": 3,
+      "iterations": 1,
+      "all_wire_models_identical": true,
+      "wire_keys": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "wire_max_tokens": 4096,
+      "wire_thinking": null,
+      "wire_reasoning_effort": null,
+      "wire_urls": [
+        "https://api.x.ai/v1/chat/completions"
+      ],
+      "full_wire_body_hashes": [
+        "4d2d91aad2161fe67a84543e81f5bf89110addd6f7eb10670e69b94906a2f779",
+        "52f19e4617e07e6a730dc7910d99d813363129e1220f61adfbc3e944b64efb37",
+        "7928b97391b11b1e9ca06a5f25cae96678bff0468830a48e27c467bc37707440"
+      ],
+      "recorded_usage_requests": 3
+    },
+    {
+      "scenario": "grok_maximal_loop",
+      "requested_model": "grok-4.7",
+      "resolved_model": "grok-4.7",
+      "provider": "https://api.x.ai/v1",
+      "requested_effort": "high",
+      "temperature": 0.7,
+      "calls": 19,
+      "iterations": 3,
+      "all_wire_models_identical": true,
+      "wire_keys": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "wire_max_tokens": 4096,
+      "wire_thinking": null,
+      "wire_reasoning_effort": null,
+      "wire_urls": [
+        "https://api.x.ai/v1/chat/completions"
+      ],
+      "full_wire_body_hashes": [
+        "4d2d91aad2161fe67a84543e81f5bf89110addd6f7eb10670e69b94906a2f779",
+        "55e75c94e89128a2e49494e548def9f36777a224fbf30188408c61e69c465f95",
+        "22fae02da35efb9541eb88288447545733edde59742b6630b823fccb84f15146",
+        "5665359639cae32f69d84465e5e987048703b77313d58888e787c204c7ef89f6",
+        "eeb2af06e777afde81e0bd0c0d9b314c3e5e72077db4a6be1919d953a5dc25fe",
+        "5553ba65d3bcc7bc62a581a5848e6180adcffa9ebe8037d5637a8b34b0749197",
+        "ca0766c30be5edd1cfa0cfd2c6622e8f953e8c325b01ec329491762dbb252332",
+        "f1f6061b466e1e73756d4f8ea273b4d158199f3eb7233a29c6f2a1e9b480f673",
+        "137013ca12398bd5a2997416dd7602bc1b0691da84afd434736ac616d4395829",
+        "dfdb5a85d879d4de1da8479abd34067313362032cf97d5fdc34de84c48448296",
+        "dfc89c8acc7eb7d1b37bbe88e9b2274b6add915430f31fc9eafd222971eab875",
+        "376c713eb943b058411b584b6d7bddb3e4af5aaef89e03cdc0a19707f1214ab1",
+        "38806ff536cb100c25b19e7f5a50f99003fd46a100e8d5f367b0360090dca0e2",
+        "86071746454f0fef7663550fa7d69bf6f5bd79195b1f08bbb0347ff37ae96f2c",
+        "7898f27cf8919f266ae0deac85ea73f948ed4cf6ae42f58b94c2e1d5e62100bb",
+        "398c234d44bd97fc2fa517ab27090d84e2a4ad43075820138c54f953042e9c52",
+        "f8be06f741f6b10954e1dc6fbd1d6de19b4162acd94d3edc1c707e59e680374f",
+        "c320c33aa91991617ee5144a326cdf0b1a147b90e75ddaab78b3289a2d7bb73a",
+        "267b805baecc5220146346c8616b85a1f8c6a4e7d02e072e8e438291d47ea324"
+      ],
+      "recorded_usage_requests": 19
+    }
+  ]
+}

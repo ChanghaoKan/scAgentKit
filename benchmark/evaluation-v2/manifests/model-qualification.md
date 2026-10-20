@@ -1,40 +1,68 @@
-# E0：主矩阵模型与注释对照资格核实
+# CASSIA 同模型对照资格核实：DeepSeek 与 Grok
 
-核实日期：2026-10-20。范围为官方仓库源码、许可证、供应商文档，以及一个隔离的离线请求形状探针。没有访问 API key，没有付费 API 调用，没有下载生物学数据，也没有运行完整对照工具。以下“源码符合”不等于真实服务冒烟通过。
+核实日期：2026-10-20。范围：官方源码、官方 API 文档、离线 SDK/HTTP 请求探针；**未读取真实 key、未调用 provider API、未运行真实注释实验**。主矩阵按维护者最新决定为 DeepSeek + Grok；M1-xAI 先实现，Anthropic/OpenAI 的正式产品支持随后完成。费用仅在运行后比较，费用估算/预留不是本资格核实的准入条件。
 
-## 建议
+本报告修正此前资格记录中过宽的说法：CASSIA 的 DeepSeek thinking 控制依赖型号名包含 `deepseek-v4`，并非适用于所有 DeepSeek 型号。旧的 Anthropic 主矩阵建议也已被维护者后续决定替代。
 
-主矩阵采用 **DeepSeek + Anthropic**；前沿模型候选固定为 **`claude-opus-5-5`**，主要同模型注释对照采用 **CASSIA 1.4.0、commit `c01f573caf25c5ef471e8afefd035c05becfab08`**。先实施 M1-Anthropic；OpenAI、xAI 各自单独 PR，作为扩展矩阵，不阻塞正式实验。ReAct v1 的 DeepSeek 产品支持范围保持原计划。
+## 结论
 
-选择依据是可审查的接口路径与版本稳定性，**不是已经证明 Claude 的单细胞准确率更好**：
+**CASSIA 1.4.0 可以作为主矩阵的同型号注释对照候选。离线实际 SDK 请求已证明 `deepseek-flash`、`deepseek-v4-pro`、`grok-4.7` 在注释、验证、格式化三个角色中均原样透传，没有改成默认型号或 OpenRouter 别名。但同型号不代表同推理配置。**
 
-- CASSIA 的精确模型名可直接透传；Anthropic 注释、验证、格式化 agent 使用传入的同一模型和 provider。原生 Messages 调用对 Claude Opus 5 系列省略 temperature，并可传入 `output_config.effort`，提取文本时跳过典型的 thinking 块。[模型名解析](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/model_settings.py#L115-L176)、[原生调用](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/llm_utils.py#L580-L671)、[三个 agent 的模型传递](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/main_function_code.py#L506-L545)。
-- Anthropic 当前官方文档列出 `claude-opus-5-5`，支持工具使用；该模型的 adaptive thinking 不能关闭。官方版本说明把 4.6 及以后没有日期后缀的模型 ID 定义为固定模型快照，同时说明服务基础设施变化仍可能改变可观察行为。因此记录模型 ID、返回的 model、请求日期、实际参数和完整响应，不能承诺重新请求逐字一致。[模型说明](https://platform.claude.com/docs/en/models/opus-5-5/overview)、[版本语义](https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions)。
-- CASSIA 的 R/Python 声明版本均为 1.4.0，仓库使用 MIT 许可；README 展示的版本/模型名可能落后于当前源码，应以本次锁定 commit 为准。[R 版本](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_R/DESCRIPTION)、[Python 版本](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/setup.py)、[许可证](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/LICENSE)。
+| 候选 | exact model 透传 | 与 scAgentKit 预期配置的关系 | 资格判断 |
+|---|---|---|---|
+| `deepseek-v4-pro`，官方 DeepSeek URL | 三个角色均通过 | `reasoning="none"` 真正生成 `thinking.type="disabled"`；temperature 0 原样发送；CASSIA 输出参数固定 16384 | 最直接的未修改 CASSIA 主矩阵候选。需要冻结 scAgentKit 同型号和生成配置、完成真实开发集冒烟后才能标为运行资格通过 |
+| `deepseek-flash`，官方 DeepSeek URL | 三个角色均通过 | `reasoning="none"` **没有**生成 thinking 字段；官方当前默认 thinking enabled/high，因此也不能把发送的 temperature 0 当成生效的非思考温度配置 | 保留原生 preset 时可作同型号、不同推理配置的描述性对照；**不能冒充 thinking-off 的受控对照**。若坚持主矩阵 Flash，应先明确冻结一个最小传输兼容补丁，把 `thinking.disabled` 传到真实请求，保留全部科学 prompt/agent 流程，并重新验证 |
+| `grok-4.7`，官方 xAI URL | 三个角色均通过 | CASSIA 使用 Chat Completions；`reasoning="medium"` 与 `"high"` 都被忽略；有效配置依赖官方当前默认 high。temperature .7 原样发送，输出参数固定 4096 | 可以作为同型号主矩阵候选，建议冻结 **high**，并记录请求未显式发送 effort、官方默认核实日期和 endpoint 差异。若 scAgentKit 选择 medium，则不是同 effort 的受控对照，需显式传输补丁或将其作为不同 preset 的描述性结果 |
 
-**资格状态：仓库、许可、精确模型透传路径和离线请求形状已核实；完整安装、真实 API 可用性、完整 CASSIA preset 输出、预算覆盖和 scAgentKit M1 接入未核实。** 主矩阵正式执行仍受这些剩余项阻塞。不要在协议中把本次核实写成“同模型对照已跑通”。
+本次没有要求所有方法使用同一 endpoint。Grok 的 CASSIA Chat Completions 与 scAgentKit 拟用 Responses 可以进行**同底座模型的方法比较**，但不能称为多轮协议等价，也不能单凭这个对照把所有差异归因于 ReAct。ReAct on/off 的因果消融应在 scAgentKit 内固定 provider、型号、生成配置和其他方案。当前正式实验剩余条件是完整安装、真实 provider 接受请求、冻结 preset、完整结果与失败处理；没有把它们写成已完成。
 
-## 其他对照工具
+## 固定来源与路由
 
-| 工具与锁定版本 | 证据和角色 | 当前限制 |
-|---|---|---|
-| GPTCelltype 1.0.1；`3d2785aa96ab5f260dd075b688a9fa51654cdf0d`；DESCRIPTION 声明 MIT | `gptcelltype(..., model=)` 把模型名传入 `openai::create_chat_completion()`；适合 OpenAI 扩展矩阵中的一次性注释对照。[源码](https://github.com/Winnie09/GPTCelltype/blob/3d2785aa96ab5f260dd075b688a9fa51654cdf0d/R/gptcelltype.R)、[版本及许可声明](https://github.com/Winnie09/GPTCelltype/blob/3d2785aa96ab5f260dd075b688a9fa51654cdf0d/DESCRIPTION) | 模型可传不等于当前前沿型号已兼容；旧 R 客户端和返回解析需冒烟核实。源码对返回行数不匹配使用无上限 while 重试，须在外部运行器设置超时/费用硬限，不能让它无界消耗。该保护不改变注释 prompt。 |
-| mLLMCelltype R 2.0.8 / Python 2.0.9；`26bda564459257a47dd75f8ed321ad81cb306bca`；MIT | Python 原生 provider 模块涵盖 OpenAI、Anthropic、DeepSeek、Grok；可作为扩展多模型对照。正式比较必须区分单 provider 配置和多模型共识配置。[R 版本](https://github.com/cafferychen777/mLLMCelltype/blob/26bda564459257a47dd75f8ed321ad81cb306bca/R/DESCRIPTION)、[Python 版本](https://github.com/cafferychen777/mLLMCelltype/blob/26bda564459257a47dd75f8ed321ad81cb306bca/python/pyproject.toml)、[providers](https://github.com/cafferychen777/mLLMCelltype/tree/26bda564459257a47dd75f8ed321ad81cb306bca/python/mllmcelltype/providers)、[MIT](https://github.com/cafferychen777/mLLMCelltype/blob/26bda564459257a47dd75f8ed321ad81cb306bca/LICENSE) | `latest` 别名在源码中可能映射到旧型号，必须传明确 ID；其具体最新模型和完整共识流程尚未做真实调用。Python 原生 Anthropic 路径的输出限额为 4096，默认重试和超时也需记录。 |
-| 论文对应 CellTypeAgent；`da9c31dbca44d1b2eb6bdde1cecf077987f28d42`；未发现仓库 LICENSE，包版本 unknown | 原论文链接的是 **jianghao-zhang/CellTypeAgent**，不是其他同名 celltype-agent 项目。README 写明 OpenAI/Anthropic/DeepSeek，并要求 CELLxGENE 表达参考。[仓库](https://github.com/jianghao-zhang/CellTypeAgent/tree/da9c31dbca44d1b2eb6bdde1cecf077987f28d42)、[论文](https://pmc.ncbi.nlm.nih.gov/articles/PMC12133089/)、[调用代码](https://github.com/jianghao-zhang/CellTypeAgent/blob/da9c31dbca44d1b2eb6bdde1cecf077987f28d42/CellTypeAgent/LLM.py#L75-L146) | 调用代码面向旧型号：Claude 无条件发送 temperature，OpenAI 对 gpt-5/6 会走非旧 GPT chat 分支，不能据此认定当前前沿型号可直接运行。API 文件夹用于用户自备密钥；没有下载或读取任何真实密钥。代码许可不能用论文 CC BY 替代。当前列为待维护者资格确认，不能作为主矩阵唯一对照。 |
+CASSIA 固定 commit：`c01f573caf25c5ef471e8afefd035c05becfab08`。R/Python 均声明 1.4.0，MIT 许可；不是根据 README 的型号示例猜测兼容性。[R DESCRIPTION](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_R/DESCRIPTION)、[Python setup](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/setup.py)、[LICENSE](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/LICENSE)。
 
-这里的注释工具均用于注释比较；描述范围差异时使用“未将 QC、批次等作为显式、可审阅的决策”，不推断它们“不考虑”这些因素。
+- 用户入口 `runCASSIA(..., provider=<完整 HTTPS base URL>, model=<exact ID>, temperature=<显式数值>, use_reference=FALSE)`；不要把 `provider="deepseek"` 或 `"grok"` 当成支持的标准 provider。内部 `_run_core_analysis()` 将 URL、型号和 reasoning 交给 custom wrapper。custom wrapper 的注释、验证、格式化三个 agent 使用同一型号与 URL。[tools_function.py:222–265、346–429](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/tools_function.py#L222-L265)、[main_function_code.py:588–632](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/main_function_code.py#L588-L632)。
+- resolver 对 HTTP provider 仍检查全局 alias，再走 exact ID passthrough。因此必须运行真实 resolver 验证，不能仅依据“pass through”的代码注释。此次三种 exact ID 均未改变。[model_settings.py:115–176](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/model_settings.py#L115-L176)、[冻结 alias 配置](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/data/model_settings.json)。
+- custom route 创建 `openai.OpenAI(base_url=provider)` 并调用 `chat.completions.create(model=model, ...)`。仅 DeepSeek 官方 endpoint 且型号名包含 `deepseek-v4` 才调用 thinking 转换函数。这就是 canonical Flash 的配置缺口。Grok custom route 没有 effort 转换。[llm_utils.py:519–579](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/llm_utils.py#L519-L579)。
+- DeepSeek 当前文档把 `deepseek-flash` 指向 DeepSeek-V4.1-Flash-1017，`deepseek-v4-pro` 指向 DeepSeek-V4-Pro-0813；旧 Flash 名称已经重定向。不能为了触发 CASSIA 字符串判断而悄悄改用旧 alias。冻结 manifest 要同时保留请求 ID、官方对应版本、请求日期和响应 model。[官方型号说明](https://api-docs.deepseek.com/quick_start/pricing/)、[thinking 默认及参数语义](https://api-docs.deepseek.com/guides/thinking_mode/)。
+- Grok 当前 exact ID 为 `grok-4.7`，官方默认 effort high。Responses 返回并支持延续 encrypted reasoning；CASSIA legacy Chat 路径仅保存文本历史。这项方法差异必须在主结果说明，不能记成相同多轮记忆机制。[Grok 4.7](https://docs.x.ai/developers/grok-4-7)、[legacy Chat Completions](https://docs.x.ai/developers/model-capabilities/legacy/chat-completions)、[reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning)。
 
-## 请求参数与公平比较
+## 实际离线探针
 
-1. DeepSeek 延续 v1 的 thinking disabled、temperature 0。CASSIA 原生 DeepSeek 自定义 endpoint 的调用代码可以在 `reasoning={"effort":"none"}` 下生成 `thinking={"type":"disabled"}`。实际使用的 model 和价格仍需在正式 manifest 冻结；不要沿用陈旧别名并假定底座未变。[CASSIA 路由](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/llm_utils.py#L19-L60)、[DeepSeek 官方当前入口](https://api-docs.deepseek.com/)。
-2. 对 Anthropic，建议两方法都使用 `claude-opus-5-5`、adaptive thinking、`effort="medium"`，省略不支持的 temperature 字段；预算包含计费的推理输出。该参数候选需在 M1 的模型能力核实与开发集冒烟时冻结。**不能把“temperature 0、thinking off”宣称为所有模型的统一设置。** 不要求查看或公开模型隐藏推理文本；保存 API 返回中重放协议所必需的 opaque blocks/signatures 时仍应用隐私及安全边界。
-3. CASSIA 使用固定的公开 annotation preset，所有 annotation/validator/formatter 模型一致；若加 score/boost/merge，它们也必须使用同一底座，并预先把 preset 名称、预算、额外信息来源冻结。不能将默认的混合模型 pipeline 写成同模型比较。
-4. 方法之间固定底座、输入/组织/物种上下文和预处理底座；保留各方法自身算法和提示。主注释比较与端到端比较分开。提示长度、工具信息量和费用不是天然相同，应报告，不通过暗中删改对照方法消除差异。
-5. xAI 已在官方文档中说明模型版本/别名和函数调用能力，但不据此推断旧版对照 adapter 已支持最新 Grok；扩展矩阵须单独核实模型 ID、接口类型、token 计费和响应重放。[xAI 模型文档](https://docs.x.ai/developers/models)。
-6. 公开数据晚于训练截止日期是优先项，不是硬准入；主要“模型未见原始数据”证据由未公开的维护者留出集、冻结 hash/时间记录和隔离规则承担。即使原始数据未公开，也不能推断模型从未见过相似 marker 知识或相关论文。分别记录公开数据发布日期、模型公开训练截止说明、unknown 项和已知泄漏风险。
+可复查附件包含[原始脚本、结果、依赖版本和五份固定源码的下载/hash 清单](cassia-offline-probe/README.md)。脚本和结果按已执行版本原样保留，第三方源码/依赖不打包；复跑在 scratch 目录完成，不覆盖提交的结果。
 
-## 本次离线探针
+离线探针运行环境：Python 3.9.6，OpenAI SDK **2.48.0**（满足 CASSIA `openai>=2.0.0`），httpx **0.28.1**。
 
-阶段 0 核实中，从锁定 CASSIA 源码的 AST 只加载 `call_llm` 和文本提取函数，替换 Anthropic SDK 为假客户端并阻断 socket。断言通过：精确 `claude-opus-5-5` 透传、effort 传递、temperature 省略、文本块提取、usage hook 调用。API 调用数为 0。
+从冻结源码通过 AST 加载真实 ModelSettings、alias JSON、`call_llm`、annotation/validator/formatter、`_run_core_analysis` 和 usage 代码；跳过模块的第三方导入及初始化。真实 SDK 完成请求 JSON 序列化，httpx MockTransport 在内存中接收并返回固定响应；socket 禁用、使用合成 key，未读取真实凭据。HTTP mock 的合成响应不能证明服务端接受该请求。
 
-上游被核实文件 SHA256：`3d644ca2fb7f494d1b1e8488cd87a1b8cdb49c33186e4a0c2fbf53fdcf08ed7d`。这个探针只证明隔离的请求构造路径，**不证明**完整依赖安装、SDK 最新兼容性、真实响应或科学准确性。
+| 实际执行的情景 | 内存 HTTP 请求数 | 检查结果 |
+|---|---:|---|
+| Flash + requested none | 3 | 全部 exact Flash；thinking 字段缺失；max_tokens=4096 |
+| V4 Pro + requested none | 3 | 全部 exact Pro；thinking.disabled；max_tokens=16384 |
+| Grok 4.7 + requested medium | 3 | 全部 exact Grok；effort 字段缺失；max_tokens=4096 |
+| Grok 4.7 + requested high | 3 | 与 medium 情景的三个请求 body hash **逐一相同**，直接证明该参数未传入 |
+| Grok 无完成短语、验证不通过 | 19 | 三次 outer iteration 后格式化；全部 exact Grok；三个角色没有切换型号 |
+
+以上断言全部通过。实际 provider 请求 **0**；没有实付费用或真实准确率结果。探针记录了源码 SHA256 和每次完整请求体 hash；探针中 SDK retries=0 仅为测试隔离，不能据此声称原始 CASSIA 禁用了 retries。
+
+## 应冻结的 CASSIA preset 与界限
+
+建议命名 `cassia-1.4.0-annotation-validator-v1-no-reference`，采用公开 `runCASSIA` 的注释 + validator v1 + formatter 流程；同一份已冻结的 marker 输入、物种/组织和允许的研究背景。`use_reference=FALSE`、无 proxy、完整 direct URL、exact model、显式 temperature；不调用混合模型的 pipeline 默认项，不加入 score/annotationboost/merge，不借用 ACT 或真值。若要比较这些额外能力，应另立冻结的 preset，所有参与模型和外部证据分别记录。[pipeline defaults](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/pipeline/pipeline.py#L134-L160)。
+
+这**不是一次性单调用基线**：正常合成流程 3 次；源码每次 annotation 至多 5 次、validator 外循环至多 3 次，最后 formatter 1 次，单次核心分析至多 **19 次逻辑调用**。SDK 自动重试、batch retry、API key 预检都是额外调用，不计在 19 中。[循环](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/main_function_code.py#L161-L185)、[outer loop](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/main_function_code.py#L400-L454)。
+
+batch 默认 n_genes=50、max_workers=10、max_retries=1（初次 + 最多一次整簇重试）、运行前 API 验证开启、gene ID 自动转换开启。正式适配必须显式冻结这些参数，最好复用已有 marker/label-map 准备，避免自动转换和默认 marker 数改变输入。外部运行器设置次数/时间边界、记录每个重试及失败；费用和 token 在运行后汇总，未知 usage 保留 unknown。源码未自设 SDK timeout/retries；所测 SDK 默认 retries=2、读超时600秒。这些不是本次真实 provider 测量结果。[batch 参数](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/tools_function.py#L557-L625)、[batch retry](https://github.com/ElliotXie/CASSIA/blob/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/tools_function.py#L895-L968)。
+
+本报告不宣称 CASSIA 的 LLM validator 是确定性证据校验器。对照仍统一由 scAgentKit evaluator 的 CL 映射、层级指标和分母规则计分。
+
+## 备选工具的边界
+
+mLLMCelltype 固定 `26bda564459257a47dd75f8ed321ad81cb306bca`（R 2.0.8 / Python 2.0.9，MIT）具有 DeepSeek 和 Grok 模块。DeepSeek 模块显式关闭 thinking，但硬编码 temperature .7；Grok 模块走原生 Chat 接口并传入 model。它可以作为后续候选，**此次没有完成其公共入口/共识模型选择/实际 SDK 请求探针**，不把 provider 函数的静态审阅写成完整对照资格。使用多模型共识时也不能称为单底座控制。[DeepSeek 模块](https://github.com/cafferychen777/mLLMCelltype/blob/26bda564459257a47dd75f8ed321ad81cb306bca/python/mllmcelltype/providers/deepseek.py)、[Grok 模块](https://github.com/cafferychen777/mLLMCelltype/blob/26bda564459257a47dd75f8ed321ad81cb306bca/python/mllmcelltype/providers/grok.py)。
+
+## 后续资格与计划
+
+1. 主矩阵保留 DeepSeek + Grok4.7，M1-xAI 先做，成本仅事后比较。
+2. 原样 CASSIA 最清楚的受控候选是 **DeepSeek V4 Pro non-thinking / temperature 0 + Grok4.7 high**；模型最终选择仍由维护者确定，不因本核实暗改项目默认 Flash。
+3. 如保留 Flash，增加显式、单独记录的最小传输兼容修复再冻结 preset；修复前 Flash native preset 的差异应明确标注，不能称同 thinking 配置。Grok 如要求 medium，也遵循同样规则。
+4. 正式实验前需完成真实开发集小规模冒烟和完整 CASSIA 安装/结果导出验证；没有实测结果就保持 pending。不需要先计算费用上界或建立 token 预估系统。
+
+费用仅按[E5 费用报告](E5_COST_REPORTING.md)事后汇总；发送与型号状态遵循[provider 契约](../../../docs/dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md)。xAI 官方能力、协议和用量口径见[xAI 资格记录](xai-qualification.md)。历史 E0 阶段报告保持原样。
