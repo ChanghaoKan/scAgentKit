@@ -42,7 +42,7 @@ react_real_smoke <- function(mex_dir, project_dir, provider, model = NULL,
       receipt$provider_entries <- lapply(entries, function(x) x[intersect(names(x), c('status','delivery','model_reported','cost_state','cost_usd','usage'))])
     }
     if (dir.exists(project_dir)) jsonlite::write_json(receipt,
-      file.path(project_dir, 'smoke-receipt.json'), auto_unbox = TRUE, pretty = TRUE, null = 'null')
+      file.path(project_dir, 'smoke-receipt.json'), auto_unbox = TRUE, pretty = TRUE, null = 'null', digits = NA)
   }, add = TRUE)
   tryCatch({
     selected <- if (provider == 'mock') 'mock' else list(name = provider, model = model)

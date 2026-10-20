@@ -73,7 +73,7 @@
       !identical(value$protocol$schema, "xai.responses.v1")) return(fail())
   safe <- .sc_run_provider_plain(value[c("schema_version", "message", "finish_reason", "protocol")])
   checked <- tryCatch({
-    if (nchar(.sc_run_provider_json(safe), type = "bytes") > request$session$policy$max_payload_bytes)
+    if (nchar(.sc_run_provider_json(safe), type = "bytes") > .sc_run_capacity_bytes(request$session$policy$max_payload_bytes))
       .sc_run_turn_error("payload_too_large", "Native response exceeds the session limit.")
     if (!safe$protocol$status %in% c("completed", "incomplete", "failed"))
       stop("Unexpected native status.")

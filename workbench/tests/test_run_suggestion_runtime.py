@@ -265,7 +265,7 @@ class SuggestionRuntimeTests(unittest.TestCase):
             with self.subTest(name=name),self.assertRaises(StoreError):module._environment(key_name=name)
 
     def test_timeout_range_and_boolean_operator_settings_validated(self):
-        for kwargs in ({'worker_timeout':0},{'worker_timeout':True},{'worker_timeout':3601},{'simulate':'yes'},{'threads':0}):
+        for kwargs in ({'worker_timeout':0},{'worker_timeout':True},{'worker_timeout':86401},{'simulate':'yes'},{'threads':0}):
             with self.subTest(kwargs=kwargs),self.assertRaises(StoreError):RunSuggestionRuntime(self.project,rscript=str(self.fake),**kwargs)
 
 

@@ -1,6 +1,6 @@
 # Stage-only model suggestions. This channel never changes a scientific approval
 # or executes analysis. Its exact transfer authority is separate from pending.
-.sc_run_suggestion_scan <- function(scan) {
+.sc_run_suggestion_scan <- function(scan, max_bytes = 60000L) {
   science <- scan$scientific_diagnostics
   if (!is.null(science)) {
     # The saved diagnostic artifact includes literal per-cell evidence. Only
@@ -25,7 +25,7 @@
     }
     scan$scientific_diagnostics <- aggregate
   }
-  .sc_run_cluster_scan_payload(scan)
+  .sc_run_cluster_scan_payload(scan, max_bytes = max_bytes)
 }
 
 .sc_run_suggestion_context <- function(root, state, simulate = FALSE) {
@@ -53,7 +53,17 @@
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
   summary <- evidence$summary
   if (!is.null(scan)) {
-    summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan)
+    scan_limit <- if (is.null(state$config$react)) 60000L else .sc_run_capacity_bytes(state$config$react$max_payload_bytes)
+    if (is.finite(scan_limit) && !is.null(state$config$react)) {
+      # Measure the exact prompt with an empty scan slot, retaining its small
+      # placeholder as spare room; no fixed percentage or token conversion.
+      base_summary <- summary; base_summary$cluster_diagnostics <- list()
+      base_request <- .sc_run_request(kind, base_summary, state$config)
+      overhead <- nchar(enc2utf8(base_request$system_prompt), type="bytes") +
+        nchar(enc2utf8(base_request$user_prompt), type="bytes")
+      scan_limit <- max(0L, scan_limit - overhead)
+    }
+    summary$cluster_diagnostics <- .sc_run_suggestion_scan(scan, max_bytes = scan_limit)
     if(identical(summary$cluster_diagnostics$status,"unavailable_essential_aggregates_exceed_bound"))
       return(list(kind=kind,provider=provider,blocked_reason=paste("No model request was sent.",summary$cluster_diagnostics$reason)))
   }
@@ -80,12 +90,12 @@
     if (!is.null(request$transfer_scope)) request$transfer_scope <- .sc_run_transfer_scope(request$purpose)
   }
   request_hash <- tryCatch(.sc_run_request_hash(request, provider), error = function(e) {
-    if (identical(conditionMessage(e), "Aggregate provider request exceeds 100,000 bytes."))
+    if (inherits(e, "sc_run_payload_too_large"))
       return(NULL)
     stop(e)
   })
   if (is.null(request_hash)) return(list(kind = kind, provider = provider,
-    blocked_reason = paste("Aggregate provider request exceeds 100,000 bytes.",
+    blocked_reason = paste("Aggregate provider request exceeds the configured byte limit.",
       "Suggestions are unavailable for this snapshot; review the complete local evidence manually.",
       "No evidence was truncated to force this request under the limit; the diagnostic projection separately declares its scope and omission accounting. No provider request was sent.")))
   binding <- list(stage = state$stage, input_hash = state$input_hash,
@@ -133,6 +143,9 @@
   provider <- context$provider
   result$preview <- list(request_hash = context$request_hash, provider = provider,
     model = provider$model, generation = provider$generation,
+    resource_limits = list(request_bytes = if (is.null(context$request$max_payload_bytes)) 100000L else context$request$max_payload_bytes,
+      react = state$config$react, model_context_tokens = "unknown",
+      context_notice = "Application bytes are not model tokens. Model context admission is not verified by this package; provider rejection falls back without automatic retry."),
     cost_mode = if (posthoc) "posthoc" else "legacy_cap",
     budget = if (posthoc) NULL else state$config$budget, remaining_usd = max(0, state$config$budget - amount("charged_or_held_usd")),
     consent_mode = if (is.null(state$config$review$transfer_consent)) "strict" else "project",

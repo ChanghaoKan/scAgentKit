@@ -1,5 +1,13 @@
 # Development changes (unreleased)
 
+- New ReAct policies default to unlimited application request bytes, with optional
+  hash-bound finite quotas shared by one-shot and turn requests. Scan space is
+  measured from the remaining prompt rather than a fixed percentage.
+- Derive the default whole-request deadline from saved limits; add marker/ACT
+  continuation pages and read-only workbench storage measurement. Prompt v4 and
+  tool schema v2 change the implementation hash; model token capacity remains
+  explicitly unknown, and no fee reservation is added.
+
 - Startup accepts the existing bounded ReAct policy list and a whole suggestion-worker timeout; the launcher binds that timeout rather than silently reusing another setting. These controls do not change independent request/storage limits.
 
 - Release preflight records explicit unknown ACT publisher version/date and

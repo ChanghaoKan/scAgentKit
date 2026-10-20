@@ -1,4 +1,4 @@
-.sc_run_prompt_version <- function() "aggregate-review.v3"
+.sc_run_prompt_version <- function() "aggregate-review.v5"
 
 # Transfer consent never grants scientific approval. The exact payload remains
 # visible and hashed even when a creation-time scope permits another dispatch.
@@ -56,6 +56,9 @@
       !identical(consent$provider_hash, .sc_run_provider_hash(config$provider)) ||
       !identical(consent$budget_usd, as.numeric(config$budget))) return(FALSE)
   if (identical(consent$cost_mode, "posthoc") != identical(config$cost_mode, "posthoc")) return(FALSE)
+  if (!is.null(request$max_payload_bytes) &&
+      (is.null(consent$react_scope$policy$max_payload_bytes) ||
+       .sc_run_capacity_bytes(request$max_payload_bytes) > .sc_run_capacity_bytes(consent$react_scope$policy$max_payload_bytes))) return(FALSE)
   kind <- request$purpose
   if (!is.character(kind) || length(kind) != 1L || !kind %in% c("strategy", "qc", "annotation", "simulated_strategy", "simulated_qc", "simulated_annotation")) return(FALSE)
   if (startsWith(kind, "simulated_") && !identical(config$provider$name, "mock")) return(FALSE)

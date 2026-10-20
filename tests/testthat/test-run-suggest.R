@@ -60,7 +60,7 @@ test_that("oversized aggregate suggestions block only the optional provider path
   expect_false(view$available)
   expect_false(view$can_request)
   expect_false(view$can_approve)
-  expect_match(view$blocked_reason, "100,000 bytes", fixed = TRUE)
+  expect_match(view$blocked_reason, "configured byte limit", fixed = TRUE)
   expect_match(view$blocked_reason, "No evidence was truncated", fixed = TRUE)
   expect_identical(.sc_run_get(f$root, state, "annotation_evidence"), f$evidence)
   expect_identical(.sc_project_sha_file(file.path(f$root, "state.rds")), before)

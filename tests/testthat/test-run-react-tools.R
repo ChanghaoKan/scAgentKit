@@ -24,7 +24,7 @@ test_that("arguments reject unknown fields, malformed scalars, duplicates and li
     list(cluster_id = "0", genes = list("G01", 1)), list(cluster_id = "0", genes = c(a = "G01")),
     list(cluster_id = "0", genes = list(list("G01"))))
   for (args in expression_bad) expect_error(.sc_run_react_arguments(registry$gene_expression, args), class = "sc_run_react_error")
-  expect_identical(.sc_run_react_arguments(registry$cluster_markers, list(cluster_id = "0")), list(cluster_id = "0", n = 30L))
+  expect_identical(.sc_run_react_arguments(registry$cluster_markers, list(cluster_id = "0")), list(cluster_id = "0", offset = 0L, n = 30L))
   expect_identical(.sc_run_react_arguments(registry$gene_expression, list(genes = c("G02", "G01"), cluster_id = "0")),
     list(cluster_id = "0", genes = list("G01", "G02")))
 })

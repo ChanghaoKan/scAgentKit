@@ -145,8 +145,8 @@ def serve(config_path):
 
 
 def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90, review_mode=False, model_mode="off", key_env=None, model_timeout=300):
-    if isinstance(model_timeout, bool) or not isinstance(model_timeout, int) or not 1 <= model_timeout <= 3600:
-        raise ValueError("model_timeout must be whole seconds from 1 to 3600")
+    if isinstance(model_timeout, bool) or not isinstance(model_timeout, int) or not 1 <= model_timeout <= 86400:
+        raise ValueError("model_timeout must be whole seconds from 1 to 86400")
     if model_mode not in {"off", "configured", "simulate"} or not review_mode and model_mode != "off":
         raise ValueError("Model workflow requires an explicit supported review mode")
     project = Path(project).expanduser()

@@ -46,10 +46,10 @@ def main(argv=None):
     model = parser.add_mutually_exclusive_group()
     model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
     model.add_argument("--model-mock", action="store_true", help="Explicit offline simulation for a saved mock project")
-    parser.add_argument("--model-timeout", type=int, default=300, help="Whole suggestion worker limit, 1–3600 seconds")
+    parser.add_argument("--model-timeout", type=int, default=300, help="Whole suggestion worker limit, 1–86400 seconds")
     args = parser.parse_args(argv)
-    if not 1 <= args.model_timeout <= 3600:
-        parser.error("model-timeout must be from 1 to 3600 seconds")
+    if not 1 <= args.model_timeout <= 86400:
+        parser.error("model-timeout must be from 1 to 86400 seconds")
     if sys.version_info < (3, 9):
         parser.error("Python 3.9 or later is required")
     if not 0 <= args.port <= 65535:
