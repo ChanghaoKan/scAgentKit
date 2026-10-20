@@ -237,3 +237,33 @@ test_that("strict sessions persist the exact unsent payload for explicit approva
   expect_length(trace$tools, 1L)
   expect_identical(trace$pending_request$ordinal, 2L)
 })
+
+test_that("illegal tool arguments can be corrected in a subsequent bounded turn", {
+  f <- react_loop_fixture(); on.exit(unlink(f$root, recursive = TRUE))
+  next_call <- react_mock("unknown_then_retry")
+  out <- .sc_run_react_refine(f$root, f$baseline, function(messages, ...) {
+    reply <- next_call(messages, ...)
+    if (identical(reply$message$tool_calls[[1]]$`function`$name, "unknown_tool")) {
+      reply$message$tool_calls[[1]]$`function`$name <- "cluster_markers"
+      cluster <- jsonlite::fromJSON(messages[[2]]$content, simplifyVector = FALSE)$cluster_id
+      reply$message$tool_calls[[1]]$`function`$arguments <- .sc_project_json(list(cluster_id = cluster, n = 51L))
+    }
+    reply
+  })
+  trace <- readRDS(file.path(f$root, out$traces[["0"]]$path))
+  expect_identical(trace$tools[[1]]$response$error$code, "invalid_arguments")
+  expect_identical(trace$status, "completed")
+  expect_identical(trace$result$citations[[1]]$source, "tool:2")
+})
+
+test_that("the total session turn limit preserves later baseline clusters", {
+  f <- react_loop_fixture(list(mode = "all", max_steps = 2L, max_steps_per_cluster = 2L))
+  on.exit(unlink(f$root, recursive = TRUE))
+  out <- .sc_run_react_refine(f$root, f$baseline, react_mock())
+  first <- readRDS(file.path(f$root, out$traces[["0"]]$path))
+  second <- readRDS(file.path(f$root, out$traces[["1"]]$path))
+  expect_identical(first$status, "completed")
+  expect_identical(second$fallback_reason, "step_limit")
+  expect_identical(second$result$row, f$baseline$annotations[[2]])
+  expect_length(second$turns, 0L)
+})
