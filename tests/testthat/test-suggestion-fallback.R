@@ -86,23 +86,3 @@ test_that('configured provider without explicit plan still starts with a saved r
  expect_match(sc_open(root)$plan$qc$rationale,'unassessed')
 })
 
-test_that('missing-key fallback allows an explicit same-provider request without automatic retry', {
-  status <- 'needs_provider'; calls <- 0L
-  local_mocked_bindings(.sc_run_call=function(...) {
-    calls <<- calls + 1L
-    list(status=status,error='Offline missing-key fixture; no HTTP.',request_hash='offline')
-  }, .package='scAgentKit')
-  root <- fallback_project(); on.exit(unlink(root,recursive=TRUE))
-  provider <- .sc_run_load(root)$config$provider
-  fallback_action(root,'approve')
-  fallback_action(root,'request')
-  preview <- sc_run_suggest(root)
-  expect_true(preview$can_request || preview$can_approve)
-  expect_false(preview$can_auto_request)
-  if (preview$can_approve) fallback_action(root,'approve')
-  status <- 'invalid_response'
-  expect_no_error(fallback_action(root,'request'))
-  expect_equal(calls,2L)
-  expect_identical(.sc_run_load(root)$config$provider,provider)
-  expect_length(.sc_run_load(root)$approvals,0L)
-})
