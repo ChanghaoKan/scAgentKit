@@ -1,6 +1,6 @@
 # Purpose-built aggregate projection; complete native scan/checkpoints remain
 # local and unchanged. Omit whole split blocks only, with an explicit inventory.
-.sc_run_cluster_scan_payload <- function(scan,max_bytes=60000L) {
+.sc_run_cluster_scan_payload <- function(scan,max_bytes=Inf) {
   pack<-function(rows,columns)unname(lapply(rows,function(row)unname(lapply(columns,function(key)row[[key]]))))
   marker_columns<-c("clusterId","gene","avgLog2FC","pct1","pct2","pAdj")
   marker_rows<-function(rows,n) {

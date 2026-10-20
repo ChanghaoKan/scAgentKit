@@ -465,7 +465,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   request <- list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
        user_prompt = .sc_project_json(list(context = if (kind == "annotation" && !is.null(evidence$child_context)) evidence$context else config$context, evidence = payload_evidence)),
        purpose = kind, evidence_hash = .sc_run_hash(evidence), prompt_version = .sc_run_prompt_version())
-  if (!is.null(config$react)) request$max_payload_bytes <- config$react$max_payload_bytes
+  request$max_payload_bytes <- if (is.null(config$react)) "unlimited" else config$react$max_payload_bytes
   if (!is.null(config$review$transfer_consent)) request$transfer_scope <- .sc_run_transfer_scope(kind)
   request
 }

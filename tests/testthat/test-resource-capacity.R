@@ -1,6 +1,8 @@
 test_that('one-shot capacity is explicit, bounded and hash-bound', {
   request <- list(system_prompt='JSON',user_prompt=paste(rep('a',150000),collapse=''),purpose='strategy')
-  expect_error(.sc_run_provider_request(request),'100000 byte limit')
+  expect_no_error(.sc_run_provider_request(request))
+  request$max_payload_bytes <- 100000L
+  expect_error(.sc_run_provider_request(request),class='sc_run_payload_too_large')
   request$max_payload_bytes <- 200000L
   expect_equal(.sc_run_provider_request(request)$max_payload_bytes,200000)
   before <- .sc_run_request_hash(request,'mock')

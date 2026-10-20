@@ -4,7 +4,7 @@ Base: #27 / fb3fa34ff4439a4ea006ebff7407bb0e18bfac75. Stacked draft; no merge au
 
 ## Delivered behavior
 
-New ReAct policies default to `max_payload_bytes="unlimited"`: no arbitrary application request-byte quota. A finite user-selected 1–1,000,000-byte quota is still supported and hash/consent bound. One-shot and conversation paths use the same saved setting. Legacy requests without this field retain their old 100,000-byte behavior; saved configuration is not silently rewritten. An increased finite quota or unlimited request cannot inherit a smaller project transfer allowance.
+New ReAct policies default to `max_payload_bytes="unlimited"`: no arbitrary application request-byte quota. A finite user-selected 1–1,000,000-byte quota is still supported and hash/consent bound. One-shot and conversation paths use the same saved setting. Requests without this optional field also have no application byte quota; explicit saved finite policies remain unchanged. An increased finite quota or unlimited request cannot inherit a smaller project transfer allowance.
 
 The former hard-coded scan 60,000 bytes and the intermediate proposed 60% share were application choices, not provider limits; neither had a model-context basis. For new finite policies the scan receives the remaining measured prompt space after the other aggregates and system prompt, with a small conservative empty-placeholder allowance. Unlimited policies retain the full scan projection. Existing source hash, split inventory and omission accounting remain. The complete request still passes its final size check. No byte-to-token conversion or invented model context size is introduced. The preview explicitly reports model context capacity as unknown; provider-specific context admission is pending. A provider context rejection follows existing failure/fallback handling, without automatic resend.
 
@@ -14,7 +14,7 @@ Read-only cluster_markers and act_lookup accept offset-based continuation. Each 
 
 The workbench adds on-demand local storage measurement. It counts logical file bytes, skips links (directory opens use no-follow), reports partial lower bounds when the bounded scan ends, and never deletes data. Documentation explains whole-project archival after workers stop, verification of copied hashes, and separate preservation of inputs/environment. A review bundle is not a full project archive.
 
-Effective byte settings and outer worker time are visible in the existing suggestion panel. Post-call cost accounting is unchanged; unknown costs remain unknown. Existing explicit legacy one-shot caps are retained, not expanded into a new budget UI or a ReAct monetary guarantee.
+Effective byte settings and outer worker time are visible in the existing suggestion panel. Post-call cost accounting is unchanged; unknown costs remain unknown. The older explicit monetary-cap dispatch branches remain pending cleanup; this capacity checkpoint does not claim all entry defaults are unified yet.
 
 ## Verification and status
 
@@ -22,7 +22,7 @@ Initial targeted checks exposed pagination fields missing from the strict public
 
 Offline cases cover finite rejection, >1 MB unlimited acceptance, changed-request hashes, full marker-page coverage without duplication, ACT continuation, invalid offsets, strict privacy checks, existing consent/fallbacks, replay, and native startup configuration binding. Python covers no-follow storage/no deletion/partial counts and worker limits. Node suites exercise production UI source. Full CI on the submitted candidate remains required.
 
-#25: all four CI workflows passed at audit. #26/#27: workbench and installed runtime passed, R-CMD-check/release-archive still running at this checkpoint. No failed upstream workflow was observed; none was bypassed or merged.
+#25: all four CI workflows passed at audit. #26/#27: release-archive, workbench and installed runtime passed. Both R-CMD-check runs failed on the same stale MAD test assertion: it read quality.mad after exact duplicate evidence was moved to canonical qc_mad. The correction verifies qc_mad, absence of the redundant copy, and the alias target/hash. Fresh CI is required; no failure is bypassed and nothing is merged.
 
 ## Not delivered / limitations
 
@@ -32,6 +32,12 @@ No optional project disk allowance yet, nor configurable ZIP/display/journal exp
 
 ## Acceptance, complexity and paper milestone
 
-Advances standards 1/7/12 through public configuration, continuation evidence and replay validation; does not close standards 11/14, 50k whole-pipeline validation or 1.0 readiness. ReAct tool and prompt/implementation hashes change (aggregate-review.v4). Existing approval structure is unchanged.
+Advances standards 1/7/12 through public configuration, continuation evidence and replay validation; does not close standards 11/14, 50k whole-pipeline validation or 1.0 readiness. ReAct tool and prompt/implementation hashes change (aggregate-review.v5). Existing approval structure is unchanged.
 
 New abstractions: one byte-setting decoder and one read-only local storage measurement function/schema. Reuse request hashing, project consent, scan projection, worker deadlines, tools, cache, citation checks and replay. No new coordinator, budget system, scientific approval action or data-deletion policy. Deviations: optional model-context enforcement and storage-format migration remain separate work; arbitrary byte/percentage defaults were removed instead of being presented as validated model budgets.
+
+## Public development smoke
+
+The first real DeepSeek request stopped at gate 1: the draft omitted required diagnostic resolutions, and a risk field cited a noncanonical evidence ID. No scientific approval occurred. Prompt v5 explicitly states the required scan and canonical evidence IDs; validation was not relaxed. The failed run is preserved (actual cost $0.0076458).
+
+A deliberate fresh-project retest with DeepSeek deepseek-flash completed all three scripted approvals on public PBMC3k, with 2700 output cells, 16 tool calls, 8 completed ReAct clusters, no fallback, and matching offline replay. Elapsed time: 415.715 seconds. Actual usage: 175543 input and 9129 output tokens; recorded cost: $0.052591524. Implementation hash: 7e1a6737e516160667074b2d2a0ea2f9fa5f57e792e922455460297e312202df. This receipt belongs to that installed implementation, not subsequent candidate revisions. It is engineering validation, not truth-label accuracy or a paper experiment.

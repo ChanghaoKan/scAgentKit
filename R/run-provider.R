@@ -157,7 +157,7 @@
       any(!names(request) %in% fields)) stop("Invalid coordinator provider request fields.")
   system <- .sc_run_provider_scalar(request$system_prompt, "system_prompt")
   user <- .sc_run_provider_scalar(request$user_prompt, "user_prompt")
-  limit <- if (is.null(request$max_payload_bytes)) 100000L else
+  limit <- if (is.null(request$max_payload_bytes)) Inf else
     .sc_run_capacity_bytes(request$max_payload_bytes)
   if (limit != floor(limit)) stop("Request byte limit must be an integer.")
   if (nchar(enc2utf8(system), type = "bytes") + nchar(enc2utf8(user), type = "bytes") > limit)

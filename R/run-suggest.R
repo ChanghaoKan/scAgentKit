@@ -1,6 +1,6 @@
 # Stage-only model suggestions. This channel never changes a scientific approval
 # or executes analysis. Its exact transfer authority is separate from pending.
-.sc_run_suggestion_scan <- function(scan, max_bytes = 60000L) {
+.sc_run_suggestion_scan <- function(scan, max_bytes = Inf) {
   science <- scan$scientific_diagnostics
   if (!is.null(science)) {
     # The saved diagnostic artifact includes literal per-cell evidence. Only
@@ -53,7 +53,7 @@
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
   summary <- evidence$summary
   if (!is.null(scan)) {
-    scan_limit <- if (is.null(state$config$react)) 60000L else .sc_run_capacity_bytes(state$config$react$max_payload_bytes)
+    scan_limit <- if (is.null(state$config$react)) Inf else .sc_run_capacity_bytes(state$config$react$max_payload_bytes)
     if (is.finite(scan_limit) && !is.null(state$config$react)) {
       # Measure the exact prompt with an empty scan slot, retaining its small
       # placeholder as spare room; no fixed percentage or token conversion.
@@ -143,7 +143,7 @@
   provider <- context$provider
   result$preview <- list(request_hash = context$request_hash, provider = provider,
     model = provider$model, generation = provider$generation,
-    resource_limits = list(request_bytes = if (is.null(context$request$max_payload_bytes)) 100000L else context$request$max_payload_bytes,
+    resource_limits = list(request_bytes = if (is.null(context$request$max_payload_bytes)) "unlimited" else context$request$max_payload_bytes,
       react = state$config$react, model_context_tokens = "unknown",
       context_notice = "Application bytes are not model tokens. Model context admission is not verified by this package; provider rejection falls back without automatic retry."),
     cost_mode = if (posthoc) "posthoc" else "legacy_cap",
