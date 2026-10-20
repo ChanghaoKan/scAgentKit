@@ -1,5 +1,7 @@
 # Development changes (unreleased)
 
+- Startup accepts the existing bounded ReAct policy list and a whole suggestion-worker timeout; the launcher binds that timeout rather than silently reusing another setting. These controls do not change independent request/storage limits.
+
 - Release preflight records explicit unknown ACT publisher version/date and
   snapshot licensing, with source-check provenance; marker bytes are unchanged.
 - Serialize identical QC/strategy diagnostic aggregates once with explicit aliases,

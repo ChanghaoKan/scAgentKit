@@ -46,7 +46,10 @@ def main(argv=None):
     model = parser.add_mutually_exclusive_group()
     model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
     model.add_argument("--model-mock", action="store_true", help="Explicit offline simulation for a saved mock project")
+    parser.add_argument("--model-timeout", type=int, default=300, help="Whole suggestion worker limit, 1–3600 seconds")
     args = parser.parse_args(argv)
+    if not 1 <= args.model_timeout <= 3600:
+        parser.error("model-timeout must be from 1 to 3600 seconds")
     if sys.version_info < (3, 9):
         parser.error("Python 3.9 or later is required")
     if not 0 <= args.port <= 65535:
@@ -125,13 +128,14 @@ def main(argv=None):
     if args.background:
         print(json.dumps(open_results(project, rscript, library, not args.no_browser, review_mode=True,
             model_mode="simulate" if args.model_mock else "configured" if args.model_suggestions else "off",
-            key_env=identity.get("provider", {}).get("api_key_env"))))
+            key_env=identity.get("provider", {}).get("api_key_env"), model_timeout=args.model_timeout)))
         return
     print("Project prepared: %s · %s / %s. Review and continue in the browser; Ctrl-C closes this service." %
           (identity["project_id"], identity["status"], identity["stage"]), flush=True)
     options = ["--run-project", str(project), "--local-continue", "--rscript", rscript, "--port", str(args.port)]
     if library:
         options += ["--r-library", library]
+    options += ["--model-timeout", str(args.model_timeout)]
     if args.model_suggestions: options += ["--model-suggestions"]
     if args.model_mock: options += ["--model-mock"]
     serve(options)
