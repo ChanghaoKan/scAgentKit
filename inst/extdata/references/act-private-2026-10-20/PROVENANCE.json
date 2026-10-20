@@ -1,8 +1,8 @@
 {
   "schema": "scagentkit.ACT-snapshot.v1",
   "snapshot_id": "local-download-2026-10-20",
-  "publisher_release": null,
-  "publisher_release_date": null,
+  "publisher_release": "unknown",
+  "publisher_release_date": "unknown",
   "downloaded_date_as_supplied": "2026-10-20",
   "download_date_is_publisher_release": false,
   "source_page": "http://xteam.xbio.top/ACT/download.jsp",
@@ -65,5 +65,30 @@
       "sha256": "0565a6387a72292d844b32a0624fa6b26528126dbd915a69647b696c95ee632c",
       "original_sha256": "fc9e4a3cdb0a9e2f7b89e70de915e9a92bec88bd3a5c990d42405f03757ac475"
     }
-  ]
+  ],
+  "license_terms": "unknown",
+  "license_url": "unknown",
+  "provenance_review": {
+    "reviewed_date": "2026-10-21",
+    "download_date_basis": "Supplied download README records 2026-10-20; not a publisher release date.",
+    "publisher_version_status": "No publisher version verified for these exact downloaded bytes.",
+    "snapshot_license_status": "unknown",
+    "article_url": "https://link.springer.com/article/10.1186/s13073-023-01249-5",
+    "article_license": "CC-BY-4.0; article states CC0 for article data unless otherwise credited.",
+    "license_scope_limit": "Applicability to the exact separately downloaded ACT website snapshot has not been established; article terms are not assigned to this snapshot.",
+    "source_checks": [
+      {
+        "url": "http://xteam.xbio.top/ACT/download.jsp",
+        "result": "Direct HTTP download page retrieved on 2026-10-21; copyright footer present, but no snapshot-specific licence or publisher version identified. Earlier web-tool fetch unavailable."
+      },
+      {
+        "url": "http://biocc.hrbmu.edu.cn/ACT/download.jsp",
+        "result": "Direct HTTP download page retrieved on 2026-10-21; copyright footer present, but no snapshot-specific licence or publisher version identified. Earlier web-tool fetch unavailable."
+      },
+      {
+        "url": "https://link.springer.com/article/10.1186/s13073-023-01249-5",
+        "result": "publisher article retrieved; cites both ACT server URLs and article-specific rights"
+      }
+    ]
+  }
 }

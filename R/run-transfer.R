@@ -1,4 +1,4 @@
-.sc_run_prompt_version <- function() "aggregate-review.v2"
+.sc_run_prompt_version <- function() "aggregate-review.v3"
 
 # Transfer consent never grants scientific approval. The exact payload remains
 # visible and hashed even when a creation-time scope permits another dispatch.

@@ -416,6 +416,41 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     "Absence from the supplied top-marker list (including a top-30 list) is not absent or low expression. Do not invent negative expression or cross-lineage facts; cross-lineage warnings require explicit lineage declarations.",
     "Local database scoring/ranking is expression-marker coverage only and is not reranked or restricted by parent labels. Agreement between branches sharing parent context is not independent biological replication.")
   payload_evidence <- evidence
+  if (kind == "strategy") {
+    # QC and strategy views both retain these complete aggregates locally.
+    # Serialize exact duplicates once, with explicit aliases; unique evidence
+    # and the original evidence hash remain unchanged.
+    aliases <- list()
+    pairs <- c(biology = "biology", mad = "qc_mad")
+    for (nested in names(pairs)) {
+      canonical <- unname(pairs[[nested]])
+      value <- payload_evidence[[canonical]]
+      if (is.list(payload_evidence$quality) && !is.null(value) &&
+          identical(payload_evidence$quality[[nested]], value)) {
+        payload_evidence$quality[[nested]] <- NULL
+        aliases[[length(aliases) + 1L]] <- list(from = paste0("quality.", nested),
+          to = canonical, aggregate_hash = .sc_run_hash(value))
+      }
+    }
+    pcs <- payload_evidence$cluster_diagnostics$selected_pcs
+    if (is.list(pcs)) {
+      for (group in c("top50_candidates", "all_computed_pc_variance")) {
+        for (field in c("fraction_per_pc", "cumulative_fraction")) {
+          if (is.list(pcs[[group]]) && !is.null(pcs[[field]]) &&
+              identical(pcs[[group]][[field]], pcs[[field]])) {
+            payload_evidence$cluster_diagnostics$selected_pcs[[group]][[field]] <- NULL
+            aliases[[length(aliases) + 1L]] <- list(
+              from = paste("cluster_diagnostics.selected_pcs", group, field, sep = "."),
+              to = paste("cluster_diagnostics.selected_pcs", field, sep = "."),
+              aggregate_hash = .sc_run_hash(pcs[[field]]))
+          }
+        }
+      }
+    }
+    if (length(aliases)) payload_evidence$duplicate_evidence_projection <- list(
+      schema = "scagentkit.duplicate-evidence-projection.v1", aliases = aliases,
+      notice = "Exact duplicate aggregates are serialized once at the named canonical locations. No unique evidence is omitted; complete local review is unchanged.")
+  }
   if (kind == "strategy" && !is.null(payload_evidence$cycle_diagnostics)) {
     # Local review retains the declared lists/mapping; a remote suggestion only
     # needs aggregate coverage, scores and provenance, never the input symbols.

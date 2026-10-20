@@ -1,5 +1,14 @@
 # Development changes (unreleased)
 
+- Release preflight records explicit unknown ACT publisher version/date and
+  snapshot licensing, with source-check provenance; marker bytes are unchanged.
+- Serialize identical QC/strategy diagnostic aggregates once with explicit aliases,
+  retaining all unique evidence and the 100 KB bound. This unblocks PBMC3k
+  default startup; prompt version advances to aggregate-review.v3 and the
+  implementation hash changes.
+- Add a manual public PBMC3k ReAct smoke driver using frozen v1 input hashes,
+  explicit benchmark reviews and post-call usage/replay receipts.
+
 - Default new `sc_start` projects to ReAct auto and diagnostic-only QC/batch evidence. Preserve saved settings on reopening and allow explicit opt-outs. New startup uses post-call accounting without monetary reservation; explicit legacy budgets and existing projects keep their original mode. Mock suggestions now exercise the real read-only ReAct loop. Add a public three-gate accept-draft example and CI acceptance test, plus bilingual user guides. Scientific approvals remain separate; the implementation hash changes.
 
 - Add `sc_react_eval()` with versioned CL scoring, external label imports,

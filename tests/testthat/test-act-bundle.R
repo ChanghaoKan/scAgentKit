@@ -49,3 +49,17 @@ test_that('new modern projects snapshot the bundled default; explicit reference 
  expect_identical(.sc_run_get(own,.sc_run_load(own),'reference'),custom)
  expect_message(.sc_ui_act_default(list(species='human',tissue='__no_such_tissue__')),'no exact match')
 })
+
+test_that('ACT provenance records explicit unknowns rather than inferring website rights from the article', {
+ manifest <- .sc_act_manifest()
+ for (key in c('source_page','downloaded_date_as_supplied','publisher_release',
+               'publisher_release_date','license_terms','license_url')) {
+  expect_type(manifest[[key]], 'character')
+  expect_length(manifest[[key]], 1L)
+  expect_true(nzchar(trimws(manifest[[key]])))
+ }
+ expect_identical(manifest$publisher_release, 'unknown')
+ expect_identical(manifest$license_terms, 'unknown')
+ expect_match(manifest$provenance_review$license_scope_limit, 'has not been established')
+ expect_identical(attr(annot_act_reference('human','blood'),'license'), 'unknown')
+})
