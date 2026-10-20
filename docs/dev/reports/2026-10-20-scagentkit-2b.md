@@ -7,8 +7,9 @@ merged with all required checks passing. Core #3 merged at
 
 ## PR and commit range
 
-The stage PR and exact head will be recorded in its GitHub description after
-publication; the baseline above is fixed. Core compatibility prerequisite:
+Stage PR: [scAgentKit #19](https://github.com/ChanghaoKan/scAgentKit/pull/19).
+Implementation range: `edba33a..38b4e3b`; later documentation-only receipt commits
+are identified by the PR head. The baseline above is fixed. Core compatibility prerequisite:
 [Core #5](https://github.com/ChanghaoKan/agentomicsCore/pull/5),
 `2ccf6a9..9799ab4`, optional DeepSeek tool-call index handling. That PR's
 R-CMD-check passed; it remains unmerged. This branch pins its exact commit.
@@ -79,3 +80,28 @@ The 2A prerequisite is merged. 2B implements the main retrieval path; M1-xAI
 continues alongside it. After 2B acceptance/merge, B1/B2 can proceed alongside
 trace UI and 4E evaluation/replay. E3 discovery metrics will use these versioned
 risk fields. No formal experiment or biological benefit claim is made yet.
+
+
+## Additional verification receipts
+
+Final targeted run before the process-stop fix: 59 cases, 420 passing assertions
+and one failure exposing asynchronous worker termination. The fix waits for
+termination before allowing continuation; all 19 worker assertions then passed.
+A fresh fixed-source full suite and GitHub checks are in progress; do not count
+the earlier overlapping source/install run as valid full-suite evidence.
+
+Authorized DeepSeek synthetic engine runs exercised all four read-only tools.
+A deliberately three-call tool bound caused step_limit fallback (2 provider
+requests, 3 tool calls, 5.487 seconds). With default six limits, two independent
+new-project runs each used 3 provider requests / 4 tools (~8.4 seconds) and
+returned invalid_draft fallback. The captured diagnostic response included
+prose before JSON and cited ACT lookup as marker support. The first fails the
+JSON contract; the second is independently inadmissible under the marker-only
+citation rule. The baseline Unknown was retained and never approved. No
+uncertain request was retried. These demonstrate real fallback behavior, not
+successful DeepSeek final-draft qualification or biological accuracy.
+
+Raw per-call usage is committed in ../benchmarks/provider-smoke/; DeepSeek
+returned no explicit monetary cost, so it remains unknown. No further provider
+requests are needed to diagnose this result. The Grok integrated successful
+synthetic draft is reported separately in M1-xAI, not attributed to this branch.

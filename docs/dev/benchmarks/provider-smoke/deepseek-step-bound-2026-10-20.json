@@ -1,0 +1,63 @@
+{
+  "schema": "scagentkit.react-engine-smoke.v1",
+  "model": "deepseek-flash",
+  "scope": "Synthetic aggregate fixture; no biological validation",
+  "status": "completed",
+  "elapsed_seconds": 5.487,
+  "tool_calls": 3,
+  "clusters": {
+    "0": {
+      "status": "fallback",
+      "fallback_reason": "step_limit",
+      "label": "Unknown",
+      "tool_names": [
+        "cluster_context",
+        "cluster_markers",
+        "act_lookup"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 2353,
+        "output_tokens": 94,
+        "cached_tokens": 0
+      },
+      "cost_state": "unknown",
+      "delivery": "received",
+      "raw_usage": {
+        "prompt_tokens": 2353,
+        "completion_tokens": 94,
+        "total_tokens": 2447,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 2353
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 4600,
+        "output_tokens": 146,
+        "cached_tokens": 2432
+      },
+      "cost_state": "unknown",
+      "delivery": "received",
+      "raw_usage": {
+        "prompt_tokens": 4600,
+        "completion_tokens": 146,
+        "total_tokens": 4746,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 2168
+      }
+    }
+  ],
+  "approved": false
+}
