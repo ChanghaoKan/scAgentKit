@@ -120,3 +120,9 @@ remaining allowance (and audited). Thus a resumed/strict-approved payload cannot
 reuse its original longer relative timeout. Exact payload consent stays stable;
 expired requests are confirmed not_sent. This closes a recovery-time boundary,
 without adding monetary controls or retries.
+
+## Release dependency integration
+
+Maintainer accepted the stage report and authorized integration. Core #4 and #5 are merged; [v0.3.0](https://github.com/ChanghaoKan/agentomicsCore/releases/tag/v0.3.0) targets `53b9faddd2fc37dd027f85823b364b928d145e62`. DESCRIPTION now requires >=0.3.0 and Remotes uses that immutable release tag.
+
+The immutable installed full suite at 93d3840 recorded 9,263 passing assertions and one source-only uniqueness-test failure (no R source files in the installed lazy-load directory). Split that test so installed behavior still runs and only the source scan skips when sources are absent; the actual source scan separately passes. The release-dependent transport/loop/manual/runtime regression also passed. No production scientific code changes in this integration. Current exact-head CI receipts are in the PR description.
