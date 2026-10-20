@@ -1,0 +1,139 @@
+{
+  "schema": "scagentkit.react-engine-smoke.v1",
+  "model": "grok-4.7",
+  "scope": "Synthetic aggregate fixture; no biological validation",
+  "status": "completed",
+  "elapsed_seconds": 74.82,
+  "tool_calls": 4,
+  "clusters": {
+    "0": {
+      "status": "completed",
+      "fallback_reason": null,
+      "label": "Unknown",
+      "tool_names": [
+        "cluster_context",
+        "cluster_markers",
+        "act_lookup",
+        "act_lookup"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 3481,
+        "output_tokens": 119,
+        "cached_tokens": 1152
+      },
+      "cost_state": "known",
+      "cost_usd": 0.0059,
+      "delivery": "received",
+      "raw_usage": {
+        "input_tokens": 3481,
+        "input_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "output_tokens": 119,
+        "output_tokens_details": {
+          "reasoning_tokens": 106
+        },
+        "total_tokens": 3600,
+        "cost_in_usd_ticks": 59480000
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 3985,
+        "output_tokens": 57,
+        "cached_tokens": 3456
+      },
+      "cost_state": "known",
+      "cost_usd": 0.0031,
+      "delivery": "received",
+      "raw_usage": {
+        "input_tokens": 3985,
+        "input_tokens_details": {
+          "cached_tokens": 3456
+        },
+        "output_tokens": 57,
+        "output_tokens_details": {
+          "reasoning_tokens": 40
+        },
+        "total_tokens": 4042,
+        "cost_in_usd_ticks": 31280000
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 5835,
+        "output_tokens": 131,
+        "cached_tokens": 3968
+      },
+      "cost_state": "known",
+      "cost_usd": 0.0065,
+      "delivery": "received",
+      "raw_usage": {
+        "input_tokens": 5835,
+        "input_tokens_details": {
+          "cached_tokens": 3968
+        },
+        "output_tokens": 131,
+        "output_tokens_details": {
+          "reasoning_tokens": 41
+        },
+        "total_tokens": 5966,
+        "cost_in_usd_ticks": 65040000
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 6304,
+        "output_tokens": 317,
+        "cached_tokens": 5760
+      },
+      "cost_state": "known",
+      "cost_usd": 0.0059,
+      "delivery": "received",
+      "raw_usage": {
+        "input_tokens": 6304,
+        "input_tokens_details": {
+          "cached_tokens": 5760
+        },
+        "output_tokens": 317,
+        "output_tokens_details": {
+          "reasoning_tokens": 276
+        },
+        "total_tokens": 6621,
+        "cost_in_usd_ticks": 58700000
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 6871,
+        "output_tokens": 4493,
+        "cached_tokens": 6272
+      },
+      "cost_state": "known",
+      "cost_usd": 0.0313,
+      "delivery": "received",
+      "raw_usage": {
+        "input_tokens": 6871,
+        "input_tokens_details": {
+          "cached_tokens": 6272
+        },
+        "output_tokens": 4493,
+        "output_tokens_details": {
+          "reasoning_tokens": 4071
+        },
+        "total_tokens": 11364,
+        "cost_in_usd_ticks": 312920000
+      }
+    }
+  ],
+  "approved": false
+}

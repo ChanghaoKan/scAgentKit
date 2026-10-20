@@ -73,3 +73,9 @@ output 165、total 3093、reasoning 134（不重复加到 total），费用由�
 
 scAgentKit M1 原生会话与 2B 集成仍为独立草稿；完整公开数据验收和 CASSIA
 真实 preset 尚未完成，不标为产品正式支持，也不将开发参数写成正式实验冻结值。
+
+随后 scAgentKit 原生引擎合成冒烟（`d1e1ebf`）通过：5 轮、4 次本地工具调用、
+74.820 秒，合法 Unknown 草稿且未批准。输入 26476、输出 5117、total 31593；
+这些实际返回的 reasoning 4534 已包含在 output 中，不重复相加。原始 ticks
+合计 527420000，即 $0.052742。[逐轮记录](../../../docs/dev/benchmarks/provider-smoke/grok-engine-2026-10-20.json)。
+该结果增加了产品引擎协议证据，未完成公开真实数据验证或正式实验资格。

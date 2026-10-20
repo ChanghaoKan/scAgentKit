@@ -57,3 +57,18 @@ unknown values stay unknown. No estimate or monetary cap is introduced.
 2B is the primary merge path; this parallel M1-xAI change provides the main
 matrix's second-provider foundation. After 2B, B1/B2 can run alongside UI/4E.
 No formal experiment, annotation-accuracy result or ACT/ReAct benefit is claimed.
+
+## Native engine live smoke follow-up
+
+At integration commit `d1e1ebf`, authorized synthetic one-cluster refinement
+completed with grok-4.7: 5 model turns, 4 tool calls, 74.820 seconds. The final
+Unknown draft passed schema/risk/citation validation and remained unapproved.
+Actual raw usage totals: input 26,476; output 5,117; total 31,593; reasoning
+4,534 is a subset in these actual responses and is not added again. Raw USD
+ticks sum to 527,420,000 ($0.052742). The committed JSON preserves per-response
+raw ticks; rounded ledger display amounts are not used to reconstruct cost.
+
+No private biological data, held-out data or accuracy experiment was used.
+This demonstrates the integrated protocol path, not real-data annotation
+quality. The earlier Core-only smoke is separate. The model qualification
+status remains pre-release until the public-data/product checks are complete.
