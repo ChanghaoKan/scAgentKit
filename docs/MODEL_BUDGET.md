@@ -16,6 +16,23 @@ consent requires an explicitly stated cap (for example `budget=1`); an omitted
 budget cannot silently confirm the default cap. No usable key means no
 provider request. Scientific approvals remain separate from transmission.
 
+## Annotation evidence checks
+
+Structured annotation evidence checks record token usage and available costs
+**after each call**. They do not require input-token estimates, prepaid
+reservations, or a monetary ceiling. Missing cost information is reported as
+unknown, never as zero. Evaluation compares the resulting costs across methods.
+The existing one-shot request budget described below is unchanged and does not
+cap these evidence-checking turns; the confirmed transfer scope says so.
+
+注释查证只在调用后记录 token 和可获得的费用，不做调用前费用估算或费用封顶。
+无法确认的费用标为未知，最终与其他方法按同一口径比较。
+
+Step limits, timeouts, whole-conversation privacy checks and human scientific
+approval still apply. Uncertain delivery is never automatically resent.
+This is the internal session foundation; the ReAct loop is not yet connected
+to the analysis flow.
+
 ## Calibration and conservative allowance
 
 On 2026-10-19, one repaired workflow using public SeuratObject `pbmc_small`

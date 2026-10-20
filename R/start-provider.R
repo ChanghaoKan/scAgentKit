@@ -43,7 +43,16 @@
   if (!is.null(review$transfer_consent)) {
     if (budget_was_default) stop("Project transfer consent requires an explicit USD cap. Review the default and data categories, then supply budget=1 or another chosen cap.", call. = FALSE)
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
-    invisible(.sc_run_transfer_options(review$transfer_consent, metadata, budget))
+    consent <- .sc_run_transfer_options(review$transfer_consent, metadata, budget)
+    scope <- consent$react_scope$policy
+    message("Confirmed project transfer scope: ", metadata$name, " / ", metadata$model,
+      "; one-shot budget USD ", format(budget, scientific = FALSE, trim = TRUE),
+      ". Annotation evidence checks may send aggregate marker, expression, QC, design and ACT reference summaries",
+      " using these read-only tools: ", paste(unlist(scope$tools, use.names = FALSE), collapse = ", "),
+      ". Limits: ", scope$max_steps_per_cluster, " turns per cluster, ", scope$max_steps,
+      " turns per session",
+      ". No cell IDs, cell-level matrices or local paths. Saving a draft never approves it.",
+      " Annotation evidence checks record usage and cost after calls; they have no monetary cap.")
   }
   list(provider = metadata, budget = budget, review = review)
 }

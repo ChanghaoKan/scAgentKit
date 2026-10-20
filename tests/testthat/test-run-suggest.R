@@ -205,6 +205,22 @@ test_that("unknown delivery and interrupted reservations never automatically rep
   expect_length(.sc_run_provider_read(file.path(g$root, "provider", "ledger.json"))$entries, 1L)
 })
 
+test_that("post-call annotation costs do not reduce the one-shot allowance", {
+  f <- suggestion_fixture(TRUE, budget = .05)
+  on.exit(unlink(f$root, recursive = TRUE))
+  dir.create(file.path(f$root, "provider"), showWarnings = FALSE)
+  ledger <- list(schema = "scagentkit.provider-ledger.v1", entries = list(
+    list(request_hash = strrep("a", 64), cost_mode = "posthoc",
+      cost_state = "known", charged_or_held_usd = 2),
+    list(request_hash = strrep("b", 64), cost_state = "known", charged_or_held_usd = .01)))
+  .sc_run_provider_write(ledger, file.path(f$root, "provider", "ledger.json"))
+  view <- sc_run_suggest(f$root, "preview", simulate = FALSE)
+  expect_equal(view$preview$remaining_usd, .04)
+  expect_equal(view$preview$known_cost_usd, .01)
+  expect_equal(view$preview$held_usd, 0)
+  expect_length(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 2L)
+})
+
 test_that("budget stops before callbacks and manual configuration cannot be enabled by simulation", {
   f <- suggestion_fixture(TRUE, budget = .005); on.exit(unlink(f$root, recursive = TRUE))
   approved <- suggestion_action(f, "approve", simulate = FALSE)

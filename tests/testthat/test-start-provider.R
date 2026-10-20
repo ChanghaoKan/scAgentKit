@@ -55,3 +55,21 @@ test_that("reopening cannot silently replace saved provider or transfer policy",
   expect_error(.sc_start_provider_setup(budget = 1, saved = saved), "saved provider")
   expect_error(.sc_start_provider_setup(review = list(allow_external = FALSE), saved = saved), "saved provider")
 })
+
+test_that("creation displays the bounded annotation scope without another confirmation", {
+  start_provider_clean_environment()
+  review <- list(allow_external = TRUE, transfer_consent = list(mode = "project",
+    confirmed = TRUE, reviewer = "fixture", reason = "Review aggregate transfer and cost.",
+    categories = c("study_context", "aggregate_qc", "aggregate_markers",
+      "aggregate_design", "aggregate_expression")))
+  text <- paste(capture.output(value <- .sc_start_provider_setup(
+    list(name = "mock", model = "offline"), budget = .8, review = review),
+    type = "message"), collapse = " ")
+  expect_match(text, "USD 0.8", fixed = TRUE)
+  expect_match(text, "6 turns per cluster, 60 turns per session", fixed = TRUE)
+  expect_match(text, "cluster_markers", fixed = TRUE)
+  expect_match(text, "Saving a draft never approves it", fixed = TRUE)
+  expect_match(text, "no monetary cap", fixed = TRUE)
+  expect_identical(value$review, review)
+  expect_equal(value$budget, .8)
+})

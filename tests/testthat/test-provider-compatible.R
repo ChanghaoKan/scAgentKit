@@ -62,7 +62,7 @@ test_that("existing agentomicsCore generic factory works with mocked HTTP only",
     httr2::response(status_code = 200, method = "POST", url = req$url,
       headers = list(`content-type` = "application/json"),
       body = charToRaw(as.character(jsonlite::toJSON(list(id = "fixture-response",
-        choices = list(list(message = list(content = content), finish_reason = "stop")),
+        choices = list(list(message = list(role = "assistant", content = content), finish_reason = "stop")),
         usage = list(prompt_tokens = 10, completion_tokens = 5)), auto_unbox = TRUE))))
   }, .package = "httr2")
   provider <- compatible_provider(); request <- compatible_request(provider)

@@ -117,7 +117,9 @@
     can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE, can_review_conflicts = FALSE)
   if (!is.null(context$blocked_reason)) return(result)
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
-  entries <- ledger$entries
+  # This preview is for the existing one-shot request allowance. ReAct usage
+  # remains in the same ledger, but its post-call costs do not spend that cap.
+  entries <- Filter(function(entry) !identical(entry$cost_mode, "posthoc"), ledger$entries)
   amount <- function(field, known = NULL) sum(vapply(entries, function(entry) {
     if (!is.null(known) && !identical(identical(entry$cost_state, "known"), known)) return(0)
     value <- entry[[field]]; if (is.null(value)) 0 else value
