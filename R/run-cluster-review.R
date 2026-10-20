@@ -65,6 +65,7 @@
     adjacent_splits = .sc_run_adjacent_split_markers(seu,config,assignments),
     interpretation = "No resolution is automatically recommended. Review transitions, marker contrasts and sample composition; optional model suggestions require explicit existing transfer approval, and the author approves the final selection.")
   if (!is.null(config$scientific_review)) result$scientific_diagnostics <- .sc_run_science_diagnostics(seu,config,plan)
+  if (!is.null(execution$batch$biology)) result$batch_biology <- execution$batch$biology
   result$hash <- .sc_run_hash(result)
   result
 }

@@ -61,7 +61,7 @@
 
 .sc_run_qc_preview_build <- function(proposal, evidence, sensitivity = list(),
                                      gene_panels = list()) {
-  if (identical(proposal$schema, "scagentkit.qc.rules.v1"))
+  if (isTRUE(proposal$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
     return(.sc_run_qc_rules_preview_build(proposal, evidence, sensitivity, gene_panels))
   if (identical(proposal$schema, "scagentkit.qc.mad.v1"))
     return(.sc_run_mad_preview_build(proposal, evidence, sensitivity, gene_panels))
@@ -270,6 +270,8 @@
       }))
   })
   result <- list(schema = "scagentkit.qc.preview.v1", evidence_hash = validated$evidence_hash,
+    diagnostic_replacements = if (is.null(validated$summary$effective_thresholds)) NULL else
+      validated$summary[c("effective_thresholds", "replacement_impact")],
     canonical_parameters = list(proposal = validated$proposal,
       sensitivity = lapply(candidates, function(candidate) list(id = candidate$id, proposal = candidate$validated$proposal)),
       gene_panels = panels$parameters), retention = validated$retention,

@@ -1,5 +1,14 @@
 # Development changes (unreleased)
 
+- Add opt-in biological diagnostics before the first strategy review: separate
+  coarse clustering, cluster-specific QC comparisons and deterministic marker
+  eligibility for threshold relaxation. Typed QC v2 replaces only the specified
+  cluster/metric bounds after human approval. Final PCA is recomputed.
+- Add sample-aware batch necessity evidence and separate technical mixing,
+  fixed-label purity and replicate-aware condition measurements on the approved
+  PCA/Harmony embeddings. Add first-gate structured risk records, bound to the
+  diagnostic checkpoint. Diagnostic thresholds still need development-set
+  calibration before formal experiments. Implementation hashes change.
 - Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
 - Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
 - Require released agentomicsCore v0.3.0. The user-facing `sc_start` default, trace UI and offline replay remain later stages.
