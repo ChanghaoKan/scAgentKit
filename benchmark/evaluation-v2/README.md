@@ -1,6 +1,14 @@
 # Evaluation v2 — implementation contract
 
-**E0: approved documents only. No runner, injector, model experiment or formal result is supplied by this PR.** The scientific and scoring contract is [the v2 protocol](../../docs/dev/EVALUATION_PROTOCOL_V2.md); implementation order and the paper/1.0 split are in [the milestone plan](../../docs/dev/PAPER_MILESTONE_PLAN.md).
+**E0 is approved; the 4E scoring adapter is available in development. No runner, injector or formal model result is supplied yet.** The scientific and scoring contract is [the v2 protocol](../../docs/dev/EVALUATION_PROTOCOL_V2.md); implementation order and the paper/1.0 split are in [the milestone plan](../../docs/dev/PAPER_MILESTONE_PLAN.md).
+
+`evaluate_react.R` is a thin adapter to the package's versioned `sc_react_eval`.
+Use prepared inputs and named sections from `evaluation-v1/label-map.json`;
+historical `evaluation-v1/evaluate.py` and its outputs are unchanged. Coarse
+historical names that do not map exactly to CL remain unmapped until a
+dataset-specific mapping is frozen. Do not silently invent subtype mappings.
+See the [user guide](../../docs/REACT_EVALUATION.md) for denominators, dual truth,
+external predictions and API-free replay.
 
 This repository-only framework is excluded from the R package. Reuse `benchmark/evaluation-v1/prepare_inputs.R`, existing counts-only preparation and label maps, and version the existing evaluator without changing historical results. Package-level `sc_react_eval` and the framework must share one mapping/scoring definition. Do not create a benchmark-only approval function or implement new scientific behavior outside the package.
 
