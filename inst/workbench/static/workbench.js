@@ -427,7 +427,7 @@ function wbRenderAnnotation() {
     if (row.measured_expression) card.append(wbRecord("Saved measured expression and cross-sample evidence", row.measured_expression));
     const trace = wbArray(audit?.clusters).find(item => item.cluster_id === row.clusterId);
     if (trace) {
-      const details = wbNode("details"), steps = new Map();
+      const details = wbNode("details", null, {class: "wb-react-trace"}), steps = new Map();
       details.append(wbNode("summary", "Evidence checks · " + trace.tool_calls + " tool calls"));
       for (const step of wbArray(trace.tools)) {
         const item = wbNode("section", null, {id: "react-" + encodeURIComponent(row.clusterId) + "-" + step.sequence});

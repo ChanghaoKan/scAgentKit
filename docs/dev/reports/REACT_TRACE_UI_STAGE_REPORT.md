@@ -1,6 +1,6 @@
 # Stage 3 audit and workbench candidate
 
-Status: draft PR; not a release or completed browser acceptance. The PR records
+Status: draft PR #22; browser trace-display acceptance completed, not a release. The PR records
 the exact commit range against main after Core v0.3.0 and PRs #19/#20.
 
 ## Changes and reuse
@@ -32,8 +32,13 @@ Checkpoint, hash, event, atomic-write and UI rendering mechanisms are reused.
 - Workbench runtime/projection HTTP and R bridge tests: 42 passed. The initial
   run lacked the local R library path; rerunning with installed dependencies
   passed. This was an environment issue, not a relaxed assertion.
-- Full PR CI is pending. No real browser acceptance or new paid API call is
-  claimed by these checks.
+- Actual headless Chrome with the real R bridge on public pbmc_small and mock
+  provider: saved traces render, the evidence step expands, reload is durable,
+  390-pixel layout has no horizontal overflow, and state bytes remain unchanged.
+  No external requests, page errors or paid API calls. The browser test found
+  and fixed long JSON lines overflowing the narrow viewport. Complete browser
+  commands are in workbench/tests/browser_react_trace.mjs and its fixture script.
+- Previous-head PR CI passed; the browser-layout fix needs its own final-head CI.
 
 ## Acceptance and paper milestone
 
@@ -50,5 +55,6 @@ formal experiments remain outstanding.
 The display exposes saved evidence and draft rationales, not hidden reasoning.
 JSON previews are truncated; complete results remain in the checkpoint.
 The interface is the existing read-only workbench; editing and approval still
-use the existing review flow. Browser acceptance and release documentation
-remain required before marking this stage finished.
+use the existing review flow. Full final-head CI and release documentation remain required before release.
+The mock browser fixture checks trace rendering, not annotation accuracy or
+end-to-end biological decision validity.
