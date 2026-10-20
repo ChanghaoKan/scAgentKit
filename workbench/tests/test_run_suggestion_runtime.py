@@ -89,6 +89,21 @@ class SuggestionRuntimeTests(unittest.TestCase):
             time.sleep(.02)
         self.fail('Simulated worker did not reach a terminal record')
 
+    def test_cancel_is_bound_cooperative_and_does_not_redispatch(self):
+        self.mode(sleep=.5)
+        self.runtime.submit(self.payload)
+        payload = {k: v for k, v in self.payload.items() if k != "request_id"}
+        with self.assertRaises(StoreError):
+            self.runtime.operate("cancel", dict(payload, project_id="foreign"), self.runtime.csrf_token)
+        answer = self.runtime.operate("cancel", payload, self.runtime.csrf_token)
+        self.assertTrue(answer["accepted"])
+        control = json.loads((self.project/".run-controls.json").read_text())
+        self.assertTrue(control["cancel_requested"])
+        self.assertEqual(control["input_hash"], self.run["input_hash"])
+        self.terminal()
+        self.assertEqual(len(self.calls("suggestion_request")), 1)
+        self.assertEqual((self.project/"state.rds").read_bytes(), b'explicit-simulated-R-authority')
+
     def test_preview_readonly_never_dispatches_and_uses_secret_free_environment(self):
         with patch.dict(os.environ,{name:'SIMULATED-ENV-SENTINEL' for name in module.KEYS}):
             before=hashlib.sha256((self.project/'state.rds').read_bytes()).hexdigest()

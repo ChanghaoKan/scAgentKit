@@ -1,3 +1,10 @@
+## Development: trial run controls
+
+- New projects use post-call accounting through sc_start, sc_analyze and sc_run. Missing keys preserve the selected provider for later use in the same project.
+- Added project-scoped cooperative cancellation and optional logical disk allowance with immutable control receipts. Saved outputs are preserved; no process-wide termination or deletion is performed.
+- ReAct detects repeated evidence without progress and preserves remaining cluster time across completed-turn checkpoints. Existing delivery-uncertainty guards and three human approvals remain.
+- Scientific implementation hash changes; this candidate requires new test projects. No scientific thresholds or analysis algorithms changed.
+
 # Development changes (unreleased)
 
 - New ReAct policies default to unlimited application request bytes, with optional

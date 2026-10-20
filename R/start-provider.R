@@ -1,6 +1,6 @@
 # Creation-time provider selection never constructs a client or sends a request.
 # Reopening uses the saved policy even when the operator's environment changes.
-.sc_start_provider_setup <- function(provider = NULL, budget = NULL, review = NULL, saved = NULL, cost_mode = "legacy_cap", react = NULL) {
+.sc_start_provider_setup <- function(provider = NULL, budget = NULL, review = NULL, saved = NULL, cost_mode = "posthoc", react = NULL) {
   if (!is.null(saved)) {
     if ((!is.null(provider) && !identical(.sc_run_provider_spec(provider)$metadata, saved$provider)) ||
         (!is.null(budget) && !identical(as.numeric(budget), as.numeric(saved$budget))) ||
@@ -10,8 +10,8 @@
     if (identical(saved$cost_mode, "posthoc")) out$cost_mode <- "posthoc"
     return(out)
   }
+  cost_mode <- "posthoc"
   review_was_default <- is.null(review)
-  budget_was_default <- is.null(budget)
   if (!is.null(budget)) budget <- .sc_run_provider_number(budget, "budget")
   if (is.null(review)) review <- list(allow_external = FALSE)
   if (!is.list(review) || (length(review) && (is.null(names(review)) || anyDuplicated(names(review)))) ||
@@ -29,8 +29,7 @@
   if (isTRUE(metadata$external) && (!is.null(metadata$api_key_env) &&
       !nzchar(trimws(Sys.getenv(metadata$api_key_env))))) {
     message("No key is available in ", metadata$api_key_env,
-      "; starting manual mode. Set the key and select a new project to enable model suggestions.")
-    metadata <- .sc_run_provider_spec("manual")$metadata
+      "; model requests will remain unavailable until it is set. Local drafts remain available in this project.")
   }
   if (cost_mode == "posthoc") budget <- 0
   selected <- .sc_run_new_budget(metadata, budget)
@@ -50,16 +49,13 @@
   } else if (isTRUE(metadata$external)) {
     if (!isTRUE(review$allow_external))
       message("Provider configured. External transfer is disabled; set review=list(allow_external=TRUE) for a new project to enable exact-payload transfer review.")
-    if (budget == 0 && cost_mode != "posthoc")
-      message("Provider budget is zero. No paid request can run; choose an explicit USD cap after reviewing provider pricing. This provider/model/settings combination has no calibrated default; supply an explicit cap.")
   }
   if (!is.null(review$transfer_consent)) {
-    if (budget_was_default && cost_mode != "posthoc") stop("Project transfer consent requires an explicit USD cap. Review the default and data categories, then supply budget=1 or another chosen cap.", call. = FALSE)
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
     consent <- .sc_run_transfer_options(review$transfer_consent, metadata, budget, cost_mode)
     scope <- consent$react_scope$policy
     message("Confirmed project transfer scope: ", metadata$name, " / ", metadata$model,
-      if (cost_mode == "posthoc") "; usage and costs recorded after calls" else paste0("; one-shot budget USD ", format(budget, scientific = FALSE, trim = TRUE)),
+      "; usage and costs recorded after calls",
       ". Annotation evidence checks may send aggregate marker, expression, QC, design and ACT reference summaries",
       " using these read-only tools: ", paste(unlist(scope$tools, use.names = FALSE), collapse = ", "),
       ". Limits: ", scope$max_steps_per_cluster, " turns per cluster, ", scope$max_steps,

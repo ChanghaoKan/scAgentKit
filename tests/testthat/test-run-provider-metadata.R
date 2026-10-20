@@ -346,7 +346,7 @@ test_that("HTTP error status survives as safe typed error while body and usage s
   expect_identical(out$status, "delivery_uncertain")
   expect_equal(out$response_metadata$http_status, 429)
   expect_identical(out$response_metadata$request_id, "request-fixture-01")
-  expect_identical(out$cost_state, "unknown"); expect_equal(out$charged_or_held_usd, 0.05)
+  expect_identical(out$cost_state, "unknown"); expect_equal(out$charged_or_held_usd, 0)
   expect_null(out$raw); expect_null(out$content)
   json <- paste(readLines(file.path(f$root, "provider", "ledger.json")), collapse = "\n")
   expect_false(grepl("fictional-sensitive|error.message|authorization", json))

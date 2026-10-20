@@ -200,7 +200,7 @@ test_that("missing built-in keys pause after approved payload without HTTP charg
   expect_identical(unapproved$status, "awaiting_external_approval")
   grok_request$approved_payload_hash <- scAgentKit:::.sc_run_request_hash(grok_request, "grok")
   stopped <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", budget = 0, allow_external = TRUE)
-  expect_identical(stopped$status, "budget_stop")
+  expect_identical(stopped$status, "needs_provider")
   absent <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", budget = .05, allow_external = TRUE)
   expect_identical(absent$status, "needs_provider")
   expect_match(absent$error, "XAI_API_KEY")

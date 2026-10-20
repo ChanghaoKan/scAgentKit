@@ -52,7 +52,7 @@ class StartProviderConfigTests(unittest.TestCase):
             self.assertFalse((project / "provider/ledger.json").exists())
             checked = subprocess.run([rscript, "--vanilla", "-e",
                 'library(scAgentKit);s<-getFromNamespace(".sc_run_load","scAgentKit")(commandArgs(TRUE)[1]);'
-                'stopifnot(s$config$provider$name=="openai_compatible",s$config$budget==.2,'
+                'stopifnot(s$config$provider$name=="openai_compatible",s$config$budget==0,s$config$cost_mode=="posthoc",'
                 'isTRUE(s$config$review$allow_external),s$status=="awaiting_review",'
                 's$pending$kind=="strategy",length(s$approvals)==0L,is.null(s$files$analysis))',
                 str(project)], env=env, capture_output=True, timeout=30)

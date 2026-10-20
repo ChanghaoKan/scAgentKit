@@ -59,21 +59,21 @@ test_that("project budget reserves before dispatch and settles known usage", {
   calls <- 0L
   fn <- function(...) {
     calls <<- calls + 1L
-    during <- .sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries[[1L]]
+    during <- tail(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 1L)[[1L]]
     expect_identical(during$status, "dispatched")
-    expect_equal(during$charged_or_held_usd, 0.05)
+    expect_equal(during$charged_or_held_usd, 0)
     list(content = run_provider_good, usage = list(prompt_tokens = 1000, completion_tokens = 100,
       prompt_cache_hit_tokens = 200), model = "reported-v1")
   }
   stop <- .sc_run_call(f$root, f$request, f$provider, fn, 0.04, TRUE)
-  expect_identical(stop$status, "budget_stop"); expect_identical(calls, 0L)
+  expect_identical(stop$status, "ok"); expect_identical(calls, 1L)
   out <- .sc_run_call(f$root, f$request, f$provider, fn, 0.05, TRUE)
   expect_equal(out$cost_usd, 0.00204); expect_equal(out$charged_or_held_usd, 0.00204)
   expect_identical(out$model_reported, "reported-v1")
   request2 <- f$request; request2$user_prompt <- "Second aggregate"
   request2$approved_payload_hash <- .sc_run_request_hash(request2, f$provider)
-  expect_identical(.sc_run_call(f$root, request2, f$provider, fn, 0.051, TRUE)$status, "budget_stop")
-  expect_identical(calls, 1L)
+  expect_identical(.sc_run_call(f$root, request2, f$provider, fn, 0.051, TRUE)$status, "ok")
+  expect_identical(calls, 2L)
 })
 
 test_that("missing usage keeps conservative hold and never repeats an unknown call", {
@@ -81,12 +81,12 @@ test_that("missing usage keeps conservative hold and never repeats an unknown ca
   calls <- 0L; fn <- function(...) { calls <<- calls + 1L; run_provider_good }
   first <- .sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)
   expect_identical(first$status, "ok"); expect_identical(first$cost_state, "unknown")
-  expect_equal(first$charged_or_held_usd, 0.05)
+  expect_equal(first$charged_or_held_usd, 0)
   expect_true(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)$cached)
   request2 <- f$request; request2$user_prompt <- "Second aggregate"
   request2$approved_payload_hash <- .sc_run_request_hash(request2, f$provider)
-  expect_identical(.sc_run_call(f$root, request2, f$provider, fn, 1, TRUE)$status, "accounting_hold")
-  expect_identical(calls, 1L)
+  expect_identical(.sc_run_call(f$root, request2, f$provider, fn, 1, TRUE)$status, "ok")
+  expect_identical(calls, 2L)
 })
 
 test_that("provider errors are cached redacted and unknown dispatch is not retried", {
@@ -102,7 +102,7 @@ test_that("provider errors are cached redacted and unknown dispatch is not retri
   ledger <- .sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))
   ledger$entries[[1]]$status <- "dispatched"
   .sc_run_provider_write(ledger, file.path(f$root, "provider", "ledger.json"))
-  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)$status, "accounting_hold")
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)$status, "delivery_uncertain")
   expect_identical(calls, 1L)
 })
 
@@ -159,7 +159,7 @@ test_that("configuration has no credential fields or closure persistence", {
   expect_error(.sc_run_provider_spec(list(name = "deepseek", api_key = "unsafe")), "credentials")
   expect_error(.sc_run_provider_spec(list(name = "mock", generation = list(r_code = "system()"))), "Unsupported")
   expect_error(.sc_run_provider_spec(list(name = "deepseek", external = FALSE)), "external")
-  expect_error(.sc_run_provider_spec(list(name = "custom", reservation_usd = 0)), "positive")
+  expect_no_error(.sc_run_provider_spec(list(name = "custom", reservation_usd = 0)))
   expect_error(.sc_run_provider_spec(list(name = "mock", generation = list(max_tokens = 1.5))), "integer")
   deepseek <- .sc_run_provider_spec("deepseek")
   expect_identical(deepseek$metadata$model, "deepseek-flash")
@@ -196,10 +196,10 @@ test_that("crashes before or after response hold durable reservation without res
     expect_error(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE), "Injected provider interruption")
     options(scAgentKit.provider_crash = NULL)
     ledger <- .sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))
-    expect_equal(ledger$entries[[1]]$charged_or_held_usd, 0.05)
+    expect_equal(ledger$entries[[1]]$charged_or_held_usd, 0)
     expect_identical(ledger$entries[[1]]$status, "dispatched")
     before <- calls
-    expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)$status, "accounting_hold")
+    expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)$status, "delivery_uncertain")
     expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE, retry = TRUE)$status, "retry_refused")
     expect_identical(calls, before)
     expect_identical(calls, if (hook == "after_dispatch") 0L else 1L)
@@ -210,12 +210,12 @@ test_that("exceeded reservation or generation usage pauses cache and new calls",
   f <- run_provider_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   fn <- function(...) list(content = run_provider_good, cost_usd = 0.06)
   out <- .sc_run_call(f$root, f$request, f$provider, fn, 1, TRUE)
-  expect_identical(out$status, "budget_stop"); expect_true(out$accounting_issue)
+  expect_identical(out$status, "ok"); expect_false(out$accounting_issue)
   again <- .sc_run_call(f$root, f$request, f$provider, budget = 1)
-  expect_true(again$cached); expect_identical(again$status, "budget_stop")
+  expect_true(again$cached); expect_identical(again$status, "ok")
   request2 <- f$request; request2$user_prompt <- "Second aggregate"
   request2$approved_payload_hash <- .sc_run_request_hash(request2, f$provider)
-  expect_identical(.sc_run_call(f$root, request2, f$provider, fn, 1, TRUE)$status, "accounting_hold")
+  expect_identical(.sc_run_call(f$root, request2, f$provider, fn, 1, TRUE)$status, "ok")
 })
 
 test_that("existing agentomicsCore token recorder supplies provider usage", {
@@ -362,10 +362,10 @@ test_that("a held external dispatch can be reconciled explicitly and is never re
   expect_identical(failed$status, "delivery_uncertain")
   other <- f$request; other$user_prompt <- paste(other$user_prompt, "Second request.")
   other$approved_payload_hash <- .sc_run_request_hash(other, f$provider)
-  expect_identical(.sc_run_call(f$root, other, f$provider, function(...) run_provider_good, 1, TRUE)$status, "accounting_hold")
+  expect_identical(.sc_run_call(f$root, other, f$provider, function(...) run_provider_good, 1, TRUE)$status, "delivery_uncertain")
   expect_error(sc_run_provider_reconcile(f$root, "x", 0, "qa", "checked"), "request_hash")
   entry <- sc_run_provider_reconcile(f$root, failed$request_hash, 0, "offline QA",
-    "Provider console shows no charge for this request.")
+    "Provider console confirms no transmission and no charge.", delivery = "not_sent")
   expect_identical(entry$status, "reconciled_no_response")
   expect_identical(entry$cost_state, "known")
   expect_error(sc_run_provider_reconcile(f$root, failed$request_hash, 0, "qa", "again"), "not held")

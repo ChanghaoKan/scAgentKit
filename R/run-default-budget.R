@@ -1,5 +1,5 @@
-# Only this measured provider/model/output bound receives a paid default.
-# This configures a cap, never consent, client construction or dispatch.
+# Shared provider defaults. Former budget arguments are validated but do not
+# gate dispatch. Costs are recorded from actual usage, independently of consent.
 .sc_run_new_budget <- function(provider = NULL, budget = NULL, chat_fn = NULL) {
   spec <- .sc_run_provider_spec(provider, chat_fn)
   metadata <- spec$metadata
@@ -8,6 +8,7 @@
     metadata$generation$max_tokens <= 4096 && identical(metadata$generation$thinking$type, 'disabled') &&
     metadata$reservation_usd <= .05 && (is.null(metadata$pricing) || isTRUE(all.equal(metadata$pricing, rates)))
   if (eligible && is.null(metadata$pricing)) metadata$pricing <- rates
-  amount <- if (is.null(budget)) if (eligible) 1.00 else 0 else .sc_run_provider_number(budget, 'budget')
+  if (!is.null(budget)) .sc_run_provider_number(budget, "budget")
+  amount <- 0
   list(provider = metadata, budget = amount, calibrated = eligible, chat_fn = spec$fn)
 }

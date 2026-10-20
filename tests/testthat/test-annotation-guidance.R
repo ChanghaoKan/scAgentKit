@@ -88,13 +88,13 @@ test_that("guided invalid responses, uncertain delivery and insufficient budget 
       list(content="{invalid",cost_usd=.002)
     })
     expect_identical(result$status,"failed");expect_false(result$can_request);expect_false(result$can_auto_request)
-    expect_identical(calls,if(mode=="budget")0L else 1L)
+    expect_identical(calls,1L)
     expect_error(guided_action(root,"request",chat_fn=function(...)stop("must not retry")),"already attempted")
     expect_true(.sc_run_load(root)$annotation_guided_attempted)
     expect_length(.sc_run_load(root)$approvals,0L)
-    if(mode=="budget")expect_identical(result$response$status,"budget_stop")
+    if(mode=="budget")expect_identical(result$response$status,"invalid_response")
     if(mode=="invalid")expect_identical(result$response$status,"invalid_response")
-    if(mode=="uncertain")expect_gt(result$preview$held_usd,0)
+    if(mode=="uncertain")expect_identical(result$response$status,"delivery_uncertain")
   }
 })
 

@@ -85,3 +85,4 @@ test_that('configured provider without explicit plan still starts with a saved r
  expect_false(file.exists(file.path(root,'provider','ledger.json')))
  expect_match(sc_open(root)$plan$qc$rationale,'unassessed')
 })
+

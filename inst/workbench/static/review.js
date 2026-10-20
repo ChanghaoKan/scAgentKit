@@ -300,6 +300,7 @@ function draftError() {
 }
 function suggestionButtons() {
   const answer = state.suggestion, item = answer?.suggestion;
+  if ($("suggestion-cancel")) { $("suggestion-cancel").hidden = !activeSuggestion(); $("suggestion-cancel").disabled = state.suggestionBusy; }
   const idle = !!state.view && !state.busy && !state.stale && !activeJob() && !activeSuggestion() && !state.suggestionBusy && !state.suggestionChaining && !state.suggestionLost && !dirty();
   const current = idle && answer?.enabled === true && item?.revision === state.view.run.revision && hash(item?.suggestion_hash);
   $("suggestion-preview").disabled = state.view?.suggestion_enabled !== true || state.busy || activeJob() || state.suggestionBusy || state.suggestionChaining || dirty();
@@ -360,38 +361,23 @@ function suggestionSummary(candidate, kind) {
   if (candidate.doublet) parts.push("Doublets: " + candidate.doublet.method);
   return parts;
 }
-function budgetAmount(value) {
-  return Number.isFinite(value) ? "$" + (Number(value.toFixed(4)) === value ? value.toFixed(4) : String(value)) : "unavailable";
-}
-function renderNewProjectBudget() {
-  const input = $("new-project-budget"), configured = state.suggestion?.suggestion?.new_project_budget_default;
-  if (!input.dataset.initialized && Number.isFinite(configured) && configured >= 0) {
-    input.value = String(configured); input.dataset.initialized = "true";
-  }
-  const raw = input.value.trim(), amount = Number(raw);
-  const valid = raw !== "" && Number.isFinite(amount) && amount >= 0;
-  $("new-project-budget-message").textContent = valid ? `Chosen new-project cap: ${budgetAmount(amount)}. Current project unchanged; no request sent.` : "Enter a nonnegative finite USD cap; no project or request is created here.";
-  $("new-project-budget-command").textContent = valid ? `sc_start(input, "new-project", context=context, provider="deepseek", budget=${amount}, review=list(allow_external=TRUE))` : "";
-}
 function renderSuggestion() {
-  renderNewProjectBudget();
   const answer = state.suggestion, item = answer?.suggestion, preview = item?.preview, job = answer?.job;
   const section = $("run-suggestion"); section.setAttribute("data-connection", state.suggestionLost ? "lost" : "verified"); section.setAttribute("data-job-status", job?.status || "none");
   const disabled = state.view?.suggestion_enabled !== true;
   $("suggestion-status").textContent = state.suggestionLost ? "Connection unverified" : job && ["queued", "running", "failed", "interrupted", "timed_out"].includes(job.status) ? "Model task: " + job.status : item?.available === false ? "Unavailable at this step" : item?.status || (answer?.enabled === false || disabled ? "Unavailable" : "Not requested");
   $("suggestion-simulated").hidden = preview?.simulated !== true && answer?.simulated !== true;
   const provider = typeof preview?.provider === "string" ? preview.provider : preview?.provider?.name;
-  $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot change the current project’s key, endpoint, model or budget.";
+  $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot change the current project’s key, endpoint, model.";
   if (preview) {
     const usd = value => Number.isFinite(value) ? "$" + value.toFixed(4) : "unavailable";
-    if (preview.cost_mode === "posthoc") $("suggestion-summary").textContent += ` Recorded cost ${usd(preview.known_cost_usd)}. Usage is recorded after calls; missing cost is unknown. No monetary cap or reservation.`;
-    else $("suggestion-summary").textContent += ` Budget ${budgetAmount(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
+    $("suggestion-summary").textContent += ` Recorded cost ${usd(preview.known_cost_usd)}. Usage is recorded after calls; missing cost is unknown. No monetary cap or reservation.`;
   }
   $("suggestion-notice").textContent = preview?.notice || "";
   const savedScope = preview?.transfer_consent?.schema === "scagentkit.transfer-consent.v2" ? preview.transfer_consent.react_scope?.policy : null;
   if (savedScope && Array.isArray(savedScope.tools) && savedScope.tools.every(name => typeof name === "string") &&
       Number.isFinite(savedScope.max_steps_per_cluster) && Number.isFinite(savedScope.max_steps)) {
-    $("suggestion-notice").textContent += ` Saved annotation transfer scope: read-only ${savedScope.tools.join(", ") || "no tools"}; ACT evidence ${savedScope.act_enabled === true ? "on" : "off"}; ${savedScope.max_payload_bytes} bytes per request/conversation (scan uses remaining request space); ${savedScope.cluster_timeout_seconds} seconds per cluster, ${savedScope.tool_timeout_seconds} seconds per tool; up to ${savedScope.max_steps_per_cluster} turns per cluster and ${savedScope.max_steps} per session. Only aggregate marker, expression, QC, design and reference evidence may be sent. No cell IDs, cell-level matrices or local paths. Annotation evidence checks record usage and cost after calls; they have no monetary cap. ${preview.cost_mode === "posthoc" ? "One-shot drafts also use post-call accounting." : "The one-shot budget shown above is unchanged."} Saving a draft never approves it. This scope does not itself start an evidence-checking session.`;
+    $("suggestion-notice").textContent += ` Saved annotation transfer scope: read-only ${savedScope.tools.join(", ") || "no tools"}; ACT evidence ${savedScope.act_enabled === true ? "on" : "off"}; ${savedScope.max_payload_bytes} bytes per request/conversation (scan uses remaining request space); ${savedScope.cluster_timeout_seconds} seconds per cluster, ${savedScope.tool_timeout_seconds} seconds per tool; up to ${savedScope.max_steps_per_cluster} turns per cluster and ${savedScope.max_steps} per session. Only aggregate marker, expression, QC, design and reference evidence may be sent. No cell IDs, cell-level matrices or local paths. Annotation evidence checks record usage and cost after calls; they have no monetary cap. One-shot drafts also use post-call accounting. Saving a draft never approves it. This scope does not itself start an evidence-checking session.`;
   }
   if (preview?.resource_limits) $("suggestion-notice").textContent += ` Application request byte quota: ${preview.resource_limits.request_bytes}. ${preview.resource_limits.context_notice}`;
   if (answer?.operator_limits) $("suggestion-notice").textContent += ` Whole request worker: ${answer.operator_limits.whole_worker_seconds} seconds.`;
@@ -427,7 +413,7 @@ function renderSuggestion() {
   $("suggestion-disclosure-status").textContent = $("suggestion-status").textContent;
   $("suggestion-job-details").hidden = !job; $("suggestion-job-id").textContent = job?.job_id || "";
   $("suggestion-payload").replaceChildren(preview ? raw({model: preview.model, generation: preview.generation, provider: preview.provider, transfer_consent: preview.transfer_consent, external: preview.external, simulated: preview.simulated, system_prompt: preview.system_prompt, user_prompt: preview.user_prompt}) : element("p", "No exact request preview is available.", {class: "review-empty"}));
-  $("suggestion-accounting").replaceChildren(raw(preview ? {budget_usd: preview.budget, remaining_usd: preview.remaining_usd, consent_mode: preview.consent_mode, reservation_usd: preview.reservation_usd, charged_or_held_usd: preview.charged_or_held_usd, known_cost_usd: preview.known_cost_usd, held_usd: preview.held_usd, response: response ? {status: response.status, cached: response.cached, cost_state: response.cost_state, cost_usd: response.cost_usd, charged_or_held_usd: response.charged_or_held_usd, usage: response.usage, response_metadata: response.response_metadata} : null} : {status: "No request accounting is available."}));
+  $("suggestion-accounting").replaceChildren(raw(preview ? {consent_mode: preview.consent_mode, charged_or_held_usd: preview.charged_or_held_usd, known_cost_usd: preview.known_cost_usd, held_usd: preview.held_usd, response: response ? {status: response.status, cached: response.cached, cost_state: response.cost_state, cost_usd: response.cost_usd, charged_or_held_usd: response.charged_or_held_usd, usage: response.usage, response_metadata: response.response_metadata} : null} : {status: "No request accounting is available."}));
   const fingerprints = $("suggestion-fingerprints"); fingerprints.replaceChildren();
   for (const [name, value] of Object.entries({project_id: item?.project_id, input_hash: item?.input_hash, revision: item?.revision, suggestion_hash: item?.suggestion_hash, request_hash: preview?.request_hash})) fingerprints.append(element("span", name), element("code", value == null ? "Unavailable" : value));
   $("suggestion-candidate-details").hidden = !item?.candidate; $("suggestion-candidate-json").replaceChildren(item?.candidate ? raw(item.candidate) : element("p", "No typed candidate."));
@@ -447,6 +433,7 @@ async function suggestionRequest(action = null, payload = null) {
     const route = "/api/run-review/suggestion" + (action ? "/" + action : "");
     const response = await fetch(scopedRunURL(route), action ? {method: "POST", headers: projectHeaders({"Content-Type": "application/json", "X-ScAgentKit-Suggestion-Token": state.suggestion?.csrf_token || state.view.csrf_token}), body: JSON.stringify(payload || {}), signal: controller.signal} : {cache: "no-store", headers: projectHeaders(), signal: controller.signal});
     const answer = await response.json(); if (!response.ok) throw new Error(answer?.error || "The saved model suggestion could not be verified.");
+    if (action === "cancel") { if (answer?.accepted !== true || typeof answer.message !== "string") throw new Error("Cancellation was not acknowledged"); return answer; }
     return verifySuggestion(answer);
   } finally {clearTimeout(timer);}
 }
@@ -1994,7 +1981,6 @@ $("strategy-json").addEventListener("input", () => {state.strategyDraftText = $(
 for (const [id, action] of [["strategy-save", "revise"], ["strategy-approve", "approve"], ["strategy-reject", "reject"]]) $(id).addEventListener("click", () => decideStrategy(action));
 $("strategy-approve-continue").addEventListener("click", () => decideStrategy("approve", true));
 $("annotation-approve-continue").addEventListener("click", () => decide("approve", true));
-$("new-project-budget").addEventListener("input", renderNewProjectBudget);
 $("suggestion-preview").addEventListener("click", loadSuggestion);
 $("suggestion-approve").addEventListener("click", () => suggestionAction("approve", false, true));
 for (const [id, action] of [["suggestion-request", "request"], ["suggestion-adopt", "adopt"], ["suggestion-discard", "discard"], ["suggestion-conflicts", "review_conflicts"]]) $(id).addEventListener("click", () => suggestionAction(action));
@@ -2016,6 +2002,17 @@ $("storage-refresh")?.addEventListener("click", async () => {
     if (!response.ok) throw new Error("Storage measurement unavailable");
     out.textContent = `${value.partial ? "Partial lower bound: " : ""}${(value.logical_bytes / 1048576).toFixed(1)} MiB in ${value.files} files. ${value.skipped_links} links skipped. ${value.notice}`;
   } catch (error) { out.textContent = error.message; }
+});
+
+$("suggestion-cancel")?.addEventListener("click", async () => {
+  const job = state.suggestion?.job;
+  if (!activeSuggestion() || !job) return;
+  try {
+    const answer = await suggestionRequest("cancel", {project_id: job.project_id, input_hash: job.input_hash,
+      expected_revision: job.expected_revision, suggestion_hash: job.suggestion_hash,
+      reviewer: "workbench-user", reason: "User requested cancellation of this model job."});
+    state.suggestionError = answer.message; renderSuggestion();
+  } catch (error) { state.suggestionError = error.message; renderSuggestion(); }
 });
 
 load();

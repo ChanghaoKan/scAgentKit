@@ -24,5 +24,5 @@ full_llm_start <- function(input, project_dir, context, provider, budget = NULL,
 # react="all" checks every cluster; react="off" keeps the one-shot draft.
 # Strict per-payload transfer: sc_start(..., review=list(allow_external=TRUE)).
 # Missing key falls back visibly to manual mode. No call is resent automatically
-# after uncertain delivery. NULL budget uses post-call accounting; an explicit
-# budget retains the legacy capped path for compatibility with older scripts.
+# after uncertain delivery. All requests use post-call accounting; the deprecated
+# budget argument does not impose a cap.

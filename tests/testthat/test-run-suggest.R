@@ -190,7 +190,7 @@ test_that("unknown delivery and interrupted reservations never automatically rep
   calls <- 0L; fn <- function(...) { calls <<- calls + 1L; stop("Sensitive HTTP body is not retained.") }
   failed <- suggestion_action(f, "request", simulate = FALSE, view = approved, chat_fn = fn)
   expect_identical(failed$response$status, "delivery_uncertain")
-  expect_equal(failed$preview$held_usd, .01)
+  expect_equal(failed$preview$held_usd, 0)
   expect_false(grepl("Sensitive HTTP", failed$response$error, fixed = TRUE))
   again <- suggestion_action(f, "request", simulate = FALSE, view = failed, chat_fn = fn)
   expect_true(again$response$cached); expect_identical(calls, 1L)
@@ -200,10 +200,10 @@ test_that("unknown delivery and interrupted reservations never automatically rep
   interrupted <- suggestion_action(g, "request", simulate = FALSE, view = approved,
     chat_fn = function(...) stop("must not be called"))
   expect_identical(interrupted$response$status, "interrupted")
-  expect_equal(interrupted$preview$held_usd, .01)
+  expect_equal(interrupted$preview$held_usd, 0)
   hold <- suggestion_action(g, "request", simulate = FALSE, view = interrupted,
     chat_fn = function(...) stop("must not be called"))
-  expect_identical(hold$response$status, "accounting_hold")
+  expect_identical(hold$response$status, "delivery_uncertain")
   expect_length(.sc_run_provider_read(file.path(g$root, "provider", "ledger.json"))$entries, 1L)
 })
 
@@ -217,8 +217,8 @@ test_that("post-call annotation costs do not reduce the one-shot allowance", {
     list(request_hash = strrep("b", 64), cost_state = "known", charged_or_held_usd = .01)))
   .sc_run_provider_write(ledger, file.path(f$root, "provider", "ledger.json"))
   view <- sc_run_suggest(f$root, "preview", simulate = FALSE)
-  expect_equal(view$preview$remaining_usd, .04)
-  expect_equal(view$preview$known_cost_usd, .01)
+  expect_null(view$preview$remaining_usd)
+  expect_equal(view$preview$known_cost_usd, 2.01)
   expect_equal(view$preview$held_usd, 0)
   expect_length(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 2L)
 })
@@ -227,9 +227,9 @@ test_that("budget stops before callbacks and manual configuration cannot be enab
   f <- suggestion_fixture(TRUE, budget = .005); on.exit(unlink(f$root, recursive = TRUE))
   approved <- suggestion_action(f, "approve", simulate = FALSE)
   out <- suggestion_action(f, "request", simulate = FALSE, view = approved,
-    chat_fn = function(...) stop("must not dispatch"))
-  expect_identical(out$response$status, "budget_stop")
-  expect_false(file.exists(file.path(f$root, "provider", "ledger.json")))
+    chat_fn = function(...) list(content="{invalid", cost_usd=.001))
+  expect_identical(out$response$status, "invalid_response")
+  expect_true(file.exists(file.path(f$root, "provider", "ledger.json")))
   manual <- suggestion_fixture(provider_name = "manual")
   on.exit(unlink(manual$root, recursive = TRUE), add = TRUE)
   preview <- sc_run_suggest(manual$root, "preview")

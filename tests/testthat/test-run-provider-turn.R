@@ -39,7 +39,7 @@ test_that("session authority is committed state, never a self hash or caller bud
   fabricated <- f$request; fabricated$session$prompt_version <- "tampered.v1"
   fabricated$session$hash <- .sc_run_provider_hash(fabricated$session[setdiff(names(fabricated$session), "hash")])
   expect_error(turn_call(f, fabricated), "committed scientific session")
-  expect_error(.sc_run_call(f$root, f$request, f$provider, function(...) turn_reply(), budget = 2), "budget")
+  expect_error(.sc_run_call(f$root, f$request, f$provider, function(...) turn_reply(), budget = 2, allow_external = TRUE), "external-transfer")
   state <- .sc_run_load(f$root); saved <- .sc_run_get(f$root, state, "analysis")
   saved$seurat_clusters[1] <- "1"; state <- .sc_run_put(f$root, state, "analysis", saved)
   .sc_run_save(f$root, state)

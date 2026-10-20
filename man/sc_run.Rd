@@ -25,7 +25,7 @@ sc_run(input, project_dir, context = list(), provider = NULL,
   doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
   subcluster_origin = NULL, subcluster_creation = NULL,
   .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
-  biological_diagnostics = NULL, cost_mode = c("legacy_cap", "posthoc"))
+  biological_diagnostics = NULL, cost_mode = "posthoc")
 sc_run_inspect(project_dir)
 sc_run_approve(project_dir, proposal_hash, reviewer, reason = "",
   preview_hash = NULL, expected_revision = NULL)
@@ -48,7 +48,7 @@ sc_run_unlock(project_dir, token, reason)
 sc_run_accept(project_dir, reviewer, reason)
 }
 \arguments{
-\item{cost_mode}{Legacy capped accounting (default for this advanced interface) or post-call accounting without monetary reservation.}
+\item{cost_mode}{Post-call accounting without monetary reservation.}
 \item{scientific_review}{Optional local PC sensitivity, resampling, extra resolution extension and extended expression diagnostics; disabled by default. New raw strategy projects retain applicable declared-human blood/PBMC or pancreas classic panels, with missing/unsupported inputs explicitly recorded.}
 \item{react}{Optional list configuring the bounded annotation evidence session: mode (auto, all, off), enabled tools, ACT evidence and turn/time limits. NULL preserves the legacy one-shot path. Drafts still require human scientific approval.}
 \item{biological_diagnostics}{Optional diagnostic-only coarse clustering and batch assessment. Use TRUE or a list with cluster_qc and batch_assessment logical switches. Disabled by default at this engine interface. Diagnostic embeddings are never reused as final analysis; threshold replacements require human approval.}
@@ -63,9 +63,9 @@ sc_run_accept(project_dir, reviewer, reason)
 \item{strategy_proposal}{Complete scagentkit.strategy.v1 proposal; supplying it enables strategy. Typed QC, normalization, PC, batch none/manual, resolution and UMAP settings are centrally reviewed. Arbitrary code, automatic Harmony and subcluster operations are unsupported. Optional cycle diagnostics permit approved none/full/difference choices. A complete explicit doublet_diagnostics configuration list enables keep/remove_predicted choices with a recorded reason; removal additionally requires available saved evidence, raw strategy and exact whole-strategy approval. Other doublet operations are unsupported. The legacy qc_doublet wrapper is not invoked. Manual batch handling stops before computation. Processed entry explicitly reuses QC and analysis with null execution settings and permits only doublet keep.}
 \item{provider}{Provider name or safe configuration list. Built-in DeepSeek and Grok use runtime environment keys.}
 \item{chat_fn}{Explicit in-memory function accepting system and user prompts. Never saved.}
-\item{budget}{Project USD reservation limit. Default zero. Unknown accounting holds its reservation.}
+\item{budget}{Deprecated numeric argument, validated but not used as a monetary cap. Unknown cost stays unknown; uncertain delivery blocks automatic redispatch.}
 \item{input_policy}{Optional local input policy. automatic_cycle attempts eligible S/G2M diagnostics; doublet_mode selects auto/off/flag/remove while preserving exact human deletion approval. automatic_metadata permits a single-candidate sample fallback; multiple candidates remain an analyst choice. automatic_mad enables newly declared grouped MAD after fact review; it never enables implicit pooled MAD. preserve_metadata=TRUE stores original metadata and an exact identity cell-ID map in a collision-safe misc record. The modern sc_analyze/sc_start entry enables it; direct sc_run retains the strict fresh-output-column default.}
-\item{review}{Named policy: allow_external permits an exact-payload transfer approval node; preapprove_qc explicitly supplies a typed rule. Optional transfer_consent records an explicit creation-time project scope (mode='project', confirmed=TRUE, reviewer, reason, categories); its provider, prompt version and budget remain fixed. Omit it for strict per-payload transfer approval. No scientific approval is granted.}
+\item{review}{Named policy: allow_external permits an exact-payload transfer approval node; preapprove_qc explicitly supplies a typed rule. Optional transfer_consent records an explicit creation-time project scope (mode='project', confirmed=TRUE, reviewer, reason, categories); its provider, prompt version and aggregate categories remain fixed. Omit it for strict per-payload transfer approval. No scientific approval is granted.}
 \item{start_stage}{qc for raw input, or processed to reuse existing analysis.}
 \item{processed_reason}{Required provenance for processed entry and skipped QC/analysis.}
 \item{assay, counts_layer, normalized_layer, cluster_column}{Explicit source assay, genuine raw counts, normalized layer and cluster membership. Ambiguous layers fail closed.}

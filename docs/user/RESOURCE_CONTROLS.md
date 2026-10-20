@@ -12,8 +12,7 @@ This is an application resource guard, not a provider token/context limit and
 not a spending cap. A larger allowance does not guarantee that a model can
 accept the request. Provider-specific context admission is not yet implemented.
 Study free text and individual tool responses retain separate privacy/resource
-limits. Default fees remain post-call accounting; `budget` selects the legacy
-one-shot cap only, not a ReAct session spending guarantee.
+limits. Fees use post-call accounting across entry points; the deprecated `budget` argument does not limit dispatch.
 
 `model_timeout=NULL` derives an outer worker deadline from the saved ReAct
 limits and provider timeout, plus startup/finalization allowance. It avoids the
