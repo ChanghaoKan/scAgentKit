@@ -59,10 +59,12 @@
       list(schema = "scagentkit.react-citations.v1", run_id = run$id, citations = unname(citations)))
   }
   state <- .sc_run_put(root, state, "annotation_react_run", run)
+  exports <- if (action %in% c("react_cluster_completed", "react_completed"))
+    .sc_run_react_export(root, state) else NULL
   state <- .sc_run_event(state, action, list(run_id = run$id, session_id = run$session$id,
     cluster_id = trace$cluster_id, cluster_status = trace$status,
     fallback_reason = trace$fallback_reason, trace = if (is.null(trace)) NULL else state$files[[key]],
-    scientific_approval = FALSE))
+    trace_projections = exports, scientific_approval = FALSE))
   .sc_run_save(root, state)
   run
 }
@@ -223,7 +225,8 @@
             message = "The requested tool is not enabled in this session."))
         number <- length(trace$tools) + 1L
         trace$tools <- append(trace$tools, list(list(call_id = call$id, source = paste0("tool:", number),
-          tool = call$`function`$name, arguments = arguments, response = result)))
+          tool = call$`function`$name, arguments = arguments, response = result,
+          model_turn = length(trace$turns))))
         run$tool_calls <- run$tool_calls + 1L
         content <- .sc_project_json(list(source = paste0("tool:", number), evidence = result))
         item <- if (identical(session$capability_profile$native_protocol, "xai.responses.v1"))

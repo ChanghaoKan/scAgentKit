@@ -210,6 +210,7 @@ answer <- tryCatch({
       authority = "state.rds", hash_verification = "Original complete events verified by the coordinator; displayed details are an allowlisted projection."),
     qc_summary = plain(qc), strategy_summary = plain(summary("strategy_summary.json")),
     annotation_summary = plain(summary("annotation_evidence_summary.json")),
+    react = plain(get(".sc_run_react_audit")(root, state)),
     analysis = list(parameters = plain(state$config$analysis), markers = plain(state$config$markers)),
     artifacts = unname(artifacts), bundle_records = unname(bundle_records), bundle_scope_hash = bundle_scope_hash,
     stage_bundle = stage_bundle, bundle_error = bundle_error,

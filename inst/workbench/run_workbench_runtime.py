@@ -303,6 +303,7 @@ class RunWorkbenchRuntime(QCRuntime):
             return {"schema": "scagentkit.workbench.v1", "readonly": True,
                 "project": {key: run.get(key) for key in ("project_id", "input_hash", "revision", "history_head")},
                 "run": header, "source": source, "provider": saved.get("provider"), "history": history,
+                "react": saved.get("react"),
                 "integration_history": integration,
                 "qc": {"status": qc_status, "reason": source.get("processed_reason") if reused else
                        "No saved QC evidence exists for this run." if qc_status == "not_recorded" else None,

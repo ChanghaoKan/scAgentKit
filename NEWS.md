@@ -1,5 +1,9 @@
 # Development changes (unreleased)
 
+- Add state-bound ReAct audit projections, per-cluster JSON exports and workbench
+  evidence steps with active citation links. Expression-only results are marked
+  untested; missing cost remains unknown. These displays cannot approve a draft.
+  The implementation hash changes; offline replay remains a separate stage.
 - Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
 - Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
 - Require released agentomicsCore v0.3.0. The user-facing `sc_start` default, trace UI and offline replay remain later stages.
