@@ -49,8 +49,12 @@
   if (!is.list(evidence) || is.null(evidence$metrics) ||
       !identical(evidence$evidence_hash, .sc_run_qc_hash(evidence)))
     .sc_project_fail("QC evidence is missing or changed; regenerate the evidence and obtain a fresh proposal/approval.")
-  .sc_run_strategy_fields(proposal, c("schema", "rationale", "risks", "remove_if", "rules"), name = "QC rules proposal")
-  if (!identical(proposal$schema, "scagentkit.qc.rules.v1")) .sc_project_fail("Unsupported QC rules schema.")
+  replacing <- identical(proposal$schema, "scagentkit.qc.rules.v2")
+  fields <- c("schema", "rationale", "risks", "remove_if", "rules")
+  if (replacing) fields <- c(fields, "diagnostic_hash", "membership_hash", "replacements")
+  .sc_run_strategy_fields(proposal, fields, name = "QC rules proposal")
+  if (!replacing && !identical(proposal$schema, "scagentkit.qc.rules.v1")) .sc_project_fail("Unsupported QC rules schema.")
+  replacement <- if (replacing) .sc_run_qc_replacements(proposal, evidence) else NULL
   rationale <- .sc_run_strategy_text(proposal$rationale, "QC rules rationale")
   risks <- .sc_run_strategy_array(proposal$risks, "QC rules risks")
   if (!is.character(proposal$remove_if) || length(proposal$remove_if) != 1L ||
@@ -74,7 +78,21 @@
   statuses <- lapply(rules, function(rule) {
     if (!is.list(rule) || !is.character(rule$op) || length(rule$op) != 1L || is.na(rule$op))
       .sc_project_fail("Every QC rule must declare one supported typed op.")
-    if (identical(rule$op, "range")) return(.sc_run_qc_rule_range(rule, metrics))
+    if (identical(rule$op, "range")) {
+      status <- .sc_run_qc_rule_range(rule, metrics)
+      status$original_failed <- status$failed
+      status$failed <- .sc_run_qc_replace_metric(rule$metric, status$selected & base,
+        rule$min, rule$max, metrics[[rule$metric]], status$failed, replacement)
+      if (!is.null(replacement)) for (entry in replacement$entries) {
+        affected <- status$selected & base & entry$selected
+        if (identical(entry$metric, rule$metric) && any(affected)) {
+          values <- metrics[[rule$metric]][affected]
+          status$low[affected] <- if (is.null(entry$min)) FALSE else values < entry$min
+          status$high[affected] <- if (is.null(entry$max)) FALSE else values > entry$max
+        }
+      }
+      return(status)
+    }
     if (!identical(rule$op, "mad_preset"))
       .sc_project_fail("QC rules support only range or mad_preset; arbitrary code, genes and new operations are rejected.")
     .sc_run_strategy_fields(rule, c("op", "preset_id", "panel_hash"), name = "MAD predicate rule")
@@ -90,9 +108,14 @@
     if (!isTRUE(panel$available)) .sc_project_fail(paste0("MAD preset is unavailable: ", paste(panel$unavailable_reasons, collapse = " ")))
     selected <- base
     failed <- base & !cells %in% record$selections[[rule$preset_id]]
+    original_failed <- failed
+    if (!is.null(replacement)) {
+      failed <- .sc_run_qc_replace_mad(record, rule$preset_id, metrics, replacement)
+      failed[!base] <- FALSE
+    }
     list(rule = list(op = "mad_preset", preset_id = unname(rule$preset_id), panel_hash = record$panel_hash),
       selected = selected, low = rep(FALSE, length(cells)), high = rep(FALSE, length(cells)),
-      unavailable = rep(FALSE, length(cells)), failed = failed)
+      unavailable = rep(FALSE, length(cells)), failed = failed, original_failed = original_failed)
   })
   statuses <- lapply(statuses, function(status) {
     status$failed <- status$failed & base
@@ -117,14 +140,42 @@
     list(group_id = paste0("group", i), selector = group$selector, before = before,
       retained = after, removed = before - after, fraction_retained = after / before)
   })
-  canonical <- list(schema = "scagentkit.qc.rules.v1", rationale = rationale, risks = risks,
+  canonical <- list(schema = if (replacing) "scagentkit.qc.rules.v2" else "scagentkit.qc.rules.v1",
+    rationale = rationale, risks = risks,
     remove_if = unname(proposal$remove_if), rules = lapply(statuses, `[[`, "rule"))
+  if (replacing) {
+    for (i in seq_along(replacement$entries)) {
+      selected <- replacement$entries[[i]]$selected & base
+      if (!any(selected) || !all(replacement$coverage[[i]][selected]))
+        stop("Replacement requires baseline coverage of that metric throughout the diagnostic cluster.", call. = FALSE)
+    }
+    canonical$diagnostic_hash <- proposal$diagnostic_hash
+    canonical$membership_hash <- proposal$membership_hash
+    canonical$replacements <- lapply(replacement$entries, function(x)
+      x[c("cluster_id", "metric", "min", "max", "reason")])
+  }
   mad_rule <- Filter(function(rule) identical(rule$op, "mad_preset"), canonical$rules)
   summary <- list(method = "typed_rules", remove_if = canonical$remove_if,
     rule_count = length(statuses), preset_id = if (length(mad_rule)) mad_rule[[1L]]$preset_id else NULL,
     original_cells = length(cells), pre_score_cells = sum(base), post_qc_cells = sum(keep),
     prefilter_removed = sum(!base), quality_removed = sum(base & !keep),
-    high_rna_action = "flag only", ribo_hb_action = "diagnostic only")
+    high_rna_action = if (replacing) "according to effective approved bounds" else "flag only",
+    ribo_hb_action = "diagnostic only")
+  if (replacing) {
+    original <- do.call(cbind, lapply(statuses, `[[`, "original_failed"))
+    original_removed <- if (proposal$remove_if == "any") rowSums(original) > 0L else
+      rowSums(original) == ncol(original)
+    original_keep <- base & !original_removed
+    summary$effective_thresholds <- replacement$effective
+    summary$replacement_impact <- lapply(sort(unique(vapply(replacement$entries, `[[`,
+      character(1), "cluster_id")), method = "radix"), function(id) {
+      index <- replacement$entries[[which(vapply(replacement$entries, function(x)
+        identical(x$cluster_id, id), logical(1)))[1L]]]$selected
+      list(cluster_id = id, cells = sum(index),
+        retained_before = sum(original_keep[index]), retained_after = sum(keep[index]),
+        difference = sum(keep[index]) - sum(original_keep[index]))
+    })
+  }
   list(validated = list(proposal = canonical,
     retention = list(before = nrow(metrics), retained = sum(keep), removed = sum(!keep),
       fraction_retained = mean(keep), groups = retention_groups), keep_cells = cells[keep],

@@ -35,6 +35,8 @@
 #'   expected-rate provenance for fixed full-input scDblFinder diagnostics.
 #'   Cells are retained by default; typed removal needs the exact strategy review.
 #' @param qc_mad Optional explicit QC grouping and finite deterministic MAD panel.
+#' @param biological_diagnostics Optional diagnostic-only coarse partition and
+#'   batch assessment switches. Never authorizes filtering or correction.
 #'   A nested prefilter may declare an explicitly preapproved minimum-count rule;
 #'   default prefilter and quality preset retain all cells.
 #' @param scientific_review Optional local PC sensitivity, resampling, resolution
@@ -56,7 +58,8 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
-                   .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL) {
+                   .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
+                   biological_diagnostics = NULL) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -130,6 +133,12 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
   if (!is.null(react)) config$react <- .sc_run_turn_policy(react)
+  biology <- .sc_run_biology_options(biological_diagnostics)
+  if (!is.null(biology)) {
+    if (!strategy || start_stage != "qc")
+      stop("Biological diagnostics require raw strategy entry.", call. = FALSE)
+    config$biological_diagnostics <- biology
+  }
   if (!is.null(input_policy)) {
     config$input_policy <- .sc_run_input_policy(input_policy)
     config$input_policy$metadata_key <- checked$diagnostics$preserved_metadata$key
@@ -356,6 +365,12 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       "Use saved fixed-full-input score evidence and projected applicability. No inferred research goal is authorization to regress. Default to none when evidence is insufficient or preservation is uncertain; a whole exact human approval is required for full/difference.",
       "full regresses quantitative S/G2M scores; difference regresses S.Score-G2M.Score to reduce phase contrast while retaining cycling/noncycling signal. Neither deletes cells. Processed reuse supports only none.")
   }
+  if (kind == "strategy" && !is.null(config$biological_diagnostics)) schema <- paste(schema,
+    "biology contains diagnostic-only coarse clusters and fixed-parameter PCA; none is a final clustering or final PCA. Approved analysis recomputes both.",
+    "Review cluster-specific removal comparisons and top five tested markers with study purpose. Do not automatically relax QC. Relaxation requires at least three saved eligible non-mitochondrial, non-ribosomal, non-stress positive markers; unsupported clusters cannot be rescued.",
+    "Optional qc.rules.v2 has the same fields as qc.rules.v1 plus diagnostic_hash=biology_hash, membership_hash=biology.membership_hash and replacements. Each replacement has cluster_id, metric, nonempty reason and optional min/max. It replaces only that cluster/metric baseline bounds; other rules and minimal prefilter remain. No duplicate cluster/metric or absent baseline metric is allowed.",
+    "Use biology.batch recommendation with declared design. Fully confounded or no detected effect defaults to none; evidence-supported Harmony still requires all existing design guards and human approval. Technical mixing and biological preservation are separate, not a combined score.",
+    "Include risk_flags={schema:'risk_flags.v1',stage:'strategy',evidence_hash:biology_hash,fields:[...]}, with all five names doublet_risk,batch_status,qc_celltype_concern,cycle_concern,ambient_suspected. Each has value,assessment_status,source:'model',evidence_ids array. Non-batch values: not_assessed,not_detected,suspected. Batch values: not_applicable,insufficient_evidence,fully_confounded,no_effect_detected,effect_detected_design_supported. assessment_status: not_assessed,not_applicable,assessed. Assessed needs evidence_ids from quality,design,biology, or enabled cycle/doublet. Missing tests must remain unassessed.")
   if (kind == "strategy" && !is.null(config$doublet_diagnostics)) {
     schema <- sub("No R code, arbitrary regressors, automatic biological batch choice or deletion of cycling/doublet cells.",
       "No R code, arbitrary regressors, automatic biological batch choice or cycling-cell deletion.", schema, fixed = TRUE)
@@ -566,6 +581,17 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
           state <- .sc_run_put(root, state, "qc_evidence", qc)
           .sc_run_save(root, state)
         }
+        if (!is.null(state$config$biological_diagnostics)) {
+          biology <- if (is.null(state$files$biology_diagnostics))
+            .sc_run_biology_compute(seu, state$config, qc, prefilter) else
+              .sc_run_get(root, state, "biology_diagnostics")
+          .sc_run_biology_verify(biology, qc, state$config)
+          state <- .sc_run_put(root, state, "biology_diagnostics", biology)
+          qc$biology_record <- biology; qc$summary$biology <- biology$summary
+          qc$evidence_hash <- .sc_run_qc_hash(qc)
+          state <- .sc_run_put(root, state, "qc_evidence", qc)
+          .sc_run_save(root, state)
+        }
         evidence <- .sc_run_strategy_evidence(seu, state$config, qc, cycle_record = cycle,
           doublet_record = doublet, mad_record = mad, prefilter_record = prefilter)
         if (state$config$start_stage == "processed") {
@@ -637,7 +663,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         state <- .sc_run_checkpoint(root, state, stage, if (identical(plan$batch$method, "harmony")) "strategy_batch" else "strategy_neighbors")
       } else if (stage == "strategy_batch") {
         validated <- .sc_run_strategy_require(root, state)
-        seu <- .sc_run_strategy_batch(.sc_run_get(root, state, "strategy_basis"), state$config, validated$proposal)
+        basis <- .sc_run_get(root, state, "strategy_basis")
+        seu <- .sc_run_strategy_batch(basis, state$config, validated$proposal)
+        if (!is.null(state$files$biology_diagnostics))
+          seu@misc$strategy_execution$batch$biology <- .sc_run_biology_post_batch(
+            basis, seu, state$config, .sc_run_get(root, state, "biology_diagnostics"), validated$proposal)
         seu@misc$strategy_execution$batch$dependency_hash <- validated$dependency_hashes$batch
         seu@misc$strategy_execution$batch$basis_sha256 <- state$files$strategy_basis$sha256
         state <- .sc_run_put(root, state, "strategy_batch", seu)

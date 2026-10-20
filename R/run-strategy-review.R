@@ -18,6 +18,7 @@
   if (!is.null(config$recommendation_doublet_preparation)) fields <- c(fields, "recommendation_doublet_preparation")
   if (!is.null(config$recommendation_doublet_settings)) fields <- c(fields, "recommendation_doublet_settings")
   if (!is.null(config$qc_mad)) fields <- c(fields, "qc_mad")
+  if (!is.null(config$biological_diagnostics)) fields <- c(fields, "biological_diagnostics")
   if (!is.null(config$scientific_review)) fields <- c(fields,"scientific_review")
   if (!is.null(config$basic_expression_review)) fields <- c(fields,"basic_expression_review")
   if (!is.null(config$subcluster_origin)) fields <- c(fields, "subcluster_origin", "subcluster_creation")
@@ -35,7 +36,7 @@
     policy = policy,
     interpretation = if (state$config$start_stage == "processed")
       "Supplied analysis is reused; this strategy does not compute or select new PCs." else
-      "Approval selects a deterministic PC rule. Actual dimensions and 80/85% diagnostics are unavailable until the approved QC and PCA checkpoint has completed; no pre-approval PCA is run.")
+      "Approval selects a deterministic PC rule. Final dimensions and 80/85% diagnostics require approved QC and fresh PCA. Any pre-approval PCA is a separate diagnostic and cannot supply final embeddings or clusters.")
   artifact <- state$files$strategy_basis
   if (is.null(artifact)) return(result)
   path <- file.path(root, artifact$path)
@@ -165,13 +166,20 @@
     record$details$prefilter <- summary$prefilter
     record$details$prefilter_evidence_hash <- evidence$private$prefilter_record$evidence_hash
   }
+  if (!is.null(summary$biology)) {
+    record$details$biology <- summary$biology
+    record$details$biology_hash <- evidence$private$biology_record$hash
+    record$details$risk_flags <- validated$proposal$risk_flags
+    record$details$diagnostic_thresholds <- .sc_run_biology_threshold_review(validated, evidence)
+    record$details$capabilities$qc_rules$replacement_schema <- "scagentkit.qc.rules.v2"
+  }
   if (!is.null(summary$qc_mad)) {
     record$details$mad_panel <- summary$qc_mad
     record$details$qc_mad <- list(panel_hash = evidence$private$mad_record$panel_hash,
       evidence_hash = evidence$private$mad_record$evidence_hash,
       choice = if (is.null(validated$qc_validated)) NULL else validated$qc_validated$proposal,
       impact = validated$applicability$qc_mad)
-    record$details$execution_plan <- c(list(if (identical(validated$proposal$qc$schema, "scagentkit.qc.rules.v1"))
+    record$details$execution_plan <- c(list(if (isTRUE(validated$proposal$qc$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
       "Use the saved pre-score eligibility and exact sample-aware MAD statistics. One central approval selects the explicit range/MAD failure rules and OR/AND combination; no cells outside the prefilter cohort can be restored." else
       "Use the saved sample-aware MAD statistics from the explicit pre-score cohort. One central approval selects one finite preset for all declared QC groups; no per-group approval or automatic preset change is performed."),
       record$details$execution_plan)
@@ -201,6 +209,14 @@
   if (is.null(state$files$strategy_review)) stop("Strategy review is missing.", call. = FALSE)
   record <- .sc_run_get(root, state, "strategy_review")
   evidence <- .sc_run_get(root, state, "strategy_evidence")
+  if (!is.null(state$config$biological_diagnostics)) {
+    biology <- .sc_run_get(root, state, "biology_diagnostics")
+    .sc_run_biology_verify(biology, evidence$qc, state$config)
+    if (!identical(biology, evidence$private$biology_record) ||
+        !identical(biology$summary, record$details$biology) ||
+        !identical(biology$hash, record$details$biology_hash))
+      stop("Biological diagnostic review differs from its bound checkpoint.", call. = FALSE)
+  }
   saved <- .sc_run_get(root, state, "strategy_validated")
   current <- .sc_run_strategy_validate(saved$proposal, evidence)
   .sc_run_subcluster_strategy(state, current, evidence)
@@ -284,7 +300,7 @@
 .sc_run_strategy_pending <- function(root, state, validated, evidence) {
   state$stage <- "strategy_propose"
   record <- .sc_run_strategy_review_verify(root, state)
-  files <- intersect(c("input", "prefilter", "qc_mad", "qc_evidence", "strategy_evidence", "cycle_diagnostics", "doublet_diagnostics", "manual_strategy",
+  files <- intersect(c("input", "prefilter", "qc_mad", "biology_diagnostics", "qc_evidence", "strategy_evidence", "cycle_diagnostics", "doublet_diagnostics", "manual_strategy",
     "strategy_validated", "strategy_review", "qc_validated", "qc_preview", "qc_preview_plot", "strategy_basis", "strategy_batch", "strategy_neighbors", "cluster_scan"), names(state$files))
   .sc_run_pending(state, "strategy", list(plan = validated$proposal, review_hash = record$hash),
     evidence$evidence_hash, "strategy_apply", file_names = files)

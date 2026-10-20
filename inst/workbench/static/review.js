@@ -99,10 +99,15 @@ function declaredHarmonyColumns(details = state.view?.run.strategy_review?.detai
 function qcRulesEnabled(details) {return details?.capabilities?.qc_rules?.schema === "scagentkit.qc.rules.v1";}
 function typedQCRulesError(qc, details) {
   const legacyRanges = qc?.schema === "scagentkit.qc.v1";
-  if (!legacyRanges && qc?.schema !== "scagentkit.qc.rules.v1") return null; // Other legacy choices keep their separate validation.
+  if (!legacyRanges && !["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema)) return null; // Other legacy choices keep their separate validation.
   if (!legacyRanges && !qcRulesEnabled(details)) return "The saved runtime does not advertise typed combined QC rules. Rebuild the review with supported R capabilities before changing this schema.";
   const fields = legacyRanges ? ["schema", "rationale", "risks", "filters"] : ["schema", "rationale", "risks", "remove_if", "rules"];
   // R's canonical character/numeric vectors auto-unbox at length one.
+  if (qc.schema === "scagentkit.qc.rules.v2") {
+    fields.push("diagnostic_hash", "membership_hash", "replacements");
+    if (details?.capabilities?.qc_rules?.replacement_schema !== qc.schema || qc.diagnostic_hash !== details?.biology_hash || qc.membership_hash !== details?.biology?.membership_hash || !Array.isArray(qc.replacements) || !qc.replacements.length)
+      return "Cluster replacements need the current diagnostic checkpoint and explicit replacement bounds. Save for deterministic R validation before approval.";
+  }
   const risks = array(qc.risks);
   if (Object.keys(qc).some(key => !fields.includes(key)) || fields.some(key => !Object.hasOwn(qc, key)) ||
       typeof qc.rationale !== "string" || !qc.rationale.trim() || !(Array.isArray(qc.risks) || typeof qc.risks === "string") || risks.some(value => typeof value !== "string" || !value.trim()))
@@ -144,7 +149,7 @@ function clusteringDraftError(clustering) {
 }
 function typedStrategyError(value, details = state.view?.run.strategy_review?.details) {
   if (value?.schema !== "scagentkit.strategy.v1") return "Keep the supported scagentkit.strategy.v1 schema. R validates every operation and parameter.";
-  const allowed = ["schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap", "cycle", "doublet", "choice_reasons"];
+  const allowed = ["schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap", "cycle", "doublet", "choice_reasons", "risk_flags"];
   if (Object.keys(value).some(key => !allowed.includes(key))) return "Only supported typed strategy fields can be saved. Provider settings, arbitrary code and extra operations are rejected.";
   function unsafeFields(item) {return item && typeof item === "object" && Object.entries(item).some(([key, child]) => ["code", "r_code", "provider", "chat_fn", "command", "script", "api_key", "system_prompt"].includes(key) || unsafeFields(child));}
   if (unsafeFields(value)) return "Arbitrary code, provider settings and secret-bearing fields cannot be saved as strategy operations.";
@@ -194,7 +199,7 @@ function doubletEnabled(details, proposal) {
 const madPresets = ["keep_all", "conservative_and3", "low_counts3", "low_features3", "high_mt3", "any_quality3"];
 function madEnabled(details, proposal) {return details?.mad_panel != null || details?.qc_mad != null || proposal?.qc?.schema === "scagentkit.qc.mad.v1";}
 function madReviewError(details = state.view?.run.strategy_review?.details, proposal = details?.canonical_proposal) {
-  if (proposal?.qc?.schema === "scagentkit.qc.rules.v1") return qcRulesReviewError(details, proposal);
+  if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(proposal?.qc?.schema)) return qcRulesReviewError(details, proposal);
   if (!madEnabled(details, proposal)) return null;
   const saved = details?.qc_mad, panel = details?.mad_panel, choice = proposal?.qc;
   if (choice?.schema !== "scagentkit.qc.mad.v1" || panel?.schema !== "scagentkit.qc.mad.evidence.v1" ||
@@ -345,7 +350,7 @@ function suggestionSummary(candidate, kind) {
   if (kind === "qc" && candidate.schema === "scagentkit.qc.rules.v1") return [candidate.rationale || "Typed QC proposal", qcRulesSummary(candidate)];
   if (kind === "qc") return [candidate.rationale || "Typed QC proposal", candidate.preset_id ? "Saved MAD preset: " + candidate.preset_id : "Supported range rules: " + array(candidate.filters).length];
   const parts = [candidate.rationale || "Typed analysis strategy"];
-  if (candidate.qc?.schema === "scagentkit.qc.rules.v1") parts.push(qcRulesSummary(candidate.qc));
+  if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(candidate.qc?.schema)) parts.push(qcRulesSummary(candidate.qc));
   else if (candidate.qc?.preset_id) parts.push("QC: saved MAD preset " + candidate.qc.preset_id);
   else if (candidate.qc) parts.push("QC: " + array(candidate.qc.filters).length + " supported range rules");
   if (candidate.analysis) parts.push(`${candidate.analysis.normalization_method} · ${candidate.analysis.nfeatures} requested HVGs · ${candidate.analysis.npcs} requested PCs`);
@@ -1090,13 +1095,13 @@ function setStrategyDraft(draft, rebuildControls = false) {
   updateStrategyDraftStatus(); buttons();
 }
 function qcDraftRules(qc) {
-  if (qc?.schema === "scagentkit.qc.rules.v1") return array(qc.rules);
+  if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema)) return array(qc.rules);
   if (qc?.schema === "scagentkit.qc.v1") return array(qc.filters);
   if (qc?.schema === "scagentkit.qc.mad.v1") return [{op: "mad_preset", preset_id: qc.preset_id, panel_hash: qc.panel_hash}];
   return [];
 }
 function rulesQC(qc, rules, removeIf = qc?.remove_if || "any") {
-  return {schema: "scagentkit.qc.rules.v1", rationale: qc?.rationale || "", risks: array(qc?.risks), remove_if: removeIf, rules};
+  return {...(qc?.schema === "scagentkit.qc.rules.v2" ? {diagnostic_hash: qc.diagnostic_hash, membership_hash: qc.membership_hash, replacements: qc.replacements} : {}), schema: qc?.schema === "scagentkit.qc.rules.v2" ? qc.schema : "scagentkit.qc.rules.v1", rationale: qc?.rationale || "", risks: array(qc?.risks), remove_if: removeIf, rules};
 }
 function qcGroupOptions(details, rules) {
   const options = new Map([["null", "All supplied QC cells"]]);
@@ -1138,7 +1143,7 @@ function changeQCRules(action, index) {
   } catch (_) {message("Correct the complete JSON draft before adding or removing a QC rule.", true);}
 }
 function renderQCControls(details, proposal) {
-  const qc = proposal.qc, supported = ["scagentkit.qc.v1", "scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1"].includes(qc?.schema);
+  const qc = proposal.qc, supported = ["scagentkit.qc.v1", "scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema);
   if (!supported) return strategySection("QC and cell retention", qc, "Processed QC is reused; no new cell filtering is implied.");
   const card = cycleNode("section", null, "qc-parameter-card", {class: "strategy-evidence-card qc-parameter-card"});
   card.append(element("h3", "QC rules")); state.strategyFeedback = cycleNode("p", null, "strategy-controls-status", {class: "microcopy strategy-controls-status", role: "status", "aria-live": "polite"}); card.append(state.strategyFeedback);
@@ -1258,6 +1263,10 @@ function renderClustering(details, proposal) {
   if (bound && Array.isArray(actual.candidates) && actual.candidates.length) comparison.append(element("p", "Actual saved comparison from the approved analysis checkpoint; new draft values have not been executed."), table(["Resolution", "Chosen", "Clusters", "Smallest", "Largest", "ARI / chosen", "ARI / previous"], actual.candidates.map(row => [evidenceNumber(row.resolution), typeof row.chosen === "boolean" ? String(row.chosen) : "Unknown", evidenceNumber(row.n_clusters), evidenceNumber(row.min_cluster_size), evidenceNumber(row.max_cluster_size), evidenceNumber(row.ari_vs_chosen), evidenceNumber(row.ari_vs_previous)])));
   else empty(comparison, "Not run or no bound saved diagnostic comparison is available. Candidate settings do not imply observed cluster counts.");
   if (details.cluster_diagnostics) card.append(renderClusterTree(details.cluster_diagnostics));
+  if (details.cluster_diagnostics?.batch_biology) card.append(strategySection(
+    "Batch correction: technical mixing and biological preservation",
+    details.cluster_diagnostics.batch_biology,
+    "These are separate measurements on the actual approved embeddings. Condition signal is unavailable without independent replicate samples; unchanged RNA is only an integrity check."));
   card.append(comparison); return card;
 }
 function chooseBatchDraft() {
@@ -1728,7 +1737,7 @@ function savedOperationSummary(key, proposal) {
   if (choice == null) return "No saved choice supplied";
   if (key === "qc-mad") return choice.preset_id ? "Saved preset · " + choice.preset_id : "Inspect the saved QC panel and choice";
   if (key === "qc") {
-    if (["scagentkit.qc.v1", "scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1"].includes(choice.schema)) {
+    if (["scagentkit.qc.v1", "scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(choice.schema)) {
       const rules = qcDraftRules(choice), fixed = rules.filter(rule => rule.op === "range").length, mad = rules.filter(rule => rule.op === "mad_preset").length;
       return `${fixed} fixed ranges · ${mad} saved MAD presets · remove_if ${choice.remove_if || "any"}`;
     }
@@ -1771,7 +1780,7 @@ function renderStrategyOperations(details, proposal) {
     const card = key === "qc" ? renderQCControls(details, proposal) : key === "pcs" ? renderPCs(details, proposal) : key === "clustering" ? renderClustering(details, proposal) : harmonyEnabled(details) && key === "batch" ? renderBatch(details, proposal) : strategySection(title, proposal[key], "Reuse is explicit for a processed start; consult the saved execution plan for this step.");
     operations.append(strategyOperationGroup(key, title, card, details.canonical_proposal || {}, opened));
   }
-  if (madEnabled(details, proposal) && proposal.qc?.schema !== "scagentkit.qc.rules.v1") {operations.append(strategyOperationGroup("qc-mad", "Saved sample-aware MAD panel", renderMad(details, details.canonical_proposal), details.canonical_proposal || {}, opened)); if (state.madSelect && proposal.qc?.schema === "scagentkit.qc.mad.v1") state.madSelect.value = proposal.qc.preset_id;}
+  if (madEnabled(details, proposal) && !["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(proposal.qc?.schema)) {operations.append(strategyOperationGroup("qc-mad", "Saved sample-aware MAD panel", renderMad(details, details.canonical_proposal), details.canonical_proposal || {}, opened)); if (state.madSelect && proposal.qc?.schema === "scagentkit.qc.mad.v1") state.madSelect.value = proposal.qc.preset_id;}
   if (details.cycle_diagnostics != null || Object.hasOwn(proposal, "cycle") || Array.isArray(details.capabilities?.cycle)) operations.append(strategyOperationGroup("cycle", "Cell-cycle choice and evidence", renderCycle(details, details.canonical_proposal), details.canonical_proposal || {}, opened));
   if (doubletEnabled(details, proposal)) operations.append(strategyOperationGroup("doublet", "Separate doublet choice and evidence", renderDoublet(details, proposal), details.canonical_proposal || {}, opened));
 }
@@ -1802,6 +1811,31 @@ function renderStrategy() {
   $("strategy-blockers").hidden = !array(applicability.blockers).length;
   $("strategy-quality").replaceChildren(strategySection("Actual quality summary", details.quality));
   $("strategy-qc-impact").replaceChildren(renderQCImpact(details));
+  if (details.biology) {
+    $("strategy-qc-impact").append(strategySection("Diagnostic clusters · not final analysis", details.biology,
+      "Diagnostic PCA and clusters only explain possible QC bias. Approved analysis recomputes them. Any threshold replacement requires a reason and human approval."),
+      strategySection("Structured risk assessments", details.risk_flags));
+    const bounds = details.diagnostic_thresholds;
+    const boundCard = element("section", null, {class: "strategy-evidence-card"});
+    boundCard.append(element("h3", "Final effective diagnostic-cluster bounds"));
+    if (bounds) {
+      const interval = (lower, upper) => (lower == null ? "No lower bound" : "≥ " + evidenceNumber(lower)) +
+        " · " + (upper == null ? "No upper bound" : "≤ " + evidenceNumber(upper));
+      boundCard.append(element("p", "Diagnostic clusters only. Minimum prefilter counts: " + evidenceNumber(bounds.minimum_prefilter_counts) +
+        ". Other QC rules still apply; replacing one boundary does not cancel another rule."),
+        table(["Diagnostic cluster", "Metric", "Rule / scope", "Cells", "Baseline", "Effective", "Change reason"],
+          array(bounds.table).map(row => [row.cluster_id, row.metric, row.predicate, row.cells,
+            interval(row.baseline_min, row.baseline_max), interval(row.effective_min, row.effective_max),
+            row.replaced ? row.reason : "Baseline retained"])));
+      if (array(bounds.replacement_impact).length) boundCard.append(
+        table(["Diagnostic cluster", "Cells", "Retained before", "Retained after", "Change"],
+          array(bounds.replacement_impact).map(row => [row.cluster_id, row.cells,
+            row.retained_before, row.retained_after, row.difference])));
+      boundCard.append(strategyRecord(bounds));
+    } else empty(boundCard, "Diagnostic bounds are unavailable for this saved proposal.");
+    $("strategy-qc-impact").append(boundCard);
+    if (details.qc_impact?.diagnostic_replacements) $("strategy-qc-impact").append(strategySection("Effective replacement thresholds and retained cells", details.qc_impact.diagnostic_replacements));
+  }
   $("strategy-capabilities").replaceChildren(strategySection("Supported capabilities and dependencies", details.capabilities), strategySection("Saved execution plan", details.execution_plan));
   $("strategy-unsupported").textContent = doubletSupported ? (cycleSupported ? "Subclustering is a separate scoped-child action from a completed parent; nested child creation is not a strategy operation." : "Cell-cycle regression is unsupported in this strategy version. Subclustering is a separate scoped-child action from a completed parent.") + " Doublet classes are algorithm predictions. Only an explicitly approved remove_predicted strategy can remove its exact saved scope; cycle regression does not delete cells." : cycleSupported ? "Doublet scoring/removal is unsupported in this strategy version. Subclustering is a separate scoped-child action from a completed parent. Cell-cycle regression does not mean deleting cycling cells; a doublet score alone does not authorize removal." : "Cell-cycle regression and doublet scoring/removal are unsupported in this strategy version. Subclustering is a separate scoped-child action from a completed parent. Cell-cycle regression does not mean deleting cycling cells; a doublet score alone does not authorize removal.";
   $("strategy-limitations").replaceChildren(...array(details.limitations).map(value => element("li", value)));

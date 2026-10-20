@@ -141,6 +141,15 @@ await check("each choice reason is editable without replacing other parameters o
   const expected=copy(before);expected.choice_reasons.qc=input.value;assert.deepEqual(after,expected);
   assert.equal(h.el("strategy-approve").disabled,true);assert.equal(h.requests.length,0);
 });
+await check("diagnostic replacements show readable bounds and retention without a write", () => {
+  const value=answer(), d=details(value);
+  d.biology={diagnostic_only:true};
+  d.diagnostic_thresholds={minimum_prefilter_counts:1, table:[{cluster_id:"0",metric:"nCount",predicate:"rule:1",cells:30,baseline_min:100,effective_min:50,replaced:true,reason:"Reviewed low-RNA evidence"}], replacement_impact:[{cluster_id:"0",cells:30,retained_before:12,retained_after:20,difference:8}]};
+  const h=setup(value), text=h.el("strategy-qc-impact").textContent;
+  assert.match(text,/Reviewed low-RNA evidence/);assert.match(text,/Retained before/);
+  assert.match(text,/No upper bound/);assert.match(text,/Baseline/);
+  assert.equal(h.requests.length,0);
+});
 const report = {schema: "scagentkit.strategy-parameters.dom-tests.v1", actualProductionSource: true, syntheticContractRecords: true, actualBrowser: false, actualR: false, networkRequests: 0, providerRequests: 0, sourceSha256: sha(source), cssSha256: sha(css), driverSha256: sha(fs.readFileSync(file)), tests: results.length, passed: results.filter(row => row.passed).length, failed: results.filter(row => !row.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 console.log(JSON.stringify({tests: report.tests, passed: report.passed, failed: report.failed, failures: results.filter(row => !row.passed)})); if (report.failed) process.exitCode = 1;

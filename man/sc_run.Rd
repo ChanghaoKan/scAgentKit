@@ -24,7 +24,8 @@ sc_run(input, project_dir, context = list(), provider = NULL,
   strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
   doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
   subcluster_origin = NULL, subcluster_creation = NULL,
-  .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL)
+  .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
+  biological_diagnostics = NULL)
 sc_run_inspect(project_dir)
 sc_run_approve(project_dir, proposal_hash, reviewer, reason = "",
   preview_hash = NULL, expected_revision = NULL)
@@ -49,6 +50,7 @@ sc_run_accept(project_dir, reviewer, reason)
 \arguments{
 \item{scientific_review}{Optional local PC sensitivity, resampling, extra resolution extension and extended expression diagnostics; disabled by default. New raw strategy projects retain applicable declared-human blood/PBMC or pancreas classic panels, with missing/unsupported inputs explicitly recorded.}
 \item{react}{Optional list configuring the bounded annotation evidence session: mode (auto, all, off), enabled tools, ACT evidence and turn/time limits. NULL preserves the legacy one-shot path. Drafts still require human scientific approval.}
+\item{biological_diagnostics}{Optional diagnostic-only coarse clustering and batch assessment. Use TRUE or a list with cluster_qc and batch_assessment logical switches. Disabled by default at this engine interface. Diagnostic embeddings are never reused as final analysis; threshold replacements require human approval.}
 \item{input}{Named genuine raw counts matrix, Seurat object, or local RDS path.}
 \item{project_dir}{Server-side directory. Creation requires no existing run.}
 \item{context}{Named user facts with explicitly declared human/Homo sapiens or mouse/Mus musculus species, tissue, notes, optional research_goal and design (type, technical_batch logical, notes), and columns mapping sample, qc_group, capture, batch, group, condition and donor roles to actual metadata columns. Missing facts are disclosed, never inferred as metadata.}

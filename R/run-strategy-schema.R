@@ -194,8 +194,7 @@
         !identical(mad_record$prefilter_record, prefilter_record) ||
         !identical(mad_record$prefilter_hash, if (prefilter_enabled) prefilter_record$evidence_hash else NULL))
       stop("MAD evidence source, context or prefilter differs from the actual QC input.", call. = FALSE)
-    baseline_qc <- qc_evidence
-    baseline_qc$mad_record <- NULL; baseline_qc$summary$mad <- NULL
+    baseline_qc <- .sc_run_mad_baseline_qc(qc_evidence)
     if (!identical(mad_record$qc_evidence_hash, .sc_run_qc_hash(baseline_qc)))
       stop("MAD evidence statistics refer to different baseline QC measurements.", call. = FALSE)
   }
@@ -369,6 +368,13 @@
   if (doublet_enabled) evidence$private$doublet_record <- doublet_record
   if (prefilter_enabled) evidence$private$prefilter_record <- prefilter_record
   if (mad_enabled) evidence$private$mad_record <- mad_record
+  if (!is.null(config$biological_diagnostics)) {
+    biology <- qc_evidence$biology_record
+    .sc_run_biology_verify(biology, qc_evidence, config)
+    evidence$summary$biology <- biology$summary
+    evidence$summary$biology_hash <- biology$hash
+    evidence$private$biology_record <- biology
+  }
   evidence$evidence_hash <- .sc_run_hash(evidence)
   evidence
 }
@@ -464,7 +470,7 @@
   }
   proposal <- .sc_run_strategy_fields(proposal,
     c("schema", "rationale", "risks", "inferences", "qc", "analysis", "pcs", "batch", "clustering", "umap"),
-    optional = c("choice_reasons", if (cycle_enabled) "cycle" else character(),
+    optional = c("choice_reasons", "risk_flags", if (cycle_enabled) "cycle" else character(),
       if (doublet_enabled) "doublet" else character()), name = "Strategy proposal")
   if (!identical(proposal$schema, "scagentkit.strategy.v1")) stop("Unsupported strategy proposal schema.", call. = FALSE)
   rationale <- .sc_run_strategy_text(proposal$rationale, "strategy$rationale")
@@ -487,7 +493,7 @@
     if (!identical(evidence$summary$input$counts_layer, "counts"))
       stop("Raw coordinated strategy requires the exact canonical counts_layer='counts'; explicitly prepare alternate source layers before processed reuse.", call. = FALSE)
     qc_schema <- if (is.list(proposal$qc)) proposal$qc$schema else NULL
-    if (mad_enabled && !isTRUE(qc_schema %in% c("scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1")))
+    if (mad_enabled && !isTRUE(qc_schema %in% c("scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
       stop("Enabled qc_mad requires an explicit scagentkit.qc.mad.v1 preset choice or scagentkit.qc.rules.v1 combination; legacy ranges cannot silently change meaning.", call. = FALSE)
     if (!mad_enabled && identical(qc_schema, "scagentkit.qc.mad.v1"))
       stop("MAD presets require explicitly enabled qc_mad and an intact local panel; legacy range QC remains unchanged.", call. = FALSE)
@@ -610,11 +616,13 @@
     risks = risks, inferences = inferences, qc = if (processed) NULL else qc_validated$proposal,
     analysis = analysis, pcs = pcs, batch = batch, clustering = clustering, umap = umap)
   if (!is.null(choice_reasons)) canonical$choice_reasons <- choice_reasons
+  diagnostic_risks <- .sc_run_biology_risks(proposal$risk_flags, evidence)
+  if (!is.null(diagnostic_risks)) canonical$risk_flags <- diagnostic_risks
   if (cycle_enabled) canonical$cycle <- cycle$choice
   if (doublet_enabled) canonical$doublet <- doublet$choice
   blockers <- harmony$blockers
-  qc_rules <- if (processed) NULL else if (identical(qc_validated$proposal$schema, "scagentkit.qc.rules.v1"))
-    qc_validated$proposal[c("schema", "remove_if", "rules")] else if (mad_enabled)
+  qc_rules <- if (processed) NULL else if (isTRUE(qc_validated$proposal$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
+    qc_validated$proposal[intersect(c("schema", "remove_if", "rules", "diagnostic_hash", "membership_hash", "replacements"), names(qc_validated$proposal))] else if (mad_enabled)
     qc_validated$proposal[c("schema", "preset_id", "panel_hash")] else qc_validated$proposal$filters
   qc_hash <- .sc_run_hash(list(counts_hash = evidence$qc$counts_hash,
     evidence_hash = evidence$qc$evidence_hash, rules = qc_rules,
@@ -695,7 +703,7 @@
   if (mad_enabled) {
     validated$applicability$qc_mad <- list(panel_hash = evidence$private$mad_record$panel_hash,
       evidence_hash = evidence$private$mad_record$evidence_hash,
-      preset_id = if (processed) NULL else if (identical(qc_validated$proposal$schema, "scagentkit.qc.rules.v1"))
+      preset_id = if (processed) NULL else if (isTRUE(qc_validated$proposal$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
         qc_validated$summary$preset_id else qc_validated$proposal$preset_id,
       impact = if (processed) NULL else qc_validated$summary,
       retention = if (processed) NULL else qc_validated$retention,
