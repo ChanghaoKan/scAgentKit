@@ -1,8 +1,10 @@
 # Session-local worker: verified bytes are decoded once and retained in memory.
 # Filesystem status is an alarm, never a replacement for publication-time SHA.
 .sc_run_react_worker_close <- function(runtime) {
-  if (is.environment(runtime) && !is.null(runtime$process) && runtime$process$is_alive())
+  if (is.environment(runtime) && !is.null(runtime$process) && runtime$process$is_alive()) {
     runtime$process$kill_tree()
+    runtime$process$wait(2000)
+  }
   invisible(NULL)
 }
 
@@ -150,7 +152,7 @@
   repeat {
     if (identical(process$poll_process(25), "ready")) result <- process$read()
     if (!process$is_alive() || proc.time()[["elapsed"]] - started >= timeout) {
-      process$kill_tree()
+      .sc_run_react_worker_close(runtime)
       return(failure("timeout", "The tool reached its time limit; the worker was stopped."))
     }
     if (process$get_state() == "idle") break
