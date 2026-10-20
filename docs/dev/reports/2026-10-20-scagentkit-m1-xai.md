@@ -66,7 +66,7 @@ Unknown draft passed schema/risk/citation validation and remained unapproved.
 Actual raw usage totals: input 26,476; output 5,117; total 31,593; reasoning
 4,534 is a subset in these actual responses and is not added again. Raw USD
 ticks sum to 527,420,000 ($0.052742). The committed JSON preserves per-response
-raw ticks; rounded ledger display amounts are not used to reconstruct cost.
+raw ticks; rounded JSON summary amounts are not used to reconstruct cost.
 
 No private biological data, held-out data or accuracy experiment was used.
 This demonstrates the integrated protocol path, not real-data annotation
