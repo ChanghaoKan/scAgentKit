@@ -67,6 +67,8 @@ importFrom(utils,file_test)
 importFrom(utils,tail)
 
 export(sc_run)
+export(sc_react_replay)
+export(sc_react_eval)
 export(sc_run_suggest)
 export(sc_run_qc_preview)
 export(sc_run_qc_review)

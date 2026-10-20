@@ -1,11 +1,14 @@
 # Local orchestration for read-only tools. This layer owns caches and hard wall
 # time limits; callers must never put the context itself in a model request.
-.sc_run_react_context <- function(root, state = NULL) {
+.sc_run_react_context <- function(root, state = NULL, replay = FALSE) {
   root <- .sc_run_root(root); current <- .sc_run_load(root)
   if (!is.null(state) && !identical(state, current))
     .sc_run_react_error("stale_context", "Use the current committed project state.")
   state <- current
-  if (!state$stage %in% c("annotation_propose", "annotation_apply") ||
+  completed_replay <- isTRUE(replay) && identical(state$status, "complete") &&
+    !is.null(state$files$annotation_react_run) &&
+    identical(.sc_run_get(root, state, "annotation_react_run")$status, "completed")
+  if ((!state$stage %in% c("annotation_propose", "annotation_apply") && !completed_replay) ||
       !identical(state$config_hash, .sc_run_hash(state$config)) ||
       !identical(state$implementation_hash, .sc_run_implementation()))
     .sc_run_react_error("invalid_binding", "The annotation configuration or implementation binding is unavailable or changed.")

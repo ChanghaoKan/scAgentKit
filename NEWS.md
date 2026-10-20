@@ -1,12 +1,18 @@
 # Development changes (unreleased)
 
+- Add `sc_react_eval()` with versioned CL scoring, external label imports,
+  dual human truth, configuration/usage exports and explicit unmapped denominators.
+  Add `sc_react_replay()` to reconstruct saved native histories, rerun read-only
+  evidence and check original draft citations without an API key. Existing
+  checkpoints, ledger receipts and validators are reused. The implementation
+  hash changes; older scientific environments are not silently migrated.
 - Add state-bound ReAct audit projections, per-cluster JSON exports and workbench
   evidence steps with active citation links. Expression-only results are marked
   untested; missing cost remains unknown. These displays cannot approve a draft.
-  The implementation hash changes; offline replay remains a separate stage.
+  The implementation hash changes.
 - Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
 - Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
-- Require released agentomicsCore v0.3.0. The user-facing `sc_start` default, trace UI and offline replay remain later stages.
+- Require released agentomicsCore v0.3.0. The user-facing `sc_start` default remains a later integration stage.
 - Add an internal native xAI Responses session adapter for the explicit
   `grok-4.7` candidate. Preserve complete native output, including opaque
   reasoning, with committed-history verification and visible-content privacy

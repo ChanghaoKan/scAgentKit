@@ -171,4 +171,7 @@ test_that("native ReAct loop retains complete output items and stages verified d
   expect_identical(histories[[2]][[3]]$encrypted_content, "opaque/bytes/do-not-rewrite")
   expect_identical(tail(histories[[2]], 1L)[[1]]$type, "function_call_output")
   expect_null(.sc_run_load(f$root)$approved)
+  replay <- sc_react_replay(f$root)
+  expect_true(replay$matches, info = .sc_project_json(replay$differences))
+  expect_identical(replay$proposal, out$proposal)
 })
