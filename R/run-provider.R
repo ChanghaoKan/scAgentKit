@@ -660,7 +660,16 @@
   value <- tryCatch(if (turn) {
     again <- .sc_run_turn_prepare(request, spec$metadata)
     if (!identical(again$json, prepared$json)) .sc_run_turn_error("invalid_request", "Prepared turn changed before dispatch.")
-    do.call(fn, prepared$args)
+    args <- prepared$args
+    if (!is.null(request$deadline)) {
+      remaining <- request$deadline - as.numeric(Sys.time())
+      if (remaining <= .001) stop(structure(list(message = "The cluster deadline expired before dispatch.",
+        call = NULL, code = "cluster_timeout", delivery = "not_sent"),
+        class = c("agentomics_turn_error", "error", "condition")))
+      args$timeout_secs <- min(args$timeout_secs, remaining)
+    }
+    entry$effective_timeout_seconds <- args$timeout_secs
+    do.call(fn, args)
   } else fn(request$system_prompt, request$user_prompt), error = function(e) e)
   if (identical(getOption("scAgentKit.provider_crash"), "after_response"))
     stop("Injected provider interruption after response; reservation remains held.")

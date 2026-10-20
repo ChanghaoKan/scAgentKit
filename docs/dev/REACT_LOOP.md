@@ -81,3 +81,10 @@ DeepSeek requires the optional-index compatibility patch in Core PR #5,
 pinned in Remotes for review. No release tag was rewritten. xAI's native adapter
 and protocol receipts are a separate M1 change; this stage does not mark it as
 formally supported. Trace UI, export/replay and evaluation remain later stages.
+
+The persisted absolute cluster deadline is part of the authorized request hash.
+Immediately before dispatch, the actual HTTP timeout is reduced to the remaining
+wall-clock allowance and recorded in the committed receipt. Pausing for strict
+approval or resuming a pending request cannot reuse an older, longer relative
+timeout. The wire body and consent hash stay unchanged; an expired deadline is
+recorded as not sent.

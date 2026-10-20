@@ -155,7 +155,7 @@
     repeat {
       .sc_run_react_worker_check(runtime)
       remaining <- trace$deadline - as.numeric(Sys.time())
-      if (remaining <= 0) { trace$fallback_reason <- "cluster_timeout"; break }
+      if (remaining <= .001) { trace$fallback_reason <- "cluster_timeout"; break }
       if (!length(trace$pending_calls)) {
       if (is.null(trace$pending_request)) {
         ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
@@ -167,6 +167,7 @@
         previous <- if (!is.null(last$turn_response_hash)) last$turn_response_hash else last$turn_outcome_hash
         request <- .sc_run_turn_request(session, trace$messages, cluster, length(prior) + 1L, previous)
         request$timeout_seconds <- remaining
+        request$deadline <- trace$deadline
         request$approved_payload_hash <- .sc_run_request_hash(request, state$config$provider)
         trace$pending_request <- request
         run <- .sc_run_react_save(root, run, trace)
@@ -187,7 +188,11 @@
         usage = answer$usage, raw_usage = answer$raw_usage, cost_usd = answer$cost_usd,
         cost_state = answer$cost_state, delivery = answer$delivery)))
       trace$pending_request <- NULL
-      if (!identical(answer$status, "ok")) { trace$fallback_reason <- answer$status; break }
+      if (!identical(answer$status, "ok")) {
+        trace$fallback_reason <- if (identical(answer$provider_error_code, "cluster_timeout"))
+          "cluster_timeout" else answer$status
+        break
+      }
       if (as.numeric(Sys.time()) > trace$deadline) { trace$fallback_reason <- "cluster_timeout"; break }
       native <- identical(session$capability_profile$native_protocol, "xai.responses.v1")
       trace$messages <- append(trace$messages, if (native) answer$turn_response$protocol$output else
@@ -208,7 +213,7 @@
           trace$fallback_reason <- "step_limit"; break
         }
         remaining <- trace$deadline - as.numeric(Sys.time())
-        if (remaining <= 0) { trace$fallback_reason <- "cluster_timeout"; break }
+        if (remaining <= .001) { trace$fallback_reason <- "cluster_timeout"; break }
         arguments <- tryCatch(jsonlite::fromJSON(call$`function`$arguments, simplifyVector = FALSE),
           error = function(e) NULL)
         enabled <- call$`function`$name %in% unlist(policy$tools, use.names = FALSE)
