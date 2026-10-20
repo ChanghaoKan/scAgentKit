@@ -42,6 +42,13 @@
 }
 
 .sc_run_turn_profile <- function(provider) {
+  if (.sc_run_xai_native(provider))
+    return(list(schema = "scagentkit.turn-capability.v1", model = provider$model,
+      max_output_tokens = 128000, protocol = "agentomics.turn.v2",
+      output_cap_basis = "local_cap_at_documented_default_visible_only",
+      native_protocol = "xai.responses.v1", qualification = "offline_only",
+      reasoning_effort = if (is.null(provider$generation$reasoning_effort)) "high" else
+        provider$generation$reasoning_effort))
   if (!provider$external && identical(provider$name, "mock"))
     return(list(schema = "scagentkit.turn-capability.v1", model = provider$model,
       max_output_tokens = 393216, protocol = "agentomics.turn.v1"))
@@ -53,6 +60,7 @@
 
 .sc_run_turn_factory <- function(provider) {
   .sc_run_turn_profile(provider)
+  if (.sc_run_xai_native(provider)) return(.sc_run_xai_factory(provider))
   g <- provider$generation
   if (!identical(g$temperature, 0) ||
       (provider$external && !identical(g$thinking$type, "disabled")) ||
@@ -157,6 +165,9 @@
     parallel_tool_calls = if (is.null(session$tools)) NULL else FALSE,
     max_tokens = g$max_tokens,
     timeout_secs = min(g$timeout_secs, session$policy$cluster_timeout_seconds))
+  if (.sc_run_xai_native(provider)) args <- list(input = request$messages,
+    tools = session$tools, max_tokens = g$max_tokens,
+    timeout_secs = min(g$timeout_secs, session$policy$cluster_timeout_seconds))
   if (!is.null(request$timeout_seconds)) args$timeout_secs <- min(args$timeout_secs,
     .sc_run_provider_number(request$timeout_seconds, "timeout_seconds", .001,
       session$policy$cluster_timeout_seconds))
@@ -169,7 +180,8 @@
     cluster_id = request$cluster_id, ordinal = as.integer(ordinal),
     previous_response_hash = request$previous_response_hash,
     prompt_version = session$prompt_version, prompt_hash = session$prompt_hash,
-    endpoint = if (provider$external) "https://api.deepseek.com/v1/chat/completions" else "offline-mock",
+    endpoint = if (.sc_run_xai_native(provider)) "https://api.x.ai/v1/responses" else
+      if (provider$external) "https://api.deepseek.com/v1/chat/completions" else "offline-mock",
     wire_json = prepared$json)
   if (!is.null(request$timeout_seconds)) payload$timeout_seconds <- args$timeout_secs
   list(args = args, body = prepared$body, json = prepared$json, payload = payload,
@@ -246,7 +258,8 @@
       !identical(provider, state$config$provider))
     .sc_run_turn_error("invalid_session", "The turn does not match the current committed scientific session.")
   .sc_run_transfer_privacy_check(state$config)
-  .sc_run_turn_privacy(prepared$body, context, session$policy$max_payload_bytes, provider$api_key_env)
+  .sc_run_turn_privacy(if (.sc_run_xai_native(provider)) .sc_run_xai_inspectable(prepared$body)
+    else prepared$body, context, session$policy$max_payload_bytes, provider$api_key_env)
   list(context = context, state = state)
 }
 
@@ -319,6 +332,8 @@
   if ((length(prior) && is.null(previous)) || !identical(request$previous_response_hash, previous))
     .sc_run_turn_error("invalid_sequence", "The turn does not continue the saved response chain.")
   cluster <- Filter(function(x) identical(x$cluster_id, request$cluster_id), prior)
+  if (identical(request$session$capability_profile$native_protocol, "xai.responses.v1"))
+    return(.sc_run_xai_sequence(prepared$body$input, cluster))
   current <- prepared$body$messages
   if (!length(cluster)) {
     if (any(!vapply(current, function(x) x$role %in% c("system", "user"), logical(1))))
@@ -338,6 +353,8 @@
 }
 
 .sc_run_turn_response <- function(value, request, context, provider, usage = NULL) {
+  if (.sc_run_xai_native(provider))
+    return(.sc_run_xai_response(value, request, context, provider, usage))
   fail <- function(status, error) list(status = status, content = NULL,
     turn_response = NULL, error = error)
   if (!is.list(value) || !identical(value$schema_version, "agentomics.turn.v1") ||
@@ -517,21 +534,24 @@
     entry$cost_basis <- if (provider$external) "confirmed_not_sent" else "offline_no_fee"
     entry$actual_cost_usd <- 0
   } else if (identical(entry$delivery, "received")) {
-    consistent <- .sc_run_turn_usage_consistent(entry$usage, entry$raw_usage)
+    native <- .sc_run_xai_native(provider)
+    consistent <- if (native) !is.null(entry$usage$input_tokens) &&
+      !is.null(entry$usage$output_tokens) else .sc_run_turn_usage_consistent(entry$usage, entry$raw_usage)
     if (!consistent) entry$usage_status <- "missing_or_inconsistent"
-    cost <- .sc_run_provider_cost(value, if (consistent) entry$usage else NULL, provider)
+    cost <- if (native) .sc_run_xai_cost(value) else
+      .sc_run_provider_cost(value, if (consistent) entry$usage else NULL, provider)
     entry$cost_state <- cost$state; entry$cost_usd <- cost$cost_usd
     if (identical(cost$state, "known")) {
       entry$charged_or_held_usd <- cost$cost_usd
-      explicit <- is.numeric(value$cost_usd) && length(value$cost_usd) == 1L &&
-        is.finite(value$cost_usd) && value$cost_usd >= 0
+      explicit <- native || (is.numeric(value$cost_usd) && length(value$cost_usd) == 1L &&
+        is.finite(value$cost_usd) && value$cost_usd >= 0)
       entry$cost_basis <- if (explicit) "provider_reported" else "usage_configured_pricing"
       entry$cost_estimated <- !explicit
       if (explicit) entry$actual_cost_usd <- cost$cost_usd
     }
     # Cost is descriptive after the request, never a new send/continue gate.
     # Output caps remain part of the response contract, independent of money.
-    if (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > provider$generation$max_tokens) {
+    if (!native && !is.null(entry$usage$output_tokens) && entry$usage$output_tokens > provider$generation$max_tokens) {
       entry$status <- "invalid_response"; entry$content <- NULL
       entry$error <- "Provider output exceeded its configured token cap."
     }
