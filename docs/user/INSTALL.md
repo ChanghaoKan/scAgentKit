@@ -51,3 +51,5 @@ sending data. Actual usage and costs are recorded after calls, without a monetar
 Reopen using the same input/project and software environment. See
 [workflow](WORKFLOW.md), [cancel/resume/disk allowance](TRIAL_CONTROLS.md) and
 [complete examples](../../inst/examples/README.md).
+
+For a downloaded build archive, use the [bundled archive installation guide](../../inst/INSTALL.md). CI extracts and executes those commands from the unmodified archive.
