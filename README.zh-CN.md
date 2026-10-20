@@ -5,6 +5,11 @@
 scAgentKit 帮助研究者从单细胞 counts 和样本信息开始，完成 QC、基础分析、分群与注释复核。
 保存的项目包含新的 Seurat 对象、marker 表、图和你的决策记录。
 
+工作流将实测证据与可选模型建议汇集到研究者复核环节，并将每次获批决定保存在项目中。
+[已有验证记录](benchmark/evaluation-v1/results/report.md)覆盖离线工作流执行；
+单独的 [80 细胞模型检查](docs/MODEL_BUDGET.md)覆盖请求传输、响应校验与工作流运行。
+生物学准确率、最优分析参数和人工作业时间节省尚未得到验证。
+
 ## 分析流程
 
 <img src="docs/diagrams/project-analysis-flow.zh-CN.svg" alt="三次复核决定：初始方案、实测分群和注释" width="1000">
@@ -74,17 +79,25 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 在新项目创建前决定模型策略。已有 key 只放在分析机器的环境变量
 `DEEPSEEK_API_KEY` 或 `XAI_API_KEY` 中，不写进代码、研究备注、网页或项目文件。
 `sc_start()` 直接接收 provider，不需另行初始化。缺少可用 key 时进入人工路径；
-检测到两个 provider key 时须明确选择。默认预算为 **USD 0**，尚未用真实模型校准付费默认值。
+检测到两个 provider key 时须明确选择。
+
+省略 `budget` 时，`sc_start()` 和 `sc_analyze()` 对标准内置 DeepSeek
+`deepseek-flash` 设置选择**每个新项目 USD1.00** 上限；
+适用设置见[实测费用与限制](docs/MODEL_BUDGET.md)。
+其他配置默认 USD0，需要显式设置上限才能发送付费请求。
+显式指定的非负有限 `budget`（包括 `budget=0`）优先；已有项目的上限保持冻结。
+预算上限不授权传输：仍须单独复核数据范围与预算，项目级同意必须显式指定上限。
 
 需要模型辅助时，先 source 下方 helper，检查实际研究信息、聚合类别、provider/model、
 已核实价格和自行选择的 USD 上限，再在调用中确认 `confirmed=TRUE`。
-Source 本身不会发送内容；下方零预算示例不能产生付费请求。
+Source 本身不会发送内容。下例设定 `budget=1`，但保留 `confirmed=FALSE`，
+因此 helper 会在启动项目或请求模型前停止。
 
 ```r
 source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
 service <- full_llm_start("input.rds", "new-project",
   context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
-  provider=list(name="deepseek", model="deepseek-flash"), budget=0,
+  provider=list(name="deepseek", model="deepseek-flash"), budget=1,
   reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
   categories=c("study_context", "aggregate_qc", "aggregate_markers",
     "aggregate_design", "aggregate_expression"), confirmed=FALSE)

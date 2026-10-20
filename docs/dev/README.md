@@ -12,6 +12,7 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [DOUBLET REVIEW](DOUBLET_REVIEW.md)
 - [ENVIRONMENT RESTORE](ENVIRONMENT_RESTORE.md)
 - [EVALUATION PROTOCOL V1](EVALUATION_PROTOCOL_V1.md)
+- [Proposed evaluation v2: annotation and human effort](EVALUATION_PROTOCOL_V2.md) — not executed or preregistered
 - [HARMONY PC REVIEW](HARMONY_PC_REVIEW.md)
 - [MAD REVIEW](MAD_REVIEW.md)
 - [OFFLINE COMPARISON CONTRACT](OFFLINE_COMPARISON_CONTRACT.md)

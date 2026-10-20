@@ -175,5 +175,11 @@ sc_run_open(project_dir)
 | job 忙或响应不明确 | 先看保存的 job/回执，等 worker 完成后再提交。 |
 | 输入/layer 不符或项目环境改变 | 核对输入和记录的环境；使用原环境或另建项目。 |
 
+完整备份复制回原路径后，目录身份会改变。若出现
+`Saved local continuation belongs to a different project directory`，
+含恢复命令的开发构建提供[显式终态作业恢复](../workbench/RUN_CONTINUE_RUNTIME.md#restore-a-complete-terminal-job-backup-unreleased)。
+它保留原作业与科学记录，只重新绑定已结束作业的本地目录；不支持正在运行的备份或迁移到新路径。
+恢复后仍须用原环境检查项目，不要手动修改状态、锁或校验值。
+
 反馈时保留包/OS 版本、输入类型、当前阶段、准确错误及 job/回执。
 分享前移除私密数据和凭据。
