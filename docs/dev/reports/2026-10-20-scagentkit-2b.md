@@ -105,3 +105,11 @@ Raw per-call usage is committed in ../benchmarks/provider-smoke/; DeepSeek
 returned no explicit monetary cost, so it remains unknown. No further provider
 requests are needed to diagnose this result. The Grok integrated successful
 synthetic draft is reported separately in M1-xAI, not attributed to this branch.
+
+Manual-review regression follow-up: a saved manual deletion previously projected
+the pre-edit citation set into the review while committing the reduced citation
+authority. The new actual-save test reproduced the stale-review failure. The
+fix rebuilds the evidence projection after pruning citation authority, before
+publishing review/pending state. The four integration assertions now pass:
+review verifies, approval remains absent, the third gate is pending, and the
+removed outside-pool gene cannot be re-added manually.

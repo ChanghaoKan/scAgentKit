@@ -973,7 +973,11 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     previous <- if (is.null(state$files$annotation_validated)) NULL else .sc_run_get(root, state, "annotation_validated")
     state <- .sc_run_draft_track(root, state, kind, previous, .sc_run_annotation_validate(proposal, evidence))
   }
-  if (kind == "annotation") state <- .sc_run_react_retain_citations(root, state, proposal)
+  if (kind == "annotation") {
+    state <- .sc_run_react_retain_citations(root, state, proposal)
+    # Publish from the reduced source authority, not the pre-edit projection.
+    evidence <- .sc_run_react_review_evidence(root, state)
+  }
   state <- .sc_run_put(root, state, paste0("manual_", kind), proposal)
   previous_proposal_hash <- state$pending$hash
   previous_preview_hash <- if (kind == "qc" && !is.null(state$files$qc_preview)) .sc_run_get(root, state, "qc_preview")$hash else NULL
