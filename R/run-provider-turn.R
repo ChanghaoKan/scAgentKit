@@ -46,7 +46,8 @@
     return(list(schema = "scagentkit.turn-capability.v1", model = provider$model,
       max_output_tokens = 128000, protocol = "agentomics.turn.v2",
       output_cap_basis = "local_cap_at_documented_default_visible_only",
-      native_protocol = "xai.responses.v1", qualification = "offline_only",
+      native_protocol = "xai.responses.v1", qualification = "synthetic_smoke_verified",
+      verification_date = "2026-10-20", formal_support = FALSE,
       reasoning_effort = if (is.null(provider$generation$reasoning_effort)) "high" else
         provider$generation$reasoning_effort))
   if (!provider$external && identical(provider$name, "mock"))

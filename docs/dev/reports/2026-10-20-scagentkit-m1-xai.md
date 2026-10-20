@@ -72,3 +72,11 @@ No private biological data, held-out data or accuracy experiment was used.
 This demonstrates the integrated protocol path, not real-data annotation
 quality. The earlier Core-only smoke is separate. The model qualification
 status remains pre-release until the public-data/product checks are complete.
+
+
+The capability receipt now records synthetic_smoke_verified, verification date
+2026-10-20 and formal_support=false. Native Responses currently covers the
+structured turns; the existing one-shot baseline still uses its legacy text
+provider route. This stage does not claim every approval-stage request has
+migrated to native Responses. That distinction is explicit in the provider
+contract and remains part of full product qualification.

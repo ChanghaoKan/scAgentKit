@@ -41,7 +41,7 @@ xai_session_reply <- function(tool = FALSE, mode = "completed") {
     metadata = list(model = "grok-4.7", http_status = 200))
 }
 
-test_that("native session binds endpoint generation and offline qualification", {
+test_that("native session binds endpoint generation and provisional qualification", {
   f <- xai_session_fixture(); on.exit(unlink(f$root, recursive = TRUE))
   p <- .sc_run_turn_prepare(f$request, f$provider)
   expect_identical(p$payload$endpoint, "https://api.x.ai/v1/responses")
@@ -49,7 +49,7 @@ test_that("native session binds endpoint generation and offline qualification", 
   expect_false(p$body$store)
   expect_equal(p$body$temperature, 0)
   expect_identical(p$body$reasoning$effort, "high")
-  expect_identical(f$session$capability_profile$qualification, "offline_only")
+  expect_identical(f$session$capability_profile$qualification, "synthetic_smoke_verified")
   expect_null(p$body$previous_response_id)
 })
 

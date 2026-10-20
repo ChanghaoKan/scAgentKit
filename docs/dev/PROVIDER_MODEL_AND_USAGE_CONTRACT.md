@@ -6,7 +6,7 @@
 
 产品正式支持目标是 DeepSeek、xAI Grok、Anthropic Claude、OpenAI，由用户选择。每家分别提交 M1 PR，型号逐个验收。先做论文需要的 **M1-xAI：原生 Responses**；Anthropic/OpenAI 的正式支持随后实现，可在论文之后。其他届时已支持 provider 各做公开开发集 N=3 `accept_drafts` 可用性验证，与论文主准确率/稳定性实验分开，不阻塞主矩阵。
 
-DeepSeek 初始产品配置仍为 Flash、thinking disabled、temperature 0。Grok 推荐候选 `grok-4.7`：官方自定义工具能力已核实，scAgentKit live smoke 未完成。精确型号和生成设置须与对照 preset 一起冻结；不根据报价选型或增加总费用估算门槛。
+DeepSeek 初始产品配置仍为 Flash、thinking disabled、temperature 0。Grok 推荐候选 `grok-4.7`：官方自定义工具能力已核实，Core 与 scAgentKit 引擎的合成 live smoke 已通过，公开真实数据产品验证仍未完成。精确型号和生成设置须与对照 preset 一起冻结；不根据报价选型或增加总费用估算门槛。
 
 CASSIA 1.4.0 的实际 SDK/内存 HTTP 探针验证了 Flash、V4 Pro、Grok4.7 在三个 agent 中的精确型号透传；Flash 的 requested none 没有关闭 thinking，Grok 的 requested effort 没有传入。V4 Pro non-thinking/temperature 0 与 Grok4.7 默认 high/temperature .7 是无补丁匹配候选，尚未成为正式实验配置。修复传输参数或调整受影响 arm 必须在冻结前记录；不因此暗改产品默认，也不把同型号等同于同协议。见[对照资格](../../benchmark/evaluation-v2/manifests/model-qualification.md)。
 
@@ -39,3 +39,9 @@ Grok4.7 不能关闭 reasoning，默认 effort high；其他 effort 是否用于
 清单保存 provider、精确 API ID、返回 model、endpoint、日期/别名语义、支持参数、工具能力、source/offline/live 状态及来源。官方文档、离线 mock、真实开发冒烟、完整 preset 分列，只有相应验收完成才称产品已验证。用户可填写清单外型号并明确标 `unverified`；未实现 provider 返回 unsupported。未知价格不禁止发送，未知工具协议不能伪称已支持。
 
 验收复用现有测试机制：完整工具历史和 opaque item 顺序、参数/大小/隐私、投递不明不重发、拒绝/缺 usage、实际用量字段映射、离线重放。真实冒烟在 CI 外执行并记录结果；本次没有调用任何 provider API，也没有真实费用或准确率结果。
+
+
+M1-xAI 当前原生 Responses 适配覆盖结构化 ReAct turns。原有一次性草稿
+仍沿用既有文本 provider 路径；本阶段没有把三个审批的所有调用都迁移为
+Responses，也不据此宣布完整产品支持。会话能力记录写入合成冒烟验证日期和
+`formal_support=false`；正式资格仍以完整产品/公开数据验收为准。
