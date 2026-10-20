@@ -1,6 +1,6 @@
 # Resource capacity, deadlines, paging and storage — 2026-10-21
 
-Base: #27 / fb3fa34ff4439a4ea006ebff7407bb0e18bfac75. Stacked draft; no merge authorization.
+PR: https://github.com/ChanghaoKan/scAgentKit/pull/28 (draft). Base: #27 / fb3fa34ff4439a4ea006ebff7407bb0e18bfac75; implementation commits through 1973877b9f386e893cc5c96d31464b30ef4c4649. Subsequent test/report corrections are listed in PR history. No merge authorization.
 
 ## Delivered behavior
 
@@ -41,3 +41,7 @@ New abstractions: one byte-setting decoder and one read-only local storage measu
 The first real DeepSeek request stopped at gate 1: the draft omitted required diagnostic resolutions, and a risk field cited a noncanonical evidence ID. No scientific approval occurred. Prompt v5 explicitly states the required scan and canonical evidence IDs; validation was not relaxed. The failed run is preserved (actual cost $0.0076458).
 
 A deliberate fresh-project retest with DeepSeek deepseek-flash completed all three scripted approvals on public PBMC3k, with 2700 output cells, 16 tool calls, 8 completed ReAct clusters, no fallback, and matching offline replay. Elapsed time: 415.715 seconds. Actual usage: 175543 input and 9129 output tokens; recorded cost: $0.052591524. Implementation hash: 7e1a6737e516160667074b2d2a0ea2f9fa5f57e792e922455460297e312202df. This receipt belongs to that installed implementation, not subsequent candidate revisions. It is engineering validation, not truth-label accuracy or a paper experiment.
+
+## CI correction checkpoint
+
+The corrected MAD test passes locally with 34 assertions, comparing the alias hash to the saved public summary (not the private full record). Corrections were pushed to #26 at 167588732b5e600b32932e6f099e62b2445a72dd and #27 at b5c468f15b36b914320906875edf0842c031d45e. All four workflows restarted and are in progress. #28 also has four checks running; no claim of final CI success. Unified capacity/scan tests passed. The optional finite-quota suggestion fixture now declares that quota explicitly rather than relying on the removed implicit default.

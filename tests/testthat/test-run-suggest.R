@@ -51,10 +51,12 @@ suggestion_action <- function(fixture, action, simulate = TRUE, view = NULL, ...
     reason = "Review the exact software-control scope.", simulate = simulate, ...)
 }
 
-test_that("oversized aggregate suggestions block only the optional provider path", {
+test_that("explicitly bounded aggregate suggestions block only the optional provider path", {
   f <- suggestion_fixture(); on.exit(unlink(f$root, recursive = TRUE))
   f$evidence$summary$large_aggregate <- paste(rep("aggregate", 15000L), collapse = " ")
   state <- .sc_run_put(f$root, f$state, "annotation_evidence", f$evidence)
+  state$config$react <- .sc_run_turn_policy(list(mode = "off", max_payload_bytes = 100000L))
+  state$config_hash <- .sc_run_hash(state$config)
   before <- .sc_project_sha_file(file.path(f$root, "state.rds"))
   view <- .sc_run_suggestion_view(f$root, state, simulate = FALSE)
   expect_false(view$available)
