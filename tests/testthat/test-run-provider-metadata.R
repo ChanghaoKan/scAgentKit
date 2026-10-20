@@ -36,7 +36,7 @@ provider_metadata_http_fixture <- function(content = provider_metadata_json, fin
   body <- if (status >= 400) list(id = "error-fixture-01",
     error = list(message = "Bearer fictional-sensitive-error-body")) else
     list(id = "chatcmpl-fixture-01", model = "fixture-model",
-      choices = list(list(message = list(content = content), finish_reason = finish)),
+      choices = list(list(message = list(role = "assistant", content = content), finish_reason = finish)),
       usage = list(prompt_tokens = 10, completion_tokens = 7, prompt_cache_hit_tokens = 2))
   httr2::response(status_code = status, method = "POST",
     url = "https://offline.invalid/v1/chat/completions",
@@ -380,4 +380,21 @@ test_that('official adapter captures original usage from mocked HTTP with no hea
  safe<-.sc_run_provider_raw_usage(list(prompt_tokens=structure(10,secret=private)))
  expect_null(attributes(safe$prompt_tokens))
  expect_false(grepl('PRIVATE_USAGE_ATTRIBUTE_TEST',rawToChar(serialize(safe,NULL,ascii=TRUE)),fixed=TRUE))
+})
+
+test_that("Core 0.2 received text errors preserve delivery and usage accounting", {
+  f <- provider_metadata_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  failure <- structure(list(message = "Do not preserve private HTTP body", call = NULL,
+    delivery = "received", code = "invalid_response", usage = list(input_tokens = 10, output_tokens = 7),
+    raw_usage = list(prompt_tokens = 10, completion_tokens = 7),
+    metadata = list(http_status = 200, request_id = "received-text-fixture")),
+    class = c("agentomics_turn_error", "error", "condition"))
+  out <- .sc_run_call(f$root, f$request, f$provider, function(...) stop(failure), budget = 1, allow_external = TRUE)
+  expect_identical(out$delivery, "received")
+  expect_identical(out$status, "provider_response_error")
+  expect_identical(out$response_audit$json_status, "received_invalid")
+  expect_identical(out$cost_state, "known"); expect_equal(out$cost_usd, .000024)
+  expect_equal(out$response_metadata$http_status, 200)
+  expect_false(grepl("private HTTP", out$error, fixed = TRUE))
+  expect_true(.sc_run_call(f$root, f$request, f$provider, budget = 1, allow_external = TRUE)$cached)
 })

@@ -1,5 +1,14 @@
 # Development changes (unreleased)
 
+- Upgrade agentomicsCore to v0.2.0 and add the internal single-turn annotation
+  transport foundation: state-bound read-only scope, complete-conversation
+  privacy checks, exact-payload receipts and delivery-aware audit recovery.
+  Structured turns record usage and available costs after each response, without
+  a prepaid estimator or monetary cap; existing one-shot accounting is retained.
+  Reuse existing checkpoints, locks, ledger and events. No ReAct loop or scientific
+  approval is introduced here. The implementation hash changes; existing approvals
+  are not migrated.
+
 - Add explicit same-path restoration of complete terminal continuation-job
   backups, retaining old records and a separate restoration receipt. Active jobs
   and project relocation remain rejected; scientific state and approvals retain

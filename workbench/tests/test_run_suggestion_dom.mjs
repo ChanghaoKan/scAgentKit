@@ -439,6 +439,26 @@ await test("new-project budget configurator uses server default and custom value
  assert.equal(JSON.stringify(h.state.suggestion.suggestion.preview),current);assert.equal(h.requests.length,0);
 });
 
+await test("bounded session consent displays actual scope without dispatch or approval", () => {
+  const value = model(7, "approved");
+  Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
+    transfer_consent: {schema: "scagentkit.transfer-consent.v2", mode: "project",
+      react_scope: {policy: {tools: ["cluster_markers", "gene_expression"], act_enabled: false,
+        max_steps_per_cluster: 4, max_steps: 20}}}});
+  const h = setup(science(), value);
+  const notice = h.el("suggestion-notice").textContent;
+  assert.match(notice, /cluster_markers, gene_expression/);
+  assert.match(notice, /ACT evidence off/);
+  assert.match(notice, /4 turns per cluster and 20 per session/);
+  assert.match(notice, /no monetary cap/);
+  assert.doesNotMatch(notice, /estimate factor/);
+  assert.match(notice, /Saving a draft never approves it/);
+  assert.equal(h.requests.length, 0);
+  value.suggestion.preview.transfer_consent.schema = "scagentkit.transfer-consent.v1";
+  h.state.suggestion = h.call("verifySuggestion", value); h.call("renderSuggestion");
+  assert.doesNotMatch(h.el("suggestion-notice").textContent, /Saved annotation transfer scope/);
+});
+
 const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", actualProductionSource: true, actualBrowser: false, actualRBridge: false, simulatedHTTP: true, networkRequests: 0, providerRequests: 0, keyReads: 0, sourceSha256: createHash("sha256").update(source).digest("hex"), htmlSha256: createHash("sha256").update(html).digest("hex"), driverSha256: createHash("sha256").update(fs.readFileSync(fileURLToPath(import.meta.url))).digest("hex"), tests: results.length, passed: results.filter(item => item.passed).length, failed: results.filter(item => !item.passed).length, results};
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");

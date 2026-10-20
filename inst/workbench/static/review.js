@@ -382,6 +382,11 @@ function renderSuggestion() {
     $("suggestion-summary").textContent += ` Budget ${budgetAmount(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
   }
   $("suggestion-notice").textContent = preview?.notice || "";
+  const savedScope = preview?.transfer_consent?.schema === "scagentkit.transfer-consent.v2" ? preview.transfer_consent.react_scope?.policy : null;
+  if (savedScope && Array.isArray(savedScope.tools) && savedScope.tools.every(name => typeof name === "string") &&
+      Number.isFinite(savedScope.max_steps_per_cluster) && Number.isFinite(savedScope.max_steps)) {
+    $("suggestion-notice").textContent += ` Saved annotation transfer scope: read-only ${savedScope.tools.join(", ") || "no tools"}; ACT evidence ${savedScope.act_enabled === true ? "on" : "off"}; up to ${savedScope.max_steps_per_cluster} turns per cluster and ${savedScope.max_steps} per session. Only aggregate marker, expression, QC, design and reference evidence may be sent. No cell IDs, cell-level matrices or local paths. Annotation evidence checks record usage and cost after calls; they have no monetary cap. The one-shot budget shown above is unchanged. Saving a draft never approves it. This scope does not itself start an evidence-checking session.`;
+  }
   $("suggestion-approve").textContent = preview?.simulated ? "Approve and run this exact simulated suggestion" : preview?.external ? "Approve and request this exact aggregate transfer" : "Approve and request this exact local suggestion";
   $("suggestion-request").textContent = preview?.simulated ? "Run this approved simulated suggestion" : "Request this approved suggestion";
   if (item?.available === true && preview && (item.can_approve || item.can_request)) $("suggestion-preview-details").open = true;
