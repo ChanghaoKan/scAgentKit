@@ -124,7 +124,7 @@
 
 .sc_run_turn_prepare <- function(request, provider) {
   allowed <- c("schema", "purpose", "session", "messages", "cluster_id", "ordinal",
-    "previous_response_hash", "approved_payload_hash", "timeout_seconds")
+    "previous_response_hash", "approved_payload_hash", "timeout_seconds", "deadline")
   if (!is.list(request) || is.null(names(request)) || anyDuplicated(names(request)) ||
       any(!names(request) %in% allowed) || !identical(request$schema, "scagentkit.provider-turn.v1") ||
       !identical(request$purpose, "annotation_react"))
@@ -172,6 +172,8 @@
     endpoint = if (provider$external) "https://api.deepseek.com/v1/chat/completions" else "offline-mock",
     wire_json = prepared$json)
   if (!is.null(request$timeout_seconds)) payload$timeout_seconds <- args$timeout_secs
+  if (!is.null(request$deadline)) payload$deadline <-
+    .sc_run_provider_number(request$deadline, "deadline", 0)
   list(args = args, body = prepared$body, json = prepared$json, payload = payload,
     request_hash = .sc_run_provider_hash(payload), bytes = bytes)
 }
@@ -458,7 +460,7 @@
     }
     immutable <- c("request_hash", "provider", "purpose", "delivery", "session_id", "session_hash", "cluster_id", "ordinal",
       "previous_response_hash", "turn_payload", "turn_payload_hash", "cost_mode",
-      "reservation_usd", "authorization", "turn_outcome", "turn_outcome_hash", "usage",
+      "reservation_usd", "authorization", "effective_timeout_seconds", "turn_outcome", "turn_outcome_hash", "usage",
       "raw_usage", "raw_usage_hash", "cost_state", "cost_usd", "charged_or_held_usd",
       "accounting_issue", "cost_basis", "cost_estimated", "actual_cost_usd",
       "reconciliation")

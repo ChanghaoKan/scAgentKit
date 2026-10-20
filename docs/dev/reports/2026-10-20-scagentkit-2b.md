@@ -113,3 +113,10 @@ fix rebuilds the evidence projection after pruning citation authority, before
 publishing review/pending state. The four integration assertions now pass:
 review verifies, approval remains absent, the third gate is pending, and the
 removed outside-pool gene cannot be re-added manually.
+
+Deadline recovery follow-up: pending requests now bind the absolute cluster
+deadline. Immediately before HTTP, the transport timeout is reduced to the
+remaining allowance (and audited). Thus a resumed/strict-approved payload cannot
+reuse its original longer relative timeout. Exact payload consent stays stable;
+expired requests are confirmed not_sent. This closes a recovery-time boundary,
+without adding monetary controls or retries.

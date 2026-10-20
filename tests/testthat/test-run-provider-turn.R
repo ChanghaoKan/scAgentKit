@@ -322,3 +322,26 @@ test_that("output cap rejection remains rejected on cached reads without a monet
   expect_true(cached$cached); expect_identical(cached$status, "invalid_response")
   expect_null(cached$content); expect_null(cached$turn_response)
 })
+
+test_that("persisted deadlines bound resumed dispatch without changing payload consent", {
+  f <- turn_fixture(); on.exit(unlink(f$root, recursive = TRUE))
+  request <- f$request
+  request$timeout_seconds <- 60
+  request$deadline <- as.numeric(Sys.time()) + 10
+  hash <- .sc_run_request_hash(request, f$provider)
+  Sys.sleep(.02)
+  expect_identical(.sc_run_request_hash(request, f$provider), hash)
+  actual <- NULL
+  out <- turn_call(f, request, function(timeout_secs, ...) {
+    actual <<- timeout_secs; turn_reply()
+  })
+  expect_identical(out$status, "ok")
+  expect_gt(actual, 0); expect_lt(actual, 10)
+  expect_equal(out$effective_timeout_seconds, actual)
+  expired <- turn_fixture(); on.exit(unlink(expired$root, recursive = TRUE), add = TRUE)
+  request <- expired$request; request$deadline <- as.numeric(Sys.time()) - 1
+  out <- turn_call(expired, request, function(...) stop("must not send"))
+  expect_identical(out$delivery, "not_sent")
+  expect_identical(out$provider_error_code, "cluster_timeout")
+  expect_equal(out$cost_usd, 0)
+})
