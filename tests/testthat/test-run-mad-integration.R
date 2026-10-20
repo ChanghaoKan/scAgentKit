@@ -585,7 +585,7 @@ test_that("a mock provider chooses only the saved aggregate preset panel and cac
   expect_length(alias, 1L)
   expect_identical(alias[[1L]]$to, "qc_mad")
   expect_identical(alias[[1L]]$aggregate_hash,
-    scAgentKit:::.sc_run_hash(mad_integration_record(root, "qc_mad")))
+    scAgentKit:::.sc_run_hash(mad_integration_record(root, "qc_mad")$summary))
   state <- scAgentKit:::.sc_run_load(root); request <- mad_integration_record(root, "strategy_request")
   for (private in c("A-lowboth-highmt", "B-highRNA-only", "Private per-cell control", '"cell_id"', '"scores"', '"private"'))
     expect_false(grepl(private, request$user_prompt, fixed = TRUE))
