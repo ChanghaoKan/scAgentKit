@@ -74,4 +74,4 @@ calibration before formal experiments. No composite preservation score is used.
 Diagnostic clusters are proxies for cell types, not validated identities.
 Unresolved Ensembl IDs cannot qualify for relaxation. Condition diagnostics
 require declared independent samples; the software cannot certify independence.
-Full browser acceptance of B1/B2 and the integrated user journey is still required.
+Actual Chrome plus the real R bridge now verifies first-gate diagnostic evidence, structured risks and a readable effective-bounds table, refresh, and 390px layout without horizontal overflow. State is unchanged and no remote requests occur. The integrated three-gate browser journey is still required. The final parameter-controls DOM suite passes 89 checks. Browser fixture and driver are committed in workbench/tests/.

@@ -1815,7 +1815,25 @@ function renderStrategy() {
     $("strategy-qc-impact").append(strategySection("Diagnostic clusters · not final analysis", details.biology,
       "Diagnostic PCA and clusters only explain possible QC bias. Approved analysis recomputes them. Any threshold replacement requires a reason and human approval."),
       strategySection("Structured risk assessments", details.risk_flags));
-    $("strategy-qc-impact").append(strategySection("Final effective diagnostic-cluster bounds", details.diagnostic_thresholds));
+    const bounds = details.diagnostic_thresholds;
+    const boundCard = element("section", null, {class: "strategy-evidence-card"});
+    boundCard.append(element("h3", "Final effective diagnostic-cluster bounds"));
+    if (bounds) {
+      const interval = (lower, upper) => (lower == null ? "No lower bound" : "≥ " + evidenceNumber(lower)) +
+        " · " + (upper == null ? "No upper bound" : "≤ " + evidenceNumber(upper));
+      boundCard.append(element("p", "Diagnostic clusters only. Minimum prefilter counts: " + evidenceNumber(bounds.minimum_prefilter_counts) +
+        ". Other QC rules still apply; replacing one boundary does not cancel another rule."),
+        table(["Diagnostic cluster", "Metric", "Rule / scope", "Cells", "Baseline", "Effective", "Change reason"],
+          array(bounds.table).map(row => [row.cluster_id, row.metric, row.predicate, row.cells,
+            interval(row.baseline_min, row.baseline_max), interval(row.effective_min, row.effective_max),
+            row.replaced ? row.reason : "Baseline retained"])));
+      if (array(bounds.replacement_impact).length) boundCard.append(
+        table(["Diagnostic cluster", "Cells", "Retained before", "Retained after", "Change"],
+          array(bounds.replacement_impact).map(row => [row.cluster_id, row.cells,
+            row.retained_before, row.retained_after, row.difference])));
+      boundCard.append(strategyRecord(bounds));
+    } else empty(boundCard, "Diagnostic bounds are unavailable for this saved proposal.");
+    $("strategy-qc-impact").append(boundCard);
     if (details.qc_impact?.diagnostic_replacements) $("strategy-qc-impact").append(strategySection("Effective replacement thresholds and retained cells", details.qc_impact.diagnostic_replacements));
   }
   $("strategy-capabilities").replaceChildren(strategySection("Supported capabilities and dependencies", details.capabilities), strategySection("Saved execution plan", details.execution_plan));

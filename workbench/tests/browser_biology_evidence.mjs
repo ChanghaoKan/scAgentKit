@@ -1,0 +1,51 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import http from 'node:http';
+import {createRequire} from 'node:module';
+import {createHash} from 'node:crypto';
+const args={};for(let i=2;i<process.argv.length;i+=2)args[process.argv[i].slice(2)]=process.argv[i+1];
+assert(args.project && args.output && args['r-library'] && args.playwright && args.chrome);
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const project=path.resolve(args.project), output=path.resolve(args.output);
+assert.equal(await fs.access(path.join(output,'report.json')).then(()=>true,()=>false),false,'Use a fresh report directory');
+await fs.mkdir(output,{recursive:true});
+const require=createRequire(import.meta.url);
+const {chromium}=require(args.playwright);
+const env={...process.env,R_LIBS_USER:args['r-library']};
+for(const key of Object.keys(env)) if(/API_KEY|TOKEN|SECRET/.test(key)) delete env[key];
+const hash=async file=>createHash('sha256').update(await fs.readFile(file)).digest('hex');
+const statePath=path.join(project,'state.rds'), before=await hash(statePath);
+const server=spawn('python3',[path.join(root,'server.py'),'--run-project',project,'--r-library',env.R_LIBS_USER,'--port',args.port || '18764'],{env,stdio:['ignore','pipe','pipe']});
+let log='';server.stdout.on('data',b=>log+=b);server.stderr.on('data',b=>log+=b);
+const origin='http://127.0.0.1:'+(args.port || '18764');let browser;
+const report={startedAt:new Date().toISOString(),actualChrome:true,actualRBridge:true,provider:'mock',paidCalls:0,tests:[],externalRequests:[],pageErrors:[]};
+report.sourceHashes={};for(const file of ['static/review.js','static/review.css','run_workbench_bridge.R','run_workbench_runtime.py'])report.sourceHashes[file]=await hash(path.join(root,file));
+try{
+ let ready=false;for(let i=0;i<120;i++){try{const status=await new Promise((resolve,reject)=>http.get(origin+'/api/run-review/inspect',r=>{r.resume();r.on('end',()=>resolve(r.statusCode));}).on('error',reject));if(status===200){ready=true;break;}}catch{}if(server.exitCode!==null)throw Error(log);await new Promise(r=>setTimeout(r,500));}
+ assert(ready,log);browser=await chromium.launch({headless:true,executablePath:args.chrome});
+ const context=await browser.newContext({viewport:{width:1400,height:1000}});
+ await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){report.externalRequests.push(route.request().url());return route.abort();}return route.continue();});
+ const page=await context.newPage();page.on('pageerror',e=>report.pageErrors.push(e.message));
+ await page.goto(origin+'/review');
+ await page.locator('#run-strategy').waitFor({state:'visible',timeout:60000});
+ const content=page.locator('#strategy-qc-impact');
+ assert((await content.textContent()).includes('Diagnostic clusters · not final analysis'));
+ assert((await content.textContent()).includes('Final effective diagnostic-cluster bounds'));
+ assert((await content.textContent()).includes('Structured risk assessments'));
+ const bounds=content.locator('section').filter({has:page.getByRole('heading',{name:'Final effective diagnostic-cluster bounds',exact:true})});
+ assert(await bounds.locator('table').count()>0);
+ await bounds.screenshot({path:path.join(output,'effective-bounds.png')});
+ report.tests.push('First gate renders separate diagnostic evidence, risks and readable effective-bounds table');
+ await page.screenshot({path:path.join(output,'desktop.png'),fullPage:true});
+ await page.reload();await page.locator('#run-strategy').waitFor({state:'visible',timeout:60000});
+ report.tests.push('Reload preserves first-gate evidence');
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
+ report.narrowScreenOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+ await page.screenshot({path:path.join(output,'mobile.png'),fullPage:true});
+ assert.equal(await hash(statePath),before);assert.equal(report.externalRequests.length,0);assert.equal(report.pageErrors.length,0);
+ report.tests.push('No state mutation, remote requests or page errors');report.passed=true;
+}catch(e){report.passed=false;report.error=e.stack;process.exitCode=1;}
+finally{if(browser)await browser.close();server.kill('SIGTERM');await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));await fs.writeFile(path.join(output,'server.log'),log);console.log(JSON.stringify(report));}
