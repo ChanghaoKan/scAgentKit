@@ -130,8 +130,8 @@ class RunSuggestionRuntime(QCRuntime):
         super().__init__(project_dir, library, rscript)
         if not isinstance(simulate, bool):
             raise StoreError("Operator simulation flag must be boolean")
-        if isinstance(worker_timeout, bool) or not isinstance(worker_timeout, int) or not 1 <= worker_timeout <= 3600:
-            raise StoreError("Operator suggestion timeout must be an integer from 1 to 3600 seconds")
+        if isinstance(worker_timeout, bool) or not isinstance(worker_timeout, int) or not 1 <= worker_timeout <= 86400:
+            raise StoreError("Operator suggestion timeout must be an integer from 1 to 86400 seconds")
         if isinstance(threads, bool) or not isinstance(threads, int) or not 1 <= threads <= 64:
             raise StoreError("Operator suggestion threads must be an integer from 1 to 64")
         self.simulate, self.worker_timeout, self.threads = simulate, worker_timeout, threads

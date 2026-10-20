@@ -1,6 +1,6 @@
 test_that('startup rejects invalid bounded controls before inspecting inputs', {
   expect_error(sc_start('absent', 'absent', react=list(max_payload_bytes=1000001)), 'max_payload_bytes')
-  expect_error(sc_start('absent', 'absent', model_timeout=3601), 'model_timeout')
+  expect_error(sc_start('absent', 'absent', model_timeout=86401), 'model_timeout')
   expect_error(sc_start('absent', 'absent', model_timeout=1.5), 'whole seconds')
 })
 

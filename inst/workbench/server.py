@@ -15,6 +15,7 @@ from urllib.parse import urlsplit, parse_qs, urlencode
 import hashlib
 
 try:
+    from .storage_usage import project_storage
     from .evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from .store import SessionStore, StoreError
     from .directed_runtime import DirectedRuntime
@@ -28,6 +29,7 @@ try:
     from .run_suggestion_runtime import RunSuggestionRuntime
     from .run_workbench_runtime import RunWorkbenchRuntime
 except ImportError:
+    from storage_usage import project_storage
     from evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from store import SessionStore, StoreError
     from directed_runtime import DirectedRuntime
@@ -314,7 +316,7 @@ class Handler(BaseHTTPRequestHandler):
             self._capture_context()
             route = urlsplit(self.path).path
             annotation_plot = re.fullmatch(r"/api/run-review/annotation-plot/([a-f0-9]{64})", route)
-            if self.server.run_review and route.startswith("/api/") and not annotation_plot and route not in ("/api/qc/inspect", "/api/run-review/inspect", "/api/run-review/continuation", "/api/subcluster/inspect", "/api/run-review/suggestion", "/api/run-review/scopes", "/api/run-review/workbench"):
+            if self.server.run_review and route.startswith("/api/") and not annotation_plot and route not in ("/api/qc/inspect", "/api/run-review/inspect", "/api/run-review/continuation", "/api/subcluster/inspect", "/api/run-review/suggestion", "/api/run-review/scopes", "/api/run-review/workbench", "/api/run-review/storage"):
                 raise StoreError("This server reviews its configured run only", 409)
             if self.server.qc and not self.server.run_review and route.startswith("/api/") and route != "/api/qc/inspect":
                 raise StoreError("This server reviews its configured QC run only", 409)
@@ -362,6 +364,11 @@ class Handler(BaseHTTPRequestHandler):
                 if not review:
                     raise StoreError("Start a configured run review to inspect annotation plots", 409)
                 self._respond(200, review.annotation_plot(annotation_plot.group(1)), "image/png")
+            elif route == "/api/run-review/storage":
+                review, _, _ = self._run_context()
+                if not review:
+                    raise StoreError("Select a local project to inspect storage", 409)
+                self._respond(200, project_storage(review.project))
             elif route == "/api/run-review/inspect":
                 review, continuation, _ = self._run_context()
                 if not review:
@@ -385,7 +392,9 @@ class Handler(BaseHTTPRequestHandler):
                 suggestion = self._suggestion_context()
                 if not suggestion:
                     raise StoreError("Model suggestions require operator --model-suggestions or --model-mock and an executable registered scope", 409)
-                self._respond(200, suggestion.describe())
+                answer = suggestion.describe()
+                answer["operator_limits"] = {"whole_worker_seconds": suggestion.worker_timeout}
+                self._respond(200, answer)
             elif route == "/api/run-review/continuation":
                 _, continuation, _ = self._run_context()
                 if not continuation:
@@ -620,7 +629,7 @@ def main(argv=None):
     parser.add_argument("--local-continue", action="store_true", help="Enable explicit asynchronous approved local computation; provider/model stages remain in R")
     parser.add_argument("--model-suggestions", action="store_true", help="Enable explicit async requests to the project's saved DeepSeek/Grok provider; keys only from runtime environment")
     parser.add_argument("--model-mock", action="store_true", help="Enable explicitly simulated suggestions for an immutable mock-provider project; zero API calls")
-    parser.add_argument("--model-timeout", type=int, default=300, help="Operator bound for each dedicated suggestion worker, 1–3600 seconds; timeout requires R reconciliation")
+    parser.add_argument("--model-timeout", type=int, default=300, help="Operator bound for each dedicated suggestion worker, 1–86400 seconds; timeout requires R reconciliation")
     parser.add_argument("--subcluster-inherit-model", action="store_true", help="Explicitly inherit the completed parent's safe provider/budget/transfer policy when creating a child; no keys are copied")
     parser.add_argument("--project-cache", default=str(STATIC.parent / ".local" / "projects"), help="Private local imported evidence cache")
     parser.add_argument("--journal-root", default=str(STATIC.parent / ".local" / "reviews"), help="Private per-project append-only review journals")
@@ -644,8 +653,8 @@ def main(argv=None):
         parser.error("Model suggestions require --run-project")
     if args.model_suggestions and args.model_mock:
         parser.error("Choose either --model-suggestions or explicit --model-mock")
-    if not 1 <= args.model_timeout <= 3600:
-        parser.error("--model-timeout must be from 1 to 3600 seconds")
+    if not 1 <= args.model_timeout <= 86400:
+        parser.error("--model-timeout must be from 1 to 86400 seconds")
     if args.subcluster_inherit_model and not args.subcluster_workspace:
         parser.error("--subcluster-inherit-model requires --subcluster-workspace")
     try:

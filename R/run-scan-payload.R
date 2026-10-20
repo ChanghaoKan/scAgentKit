@@ -1,6 +1,6 @@
 # Purpose-built aggregate projection; complete native scan/checkpoints remain
 # local and unchanged. Omit whole split blocks only, with an explicit inventory.
-.sc_run_cluster_scan_payload <- function(scan,max_bytes=60000L) {
+.sc_run_cluster_scan_payload <- function(scan,max_bytes=Inf) {
   pack<-function(rows,columns)unname(lapply(rows,function(row)unname(lapply(columns,function(key)row[[key]]))))
   marker_columns<-c("clusterId","gene","avgLog2FC","pct1","pct2","pAdj")
   marker_rows<-function(rows,n) {
@@ -25,7 +25,7 @@
     marker_columns=marker_columns,global_markers_top3=global,
     adjacent_split_inventory=inventory,adjacent_splits_top10=list(),
     scientific_diagnostics=scan$scientific_diagnostics,
-    projection=list(maximum_bytes=as.integer(max_bytes),global_markers_per_cluster=3L,adjacent_markers_per_child=10L,
+    projection=list(maximum_bytes=if (is.infinite(max_bytes)) "unlimited" else as.integer(max_bytes),global_markers_per_cluster=3L,adjacent_markers_per_child=10L,
       split_policy="Largest parent cell scopes first; each included block retains complete saved top-ten rows for its children. Full inventory and source scan hash identify omitted blocks. Complete local evidence is unchanged.",
       interpretation="Bounded same-data aggregate for recommendations, not all marker evidence or a biological optimum."))
   bytes<-function(value)nchar(enc2utf8(.sc_run_provider_json(value)),type="bytes")
@@ -34,7 +34,7 @@
   payload$projection$included_split_blocks<-0L
   payload$projection$omitted_split_blocks<-length(inventory)
   payload$status<-"partial_split_projection"
-  payload$projection$bytes<-as.integer(max_bytes)
+  payload$projection$bytes<-if (is.infinite(max_bytes)) 0L else as.integer(max_bytes)
   if(bytes(payload)>max_bytes) {
     return(list(schema=payload$schema,hash=scan$hash,source_scan_hash=scan$hash,resolutions=scan$resolutions,
       status="unavailable_essential_aggregates_exceed_bound",

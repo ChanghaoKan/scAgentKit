@@ -2,19 +2,20 @@
 # no tool changes a scientific checkpoint, metadata, proposal or approval.
 .sc_run_react_tools <- function() {
   text <- list(type = "string", minLength = 1L, maxLength = 128L)
+  offset <- list(type = "integer", minimum = 0L, maximum = 1000000L, default = 0L)
   genes <- list(type = "array", minItems = 1L, maxItems = 20L,
     uniqueItems = TRUE, items = text)
   definition <- function(name, properties, required, execute, limit) list(name = name,
-    schema_version = "scagentkit.react-tools.v1", parameters = list(type = "object",
+    schema_version = "scagentkit.react-tools.v2", parameters = list(type = "object",
       properties = properties, required = as.list(required), additionalProperties = FALSE),
     max_argument_bytes = 8192L, max_result_bytes = limit, timeout_seconds = 60,
     execute = execute)
-  list(cluster_markers = definition("cluster_markers", list(cluster_id = text,
+  list(cluster_markers = definition("cluster_markers", list(cluster_id = text, offset = offset,
       n = list(type = "integer", minimum = 1L, maximum = 50L, default = 30L)),
       "cluster_id", .sc_run_react_cluster_markers, 32768L),
     gene_expression = definition("gene_expression", list(cluster_id = text, genes = genes),
       c("cluster_id", "genes"), .sc_run_react_gene_expression, 16384L),
-    act_lookup = definition("act_lookup", list(genes = genes), "genes", .sc_run_react_act_lookup, 32768L),
+    act_lookup = definition("act_lookup", list(genes = genes, offset = offset, n = list(type="integer", minimum=1L, maximum=100L, default=100L)), "genes", .sc_run_react_act_lookup, 32768L),
     cluster_context = definition("cluster_context", list(cluster_id = text),
       "cluster_id", .sc_run_react_cluster_context, 16384L))
 }
@@ -101,7 +102,8 @@
       table$gene, ignore.case = TRUE)])))
   table <- table[order(-table$avg_log2FC, -(table$pct.1 - table$pct.2),
     as.character(table$gene), method = "radix"), , drop = FALSE]
-  total <- nrow(table); table <- utils::head(table, arguments$n)
+  total <- nrow(table); offset <- if (is.null(arguments$offset)) 0L else arguments$offset
+  table <- utils::head(table[seq_len(total) > offset, , drop=FALSE], arguments$n)
   rows <- lapply(seq_len(nrow(table)), function(i) {
     row <- table[i, , drop = FALSE]; exclude <- as.character(row$gene) %in% excluded
     list(gene = as.character(row$gene), avg_log2FC = unname(row$avg_log2FC),
@@ -111,7 +113,9 @@
   })
   list(status = "available", cluster_id = arguments$cluster_id,
     source = "saved_FindAllMarkers", comparison = "cluster_vs_all_other_cells",
-    rows_available = total, returned = length(rows), truncated = total > length(rows), markers = rows,
+    rows_available = total, returned = length(rows), offset = offset,
+    next_offset = if (offset + length(rows) < total) offset + length(rows) else NULL,
+    truncated = offset > 0L || total > length(rows), markers = rows,
     interpretation = "Saved test results only; eligibility is a statistical citation rule, not a validated cell-type assignment. Missing rows do not establish absent expression.")
 }
 
@@ -169,12 +173,16 @@
   selected <- reference[which(keep), , drop = FALSE]
   selected <- selected[order(as.character(selected$marker), as.character(selected$cell_type),
     method = "radix"), , drop = FALSE]
-  total <- nrow(selected); selected <- utils::head(selected, 100L)
+  total <- nrow(selected); offset <- if (is.null(arguments$offset)) 0L else arguments$offset
+  n <- if (is.null(arguments$n)) 100L else arguments$n
+  selected <- utils::head(selected[seq_len(total) > offset, , drop=FALSE], n)
   text <- function(x) if (is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)) x else "unknown"
   version <- text(attr(reference, "source_version"))
   list(status = if (total) "matched" else "zero_matches", source = "ACT",
     snapshot_version = version, species = species, tissue = trimws(tissue),
-    rows_available = total, truncated = total > nrow(selected),
+    rows_available = total, returned = nrow(selected), offset = offset,
+    next_offset = if (offset + nrow(selected) < total) offset + nrow(selected) else NULL,
+    truncated = offset > 0L || total > nrow(selected),
     entries = lapply(seq_len(nrow(selected)), function(i) list(gene = as.character(selected$marker[i]),
       cell_type = as.character(selected$cell_type[i]), species = species, tissue = trimws(tissue),
       pmid = if ("pmid" %in% names(selected)) text(as.character(selected$pmid[i])) else "unknown",

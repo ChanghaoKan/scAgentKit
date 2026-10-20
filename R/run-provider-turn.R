@@ -5,10 +5,17 @@
     class = c("sc_run_turn_error", "error", "condition")))
 }
 
+.sc_run_capacity_bytes <- function(value) {
+  if (identical(value, "unlimited")) return(Inf)
+  n <- .sc_run_provider_number(value, "max_payload_bytes", 1, 1000000)
+  if (n != floor(n)) stop("Request byte limit must be an integer or unlimited.")
+  n
+}
+
 .sc_run_turn_policy <- function(value = NULL) {
   defaults <- list(mode = "auto", tools = names(.sc_run_react_tools()), act_enabled = TRUE,
     max_steps = 60L, max_steps_per_cluster = 6L, cluster_timeout_seconds = 180,
-    tool_timeout_seconds = 60, max_payload_bytes = 100000L)
+    tool_timeout_seconds = 60, max_payload_bytes = "unlimited")
   if (!is.null(value)) {
     if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
         any(!names(value) %in% names(defaults)))
@@ -26,8 +33,9 @@
     stop("Invalid read-only ReAct tool scope.", call. = FALSE)
   if (!value$act_enabled) selected <- setdiff(selected, "act_lookup")
   value$tools <- as.list(sort(selected, method = "radix"))
-  for (field in c("max_steps", "max_steps_per_cluster", "max_payload_bytes")) {
-    limit <- if (field == "max_payload_bytes") 1000000 else 10000
+  .sc_run_capacity_bytes(value$max_payload_bytes)
+  for (field in c("max_steps", "max_steps_per_cluster")) {
+    limit <- 10000
     number <- .sc_run_provider_number(value[[field]], field, 1, limit)
     if (number != floor(number)) stop("ReAct count limits must be integers.", call. = FALSE)
     value[[field]] <- as.integer(number)
@@ -174,7 +182,7 @@
       session$policy$cluster_timeout_seconds))
   prepared <- do.call(agentomicsCore::prepare_turn_request, c(list(turn_fn = fn), args))
   bytes <- nchar(enc2utf8(prepared$json), type = "bytes")
-  if (bytes > session$policy$max_payload_bytes)
+  if (bytes > .sc_run_capacity_bytes(session$policy$max_payload_bytes))
     .sc_run_turn_error("payload_too_large", "The complete conversation exceeds its authorized byte limit.")
   payload <- list(schema = request$schema, purpose = request$purpose,
     session_id = session$id, session_hash = session$hash, cost_mode = "posthoc",
@@ -192,7 +200,7 @@
 }
 
 .sc_run_turn_privacy <- function(value, context, max_bytes, env_names = NULL) {
-  if (nchar(.sc_run_provider_json(value), type = "bytes") > max_bytes)
+  if (nchar(.sc_run_provider_json(value), type = "bytes") > (if (is.numeric(max_bytes) && is.infinite(max_bytes)) max_bytes else .sc_run_capacity_bytes(max_bytes)))
     .sc_run_turn_error("payload_too_large", "The complete conversation or response exceeds its byte limit.")
   strings <- character()
   forbidden <- c("cell_id", "cell_ids", "barcode", "barcodes", "counts_matrix",
@@ -283,7 +291,7 @@
     all(unlist(policy$tools, use.names = FALSE) %in% unlist(allowed$tools, use.names = FALSE)) &&
     (!isTRUE(policy$act_enabled) || isTRUE(allowed$act_enabled)) &&
     all(vapply(c("max_steps", "max_steps_per_cluster", "cluster_timeout_seconds",
-      "tool_timeout_seconds", "max_payload_bytes"), function(name) policy[[name]] <= allowed[[name]], logical(1)))
+      "tool_timeout_seconds", "max_payload_bytes"), function(name) if (name == "max_payload_bytes") .sc_run_capacity_bytes(policy[[name]]) <= .sc_run_capacity_bytes(allowed[[name]]) else policy[[name]] <= allowed[[name]], logical(1)))
 }
 
 .sc_run_turn_strict_authorized <- function(request, request_hash, state) {

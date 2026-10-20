@@ -38,7 +38,7 @@
   private_ids <- unique(c(identity$cells, sub("^.*::", "", identity$cells)))
   binding <- list(schema = "scagentkit.react-input.v1", project_id = state$project_id,
     input_hash = state$input_hash, config_hash = state$config_hash,
-    implementation_hash = state$implementation_hash, tool_version = "scagentkit.react-tools.v1",
+    implementation_hash = state$implementation_hash, tool_version = "scagentkit.react-tools.v2",
     files = state$files[names], assay = cfg$assay, counts_layer = cfg$counts_layer,
     normalized_layer = cfg$normalized_layer, cluster_column = cfg$cluster_column,
     membership_hash = .sc_run_hash(list(cell_id = observed$cell_id, cluster = observed$cluster)),
@@ -89,7 +89,7 @@
   if (!identical(context$config, cfg) || !identical(context$private_ids, ids) ||
       !identical(context$clusters, sort(unique(observed$cluster), method = "radix")) ||
       !identical(binding$membership_hash, .sc_run_hash(list(cell_id = observed$cell_id, cluster = observed$cluster))) ||
-      !identical(binding$tool_version, "scagentkit.react-tools.v1") ||
+      !identical(binding$tool_version, "scagentkit.react-tools.v2") ||
       !identical(binding$tool_schema_hash, .sc_run_hash(schemas)))
     .sc_run_react_error("invalid_binding", "The tool context differs from its committed evidence.")
   invisible(TRUE)
@@ -117,8 +117,8 @@
     "detection_outside", "reason", "entries", "snapshot_version", "species", "tissue", "cell_type", "pmid", "cells",
     "samples", "qc", "doublet", "cell_cycle", "composition", "sample", "proportion", "label_policy", "total_counts",
     "detected_features", "mitochondrial_percent", "measured_cells", "missing_cells", "median", "scores", "score",
-    "s_score", "g2m_score", "difference")
-  if (isTRUE(arguments)) allowed <- c("cluster_id", "genes", "n")
+    "s_score", "g2m_score", "difference", "offset", "next_offset")
+  if (isTRUE(arguments)) allowed <- c("cluster_id", "genes", "n", "offset")
   strings <- character()
   walk <- function(x) {
     if (is.null(x)) return(invisible(NULL))

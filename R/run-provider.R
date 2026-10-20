@@ -152,13 +152,16 @@
 }
 
 .sc_run_provider_request <- function(request, env_names = NULL) {
-  fields <- c("system_prompt", "user_prompt", "purpose", "evidence_hash", "approved_payload_hash", "validator", "transfer_scope", "prompt_version")
+  fields <- c("system_prompt", "user_prompt", "purpose", "evidence_hash", "approved_payload_hash", "validator", "transfer_scope", "prompt_version", "max_payload_bytes")
   if (!is.list(request) || is.null(names(request)) || anyDuplicated(names(request)) ||
       any(!names(request) %in% fields)) stop("Invalid coordinator provider request fields.")
   system <- .sc_run_provider_scalar(request$system_prompt, "system_prompt")
   user <- .sc_run_provider_scalar(request$user_prompt, "user_prompt")
-  if (nchar(enc2utf8(system), type = "bytes") + nchar(enc2utf8(user), type = "bytes") > 100000L)
-    stop("Aggregate provider request exceeds 100,000 bytes.")
+  limit <- if (is.null(request$max_payload_bytes)) Inf else
+    .sc_run_capacity_bytes(request$max_payload_bytes)
+  if (limit != floor(limit)) stop("Request byte limit must be an integer.")
+  if (nchar(enc2utf8(system), type = "bytes") + nchar(enc2utf8(user), type = "bytes") > limit)
+    stop(structure(list(message=paste0("Aggregate provider request exceeds its configured ", limit, " byte limit."), call=NULL), class=c("sc_run_payload_too_large", "error", "condition")))
   if (!identical(c(system, user), .sc_run_provider_redact(c(system, user), env_names))) stop("Credential-like request content is forbidden.")
   if (!is.null(request$validator) && !is.function(request$validator)) stop("Request validator must be a function.")
   purpose <- if (is.null(request$purpose)) "analysis_decision" else .sc_run_provider_scalar(request$purpose, "purpose")
@@ -166,6 +169,7 @@
   evidence <- request$evidence_hash
   if (!is.null(evidence)) evidence <- .sc_run_provider_scalar(evidence, "evidence_hash", "^[a-f0-9]{64}$")
   payload <- list(system_prompt = system, user_prompt = user, purpose = purpose, evidence_hash = evidence)
+  if (!is.null(request$max_payload_bytes)) payload$max_payload_bytes <- request$max_payload_bytes
   if (!is.null(request$prompt_version)) payload$prompt_version <- .sc_run_provider_scalar(
     request$prompt_version, "prompt_version", "^[A-Za-z0-9._-]{1,80}$")
   if (!is.null(request$transfer_scope)) {
