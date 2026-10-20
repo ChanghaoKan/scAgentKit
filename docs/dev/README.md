@@ -1,6 +1,6 @@
-# Developer and historical references
+# Developer references
 
-These repository-only documents describe internal contracts, diagnostic drivers and version-matched history. Start a study with the [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md). They are excluded from the R archive.
+These repository-only documents describe internal contracts, diagnostic drivers and validation evidence. Start a study with the [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md). They are excluded from the R archive.
 
 - [ANALYSIS STRATEGY SUPPORT](ANALYSIS_STRATEGY_SUPPORT.md)
 - [ANNOTATION ASSISTANCE](ANNOTATION_ASSISTANCE.md)
@@ -31,8 +31,14 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [UNIFIED MODEL REVIEW](UNIFIED_MODEL_REVIEW.md)
 - [annotation-response-recovery](annotation-response-recovery.md)
 
-## Archived versions and past plans
+## Implementation reports
 
-[Archive index](archive/README.md) retains historical release protocols, notes and past benchmark/model plans. These are history, not the current 0.8.1 operating instructions.
+- [B1/B2 diagnostics](reports/BIOLOGICAL_DIAGNOSTICS_STAGE_REPORT.md)
+- [ReAct loop](reports/2026-10-20-scagentkit-2b.md) · [xAI adapter](reports/2026-10-20-scagentkit-m1-xai.md)
+- [Trace interface](reports/REACT_TRACE_UI_STAGE_REPORT.md) · [Evaluation/replay](reports/REACT_4E_STAGE_REPORT.md)
+- [Startup](reports/REACT_START_STAGE_REPORT.md) · [Capacity](reports/RESOURCE_CAPACITY_STAGE_REPORT.md)
+- [Cancellation and resume](reports/TRIAL_CONTROLS_STAGE_REPORT.md)
 
-The [superseded annotation/human-effort v2 proposal](archive/EVALUATION_PROTOCOL_V2_ANNOTATION_EFFORT_PROPOSAL.md) was not executed or preregistered. Its preservation does not change historical v1 results.
+Reports describe their recorded commits, not an assurance that every proposed experiment has run.
+Use `main` as the integration branch and one short-lived branch per PR. Delete merged remote
+branches after checking their recorded heads; keep unfinished work out of the user guides.
