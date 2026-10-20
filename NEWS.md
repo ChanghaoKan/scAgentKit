@@ -1,5 +1,7 @@
 # Development changes (unreleased)
 
+- Default new `sc_start` projects to ReAct auto and diagnostic-only QC/batch evidence. Preserve saved settings on reopening and allow explicit opt-outs. New startup uses post-call accounting without monetary reservation; explicit legacy budgets and existing projects keep their original mode. Mock suggestions now exercise the real read-only ReAct loop. Add a public three-gate accept-draft example and CI acceptance test, plus bilingual user guides. Scientific approvals remain separate; the implementation hash changes.
+
 - Add `sc_react_eval()` with versioned CL scoring, external label imports,
   dual human truth, configuration/usage exports and explicit unmapped denominators.
   Add `sc_react_replay()` to reconstruct saved native histories, rerun read-only
@@ -10,9 +12,18 @@
   evidence steps with active citation links. Expression-only results are marked
   untested; missing cost remains unknown. These displays cannot approve a draft.
   The implementation hash changes.
+- Add opt-in biological diagnostics before the first strategy review: separate
+  coarse clustering, cluster-specific QC comparisons and deterministic marker
+  eligibility for threshold relaxation. Typed QC v2 replaces only the specified
+  cluster/metric bounds after human approval. Final PCA is recomputed.
+- Add sample-aware batch necessity evidence and separate technical mixing,
+  fixed-label purity and replicate-aware condition measurements on the approved
+  PCA/Harmony embeddings. Add first-gate structured risk records, bound to the
+  diagnostic checkpoint. Diagnostic thresholds still need development-set
+  calibration before formal experiments. Implementation hashes change.
 - Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
 - Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
-- Require released agentomicsCore v0.3.0. The user-facing `sc_start` default remains a later integration stage.
+- Require released agentomicsCore v0.3.0. The integrated `sc_start` entry point now defaults to ReAct auto.
 - Add an internal native xAI Responses session adapter for the explicit
   `grok-4.7` candidate. Preserve complete native output, including opaque
   reasoning, with committed-history verification and visible-content privacy

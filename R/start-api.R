@@ -14,7 +14,9 @@
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
 #' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
-#' @param budget Nonnegative project USD cap; NULL selects USD1 for standard calibrated DeepSeek Flash settings. Explicit values take precedence; saved projects retain their frozen cap.
+#' @param budget Legacy optional USD cap. NULL uses post-call accounting without a monetary cap. Saved projects retain their frozen mode.
+#' @param react Annotation evidence checks: auto (default), all or off.
+#' @param biological_diagnostics Diagnostic-only QC/batch evidence for raw input; TRUE by default.
 #' @param review Creation-time transfer policy; optional explicit project scope skips repeated
 #'   transfer approvals within its provider/categories/budget. Payloads remain inspectable.
 #' @param model_suggestions Operator mode: auto, off, configured, or simulate.
@@ -31,7 +33,12 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
   provider = NULL, budget = NULL, review = list(allow_external = FALSE),
-  doublet = c("auto", "off", "flag", "remove")) {
+  doublet = c("auto", "off", "flag", "remove"),
+  react = c("auto", "all", "off"), biological_diagnostics = TRUE) {
+  react_supplied <- !missing(react)
+  biology_supplied <- !missing(biological_diagnostics)
+  react <- .sc_run_turn_policy(list(mode = match.arg(react)))
+  biology <- .sc_run_biology_options(biological_diagnostics)
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in panels require human species; supply explicit genes for another species.",call.=FALSE)
@@ -59,6 +66,8 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   if (!existing && reuse_processed) {
     if (doublet_supplied && doublet != "off") stop("Processed reuse does not run new doublet diagnostics; use doublet='off' or start a raw project.", call. = FALSE)
     doublet <- "off"
+    if (biology_supplied && !is.null(biology)) stop("Biological diagnostics require raw input; use biological_diagnostics=FALSE for processed reuse.", call. = FALSE)
+    biology <- NULL
   }
   if (!existing && !reuse_processed && !missing(cluster_column) && !identical(cluster_column,"sc_strategy_clusters"))
     stop("cluster_column selects processed input membership; raw analysis creates sc_strategy_clusters.",call.=FALSE)
@@ -72,6 +81,9 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
         (!missing(cluster_column) && !identical(cluster_column,state$config$cluster_column)) ||
         (!is.null(processed_reason) && !identical(processed_reason,state$config$processed_reason)))
       stop("Reopening cannot replace saved entry, reuse reason or cluster column. Omit these options to use the saved choices, or create a new project.", call. = FALSE)
+    if (react_supplied && !identical(react, state$config$react)) stop("Reopening uses saved ReAct settings; omit react or create a new project.", call. = FALSE)
+    if (biology_supplied && !identical(biology, state$config$biological_diagnostics)) stop("Reopening uses saved biological diagnostics; omit this option or create a new project.", call. = FALSE)
+    react <- state$config$react; biology <- state$config$biological_diagnostics
     context <- state$config$context
     if (doublet_supplied && !identical(doublet, state$config$input_policy$doublet_mode))
       stop("Reopening uses the saved doublet mode; omit doublet or create a new project.", call. = FALSE)
@@ -82,7 +94,8 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     cluster_column <- state$config$cluster_column
   }
   setup <- .sc_start_provider_setup(provider, if (!missing(budget)) budget,
-    if (!missing(review)) review, if (existing) state$config)
+    if (!missing(review)) review, if (existing) state$config,
+    cost_mode = if (is.null(budget)) "posthoc" else "legacy_cap", react = react)
   if (model_suggestions == "auto") model_suggestions <- if (identical(setup$provider$name, "manual")) "off" else
     if (identical(setup$provider$name, "mock")) "simulate" else "configured"
   if (model_suggestions == "simulate" && !identical(setup$provider$name, "mock"))
@@ -138,6 +151,9 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     args <- c(args, "--doublet-mode", shQuote(doublet))
     setup_file <- tempfile("scagentkit-provider-", fileext = ".json")
     on.exit(unlink(setup_file), add = TRUE)
+    setup$react <- react
+    setup$biological_diagnostics <- if (is.null(biology)) FALSE else
+      biology[c("cluster_qc", "batch_assessment")]
     jsonlite::write_json(setup, setup_file, auto_unbox = TRUE, null = "null")
     Sys.chmod(setup_file, "0600")
     args <- c(args, "--model-config-file", shQuote(setup_file))

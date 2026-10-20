@@ -9,9 +9,12 @@ sc_start(input, project_dir, context = NULL, checkout = NULL,
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
   provider = NULL, budget = NULL, review = list(allow_external = FALSE),
-  doublet = c("auto", "off", "flag", "remove"))
+  doublet = c("auto", "off", "flag", "remove"),
+  react = c("auto", "all", "off"), biological_diagnostics = TRUE)
 }
 \arguments{
+\item{react}{Annotation evidence checks: auto for difficult clusters (default), all, or off. Saved settings are immutable on reopening.}
+\item{biological_diagnostics}{Diagnostic-only coarse clusters and batch evidence for raw entry, TRUE by default. FALSE disables both; a list may independently disable cluster_qc or batch_assessment. Processed reuse defaults to disabled.}
 \item{scientific_review}{Explicit optional rebuilding/extended expression diagnostics for a new raw project, disabled by default. Applicable declared-human blood/PBMC or pancreas classic panels remain baseline evidence. Reopening cannot replace saved settings.}
 \item{input}{Local RDS file containing raw counts or a Seurat object, a 10x MEX directory, or a sample table data.frame/CSV/TSV.}
 \item{sample_id,matrix_kind}{For one 10x MEX directory, explicit sample ID and raw/filtered declaration. Sample tables instead require sample_id, path, matrix_kind columns. Optional donor/condition/batch/capture/treatment/qc_group/group columns declare those metadata roles. Filtered is a user declaration, not independent evidence of empty-droplet processing.}
@@ -23,7 +26,7 @@ sc_start(input, project_dir, context = NULL, checkout = NULL,
 \item{model_suggestions}{Operator mode: auto (default; selects configured suggestions or mock simulation from the saved provider), off, configured, or simulate (immutable mock provider only). Preview and exact transfer authorization remain separate from scientific approval.}
 \item{doublet}{Auto (default) or flag attempts eligible called-cell diagnostics and keeps cells; off explicitly leaves them unassessed. Remove stages an exact predicted-cell removal proposal only when prerequisites pass; human scientific approval remains required. Missing dependencies, capture or calling provenance are explicitly unassessed.}
 \item{provider}{Explicit name/list, including name='openai_compatible' with HTTPS base_url, model and api_key_env. NULL detects exactly one DeepSeek/Grok key; missing or ambiguous keys fall back to manual mode with a notice. Keys are never saved.}
-\item{budget}{Nonnegative project USD cap. NULL selects USD1.00 only for calibrated DeepSeek Flash with non-thinking mode, at most 4096 output tokens and reservation no greater thanUSD0.05; other settings require an explicit cap. Explicit 0 disables paid requests. No default grants data-transfer consent.}
+\item{budget}{Legacy optional USD cap. NULL creates a project with post-call usage/cost accounting and no monetary cap or reservation. Existing projects retain their saved mode.}
 \item{review}{Creation-time list with allow_external=TRUE/FALSE. Omit transfer_consent for strict approval of each external payload. To confirm one creation-time scope, add transfer_consent=list(mode='project', confirmed=TRUE, reviewer='...', reason='...', categories=c('study_context','aggregate_qc','aggregate_markers','aggregate_design','aggregate_expression')). This binds the provider, prompt version and explicit budget. Only requests within these categories skip repeated transfer approval. Payload previews remain available; no scientific approval is granted.}
 \item{python}{Existing Python 3.9+ executable, detected by default.}
 \item{browse}{Open the URL in the browser; FALSE returns it without browser dispatch.}

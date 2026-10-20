@@ -140,6 +140,7 @@
   # Optional MAD evidence is bound explicitly. Keeping this field absent when
   # disabled preserves the existing range-QC fingerprint exactly.
   if (!is.null(evidence$mad_record)) inputs$mad_evidence_hash <- evidence$mad_record$evidence_hash
+  if (!is.null(evidence$biology_record)) inputs$biology_hash <- evidence$biology_record$hash
   digest::digest(inputs,
                  algo = "sha256", serialize = TRUE, serializeVersion = 2L)
 }
@@ -219,12 +220,13 @@
       !identical(evidence$evidence_hash, .sc_run_qc_hash(evidence)))
     .sc_project_fail("QC evidence is missing or changed; regenerate the evidence and obtain a fresh proposal/approval.")
   if (!is.null(evidence$mad_record)) .sc_run_mad_verify(evidence$mad_record)
+  if (!is.null(evidence$biology_record)) .sc_run_biology_verify(evidence$biology_record, evidence)
   if (!is.list(proposal) || is.null(names(proposal)) || anyDuplicated(names(proposal)) ||
       anyNA(names(proposal)) || any(!nzchar(names(proposal))))
     .sc_project_fail("QC proposal must be a named typed object; empty/unstructured responses are not executable.")
   if (identical(proposal$schema, "scagentkit.qc.mad.v1"))
     return(.sc_run_mad_validate(proposal, evidence))
-  if (identical(proposal$schema, "scagentkit.qc.rules.v1"))
+  if (isTRUE(proposal$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
     return(.sc_run_qc_rules_validate(proposal, evidence))
   allowed <- c("schema", "rationale", "risks", "filters")
   if (length(setdiff(names(proposal), allowed)) || !all(allowed %in% names(proposal)))

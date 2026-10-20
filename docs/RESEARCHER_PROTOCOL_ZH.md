@@ -1,15 +1,16 @@
 # scAgentKit 研究者操作协议
 
-在数据所在机器上使用 0.8.1 工作流。[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
+本页描述在数据所在机器上使用当前开发源码构建的流程。[English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。
 安装、1.0 前的兼容政策及[局限](../README.zh-CN.md#局限)统一见 README。
 
 ## 本源码构建的模型入口
 
-在新项目 `sc_start()` 中直接配置 provider/model、明确 USD 上限和传输同意；见
+在新项目 `sc_start()` 中配置 provider/model，并一次确认汇总数据传输；见
 [README 入口](../README.zh-CN.md#分析步骤)及随包 `full-llm-workflow.R`。
 只使用已有环境 key；缺 key 时进入人工路径。不使用项目级同意时，每个确切 payload 单独审批。
-采纳候选或 Save 不等于科学审批。标准 DeepSeek Flash 新项目默认上限为 USD1.00；
-[实测费用、适用设置和首次同意](MODEL_BUDGET.md)仍须核对，显式 `budget=0` 禁止付费请求。
+采纳候选或 Save 不等于科学审批。新启动流程默认事后记录实际用量，不设金额上限或额度预留。
+显式填写的旧 `budget` 参数和已有项目保留原有语义。
+默认查证、回退与离线重放见 [ReAct 用户指南](REACT_ZH.md)。
 
 新草稿仅在各组所需指标完整且适用时使用保守 AND3；否则明确保留 keep-all。
 细胞周期仅对物种和基因覆盖适用的输入尝试评分；自动 doublet 仅在合格 called-cell/capture 队列中标记，

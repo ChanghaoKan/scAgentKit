@@ -124,7 +124,8 @@
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
   # This preview is for the existing one-shot request allowance. ReAct usage
   # remains in the same ledger, but its post-call costs do not spend that cap.
-  entries <- Filter(function(entry) !identical(entry$cost_mode, "posthoc"), ledger$entries)
+  posthoc <- identical(state$config$cost_mode, "posthoc")
+  entries <- if (posthoc) ledger$entries else Filter(function(entry) !identical(entry$cost_mode, "posthoc"), ledger$entries)
   amount <- function(field, known = NULL) sum(vapply(entries, function(entry) {
     if (!is.null(known) && !identical(identical(entry$cost_state, "known"), known)) return(0)
     value <- entry[[field]]; if (is.null(value)) 0 else value
@@ -132,7 +133,8 @@
   provider <- context$provider
   result$preview <- list(request_hash = context$request_hash, provider = provider,
     model = provider$model, generation = provider$generation,
-    budget = state$config$budget, remaining_usd = max(0, state$config$budget - amount("charged_or_held_usd")),
+    cost_mode = if (posthoc) "posthoc" else "legacy_cap",
+    budget = if (posthoc) NULL else state$config$budget, remaining_usd = max(0, state$config$budget - amount("charged_or_held_usd")),
     consent_mode = if (is.null(state$config$review$transfer_consent)) "strict" else "project",
     consent_hash = state$config$review$transfer_consent$hash,
     transfer_consent = state$config$review$transfer_consent,
@@ -144,7 +146,7 @@
     allow_external = isTRUE(state$config$review$allow_external), simulated = simulate,
     notice = if (simulate) "SIMULATED offline software-control response; no model request or biological inference." else
       if (.sc_run_transfer_authorized(context$request, state$config)) paste(
-        "This aggregate request is within the explicitly confirmed creation-time categories, provider and USD cap.",
+        if (posthoc) "This aggregate request is within the confirmed project categories and provider; costs are recorded afterwards." else "This aggregate request is within the explicitly confirmed creation-time categories, provider and USD cap.",
         "The exact payload below remains available. This consent does not approve a scientific plan or labels.") else
       if (provider$external) paste("The exact aggregate QC/marker/expression evidence and declared context below leave this machine.",
         "Raw matrices, cell IDs and per-cell metadata are excluded. Aggregate sample/capture labels and context may identify a study.") else
@@ -179,10 +181,11 @@
     identical(saved$binding$guided_review_hash, context$binding$guided_review_hash)
   attempted <- same_evidence && saved$status %in% c("requesting", "candidate", "adopted", "discarded", "failed")
   held <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
-    (!identical(entry$cost_state, "known") || isTRUE(entry$accounting_issue)), logical(1)))
+    (if (posthoc) identical(entry$delivery, "unknown") || entry$status %in% c("dispatched", "delivery_uncertain") else
+      !identical(entry$cost_state, "known") || isTRUE(entry$accounting_issue)), logical(1)))
   result$can_auto_request <- isTRUE(result$preview$scope_authorized) && result$can_request &&
     state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held &&
-    result$preview$remaining_usd >= provider$reservation_usd
+    (posthoc || result$preview$remaining_usd >= provider$reservation_usd)
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan, guided_review_hash=context$binding$guided_review_hash))
   if (same_evidence && !is.null(saved$fallback)) {
@@ -386,7 +389,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     if (identical(answer$status, "ok") && context$kind == "annotation" && !is.null(state$config$react)) {
       state <- .sc_run_react_record_baseline(root, state, answer)
       .sc_run_save(root, state)
-      if (!simulate) {
+      {
         refined <- .sc_run_react_refine(root, answer$content, project_lock_owner = owner)
         state <- .sc_run_load(root, verify = FALSE)
         answer$baseline_content <- answer$content

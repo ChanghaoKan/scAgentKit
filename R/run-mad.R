@@ -263,6 +263,8 @@
 .sc_run_mad_baseline_qc <- function(evidence) {
   baseline <- evidence
   baseline$mad_record <- NULL
+  baseline$biology_record <- NULL
+  if (is.list(baseline$summary)) baseline$summary$biology <- NULL
   if (is.list(baseline$summary)) baseline$summary$mad <- NULL
   baseline$evidence_hash <- .sc_run_qc_hash(baseline)
   baseline

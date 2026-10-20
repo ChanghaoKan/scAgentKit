@@ -66,6 +66,28 @@ function harmonyAnswer(policy) {
   return value;
 }
 async function main() {
+  await check("diagnostic replacement edits retain binding and show effective bounds", () => {
+    const value = answer(), details = value.run.strategy_review.details;
+    details.capabilities.qc_rules = {schema: "scagentkit.qc.rules.v1", replacement_schema: "scagentkit.qc.rules.v2"};
+    details.biology_hash = evidenceHash;
+    details.biology = {membership_hash: inputHash, diagnostic_only: true};
+    details.diagnostic_thresholds = {table: [{cluster_id: "0", effective_min: 100, replaced: true}]};
+    const qc = {schema: "scagentkit.qc.rules.v2", rationale: "Reviewed diagnostic concern", risks: [],
+      remove_if: "any", rules: [{op: "range", metric: "nCount", min: 200}],
+      diagnostic_hash: evidenceHash, membership_hash: inputHash,
+      replacements: [{cluster_id: "0", metric: "nCount", min: 100, reason: "Saved marker eligibility"}]};
+    details.canonical_proposal.qc = qc;
+    const h = setup(value);
+    assert.equal(h.call("typedQCRulesError", qc, details), null);
+    const changed = h.call("rulesQC", qc, [{op:"range",metric:"nCount",min:300}]);
+    assert.equal(changed.schema, "scagentkit.qc.rules.v2");
+    assert.equal(changed.diagnostic_hash, evidenceHash);
+    assert.deepEqual(JSON.parse(JSON.stringify(changed.replacements)), qc.replacements);
+    assert.match(h.el("strategy-qc-impact").textContent, /Diagnostic clusters.*Final effective diagnostic-cluster bounds/s);
+    const stale = {...qc, membership_hash: "0".repeat(64)};
+    assert.match(h.call("typedQCRulesError", stale, details), /current diagnostic/);
+    assert.equal(h.requests.length, 0);
+  });
   await check("verified central strategy snapshot renders without calculation", () => {const h = setup(); assert.equal(h.el("run-strategy").hidden, false); assert.equal(h.el("run-qc").hidden, true); assert.equal(h.el("run-annotation").hidden, true); assert.equal(h.requests.length, 0); assert.match(h.el("run-progress").textContent, /Analysis strategy review/);});
   await check("user facts missing background and model inferences remain separate", () => {const h = setup(); const cards = h.el("strategy-background").children; assert.equal(cards.length, 3); assert.match(cards[0].textContent, /User-provided facts.*condition.*Ca.*Ctrl/s); assert.doesNotMatch(cards[0].textContent, /unverified design/); assert.match(cards[1].textContent, /Missing background.*batch assignment/s); assert.match(cards[2].textContent, /Model \/ proposal inferences.*unverified design/s);});
   await check("all six saved operation sections are readonly observations", () => {const h = setup(); const cards = h.el("strategy-operations").children; assert.equal(cards.length, 6); assert.match(cards.map(value => value.textContent).join(" "), /QC and cell retention.*LogNormalize.*PC selection.*ndim.*Batch handling.*Clustering and resolution.*UMAP/s); assert.match(h.el("strategy-unsupported").textContent, /regression does not mean deleting cycling cells/); assert.match(h.el("strategy-unsupported").textContent, /doublet score alone does not authorize removal/);});

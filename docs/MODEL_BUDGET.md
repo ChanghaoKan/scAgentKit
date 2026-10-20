@@ -1,5 +1,11 @@
 # Model budget and measured costs
 
+This page records the legacy capped path and its historical calibration. It is
+not the default for new development-version `sc_start()` projects, which use
+post-call accounting. See [the current guide](REACT.md). Explicit legacy caps
+and saved project settings retain the behavior documented below.
+
+
 For a new DeepSeek `deepseek-flash` project with non-thinking mode, at most
 4096 output tokens and a request reservation no greater than USD0.05,
 `sc_start()` and `sc_analyze()` select a **USD1.00 project cap** when `budget`

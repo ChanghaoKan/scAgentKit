@@ -1,20 +1,28 @@
-# Source only defines this helper. It never installs software or reads a key.
-# The researcher must review the exact categories/provider/USD cap and call
-# with confirmed=TRUE. Keys stay in the runtime environment, never arguments.
-# Opening the browser stages drafts; three scientific approvals remain manual.
-full_llm_start <- function(input, project_dir, context, provider, budget,
-                           reviewer, reason, categories, confirmed=FALSE,
-                           browse=interactive()) {
-  if(!isTRUE(confirmed))stop("Review the data categories, provider/model and USD cap before confirming project transfer consent.",call.=FALSE)
-  scAgentKit::sc_start(input,project_dir,context=context,provider=provider,budget=budget,
-    review=list(allow_external=TRUE,transfer_consent=list(mode="project",confirmed=TRUE,
-      reviewer=reviewer,reason=reason,categories=categories)),browse=browse)
+# Sourcing defines a helper and sends nothing. Credentials stay in the named
+# provider environment variable. Confirm aggregate data transfer once; every
+# scientific decision still needs a separate human approval in the browser.
+full_llm_start <- function(input, project_dir, context, provider, budget = NULL,
+                           reviewer, reason, categories, confirmed = FALSE,
+                           browse = interactive(), react = "auto") {
+  if (!isTRUE(confirmed)) stop("Review the provider/model and aggregate data categories, then confirm transfer. Usage and costs are recorded afterwards.", call. = FALSE)
+  scAgentKit::sc_start(input, project_dir, context = context, provider = provider,
+    budget = budget, react = react,
+    review = list(allow_external = TRUE, transfer_consent = list(mode = "project",
+      confirmed = TRUE, reviewer = reviewer, reason = reason, categories = categories)),
+    browse = browse)
 }
-# For strict per-payload consent, call sc_start directly with
-# review=list(allow_external=TRUE), omitting transfer_consent.
-# Without an available configured key, sc_start explains the manual fallback.
-# For standard DeepSeek Flash, omitted budget in sc_start selects USD1.
-# This project-scope helper requires an explicit chosen cap, for example budget=1
-# or budget=.73; confirmed=TRUE covers that actual cap and the data categories.
-# Existing project caps stay frozen; a model cannot increase them.
-# Prices/usage need provider-specific validation; a mock is not fee calibration.
+# 1. Review the initial strategy and diagnostic QC/batch evidence; adopt/edit
+#    the prepared draft, then approve it. Saving/adopting is not approval.
+# 2. Review the measured resolution scan and batch-preservation evidence;
+#    adopt/edit the next draft and approve the selected scanned resolution.
+# 3. Review annotation and ACT agreement. ReAct auto checks low-confidence,
+#    Unknown or conflicting clusters. Expand evidence steps, adopt/edit, approve.
+# 4. Retrieve sc_result(sc_open(project_dir)). Reopen with sc_start using the
+#    same input/project; omit settings to retain the saved configuration.
+# 5. sc_react_replay(project_dir) reconstructs the original saved draft offline.
+#    sc_react_eval(project_dir, truth="truth.csv") compares evaluator-only truth.
+# react="all" checks every cluster; react="off" keeps the one-shot draft.
+# Strict per-payload transfer: sc_start(..., review=list(allow_external=TRUE)).
+# Missing key falls back visibly to manual mode. No call is resent automatically
+# after uncertain delivery. NULL budget uses post-call accounting; an explicit
+# budget retains the legacy capped path for compatibility with older scripts.

@@ -176,6 +176,22 @@
     reason = "Author choice to preserve unintegrated analysis while reviewing technical and biological evidence.")), TRUE,
     "No correction is performed; this choice alone does not establish that batch effects were assessed.")
   step$candidates <- list(none)
+  if (isTRUE(config$biological_diagnostics$batch_assessment)) {
+    measured <- evidence$summary$biology$batch
+    step$biological_diagnostics <- measured
+    if (is.null(measured) || !identical(measured$status, "effect_detected_design_supported")) {
+      skip <- !is.null(measured) && measured$status %in%
+        c("not_applicable", "no_effect_detected", "fully_confounded")
+      step$status <- if (skip) "recommend_skip" else "insufficient_information"
+      step$assessment <- if (skip) "assessed" else "unavailable"
+      step$reasons <- list(if (skip)
+        paste("Diagnostic batch status:", measured$status,
+          "Keep the unintegrated analysis; technical mixing and biology must be reviewed separately.")
+        else "Batch necessity could not be established from the diagnostic evidence; retain none.")
+      step$next_decision <- "Review the diagnostic evidence and declared design; no correction is automatically executed."
+      return(step)
+    }
+  }
   roles <- evidence$private$roles
   selected <- validated$selected_cells
   if (is.null(selected)) selected <- validated$qc_validated$keep_cells
