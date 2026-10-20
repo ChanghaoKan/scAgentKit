@@ -3,7 +3,7 @@
 .sc_act_root <- function() system.file('extdata','references','act-private-2026-10-20',package='scAgentKit',mustWork=TRUE)
 .sc_act_manifest <- function(root=.sc_act_root()) {
   path<-file.path(root,'PROVENANCE.json')
-  expected<-'77b70d5986c21c062c38d1794d41efb8d8966f7aef1a3f30eb4bc03c23b1b1f0'
+  expected<-'75f27aa181e616d7e6e18365691ff8612d06780879af9003f081a8acd4d35331'
   if(!file.exists(path)||nzchar(Sys.readlink(path))||!identical(digest::digest(file=path,algo='sha256'),expected))
     stop('ACT provenance changed or is missing. Restore the pinned installation; no reference was accepted.',call.=FALSE)
   manifest<-jsonlite::fromJSON(path,simplifyVector=FALSE)
@@ -50,6 +50,7 @@ annot_act_reference <- function(species,tissue) {
   attr(out,'requested_url')<-manifest$source_page;attr(out,'source_url_verified')<-FALSE
   attr(out,'source_version')<-manifest$snapshot_id;attr(out,'source_date')<-NA_character_
   attr(out,'retrieved_at')<-manifest$downloaded_date_as_supplied
+  attr(out,'license')<-manifest$license_terms
   attr(out,'act_snapshot')<-manifest;attr(out,'act_citation')<-manifest$citation
   attr(out,'n_input_rows')<-spec$data_rows;attr(out,'species')<-species;attr(out,'tissue_filter')<-trimws(tissue)
   attr(out,'scope_status')<-if(nrow(out))'matched' else 'zero_matches'
@@ -73,6 +74,7 @@ annot_act_reference <- function(species,tissue) {
   if(is.null(manifest))return(list())
   list(original_sha256=attr(reference,'original_sha256'),
     preparation_note=paste(attr(reference,'scope_notice'),'ACT snapshot downloaded',manifest$downloaded_date_as_supplied,
-      '; publisher release/date not recorded. Citation:',manifest$citation$title,
+      '; publisher release/date:',manifest$publisher_release,manifest$publisher_release_date,
+      '; snapshot license:',manifest$license_terms,'. Citation:',manifest$citation$title,
       'DOI',manifest$citation$doi,'PMID',manifest$citation$pmid))
 }

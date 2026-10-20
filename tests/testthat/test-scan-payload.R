@@ -23,5 +23,5 @@ test_that("the resolution rule fallback never invents an unscanned 0.5", {
   expect_null(step$fallback$resolution)
   expect_match(paste(step$conflicts,collapse=" "),"not scanned")
   expect_equal(vapply(step$candidates,function(row)row$changes$clustering$resolution,numeric(1)),c(.2,.4))
-  expect_identical(.sc_run_prompt_version(),"aggregate-review.v2")
+  expect_identical(.sc_run_prompt_version(),"aggregate-review.v3")
 })

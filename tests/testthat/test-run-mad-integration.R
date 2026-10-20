@@ -578,7 +578,14 @@ test_that("a mock provider chooses only the saved aggregate preset panel and cac
   provider <- list(name = "mock", external = FALSE, model = "bounded-local-MAD-proposal-only")
   begun <- mad_integration_begin(root, object, provider = provider, chat_fn = callback)
   expect_identical(begun$status, "awaiting_review"); expect_identical(calls, 1L)
-  expect_identical(seen$evidence$quality$mad$panel_hash, mad_integration_record(root, "qc_mad")$panel_hash)
+  expect_identical(seen$evidence$qc_mad$panel_hash, mad_integration_record(root, "qc_mad")$panel_hash)
+  expect_null(seen$evidence$quality$mad)
+  aliases <- seen$evidence$duplicate_evidence_projection$aliases
+  alias <- Filter(function(x) identical(x$from, "quality.mad"), aliases)
+  expect_length(alias, 1L)
+  expect_identical(alias[[1L]]$to, "qc_mad")
+  expect_identical(alias[[1L]]$aggregate_hash,
+    scAgentKit:::.sc_run_hash(mad_integration_record(root, "qc_mad")$summary))
   state <- scAgentKit:::.sc_run_load(root); request <- mad_integration_record(root, "strategy_request")
   for (private in c("A-lowboth-highmt", "B-highRNA-only", "Private per-cell control", '"cell_id"', '"scores"', '"private"'))
     expect_false(grepl(private, request$user_prompt, fixed = TRUE))
