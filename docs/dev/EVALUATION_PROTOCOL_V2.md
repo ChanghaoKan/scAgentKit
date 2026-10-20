@@ -1,6 +1,6 @@
 # scAgentKit 生物学决策与评估协议 v2
 
-日期：2026-10-20。状态：**E0 工程协议已获维护者确认；正式实验尚未冻结或运行。** 本版纳入四份草案审阅后的十二项决定。工程边界、CL 祖先距离 3、簇级真值 80/80 已确定；仍需开发试跑才能确定的参数和精确模型写入冻结清单，不把占位项称为已验证配置。
+日期：2026-10-20。状态：**E0 工程协议已获维护者确认；正式实验尚未冻结或运行。** 本版纳入四份草案审阅后的十二项决定及后续简化：论文主矩阵固定为 DeepSeek + Grok，M1-xAI 优先；费用只在运行后记录和比较，不建立发送前估算或费用封顶。E0 原阶段报告作为历史记录保留。工程边界、CL 祖先距离 3、簇级真值 80/80 已确定；精确型号、匹配 preset 和经验参数仍需开发资格验证后冻结。
 
 本文替代[旧的注释与人力研究提案](archive/EVALUATION_PROTOCOL_V2_ANNOTATION_EFFORT_PROPOSAL.md)，该旧提案未执行、未注册；历史 v1 结果保持原样。定位见[定位 v2](SCAGENTKIT_POSITIONING_V2.md)，阶段与关键路径见[论文里程碑计划](PAPER_MILESTONE_PLAN.md)。论文里程碑暂定 0.10，范围为 ReAct v1（含 4E）、B1、B2、E0–E5 及主矩阵 M1；完整 1.0 的其他工作在论文里程碑之后。本文不是已完成生物学验证的声明。
 
@@ -9,12 +9,12 @@
 ## 执行顺序与冻结
 
 1. 继续已批准的 ReAct v1。E0 先作为文档 PR 提交；其后的 A–C（E1–E3）可与 ReAct v1 并行实施，复用现有机制。
-2. 两个生物学功能在 ReAct v1 完成后实施。A–C 遇到尚未支持的功能开关必须返回 `unsupported_feature`，不静默忽略或自行模拟包行为。
-3. 框架完成时，在公开开发集上做 N=3 的 `accept_drafts` 试跑：mock 一组、已验证真实 provider 一组。记录费用上限与真实结果，真实 API 不进 CI。这些是开发试跑，不是正式实验。
-4. E5 正式实验必须同时满足：ReAct v1 完成；B1、B2 完成；E0–E4 的框架、协议、数据资格、主矩阵模型和分析脚本冻结。DeepSeek 加一个合格前沿模型构成主矩阵并阻塞正式实验；其余两家的扩展矩阵不阻塞。任何主矩阵前置项未满足，不启动正式基准。
+2. **2B 合并后，B1/B2 与第三步的 UI、4E 评估重放及文档工作并行推进**，不再等待 ReAct 第一版所有阶段完成；B2 的集成仍需 B1 共享诊断可用。A–C 可先开发运行器、注入器和评分；E3 的第一关主发现率依赖 B1/B2 的生产结构化风险字段，第三关主发现率依赖 2B 的对应字段。尚未支持的能力返回 `unsupported_feature`，不静默忽略、不用关键词替代主指标，也不自行模拟包行为。
+3. 框架完成时，在公开开发集上做 N=3 的 `accept_drafts` 试跑：mock 一组、已验证真实 provider 一组。记录实际用量、费用、耗时与失败结果，真实 API 不进 CI。这些是开发试跑，不是正式实验。
+4. E5 正式实验必须同时满足：ReAct v1 完成；B1、B2 完成；E0–E4 的框架、协议、数据资格、主矩阵模型和分析脚本冻结。DeepSeek + Grok 构成主矩阵并阻塞正式实验；精确型号和匹配的对照 preset 在开发资格通过后冻结，无发送前总费用报价门槛。四家 provider 的产品支持与论文矩阵分开；其他 provider 的适配和可用性验证不阻塞论文主实验。任何主矩阵前置项未满足，不启动正式基准。
 5. 最终留出集只由维护者在论文里程碑的包功能完成、真值冻结之后首次运行，作为 E5 的主要结果之一，而不是推迟到论文之后的独立 E6。开发和调参期间不读取该数据或其标签；后续 1.0 安装/兼容等工作不构成首次留出运行的额外前置条件。
 
-冻结清单保存：协议 commit、包/Core commit、依赖环境、输入/真值/映射/ACT/CL hash、模型配置、价格版本、种子、注入参数、发现规则、评分版本和外部工具版本。先提交协议，再用后续 receipt 提交记录它的 commit；不要求文件包含自身最终 commit。E0 阶段报告记录本次工程协议 commit，E5 的 `experiment-freeze` receipt 记录正式实验采用的协议与所有配置 commit，两者不能混称。未经全部门槛核实，`experiment_freeze_status` 必须保持 `not_frozen`。
+冻结清单保存：协议 commit、包/Core commit、依赖环境、输入/真值/映射/ACT/CL hash、模型配置、费用报告所用价格来源/日期或 unknown、种子、注入参数、发现规则、评分版本和外部工具版本。先提交协议，再用后续 receipt 提交记录它的 commit；不要求文件包含自身最终 commit。E0 阶段报告记录本次工程协议 commit，E5 的 `experiment-freeze` receipt 记录正式实验采用的协议与所有配置 commit，两者不能混称。未经全部门槛核实，`experiment_freeze_status` 必须保持 `not_frozen`。
 
 版本化指标并存，不覆盖历史模式；只放行已证明科学等价的项目环境变化并追加环境差异 receipt。完整性破坏和科学代码变化仍阻断，旧 hash、批准和历史结果不得重写。后者的实现属于论文之后 C1，E0 只固定边界。
 
@@ -72,11 +72,11 @@ Harmony 保持 RNA counts/data 不变，所以 RNA DE 不变只是完整性检�
 | `cycle_concern` | `not_assessed`, `not_detected`, `suspected` |
 | `ambient_suspected` | `not_assessed`, `not_detected`, `suspected`；阴性表达背景可以支持风险描述，不能充作已检验 marker 引用 |
 
-新第一关/第三关模型请求都要求返回上述五个字段；不能以“不适用”为由省略键。各字段同时记录 `assessment_status`（`assessed`、`not_assessed`、`not_applicable`）和 `source`（`model`、`rule`、`human`、`legacy_unassessed`），并校验与 value 的组合。旧草稿/手动草稿缺字段时由读取投影显式标 `not_assessed`（batch value 为 `insufficient_evidence`），其 assessment 必须为 `not_assessed`，source 为 `legacy_unassessed`，不得改写原记录或混同“测过但证据不足”。不适用字段的 assessment 为 `not_applicable`，一般 risk value 为 `not_assessed`，batch value 为 `not_applicable`。记录风险依据的证据 ID、阶段、簇/项目绑定和来源；生产校验通过只证明格式合法。已有 `strategy.v1$risks` 自由文字字段保留，不当作结构化主评分。第三关实现并入 2B，第一关 QC/周期/双细胞相关部分并入 B1，batch 部分并入 B2；ACT、Unknown 和已有提示仍按原语义保留。
+新第一关/第三关模型请求都要求返回上述五个字段；不能以“不适用”为由省略键。各字段同时记录 `assessment_status`（`assessed`、`not_assessed`、`not_applicable`）和 `source`（`model`、`rule`、`human`、`legacy_unassessed`），并校验与 value 的组合。旧草稿/手动草稿缺字段时由读取投影显式标 `not_assessed`（batch value 为 `insufficient_evidence`），其 assessment 必须为 `not_assessed`，source 为 `legacy_unassessed`，不得改写原记录或混同“测过但证据不足”。不适用字段的 assessment 为 `not_applicable`，一般 risk value 为 `not_assessed`，batch value 为 `not_applicable`。记录风险依据的证据 ID、阶段、簇/项目绑定和来源；生产校验通过只证明格式合法。已有 `strategy.v1$risks` 自由文字字段保留，不当作结构化主评分。**第三关五项风险字段及生产格式校验是 2B 的交付条件**，包括 `doublet_risk`、`ambient_suspected` 和上述其余枚举；不能推迟到 UI 或 evaluator 再生成。第一关 QC/周期/双细胞相关部分并入 B1，batch 部分并入 B2；ACT、Unknown 和已有提示仍按原语义保留。
 
 2B 性能设计采用会话期间常驻的只读 worker：开始时持有现有项目锁，完整验证科学检查点及绑定，并保证反序列化的是**已核验的同一份字节**。可读取一次字节后核验并反序列化，或先创建 worker 私有不可变副本、核验该副本再从副本加载；“先 SHA 原路径、再 readRDS 原路径、最后再 SHA”不足以排除读取期间被换入后又换回的内容。全部四工具所需对象及参考快照加载到私有内存并固定，工具各 turn 不再读取可变路径。
 
-会话中各 turn 对原文件检查普通文件/非符号链接、大小、修改时间、inode（可增加 device/ctime）和科学绑定状态，仅作提前报警。提交最终草稿前，在现有写入协调下再次完整核验检查点 SHA、科学绑定以及合法的当前历史链。账本/event 自身的预期追加是合法状态变化，不能用“整个 state hash 必须永远不变”阻止逐轮记账；仍须拒绝未授权科学输入变更。已完成簇可以按既有机制保存暂存检查点，最终发布草稿必须通过最终核验。引用、风险及会话验证记录都要纳入现有待批准文件集合和 evidence hash，不能只写附件而不绑定批准。完整性失败废弃未提交结果并阻断，不能退回 baseline 掩盖损坏；模型/预算/时间失败仍按既定回退边界处理。
+会话中各 turn 对原文件检查普通文件/非符号链接、大小、修改时间、inode（可增加 device/ctime）和科学绑定状态，仅作提前报警。提交最终草稿前，在现有写入协调下再次完整核验检查点 SHA、科学绑定以及合法的当前历史链。账本/event 自身的预期追加是合法状态变化，不能用“整个 state hash 必须永远不变”阻止逐轮记账；仍须拒绝未授权科学输入变更。已完成簇可以按既有机制保存暂存检查点，最终发布草稿必须通过最终核验。引用、风险及会话验证记录都要纳入现有待批准文件集合和 evidence hash，不能只写附件而不绑定批准。完整性失败废弃未提交结果并阻断，不能退回 baseline 掩盖损坏；模型/步数/时间失败仍按既定回退边界处理；旧一次性调用的预算回退保持兼容。
 
 文件 stat 仅是提前报警：它不能检测所有同大小/时间复原的替换，也不是面向恶意本地管理员的安全隔离。科学结果来自开始时验证并固定的内存快照，最终提交再完整校验；缓存结果也须验证与同一绑定一致，不能让常驻 worker 读取未验证的新缓存。复用项目写入协调和既有 state/checkpoint，模型工具仍无写权限。worker 的每工具 60 秒和每簇剩余时间由外部控制器执行；超时终止 worker，不能因 worker 崩溃自动重发模型请求。恢复时完整验证后才复用已提交簇记录，未完成工作按既定回退/恢复状态处理，不重发投递不明的请求。重放不依赖内存存活，仍用完整轨迹和保存检查点重建。会话开始/最终核验和常驻内存成本单列，重新测量冷/热耗时及 60 步总成本，不把免除每次完整 SHA 等同于免除验证。
 
@@ -94,21 +94,21 @@ Harmony 保持 RNA counts/data 不变，所以 RNA DE 不变只是完整性检�
 
 配置记录 react off/auto/all、工具白名单、ACT 可见性、两功能开关、provider/精确模型、解码设置、种子、prompt/schema/reference 版本和固定方案 hash。ACT-off 必须覆盖所有模型可见 ACT 内容、lookup、比较提示和 ACT 自动触发，不能只隐藏工具名。ACT-off 的产品状态为 unassessed；评估器可独立计算 ACT 对照但不得回流模型。
 
-逐 turn 的预算预留必须是真正的保守上界：使用经核验的模型 tokenizer 及消息/工具 framing 上界，或官方固定型号的上下文 token 上限作为保守输入上界，再加计费输出上限与价格。字符数除以 4 等经验估算不是保证上界，不能承担授权预算约束。模型限额、计费推理/缓存规则或价格无法确认时不发送；保留结构化原因并走既定回退。实验费用可同时报告估算与实付，但不能用较乐观估算替代发送前预留。
+每轮请求复用已有授权、全会话隐私检查、payload hash、ledger 和投递状态。**新结构化 turn 不设金额上限，费用只在调用后记录**；不新增 token 计数器、输入估算、安全系数、复杂预留或费用模式框架，也不以未知价格或未知用量阻止发送。历史一次性接口的预算行为为兼容保留，不扩展到新 turn。使用服务返回的 usage 和实际收费字段；只有 usage 与适用价格时作事后折算并注明来源，信息不足标 unknown，不猜零。投递不明仍禁止自动重发，步数/时间/隐私/审批和完整性边界不变。细则见[provider 型号与用量契约](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)，费用汇总见[E5 费用报告](../../benchmark/evaluation-v2/manifests/E5_COST_REPORTING.md)。
 
 `run_summary.json` 是现有 state/checkpoint/event/账本的只读投影，不是新权威状态库。至少包含：
 
 - 原输入及保留集合的数量/hash，完整本地 `cells.csv` 的路径/hash；每个原始细胞一行，含 retained、cluster、label、CL ID、状态。删除与缺失/失败分开。
 - 三关全部决策，包括 QC 预设/簇阈值、双细胞、周期、批次、HVG、PC 和分辨率；草稿来源、reviewer、理由、事件 ID。
 - 每簇 baseline/final、ACT 一致/冲突/未评估、ReAct 触发/尝试/完成/回退原因。
-- tokens、费用、耗时、内存及其测量范围；已知费用、估算费用、预留额度和未知交付费用分列，不能互相替代。
+- tokens、费用、耗时、内存及其测量范围；服务报告费用、按实际 usage 的事后价格折算和费用未知的请求数分列，不能把不完整总和称为完整花费。
 - 配置、版本、原始响应、轨迹和证据 hash。大型内容通过已有产物引用，不重复复制整个项目状态。
 
 细胞 ID 仅存在本地分析/评估产物中，不能进入任何外发会话。公开发布可用汇总和 hash，但须保留可审核的本地明细。
 
 ## B 重复运行与外部结果
 
-默认 N=5；只改变 replicate_id 和输出目录，固定分析种子、注入种子、输入与参数。replicate_id 不进入 prompt。每次是新的 provider 调用，不用模型响应缓存伪装独立重复；离线重放另计。temperature 0 不保证线上重复输出相同。
+默认 N=5；只改变 replicate_id 和输出目录，固定分析种子、注入种子、输入与参数。replicate_id 不进入 prompt。每次是新的 provider 调用，不用模型响应缓存伪装独立重复；离线重放另计。按各型号实际支持的解码/effort 设置冻结；temperature 0 也不保证线上重复输出相同，Claude 不发送不支持的采样字段。
 
 对 N(N−1)/2 对运行，输出：
 
@@ -148,7 +148,7 @@ CellAgent 对照以 [原始论文](https://arxiv.org/abs/2407.09811) 对应的�
 | 周期混杂 | 优先独立增殖状态；合成时用冻结的 S/G2M 基因集添加整数计数，保留谱系真值。 | 第一关提示或 cycling 标签，以及谱系/条件保留。回归或删除并非统一正确答案。 |
 | 可见参考留出类型 | 删除 ACT 和 prompt 可见的该类型及别名，冻结过滤快照；不默认移除生物数据里的 marker。 | Unknown 或预先允许的正确父类；精确恢复留出类型另列。移除参考不能移除模型预训练知识，不称“模型从未见过”。 |
 
-发现规则在实验冻结时逐项固定 stage、外层 schema 版本、字段路径、作用范围、阳性枚举及适用性。**主发现率只使用生产校验器接受的结构化风险字段**；不允许自由文字覆盖结构化阴性。各机制预定阳性映射：双细胞→`doublet_risk=suspected`；低质量/多样本深度/自然低 RNA→`qc_celltype_concern=suspected`；环境 RNA→`ambient_suspected=suspected`；真实批次→`batch_status=effect_detected_design_supported`；完全混杂→`fully_confounded`；周期→`cycle_concern=suspected`。假批次以 `no_effect_detected` 为正确阴性，另报误阳性。可见参考留出类型以第三关 schema 中的 Unknown/允许父类标签作为预定结构化终点，而不是新增任意风险字符串。没有到达阶段、非法枚举、风险未评估及未产生合格草稿均不获“已发现”记分，分别报告原因。
+E3 注入器可先实现，但发现率集成验收须等待对应生产字段：第一关依赖 B1/B2，第三关依赖 2B。未实现部分记录 unsupported，不提前声称发现率可用。发现规则在实验冻结时逐项固定 stage、外层 schema 版本、字段路径、作用范围、阳性枚举及适用性。**主发现率只使用生产校验器接受的结构化风险字段**；不允许自由文字覆盖结构化阴性。各机制预定阳性映射：双细胞→`doublet_risk=suspected`；低质量/多样本深度/自然低 RNA→`qc_celltype_concern=suspected`；环境 RNA→`ambient_suspected=suspected`；真实批次→`batch_status=effect_detected_design_supported`；完全混杂→`fully_confounded`；周期→`cycle_concern=suspected`。假批次以 `no_effect_detected` 为正确阴性，另报误阳性。可见参考留出类型以第三关 schema 中的 Unknown/允许父类标签作为预定结构化终点，而不是新增任意风险字符串。没有到达阶段、非法枚举、风险未评估及未产生合格草稿均不获“已发现”记分，分别报告原因。
 
 关键词发现只作辅助指标，单独冻结正/否定表达式和语言范围，不得用另一个 LLM 判分。关键词 “batch” 本身不算阳性，“无批次效应”不能误算检出。结构化发现是工具是否发出提示的测量，不是对风险真实存在的第二层认证。
 
@@ -182,7 +182,7 @@ CellAgent 对照以 [原始论文](https://arxiv.org/abs/2407.09811) 对应的�
 | 配置消融 | 导出有效工具列表、ACT 开关、功能 1/2 开关和参数 hash；先固定底座研究单因素，再独立报告端到端效果。 |
 | 重放 | `sc_react_replay` 无 key、无网络，复算工具、核对引用、重建草稿并报告差异；失败/损坏不得改写原记录。 |
 
-回退同时记录 planned/eligible、attempted、completed 数量。主回退率为“恢复合法 baseline 的簇/计划查证的适用簇”，包括发送前预算不足或能力不支持导致的回退；另报 attempted 条件下回退率。`baseline_unavailable` 单列未能产生可用结果的失败率，不能伪称成功回退。完整性阻断单列，回退原因可多项、另保存一个确定性主原因，避免分布求和含义不清。分母为零时为 null。
+回退同时记录 planned/eligible、attempted、completed 数量。主回退率为“恢复合法 baseline 的簇/计划查证的适用簇”，包括能力不支持、步数/时间或结果校验失败导致的回退；旧一次性预算失败单列来源，新结构化 turn 不因金额回退；另报 attempted 条件下回退率。`baseline_unavailable` 单列未能产生可用结果的失败率，不能伪称成功回退。完整性阻断单列，回退原因可多项、另保存一个确定性主原因，避免分布求和含义不清。分母为零时为 null。
 
 脚本 accept_drafts 固定 100% 采纳，不能据此报告真人采纳率。用户审阅时间、纠错能力和一致性需要后续独立用户研究；正式方案应同时衡量质量和时间。真实论文应用及外部验证者记录仍是长期使用证据。
 
@@ -204,13 +204,13 @@ CellAgent 对照以 [原始论文](https://arxiv.org/abs/2407.09811) 对应的�
 
 另保留 Tabula Sapiens v2 新供者为候选。但其 [2024 年预印本](https://www.biorxiv.org/content/10.1101/2024.12.03.626516v1) 早于 2026 年期刊发表，不能用后者证明训练后首次公开；必须逐供者检查原数据日期和 v1 重复。正式最低组合仍待真值、低 RNA/增殖覆盖和独立研究资格核实；逐模型时间核实记录为优先项及局限，不阻塞符合其他条件的正式基准。
 
-模型矩阵包括 **DeepSeek、OpenAI（ChatGPT 对应 API 模型）、Anthropic Claude、xAI Grok**。逐模型冻结 API 型号/版本、endpoint、工具能力、max_tokens、thinking/推理设置、可用解码参数、价格、生效时间、用量字段和训练截止日期来源。不同 API 的相同参数名不代表相同语义；Claude 不假定兼容 OpenAI 协议。不能把网页产品名当作可复现模型 ID。
+模型矩阵包括 **DeepSeek、OpenAI（ChatGPT 对应 API 模型）、Anthropic Claude、xAI Grok**。逐模型冻结 API 型号/版本、endpoint、工具能力、max_tokens、thinking/推理设置、可用解码参数、费用报告来源/日期或 unknown、用量字段和训练截止日期来源。不同 API 的相同参数名不代表相同语义；Claude 不假定兼容 OpenAI 协议。不能把网页产品名当作可复现模型 ID。
 
-模型分两层：**主矩阵为 DeepSeek + 一个前沿模型**，前沿模型须有至少一个合格 LLM 注释对照可使用同一精确 API 型号；此资格与原始代码/许可/信息可比性一并核实后冻结。**建议选择 Anthropic `claude-opus-5-5` 与 CASSIA 1.4.0，commit `c01f573caf25c5ef471e8afefd035c05becfab08`**：官方型号/工具能力说明、MIT 许可、原生 Messages 和精确型号传递路径已核实，隔离假 SDK 请求探针通过；完整安装、真实 API 冒烟和全流程输出仍未核实，故当前是源码合格候选，不是正式运行合格。**扩展矩阵为 OpenAI 与 xAI**，仅作描述性结果，不阻塞正式实验。完整来源和限制见[模型资格记录](../../benchmark/evaluation-v2/manifests/model-qualification.md)；实际配置与价格在 M1/E5 冻结，不把候选默认值冒充已完成验证。
+论文**主矩阵为 DeepSeek + Grok**，M1-xAI 先实现。Grok 推荐精确 API ID `grok-4.7`，官方自定义工具能力已核实，scAgentKit 真实冒烟尚未完成。CASSIA 1.4.0、commit `c01f573caf25c5ef471e8afefd035c05becfab08`（MIT）的真实 SDK + 内存 HTTP 探针已验证 `deepseek-flash`、`deepseek-v4-pro`、`grok-4.7` 在注释/验证/格式化三个 agent 中原样透传；不等于真实 API 接受请求或完整 preset 通过。[模型资格记录](../../benchmark/evaluation-v2/manifests/model-qualification.md)记录了推理参数和协议差异；[xAI 资格记录](../../benchmark/evaluation-v2/manifests/xai-qualification.md)记录官方工具能力。精确型号与完整生成 preset 在开发资格后冻结，不需要先报价或估算总费用。
 
-DeepSeek 延续 thinking disabled、temperature 0。Anthropic 当前候选的 adaptive thinking 不能关闭，不发送其不支持的 temperature；effort 候选为 medium，计费推理输出计入预算。两方法必须冻结相同的精确型号及支持的推理设置，不能强行宣称四家都使用相同解码语义。CASSIA 的 annotation/validator/formatter 等参与模型均固定同一底座，额外 score/boost/merge 如启用须预先冻结 preset 和总预算；其算法自身的验证 agent 不改变 scAgentKit 生产引用校验器必须确定性的要求。
+DeepSeek 产品初始配置延续 Flash、thinking disabled、temperature 0，不因对照工具限制暗改默认。原样 CASSIA 对 Flash 的 `reasoning="none"` 未转成 thinking.disabled；V4 Pro 可以正确传递。无补丁匹配候选为 DeepSeek V4 Pro non-thinking/temperature 0 和 Grok4.7 默认 high/temperature .7，但尚未选定正式实验 preset。若保留 Flash 或 Grok 的其他 effort，须冻结并验证最小传输兼容修复，或将未匹配的受影响 arm 明确列为描述性结果，不能冒充同配置控制。Grok 不能关闭 thinking；scAgentKit 使用 Responses，CASSIA 使用 legacy Chat，两者是同底座方法比较而非协议等价。ReAct 效应仍由 scAgentKit 内固定配置的 on/off 消融测量。CASSIA 所有参与 agent 固定同一底座；额外 score/boost/merge 若启用须另冻结 preset，费用和调用数事后完整汇总。
 
-第一版产品正式支持 DeepSeek 的既定范围继续有效；M1 按 provider 拆分 PR，先实现主矩阵中的前沿 provider，再实现另外两家的扩展适配。其他 provider 的结构化协议、费用/工具能力验证在各自 PR 完成，测试通过后才进入相应正式评估 arm。每个模型内部比较 ReAct/ACT 开关，跨模型差异单独报告。工具能力缺失的模型只能作为明确标注的一次性基线，不伪装完整 ReAct arm。
+**产品目标是 DeepSeek、OpenAI、Anthropic、xAI 四家正式支持，provider 由用户选择**。M1-xAI 是论文主矩阵前置；M1-Anthropic 和 M1-OpenAI 随后独立实现，可在论文之后，不缩减为仅描述性实验接口。型号清单记录 exact ID、核实日期、工具能力、协议及 source/offline/live 状态；只有实际通过的能力才能标已验证。清单外型号允许配置并标 `unverified`；未实现 provider 明确 unsupported，不能把字符串可填当支持。其他届时已支持 provider 在公开开发集各做 N=3、accept_drafts 可用性验证，记录三关、工具、用量、费用和失败；不触及留出集，不作为主论文准确率/稳定性结论，不阻塞主矩阵。工具能力缺失只能是标记的一次性基线，不伪装完整 ReAct arm。
 
 “晚于训练截止日期”逐模型判断，不能把某旧模型的知识日期套给可变 API 别名。未公开的 cutoff 记 unknown；发布日期与首次数据公开日期都记录，预印本/仓库先公开也计入。对没有可证 cutoff 的模型不能声称满足训练后公开优先项；记录 unknown 与限制，不靠推测补日期，也不据此阻塞已满足主矩阵资格的正式实验。
 
@@ -234,6 +234,6 @@ CI 使用 pbmc_small + mock，覆盖运行器三关、所有生成器的正常/�
 
 每阶段报告 PR/commit、18 项 1.0 验收变化、实际执行测试/CI、定位各项证明的进展、**论文里程碑进度**、限制和偏离。E0 报告注明工程协议 commit，E5 报告注明正式实验冻结 receipt 及其引用的协议 commit。正式结果 PR 保存成功与失败运行、配置、脚本、汇总及可审核原始记录。任何 mock 费用、稳定性或开发集准确率都不作为正式性能结论。
 
-E0 之后、正式冻结之前仍需完成：至少三套公开数据真值与覆盖资格；主矩阵精确模型 ID、价格/能力及同模型注释对照；CellAgent 官方版本和真实运行命令（相应端到端 arm）；留出集占位元数据/日期证据/双标签和 mask 冻结；开发集选定的诊断参数、N、批次效应/支持量/生物学保留阈值；各注入精确整数算法和结构化发现路径；已授权真实运行预算。模型 cutoff 和公开数据训练后时间关系如不可核实记 unknown，是报告的优先项/限制，不是硬性准入门槛。扩展矩阵两家可晚于主矩阵，不阻塞正式实验。
+E0 之后、正式冻结之前仍需完成：至少三套公开数据真值与覆盖资格；主矩阵精确模型 ID、能力及匹配的同模型注释对照；CellAgent 官方版本和真实运行命令（相应端到端 arm）；留出集占位元数据/日期证据/双标签和 mask 冻结；开发集选定的诊断参数、N、批次效应/支持量/生物学保留阈值；各注入精确整数算法和结构化发现路径；真实运行执行授权（本次仍未调用 API）。模型 cutoff 和公开数据训练后时间关系如不可核实记 unknown，是报告的优先项/限制，不是硬性准入门槛。非主矩阵 provider 的正式产品适配及 N=3 可用性验证可晚于主矩阵，不阻塞正式实验；不得因此将四家产品支持缩减为描述性实验选项。
 
 尚未运行的框架、B1/B2、M1、正式实验和真人研究不得标为完成。E0 不新增可执行运行器，不改变包科学语义、实现 hash 或审批结构；历史 v1 指标和结果保持原样。

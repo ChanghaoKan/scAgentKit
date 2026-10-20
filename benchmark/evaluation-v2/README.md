@@ -14,11 +14,13 @@ A local `run_summary.json` projects the existing state/checkpoints/events/ledger
 
 ## Sequence
 
-- E1 runner, E2 stability/external import and E3 injection mechanisms may develop alongside ReAct v1 after E0.
-- E4 consumes v1 citation traces and scoring; completion includes a small **development** pilot, N=3 accept_drafts with mock and one validated real primary provider. Real API calls require the configured authorization and hard budget; no real calls run in CI.
-- B1/B2 are package features after ReAct v1, with their own deterministic tests and hash/NEWS changes.
-- E5 freezes protocol/code/data/model/tool/price/parameter identities before formal public experiments and the maintainer's unpublished final holdout. ReAct v1, B1/B2, E1–E4 and the primary M1 provider must be complete first.
-- Primary models are DeepSeek and one qualified frontier model sharing an exact model with an eligible LLM annotation comparator. The other two providers are descriptive extensions and do not block E5.
+- E1 runner, E2 stability/external import and E3 injection mechanisms may develop alongside ReAct v1 after E0. E3 primary discovery scoring depends on B1/B2 production risk fields for gate 1 and the 2B outer draft risk fields for gate 3; unsupported parts remain explicit until integrated, not replaced by keyword scoring.
+- E4 consumes v1 citation traces and scoring; completion includes a small **development** pilot, N=3 accept_drafts with mock and one validated real primary provider. Real API calls require the existing authorization; usage and costs are reported afterwards. No real calls run in CI.
+- After 2B merges, B1/B2 develop in parallel with stage 3 UI, 4E evaluation/replay and documentation; they do not wait for all ReAct v1 stages. B2 integration needs the shared B1 diagnostic checkpoint. Their package tests and hash/NEWS changes remain required.
+- E5 freezes protocol/code/data/model/tool/parameter identities and the available sources for post-run cost reporting before formal public experiments and the maintainer's unpublished final holdout. ReAct v1, B1/B2, E1–E4 and the primary M1 provider must be complete first.
+- Primary providers are DeepSeek and Grok. M1-xAI goes first using Responses, with grok-4.7 as the documented candidate. Exact models and comparator presets require development qualification; no cost quote gates model selection. CASSIA exact-model forwarding passed offline SDK/HTTP probes, while thinking/effort differences and live qualification remain explicit in the model record.
+- Product support targets DeepSeek, OpenAI, Anthropic and xAI, selected by the user. Provider M1 PRs qualify exact models individually; Anthropic/OpenAI product support may follow the paper. Every other supported provider receives a public development N=3 accept_drafts usability check, separate from main scientific conclusions and non-blocking for E5.
+- The [provider contract](../../docs/dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md) defines authorization, protocol history, verified/unverified models and post-run usage. [E5 cost reporting](manifests/E5_COST_REPORTING.md) separates datasets, methods, repeats, ablations and CASSIA calls. New structured turns have no monetary cap or added counting/reservation prerequisites; the legacy one-shot budget remains unchanged. Missing costs are unknown, not zero.
 
 `manifests/` documents the qualification and freeze fields. Its examples are **non-executable templates**, not model defaults or certified datasets. Unknown or unresolved fields are explicit. The E0 protocol commit is recorded in its stage report; an E5 freeze receipt later records the exact protocol commit for experiments.
 

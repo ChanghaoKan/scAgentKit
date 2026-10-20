@@ -1,0 +1,40 @@
+{
+  "cassia_commit": "c01f573caf25c5ef471e8afefd035c05becfab08",
+  "artifacts_sha256": {
+    "probe_cassia_deepseek_grok.py": "9a1b9d7db6dac0170609d3c37e9e6b59733a6194082fcf0e30db989624ca3cbc",
+    "probe_cassia_deepseek_grok.json": "fa216f8e53f5ca6fab7b7cd0d8f334d8115c2fcd6d452498a5c2466ff2bfbcf1",
+    "probe_cassia_deepseek_grok_requirements.txt": "9826b7e8b1f4c7451fc399f7b7e7f58080757468359869456ca36cafcb4e5b3d"
+  },
+  "sources": [
+    {
+      "key": "settings",
+      "filename": "CASSIA__CASSIA_python__CASSIA__core__model_settings.py",
+      "url": "https://raw.githubusercontent.com/ElliotXie/CASSIA/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/model_settings.py",
+      "sha256": "9f32cfc4dd857212fdffe5504ee45269a3727a7bec69f8ebbc21d3eb2c9bd325"
+    },
+    {
+      "key": "config",
+      "filename": "CASSIA__CASSIA_python__CASSIA__data__model_settings.json",
+      "url": "https://raw.githubusercontent.com/ElliotXie/CASSIA/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/data/model_settings.json",
+      "sha256": "285d786a29a5918924791f32c41c7b2194112ec481d11aadf1fb0cd9570e4343"
+    },
+    {
+      "key": "llm",
+      "filename": "CASSIA__CASSIA_python__CASSIA__core__llm_utils.py",
+      "url": "https://raw.githubusercontent.com/ElliotXie/CASSIA/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/core/llm_utils.py",
+      "sha256": "3d644ca2fb7f494d1b1e8488cd87a1b8cdb49c33186e4a0c2fbf53fdcf08ed7d"
+    },
+    {
+      "key": "engine",
+      "filename": "CASSIA__engine.py",
+      "url": "https://raw.githubusercontent.com/ElliotXie/CASSIA/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/main_function_code.py",
+      "sha256": "db10fc6181e918eab49b7d3ed84411a721203dcedf9ce0b1730b214e6ad8f023"
+    },
+    {
+      "key": "tools",
+      "filename": "CASSIA__CASSIA_python__CASSIA__engine__tools_function.py",
+      "url": "https://raw.githubusercontent.com/ElliotXie/CASSIA/c01f573caf25c5ef471e8afefd035c05becfab08/CASSIA_python/CASSIA/engine/tools_function.py",
+      "sha256": "d2508a5378228170a520230b9e3bbb8c48f0aae59ae157128f97ab67198c16cd"
+    }
+  ]
+}
