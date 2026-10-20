@@ -34,7 +34,7 @@ SCHEMA = "scagentkit.run-suggestion.workbench.v1"
 JOB_SCHEMA = "scagentkit.run-suggestion.job.v1"
 ACTIVE = {"queued", "running"}
 TERMINAL = {"succeeded", "failed", "interrupted", "timed_out"}
-ACTIONS = {"preview", "approve", "request", "adopt", "discard", "review_conflicts"}
+ACTIONS = {"preview", "approve", "request", "adopt", "discard", "review_conflicts", "cancel"}
 BINDING = ("project_id", "input_hash", "expected_revision", "suggestion_hash")
 MAX_RESULT = 4 * 1024 * 1024
 
@@ -278,6 +278,19 @@ class RunSuggestionRuntime(QCRuntime):
         if not isinstance(token, str) or not secrets.compare_digest(token, self.csrf_token):
             raise StoreError("Suggestions require this server's same-origin suggestion token", 403)
         self.validate(action, payload)
+        if action == "cancel":
+            self._fresh()
+            job, _ = _current(self.base)
+            if job is None or job["status"] not in ACTIVE or any(job.get(k) != payload[k] for k in BINDING):
+                raise StoreError("Cancellation requires the exact active project job", 409)
+            path = self.project / ".run-controls.json"
+            control = _read(path) if path.exists() else {}
+            control.update(cancel_requested=True, project_id=job["project_id"], input_hash=job["input_hash"],
+                           reason=payload["reason"], updated_at=_time())
+            receipts = _safe_directory(self.project / "controls", create=True)
+            _atomic(receipts / (hashlib.sha256(canonical(control).encode()).hexdigest() + ".json"), control)
+            _atomic(path, control)
+            return {"accepted": True, "message": "Cancellation requested. The current call may finish; no request is resent. Saved results remain available."}
         if action == "request":
             return self.submit(payload)
         if action == "preview":

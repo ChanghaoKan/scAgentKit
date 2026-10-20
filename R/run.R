@@ -8,7 +8,7 @@
 #' @param context Named list with species, tissue, columns and notes.
 #' @param provider Provider configuration list, provider name, or NULL.
 #' @param chat_fn Explicit provider function, retained only in caller memory.
-#' @param budget Maximum reserved USD for this project. Default zero.
+#' @param budget Deprecated compatibility argument; no monetary cap is applied.
 #' @param review Review policy; allow_external permits proposing an external
 #'   transfer for exact-payload approval; preapprove_qc is an explicit typed rule.
 #' @param start_stage 'qc' for raw counts or 'processed' to reuse analysis.
@@ -60,8 +60,8 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
-                   biological_diagnostics = NULL, cost_mode = c("legacy_cap", "posthoc")) {
-  cost_mode <- match.arg(cost_mode)
+                   biological_diagnostics = NULL, cost_mode = "posthoc") {
+  cost_mode <- "posthoc"
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -107,6 +107,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     stop("An initialization lock is supported only for scoped child creation.", call. = FALSE)
   if (strategy && start_stage == "qc" && missing(cluster_column)) cluster_column <- "sc_strategy_clusters"
   if (!is.numeric(budget) || length(budget) != 1L || !is.finite(budget) || budget < 0) stop("budget must be nonnegative USD.", call. = FALSE)
+  budget <- 0
   allowed_review <- c("allow_external", "preapprove_qc", "transfer_consent")
   if (!is.list(review) || any(!names(review) %in% allowed_review)) stop("Unsupported review policy.", call. = FALSE)
   if (!is.null(review$allow_external) && !identical(review$allow_external, TRUE) && !identical(review$allow_external, FALSE)) stop("allow_external must be logical.", call. = FALSE)
@@ -134,7 +135,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
-  if (cost_mode == "posthoc") config$cost_mode <- cost_mode
+  config$cost_mode <- "posthoc"
   if (!is.null(react)) config$react <- .sc_run_turn_policy(react)
   biology <- .sc_run_biology_options(biological_diagnostics)
   if (!is.null(biology)) {
@@ -569,6 +570,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
 }
 .sc_run_drive <- function(root, state, provider, chat_fn, retry, local_only = FALSE) {
   repeat {
+    state <- .sc_run_control_audit(root, state)
     .sc_run_subcluster_guard(root, state)
     if (!is.null(state$config$subcluster_origin) && (!is.null(chat_fn) ||
         (!is.null(provider) && !identical(.sc_run_provider_spec(provider)$metadata$name, "manual"))))
@@ -579,6 +581,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     state$status <- "running"; state$nodes[[stage]] <- "RUNNING"
     state <- .sc_run_event(state, "running", list(stage = stage)); .sc_run_save(root, state)
     result <- tryCatch({
+      .sc_run_control_check(root)
       if (isTRUE(local_only)) .sc_run_continue_crash(paste0(stage, ":before"))
       if (stage == "prefilter") {
         record <- .sc_run_prefilter_evidence(.sc_run_get(root, state, "input"), state$config)

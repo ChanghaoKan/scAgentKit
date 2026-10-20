@@ -1,12 +1,13 @@
 # Durable local coordinator. A single rename commits state plus hash-chained history.
 .sc_run_hash <- function(x) digest::digest(x, algo = "sha256", serialize = TRUE, serializeVersion = 2L)
 .sc_run_time <- function() format(Sys.time(), "%Y-%m-%dT%H:%M:%OS3Z", tz = "UTC")
-.sc_run_atomic <- function(value, path, json = FALSE) {
+.sc_run_atomic <- function(value, path, json = FALSE, storage_root = NULL) {
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   temporary <- tempfile(".commit-", tmpdir = dirname(path))
   on.exit(unlink(temporary), add = TRUE)
   if (json) writeLines(.sc_project_json(value, pretty = TRUE), temporary, useBytes = TRUE)
   else saveRDS(value, temporary, version = 2L)
+  if (!is.null(storage_root)) .sc_run_control_check(storage_root, check_cancel = FALSE)
   if (!file.rename(temporary, path)) stop("Atomic state publication failed.", call. = FALSE)
   invisible(path)
 }
@@ -110,7 +111,7 @@
   # Versioned immutable snapshots make an interrupted state commit harmless.
   path <- file.path("checkpoints", paste0(name, "-", .sc_run_hash(value), ".rds"))
   full <- file.path(root, path)
-  if (!file.exists(full)) .sc_run_atomic(value, full)
+  if (!file.exists(full)) .sc_run_atomic(value, full, storage_root = root)
   state$files[[name]] <- list(path = path, sha256 = .sc_project_sha_file(full))
   state
 }

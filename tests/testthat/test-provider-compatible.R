@@ -40,7 +40,7 @@ test_that("generic provider retains no-key, budget and exact-transfer barriers",
   root <- tempfile(); dir.create(root); on.exit(unlink(root, recursive = TRUE))
   provider <- compatible_provider(); request <- compatible_request(provider)
   expect_identical(.sc_run_call(root, request, provider, budget = 1)$status, "awaiting_external_approval")
-  expect_identical(.sc_run_call(root, request, provider, budget = .01, allow_external = TRUE)$status, "budget_stop")
+  expect_identical(.sc_run_call(root, request, provider, budget = .01, allow_external = TRUE)$status, "needs_provider")
   expect_identical(.sc_run_call(root, request, provider, budget = 1, allow_external = TRUE)$status, "needs_provider")
   expect_length(.sc_run_provider_read(file.path(root, "provider", "ledger.json"))$entries, 0)
   changed <- provider; changed$base_url <- "https://other.invalid/v1"

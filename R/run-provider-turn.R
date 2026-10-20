@@ -281,7 +281,6 @@
       !isTRUE(config$review$allow_external) ||
       !identical(consent$hash, .sc_run_provider_hash(consent[setdiff(names(consent), "hash")])) ||
       !identical(consent$provider_hash, .sc_run_provider_hash(config$provider)) ||
-      !identical(consent$budget_usd, as.numeric(config$budget)) ||
       !identical(consent$prompt_version, .sc_run_prompt_version())) return(FALSE)
   scope <- consent$react_scope; policy <- request$session$policy
   if (!is.list(scope) || !identical(scope$schema, "scagentkit.react-scope.v1") ||

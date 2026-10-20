@@ -21,7 +21,7 @@ test_that("project transfer consent is explicit and cannot expand provider, cap,
     expect_error(.sc_run_request_hash(request, config$provider), "transfer scope")
   }
   request <- .sc_run_request("annotation", list(), config)
-  for (field in c("budget", "provider", "allow_external", "categories")) {
+  for (field in c("provider", "allow_external", "categories")) {
     changed <- config
     if (field == "budget") changed$budget <- .2
     if (field == "provider") changed$provider$model <- "new-model"
@@ -38,7 +38,7 @@ test_that("project transfer consent is explicit and cannot expand provider, cap,
   expect_error(.sc_run_transfer_options(value, config$provider, .1), "Confirm")
   value <- transfer_confirmation("cell_ids")
   expect_error(.sc_run_transfer_options(value, config$provider, .1), "cannot be authorized")
-  expect_error(.sc_run_transfer_options(transfer_confirmation(), config$provider, 0), "positive USD cap")
+  expect_no_error(.sc_run_transfer_options(transfer_confirmation(), config$provider, 0))
   strict <- config; strict$review$transfer_consent <- NULL
   request <- .sc_run_request("annotation", list(), strict)
   expect_null(request$transfer_scope)
@@ -80,7 +80,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
   })
   expect_identical(answer$status, "candidate")
   expect_false(answer$can_auto_request)
-  expect_equal(answer$preview$remaining_usd, .09)
+  expect_null(answer$preview$remaining_usd)
   after <- .sc_run_load(root)
   expect_identical(after$pending, original); expect_length(after$approvals, 0L)
   expect_null(after$files$analysis); expect_identical(calls, 1L)
@@ -109,7 +109,7 @@ test_that("strict mode and failed requests preserve unapproved draft fields", {
     } else {
       value <- transfer_action(root, "request", chat_fn = fn)
       expect_identical(value$status, "failed")
-      expect_identical(value$response$status, if (mode == "budget") "budget_stop" else "invalid_response")
+      expect_identical(value$response$status, "invalid_response")
     }
     state <- .sc_run_load(root)
     if (mode == "strict") {
@@ -119,7 +119,7 @@ test_that("strict mode and failed requests preserve unapproved draft fields", {
       # Its QC rationale/hash can change; scientific approval never follows.
       fallback <- sc_run_suggest(root)$fallback
       expect_true(fallback$saved)
-      expect_identical(fallback$trigger_status, if (mode == "budget") "budget_stop" else "invalid_response")
+      expect_identical(fallback$trigger_status, "invalid_response")
       expect_false(fallback$scientific_approval)
       expect_identical(state$pending$kind, "strategy")
       after_draft <- .sc_run_get(root, state, "manual_strategy")
@@ -131,7 +131,7 @@ test_that("strict mode and failed requests preserve unapproved draft fields", {
     }
     expect_length(state$approvals, 0L)
     expect_null(state$files$analysis)
-    expect_identical(calls, if (mode == "invalid") 1L else 0L)
+    expect_identical(calls, if (mode == "strict") 0L else 1L)
   }
 })
 

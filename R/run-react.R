@@ -43,7 +43,10 @@
 
 .sc_run_react_save <- function(root, run, trace = NULL, action = "react_progress") {
   state <- .sc_run_load(root, verify = FALSE)
+  state <- .sc_run_control_audit(root, state)
   if (!is.null(trace)) {
+    if (identical(trace$status, "running") && !is.null(trace$deadline))
+      trace$remaining_seconds <- max(0, trace$deadline - as.numeric(Sys.time()))
     key <- paste0("react_cluster_", .sc_run_hash(trace$cluster_id))
     state <- .sc_run_put(root, state, key, trace)
     run$traces[[trace$cluster_id]] <- state$files[[key]]
@@ -78,6 +81,7 @@
     on.exit(.sc_run_release(root, project_lock_owner), add = TRUE)
   }
   state <- .sc_run_load(root)
+  .sc_run_control_check(root)
   if (is.null(turn_fn) && identical(state$config$provider$name, "mock"))
     turn_fn <- .sc_run_react_mock_turn
   policy <- .sc_run_turn_policy(state$config$react)
@@ -141,6 +145,17 @@
   session <- run$session
   for (cluster in setdiff(run$targets, run$completed)) {
     trace <- if (!is.null(run$traces[[cluster]])) readRDS(file.path(root, run$traces[[cluster]]$path)) else NULL
+    if (!is.null(trace) && !is.null(trace$remaining_seconds))
+      trace$deadline <- as.numeric(Sys.time()) + trace$remaining_seconds
+    if (!is.null(trace$pending_request)) {
+      # Refresh a prepared-but-never-dispatched request only. A durable ledger
+      # entry, including uncertain delivery, must keep its original identity.
+      saved_ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
+      pending_hash <- trace$pending_request$approved_payload_hash
+      recorded <- any(vapply(saved_ledger$entries, function(x) identical(x$request_hash, pending_hash), logical(1)))
+      if (!recorded && !is.null(trace$pending_request$deadline) &&
+          trace$pending_request$deadline <= as.numeric(Sys.time())) trace$pending_request <- NULL
+    }
     if (is.null(trace)) {
       row <- Filter(function(x) identical(x$clusterId, cluster), baseline$annotations)[[1L]]
       pool <- Filter(function(x) identical(x$clusterId, cluster), evidence$summary$clusters)[[1L]]
@@ -155,6 +170,7 @@
       run <- .sc_run_react_save(root, run, trace)
     }
     repeat {
+      .sc_run_control_check(root)
       .sc_run_react_worker_check(runtime)
       remaining <- trace$deadline - as.numeric(Sys.time())
       if (remaining <= .001) { trace$fallback_reason <- "cluster_timeout"; break }
@@ -173,6 +189,7 @@
         request$approved_payload_hash <- .sc_run_request_hash(request, state$config$provider)
         trace$pending_request <- request
         run <- .sc_run_react_save(root, run, trace)
+        .sc_run_crash("react:prepared")
       }
       answer <- tryCatch(.sc_run_call(root, trace$pending_request, state$config$provider, turn_fn,
         budget = state$config$budget, allow_external = isTRUE(state$config$review$allow_external),
@@ -210,7 +227,10 @@
       trace$pending_calls <- calls
       run <- .sc_run_react_save(root, run, trace)
       } else calls <- trace$pending_calls
+      prior_evidence <- vapply(trace$tools, function(x) .sc_run_hash(list(x$tool, x$response$result_hash, x$response$error)), character(1))
+      turn_progress <- FALSE
       for (call in calls) {
+        .sc_run_control_check(root)
         if (length(trace$tools) >= policy$max_steps_per_cluster || run$tool_calls >= policy$max_steps) {
           trace$fallback_reason <- "step_limit"; break
         }
@@ -223,6 +243,8 @@
           arguments, timeout = min(policy$tool_timeout_seconds, remaining)) else
           list(ok = FALSE, error = list(code = "disabled_or_unknown_tool",
             message = "The requested tool is not enabled in this session."))
+        fingerprint <- .sc_run_hash(list(call$`function`$name, result$result_hash, result$error))
+        if (!fingerprint %in% prior_evidence) turn_progress <- TRUE
         number <- length(trace$tools) + 1L
         trace$tools <- append(trace$tools, list(list(call_id = call$id, source = paste0("tool:", number),
           tool = call$`function`$name, arguments = arguments, response = result,
@@ -238,6 +260,8 @@
         if (identical(result$error$code, "timeout")) { trace$fallback_reason <- "tool_timeout"; break }
       }
       if (!is.null(trace$fallback_reason)) break
+      trace$no_progress_turns <- if (turn_progress) 0L else (if (is.null(trace$no_progress_turns)) 0L else trace$no_progress_turns) + 1L
+      if (trace$no_progress_turns >= 2L) { trace$fallback_reason <- "no_progress"; break }
       run <- .sc_run_react_save(root, run, trace)
       .sc_run_crash("react:turn")
     }

@@ -14,7 +14,7 @@
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
 #' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
-#' @param budget Legacy optional USD cap. NULL uses post-call accounting without a monetary cap. Saved projects retain their frozen mode.
+#' @param budget Deprecated numeric argument; new requests use post-call accounting without a monetary cap.
 #' @param react Auto (default), all, off, or a validated ReAct policy list.
 #' @param model_timeout Whole suggestion-worker seconds (1–86400); NULL derives a bound from saved policy.
 #' @param biological_diagnostics Diagnostic-only QC/batch evidence for raw input; TRUE by default.
@@ -101,7 +101,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   }
   setup <- .sc_start_provider_setup(provider, if (!missing(budget)) budget,
     if (!missing(review)) review, if (existing) state$config,
-    cost_mode = if (is.null(budget)) "posthoc" else "legacy_cap", react = react)
+    cost_mode = "posthoc", react = react)
   if (model_suggestions == "auto") model_suggestions <- if (identical(setup$provider$name, "manual")) "off" else
     if (identical(setup$provider$name, "mock")) "simulate" else "configured"
   if (is.null(model_timeout)) {

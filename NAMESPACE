@@ -102,3 +102,5 @@ export(sc_run_ambient_correction)
 export(annot_import_act)
 
 export(annot_act_reference)
+
+export(sc_run_control)

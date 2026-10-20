@@ -105,7 +105,7 @@ Uncertain delivery is never automatically resent; missing keys use manual mode.
 For noninteractive startup, use the [complete model example](inst/examples/full-llm-workflow.R)
 with explicit creation-time confirmation. Strict payload review remains available
 with `review=list(allow_external=TRUE)`. Existing projects retain saved settings.
-An explicitly supplied legacy `budget` keeps its historical capped behavior.
+The deprecated `budget` argument does not impose a monetary cap. Use saved usage and cost records for comparison.
 [ReAct guide](docs/REACT.md) · [Evaluation and replay](docs/REACT_EVALUATION.md).
 
 ### 1. Choose input and declare sample facts

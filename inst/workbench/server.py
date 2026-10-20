@@ -48,7 +48,7 @@ MAX_BODY = 32 * 1024 * 1024
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self'; "
        "img-src 'self' data:; connect-src 'self'; font-src 'self'; "
        "base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'")
-SUGGESTION_ROUTES = {"/api/run-review/suggestion/" + action for action in ("preview", "approve", "request", "adopt", "discard", "review_conflicts")}
+SUGGESTION_ROUTES = {"/api/run-review/suggestion/" + action for action in ("preview", "approve", "request", "adopt", "discard", "review_conflicts", "cancel")}
 
 
 class WorkbenchServer(ThreadingHTTPServer):

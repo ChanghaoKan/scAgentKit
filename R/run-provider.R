@@ -128,9 +128,8 @@
         !value %in% c("none", "minimal", "low", "medium", "high", "xhigh")) stop("Unsupported reasoning_effort.")
   }
   generation <- generation[sort(names(generation))]
-  reserve <- if (is.null(provider$reservation_usd)) if (external) 0.05 else 0 else provider$reservation_usd
+  reserve <- if (is.null(provider$reservation_usd)) 0 else provider$reservation_usd
   reserve <- .sc_run_provider_number(reserve, "reservation_usd")
-  if (external && reserve <= 0) stop("External calls require a positive `reservation_usd`.")
   pricing <- provider$pricing
   if (!is.null(pricing)) {
     fields <- c("input_per_million", "output_per_million", "cached_input_per_million")
@@ -466,10 +465,10 @@
 .sc_run_call <- function(project_dir, request, provider = NULL, chat_fn = NULL,
                          budget = 0, allow_external = FALSE, retry = FALSE,
                          project_lock_owner = NULL, react_runtime = NULL) {
+  .sc_run_control_check(project_dir)
   spec <- .sc_run_provider_spec(provider, chat_fn)
   turn <- identical(request$schema, "scagentkit.provider-turn.v1")
-  posthoc <- turn || (file.exists(file.path(project_dir, "state.rds")) &&
-    identical(.sc_run_load(project_dir)$config$cost_mode, "posthoc"))
+
   prepared <- if (turn) tryCatch(.sc_run_turn_prepare(request, spec$metadata), error = function(e) e) else NULL
   if (inherits(prepared, "error")) return(list(status = if (inherits(prepared, "sc_run_turn_error"))
     prepared$code else "invalid_request", content = NULL, raw = NULL, cached = FALSE,
@@ -504,15 +503,14 @@
   ledger <- .sc_run_provider_read(path)
   guard <- if (turn) .sc_run_turn_guard(project_dir, request, spec$metadata, prepared, react_runtime) else NULL
   if (turn) ledger <- .sc_run_turn_recover_ledger(project_dir, guard$state, ledger, path)
-  if (turn && (!identical(as.numeric(budget), as.numeric(guard$state$config$budget)) ||
-      (isTRUE(allow_external) && !isTRUE(guard$state$config$review$allow_external))))
-    .sc_run_turn_error("invalid_session", "A turn cannot replace the committed project's budget or external-transfer policy.")
+  if (turn && isTRUE(allow_external) && !isTRUE(guard$state$config$review$allow_external))
+    .sc_run_turn_error("invalid_session", "A turn cannot replace the committed project's external-transfer policy.")
   if (turn && retry) return(result("retry_refused", "Structured turns do not resend an earlier turn; resume its saved response or reconcile uncertain delivery."))
   hits <- which(vapply(ledger$entries, function(x) identical(x$request_hash, request_hash), logical(1)))
   if (length(hits)) {
     prior <- ledger$entries[[tail(hits, 1L)]]
     if (!retry || identical(prior$status, "ok")) {
-      if (identical(prior$status, "dispatched")) return(result(if (posthoc) "delivery_uncertain" else "accounting_hold",
+      if (identical(prior$status, "dispatched")) return(result("delivery_uncertain",
         "A previous dispatch has no confirmed response and will not be resent automatically."))
       if (turn) {
         # The validated structured response is the sole content source. Never
@@ -593,19 +591,12 @@
     unresolved <- vapply(ledger$entries, function(x) {
       if (!isTRUE(x$provider$external) || !identical(x$provider$name, spec$metadata$name)) return(FALSE)
       uncertain <- identical(x$delivery, "unknown") || x$status %in% c("dispatched", "delivery_uncertain")
-      if (posthoc || identical(x$cost_mode, "posthoc")) uncertain else
-        !identical(x$cost_state, "known") || isTRUE(x$accounting_issue)
+      uncertain
     }, logical(1))
-    if (any(unresolved)) return(result(if (posthoc) "delivery_uncertain" else "accounting_hold",
-      if (posthoc) "An earlier request has uncertain delivery; it will not be resent automatically." else
-        "This provider has unresolved delivery, usage or cost; cached responses remain available, but new external dispatch is paused."))
+    if (any(unresolved)) return(result("delivery_uncertain",
+      "An earlier request has uncertain delivery; it will not be resent automatically."))
   }
-  # Existing one-shot caps retain their original scope. Post-hoc turns are
-  # recorded in the same ledger but do not reserve or consume a monetary cap.
-  capped <- Filter(function(x) !identical(x$cost_mode, "posthoc"), ledger$entries)
-  total <- sum(vapply(capped, function(x) x$charged_or_held_usd, numeric(1)))
-  reserve <- if (posthoc) 0 else spec$metadata$reservation_usd
-  if (!posthoc && total + reserve > budget + 1e-12) return(result("budget_stop", "Project budget cannot cover this request reservation.", list(charged_or_held_usd = total, requested_reservation_usd = reserve)))
+  reserve <- 0 # Retained ledger fields represent no monetary reservation.
   if (turn) {
     sequence <- tryCatch(.sc_run_turn_sequence(request, ledger$entries, prepared), error = function(e) e)
     if (inherits(sequence, "error")) return(result(sequence$code, conditionMessage(sequence)))
@@ -631,7 +622,7 @@
     model_reported = NULL, cost_state = "unknown", cost_usd = NULL,
     reservation_usd = reserve, charged_or_held_usd = reserve, accounting_issue = FALSE,
     response_metadata = .sc_run_provider_response_metadata(NULL), response_audit = NULL)
-  if (posthoc) entry$cost_mode <- "posthoc"
+  entry$cost_mode <- "posthoc"
   entry$prompt_version <- if (turn) request$session$prompt_version else
     if (is.null(request$prompt_version)) "unversioned_custom" else request$prompt_version
   entry$payload_hash <- .sc_run_provider_hash(if (turn) prepared$payload else .sc_run_provider_request(request, spec$metadata$api_key_env))
@@ -702,7 +693,7 @@
     entry$delivery <- delivery
     entry$status <- if (!spec$metadata$external) "provider_error" else
       switch(delivery, not_sent = "not_sent", received = "provider_response_error", "delivery_uncertain")
-    entry$error <- "Provider call failed after dispatch; no automatic retry. Reservation held until usage is reconciled."
+    entry$error <- "Provider call failed after dispatch; no automatic retry. Available usage is retained; unknown delivery requires reconciliation."
     entry$response_audit <- list(json_status = "not_received", json_error = NULL,
       truncation = if (isTRUE(entry$response_metadata$finish_reason %in% c("length", "max_tokens", "max_output_tokens")))
         "provider_reported" else "not_reported")
@@ -717,12 +708,11 @@
         cost <- .sc_run_provider_cost(value, entry$usage, spec$metadata)
         entry$cost_state <- cost$state; entry$cost_usd <- cost$cost_usd
         if (identical(cost$state, "known")) entry$charged_or_held_usd <- cost$cost_usd
-        entry$accounting_issue <- (!posthoc && entry$charged_or_held_usd > reserve + 1e-12) ||
-          (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > spec$metadata$generation$max_tokens)
+        entry$accounting_issue <- (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > spec$metadata$generation$max_tokens)
         entry$error <- "The provider returned an unusable response; available usage was retained without retry."
         entry$response_audit$json_status <- "received_invalid"
         if (isTRUE(entry$accounting_issue)) {
-          entry$status <- if (posthoc) "invalid_response" else "budget_stop"
+          entry$status <- "invalid_response"
           entry$error <- "The received response exceeded its reservation or output cap; further transmission is paused."
         }
       }
@@ -749,11 +739,10 @@
     cost <- .sc_run_provider_cost(value, entry$usage, spec$metadata)
     entry$cost_state <- cost$state; entry$cost_usd <- cost$cost_usd
     if (cost$state == "known") entry$charged_or_held_usd <- cost$cost_usd
-    entry$accounting_issue <- (!posthoc && entry$charged_or_held_usd > reserve + 1e-12) ||
-      (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > spec$metadata$generation$max_tokens)
+    entry$accounting_issue <- (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > spec$metadata$generation$max_tokens)
     if (entry$accounting_issue) {
-      entry$status <- if (posthoc) "invalid_response" else "budget_stop"
-      entry$error <- "Provider cost or output usage exceeded its reservation or configured cap; further dispatch is paused."
+      entry$status <- "invalid_response"
+      entry$error <- "Provider output usage exceeded the configured token limit; response rejected."
     }
   }
   # Local functions cannot incur provider fees; failures still require an
@@ -781,10 +770,13 @@
 #' @param project_dir Run directory.
 #' @param request_hash Exact 64-character request hash of the held entry.
 #' @param cost_usd Actual charge in USD confirmed by the analyst (0 if none).
-#' @param reviewer,reason Analyst identity and how the charge was verified.
+#' @param reviewer,reason Analyst identity and how cost/delivery were verified.
+#' @param delivery NULL preserves uncertainty; not_sent or received requires independent provider confirmation.
 #' @return Invisibly, the reconciled ledger entry.
 #' @export
-sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, reviewer, reason) {
+sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, reviewer, reason, delivery = NULL) {
+  if (!is.null(delivery) && (!is.character(delivery) || length(delivery) != 1L || !delivery %in% c("not_sent", "received")))
+    stop("delivery must be NULL, not_sent or received, confirmed by the operator.", call. = FALSE)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   if (!is.character(request_hash) || length(request_hash) != 1L || !grepl("^[a-f0-9]{64}$", request_hash))
     stop("`request_hash` must be one exact 64-character lowercase hex hash.", call. = FALSE)
@@ -805,16 +797,18 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
   if (!length(hits)) stop("No provider ledger entry has this request hash.", call. = FALSE)
   index <- tail(hits, 1L); entry <- ledger$entries[[index]]
   if (!isTRUE(entry$provider$external) ||
-      (identical(entry$cost_state, "known") && !isTRUE(entry$accounting_issue)))
+      (identical(entry$cost_state, "known") && !isTRUE(entry$accounting_issue) &&
+       (is.null(delivery) || !identical(entry$delivery, "unknown"))))
     stop("This ledger entry is not held; only external entries with unknown cost or an accounting issue are reconciled.", call. = FALSE)
-  previous <- list(status = entry$status, cost_state = entry$cost_state,
+  previous <- list(status = entry$status, delivery = entry$delivery, cost_state = entry$cost_state,
     charged_or_held_usd = entry$charged_or_held_usd, accounting_issue = isTRUE(entry$accounting_issue))
   previous_entry_hash <- if (!is.null(entry$session_id)) .sc_run_provider_hash(entry) else NULL
   if (entry$status %in% c("dispatched", "delivery_uncertain")) entry$status <- "reconciled_no_response"
   else if (identical(entry$status, "budget_stop")) entry$status <- if (is.null(entry$raw)) "reconciled_no_response" else "reconciled_response"
+  if (!is.null(delivery)) entry$delivery <- delivery
   entry$cost_state <- "known"; entry$cost_usd <- cost_usd; entry$charged_or_held_usd <- cost_usd
   entry$accounting_issue <- FALSE
-  entry$reconciliation <- list(reviewer = reviewer, reason = reason, previous = previous,
+  entry$reconciliation <- list(reviewer = reviewer, reason = reason, previous = previous, confirmed_delivery = delivery,
     reconciled_at = format(Sys.time(), tz = "UTC", usetz = TRUE))
   if (!is.null(entry$session_id)) {
     entry$reconciliation$previous_entry_hash <- previous_entry_hash

@@ -127,15 +127,14 @@
     input_hash = state$input_hash, revision = state$revision, kind = context$kind,
     available = is.null(context$blocked_reason), blocked_reason = context$blocked_reason,
     suggestion_hash = context$suggestion_hash, status = "preview", preview = NULL,
-    new_project_budget_default = .sc_run_new_budget("deepseek")$budget,
+    new_project_budget_default = NULL,
     candidate = NULL, response = NULL, can_approve = FALSE, can_request = FALSE,
     can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE, can_review_conflicts = FALSE)
   if (!is.null(context$blocked_reason)) return(result)
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
   # This preview is for the existing one-shot request allowance. ReAct usage
   # remains in the same ledger, but its post-call costs do not spend that cap.
-  posthoc <- identical(state$config$cost_mode, "posthoc")
-  entries <- if (posthoc) ledger$entries else Filter(function(entry) !identical(entry$cost_mode, "posthoc"), ledger$entries)
+  entries <- ledger$entries
   amount <- function(field, known = NULL) sum(vapply(entries, function(entry) {
     if (!is.null(known) && !identical(identical(entry$cost_state, "known"), known)) return(0)
     value <- entry[[field]]; if (is.null(value)) 0 else value
@@ -146,20 +145,20 @@
     resource_limits = list(request_bytes = if (is.null(context$request$max_payload_bytes)) "unlimited" else context$request$max_payload_bytes,
       react = state$config$react, model_context_tokens = "unknown",
       context_notice = "Application bytes are not model tokens. Model context admission is not verified by this package; provider rejection falls back without automatic retry."),
-    cost_mode = if (posthoc) "posthoc" else "legacy_cap",
-    budget = if (posthoc) NULL else state$config$budget, remaining_usd = max(0, state$config$budget - amount("charged_or_held_usd")),
+    cost_mode = "posthoc",
+    budget = NULL, remaining_usd = NULL,
     consent_mode = if (is.null(state$config$review$transfer_consent)) "strict" else "project",
     consent_hash = state$config$review$transfer_consent$hash,
     transfer_consent = state$config$review$transfer_consent,
     scope_authorized = .sc_run_transfer_authorized(context$request, state$config),
-    reservation_usd = provider$reservation_usd,
+    reservation_usd = 0,
     charged_or_held_usd = amount("charged_or_held_usd"),
     known_cost_usd = amount("charged_or_held_usd", TRUE),
     held_usd = amount("charged_or_held_usd", FALSE), external = provider$external,
     allow_external = isTRUE(state$config$review$allow_external), simulated = simulate,
     notice = if (simulate) "SIMULATED offline software-control response; no model request or biological inference." else
       if (.sc_run_transfer_authorized(context$request, state$config)) paste(
-        if (posthoc) "This aggregate request is within the confirmed project categories and provider; costs are recorded afterwards." else "This aggregate request is within the explicitly confirmed creation-time categories, provider and USD cap.",
+        "This aggregate request is within the confirmed project categories and provider; costs are recorded afterwards.",
         "The exact payload below remains available. This consent does not approve a scientific plan or labels.") else
       if (provider$external) paste("The exact aggregate QC/marker/expression evidence and declared context below leave this machine.",
         "Raw matrices, cell IDs and per-cell metadata are excluded. Aggregate sample/capture labels and context may identify a study.") else
@@ -192,16 +191,14 @@
     identical(saved$binding$evidence, context$binding$evidence) &&
     identical(saved$binding$cluster_scan, context$binding$cluster_scan) &&
     identical(saved$binding$guided_review_hash, context$binding$guided_review_hash)
-  attempted <- same_evidence && saved$status %in% c("requesting", "candidate", "adopted", "discarded", "failed")
+  attempted <- same_evidence && saved$status %in% c("requesting", "candidate", "adopted", "discarded", "failed", "paused")
   held <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
-    (if (posthoc) identical(entry$delivery, "unknown") || entry$status %in% c("dispatched", "delivery_uncertain") else
-      !identical(entry$cost_state, "known") || isTRUE(entry$accounting_issue)), logical(1)))
+    (identical(entry$delivery, "unknown") || entry$status %in% c("dispatched", "delivery_uncertain")), logical(1)))
   result$can_auto_request <- isTRUE(result$preview$scope_authorized) && result$can_request &&
-    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held &&
-    (posthoc || result$preview$remaining_usd >= provider$reservation_usd)
+    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan, guided_review_hash=context$binding$guided_review_hash))
-  if (same_evidence && !is.null(saved$fallback)) {
+  if (same_evidence && !is.null(saved$fallback) && !identical(saved$response$status, "needs_provider")) {
     result$fallback <- saved$fallback
     # A local draft may change the scientific proposal binding. The terminal
     # worker receipt still identifies the exact dispatched suggestion; it grants
@@ -375,6 +372,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       authority = "Exact outgoing aggregate payload only; scientific approval is unchanged."))
     .sc_run_save(root, state)
   } else if (action == "request") {
+    .sc_run_control_check(root)
     if(!is.null(context$guidance)&&isTRUE(state$annotation_guided_attempted))
       stop("The one guided annotation request was already attempted. Inspect its saved response/accounting; no guided retry is allowed.",call.=FALSE)
     if (!approved) stop("Approve the exact outgoing suggestion preview before requesting.", call. = FALSE)
@@ -396,7 +394,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     .sc_run_save(root, state)
     answer <- tryCatch(.sc_run_call(root, request, state$config$provider, chat_fn,
       budget = state$config$budget, allow_external = isTRUE(state$config$review$allow_external), retry = FALSE),
-      error = function(error) list(status = "interrupted", content = NULL, cached = FALSE,
+      error = function(error) list(status = if (inherits(error, c("sc_run_cancelled", "sc_run_disk_limit"))) "paused" else "interrupted", content = NULL, cached = FALSE,
         error = "Suggestion request interrupted; inspect the durable ledger. No automatic retry.",
         request_hash = context$request_hash))
     if (identical(answer$status, "ok") && context$kind == "annotation" && !is.null(state$config$react)) {
@@ -418,12 +416,12 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     }
     state$suggestion$response <- answer
     state$suggestion$candidate <- if (identical(answer$status, "ok")) answer$content else NULL
-    state$suggestion$status <- if (identical(answer$status, "ok")) "candidate" else "failed"
+    state$suggestion$status <- if (identical(answer$status, "ok")) "candidate" else if (identical(answer$status, "paused")) "paused" else "failed"
     state <- .sc_run_event(state, "suggestion_request_finished", list(
       suggestion_hash = suggestion_hash, request_hash = context$request_hash,
       response_status = answer$status, cached = isTRUE(answer$cached), simulated = simulate,
       cost_state = answer$cost_state, charged_or_held_usd = answer$charged_or_held_usd))
-    if (!identical(answer$status, "ok"))
+    if (!answer$status %in% c("ok", "paused"))
       state <- .sc_run_suggestion_fallback(root, state, context, answer)
     .sc_run_save(root, state)
   } else if (action == "discard") {

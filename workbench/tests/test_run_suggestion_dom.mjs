@@ -410,35 +410,6 @@ await test("failed model displays saved local rule draft without another request
  await h.call("maybeAutoSuggestion");assert.equal(h.requests.length,0);
 });
 
-await test("visible model budget separates used estimates, held cost and remaining cap", async () => {
- for (const budget of [1,.73,.1234567]) {
- const value=model(7,"preview");Object.assign(value.suggestion.preview,{budget,known_cost_usd:.006,held_usd:.05,remaining_usd:budget-.056});
- const h=setup(scientificReview(7),value);await h.call("renderSuggestion");
- const visible=h.el("suggestion-summary").textContent;
- assert(visible.includes(`Budget ${h.call("budgetAmount",budget)}`));
- assert.match(visible,/estimated used \$0.0060/);
- assert.match(visible,/held \$0.0500/);
- assert(visible.includes(`remaining $${(budget-.056).toFixed(4)}`));
- }
-});
-
-await test("new-project budget configurator uses server default and custom value without changing current policy or sending", async () => {
- const value=model();value.suggestion.new_project_budget_default=1;value.suggestion.preview.budget=.20;
- const h=setup(scientificReview(7),value), current=JSON.stringify(h.state.suggestion.suggestion.preview);
- assert.equal(h.el("new-project-budget").value,"1");
- assert.equal(h.call("budgetAmount",.000001),"$0.000001");
- for (const amount of ["0.73","0","2.5","0.000001","0.1234567"]) {
-  h.el("new-project-budget").value=amount;h.call("renderNewProjectBudget");
-  assert(h.el("new-project-budget-command").textContent.includes(`budget=${Number(amount)}`));
-  assert(h.el("new-project-budget-message").textContent.includes(h.call("budgetAmount",Number(amount))));
- }
- for (const amount of ["","-1","Infinity","NaN","bad"]) {
-  h.el("new-project-budget").value=amount;h.call("renderNewProjectBudget");
-  assert.equal(h.el("new-project-budget-command").textContent,"");
- }
- assert.equal(JSON.stringify(h.state.suggestion.suggestion.preview),current);assert.equal(h.requests.length,0);
-});
-
 await test("bounded session consent displays actual scope without dispatch or approval", () => {
   const value = model(7, "approved");
   Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
