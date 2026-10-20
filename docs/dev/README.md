@@ -27,6 +27,7 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [ReAct implementation plan](REACT_IMPLEMENTATION_PLAN.md)
 - [Accepted 1.0 gap audit](reports/2026-10-20-1.0-gap-audit.md)
 - [E0 stage report](reports/2026-10-20-e0.md)
+- [scAgentKit 2A and workflow revision stage report](reports/2026-10-20-scagentkit-2a.md)
 - [UNIFIED MODEL REVIEW](UNIFIED_MODEL_REVIEW.md)
 - [annotation-response-recovery](annotation-response-recovery.md)
 
