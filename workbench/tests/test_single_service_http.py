@@ -38,6 +38,7 @@ class Jobs:
 
 
 class Suggestions:
+    worker_timeout = 300
     def __init__(self, identity): self.identity = identity; self.csrf_token = "model-" + identity; self.job = None; self.operations = []
     def describe(self): return {"job": self.job, "csrf_token": self.csrf_token, "project_id": self.identity}
     def job_status(self): return self.job

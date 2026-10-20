@@ -32,6 +32,7 @@ class ReviewFixture:
 
 
 class SuggestionsFixture:
+    worker_timeout = 300
     csrf_token='suggestion-token'
     def __init__(self):self.operations=[];self.reads=0;self.job=None
     def describe(self):
