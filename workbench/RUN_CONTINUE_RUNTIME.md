@@ -55,6 +55,8 @@ When present, `job` contains `job_id`, `status`, `request_id`, `project_id`,
 `next_run_status`, `next_run_stage`, `next_run_revision`, `error`, and
 `retry_permitted`. `error` is null or an object with fixed safe `code` and `message`.
 POST returns the same shape plus the boolean `duplicate`.
+An explicitly restored terminal job also includes `restoration_sha256`, identifying
+its local restoration receipt.
 
 Job statuses are `queued`, `running`, `succeeded`, `failed`, and `interrupted`.
 `succeeded` means the local call reached a verified stop point. The scientific
@@ -96,3 +98,51 @@ Rscript executable. They test process/descriptor behavior rather than claiming
 real R or biological validation. Actual R/browser acceptance is a separate check.
 This local mechanism does not add authentication for multiple HPC users, perform
 scheduler submission, or repair non-POSIX filesystems.
+
+## Restore a complete terminal-job backup (unreleased)
+
+A full backup copied back to its original path has new filesystem directory
+identities, even when every file is unchanged. Ordinary inspection deliberately
+does not silently adopt those identities. Development builds containing the
+`restore` command can explicitly restore the local continuation binding.
+
+Stop the original project's browser service, workers, R processes and descendants,
+including any directly started R analysis, before taking/restoring a complete
+backup. A copied lock file cannot establish that the original workers stopped.
+Use the original recorded project path and matching R environment. Keep the backup.
+After verifying that the original processes are stopped, run from that R environment:
+
+```r
+project_dir <- "/absolute/original/project/path"
+restore_cli <- system.file("workbench", "run_continue_runtime.py",
+  package="scAgentKit", mustWork=TRUE)
+status <- system2("python3", c(shQuote(restore_cli), "restore",
+  shQuote(normalizePath(project_dir, mustWork=TRUE)),
+  "--confirm-original-stopped",
+  "--reviewer", shQuote("Your name"),
+  "--reason", shQuote("Restored the complete terminal-job backup at its original path.")))
+stopifnot(status == 0L)
+sc_open(project_dir)
+```
+
+The command requires explicit confirmation that the original processes stopped,
+an exclusive local continuation lock, no observed unresolved R project lock,
+terminal saved jobs, and consistent job/config/request records. It refuses
+queued/running job backups and relocation to a different path. Resolve an active
+or uncertain original worker before making a new terminal backup; do not edit job
+statuses, remove scientific locks or rewrite hashes to force restoration.
+
+An immutable receipt in `.workbench-jobs/restorations/` records old and new
+directory bindings, verified local job/request hashes, the operator and reason,
+and hashes of the state/projection bytes observed during the check. Old jobs, configs, scientific
+state, checkpoints and approvals are not rewritten. Receipt-backed old requests
+can return their existing terminal result; a new Continue request uses a fresh
+job and the current binding. Copying the project again requires a new explicit
+restoration.
+
+This operation restores local job metadata only. The observed byte hashes are
+audit context, not an atomic R snapshot, R-state validation or scientific result.
+The continuation lock does not exclude directly started R operations.
+Normal R inspection and
+continuation still verify the authoritative state, evidence and approvals.
+Restoration starts no R worker, scientific computation or model request.

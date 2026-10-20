@@ -6,6 +6,13 @@ scAgentKit guides researchers from single-cell counts and sample information
 through QC, basic analysis, clustering and reviewed annotation. A saved project
 contains a new Seurat object, marker tables, figures and your recorded decisions.
 
+The workflow brings measured evidence and optional model suggestions together for
+researcher review, with each approved decision saved in the project.
+[Recorded validation](benchmark/evaluation-v1/results/report.md) covers offline
+workflow execution; a separate [80-cell model check](docs/MODEL_BUDGET.md) covers
+request transport, response validation and workflow operation. Biological accuracy,
+optimal analysis settings and human time savings have not been established.
+
 ## Analysis workflow
 
 <img src="docs/diagrams/project-analysis-flow.svg" alt="Three review decisions: initial strategy, measured clustering and annotation" width="1000">
@@ -81,16 +88,21 @@ key in the analysis machine's environment (`DEEPSEEK_API_KEY` or `XAI_API_KEY`),
 never in code, study notes, browser fields or project files. `sc_start()` can
 configure the provider directly; a separate initialization call is unnecessary.
 Without a usable key it opens the manual workflow. Two detected provider keys
-require an explicit provider choice. The calibrated DeepSeek Flash default is **USD1.00 per new project**, with
-separate data/budget consent before transmission. Set a custom nonnegative finite
-cap with `budget=.73`; the preview shows your actual chosen value. Existing project
-caps stay frozen. Other models require an explicit
-cap. [Measured costs and limits](docs/MODEL_BUDGET.md).
+require an explicit provider choice.
+
+When `budget` is omitted, `sc_start()` and `sc_analyze()` select **USD1.00 per
+new project** for the standard built-in DeepSeek `deepseek-flash` settings
+defined in [measured costs and limits](docs/MODEL_BUDGET.md). Other configurations
+default to USD0 and need an explicit cap for paid requests. An explicit
+nonnegative finite `budget`, including `budget=0`, takes precedence. Existing
+project caps stay frozen. The cap does not authorize transmission: review the
+data scope and budget separately. Project-level consent requires an explicit cap.
 
 For model assistance, source the helper below, inspect the actual study context
 and aggregate categories, select a provider/model with verified pricing and set
 your own USD cap. Only then set `confirmed=TRUE` in your call. Sourcing sends
-nothing; the zero-cap example cannot make a paid request.
+nothing. The example below sets `budget=1` but keeps `confirmed=FALSE`, so the
+helper stops before starting the project or making a model request.
 
 ```r
 source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))

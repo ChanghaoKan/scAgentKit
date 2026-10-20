@@ -186,5 +186,12 @@ facts. See [reuse limits](../README.md#limitations).
 | A busy job or uncertain response | Inspect the saved job/receipt and wait for the worker before submitting again. |
 | Input/layer mismatch or changed project environment | Check the input and recorded environment; use the original environment or a new project. |
 
+A complete backup copied back to its original path has new directory identities.
+For `Saved local continuation belongs to a different project directory`, development
+builds containing the command offer [explicit terminal-job restoration](../workbench/RUN_CONTINUE_RUNTIME.md#restore-a-complete-terminal-job-backup-unreleased).
+This preserves old jobs and scientific records and rebinds only terminal local
+jobs. Active-job backups and relocation to another path are unsupported. Inspect
+the restored project in its original environment; do not edit states, locks or hashes.
+
 For help, record versions, input type, stage, exact error and job/receipt.
 Remove private data/credentials before sharing.

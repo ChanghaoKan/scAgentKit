@@ -31,6 +31,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent
 SCHEMA = "scagentkit.run-continue.workbench.v1"
 JOB_SCHEMA = "scagentkit.run-continue.job.v1"
+RESTORE_SCHEMA = "scagentkit.run-continue.restoration.v1"
 HASH = re.compile(r"[a-f0-9]{64}\Z")
 JOB_ID = re.compile(r"[a-f0-9]{32}\Z")
 ACTIVE = {"queued", "running"}
@@ -173,10 +174,37 @@ def _job_directory(base, job_id):
     return _safe_directory(base / "jobs" / job_id)
 
 
-def _saved_job(base, job_id):
+def _directory_binding(base):
+    def identity(path):
+        path = _safe_directory(path)
+        return [path.stat().st_dev, path.stat().st_ino]
+    return {"project": str(base.parent), "project_identity": identity(base.parent),
+            "base_identity": identity(base),
+            "subdirectory_identities": {name: identity(base / name) for name in ("jobs", "requests")}}
+
+
+def _config_binding(config):
+    if not isinstance(config, dict):
+        raise StoreError("Saved local continuation directory binding is invalid", 409)
+    fields = ("project", "project_identity", "base_identity", "subdirectory_identities")
+    binding = {name: config.get(name) for name in fields}
+    identities = binding["subdirectory_identities"]
+    if (not isinstance(binding["project"], str) or not Path(binding["project"]).is_absolute()
+            or not isinstance(identities, dict) or set(identities) != {"jobs", "requests"}):
+        raise StoreError("Saved local continuation directory binding is invalid", 409)
+    for value in (binding["project_identity"], binding["base_identity"], *identities.values()):
+        if (not isinstance(value, list) or len(value) != 2
+                or any(isinstance(item, bool) or not isinstance(item, int) or item < 0 for item in value)):
+            raise StoreError("Saved local continuation directory identity is invalid", 409)
+    return binding
+
+
+def _job_record(base, job_id):
+    """Validate content without granting directory or execution authority."""
     directory = _job_directory(base, job_id)
     job = _read(directory / "job.json")
     if (job.get("schema") != JOB_SCHEMA or job.get("job_id") != job_id
+            or not isinstance(job.get("status"), str)
             or job.get("status") not in ACTIVE | TERMINAL):
         raise StoreError("Invalid saved local continuation state", 409)
     config = _read(directory / "config.json")
@@ -185,22 +213,67 @@ def _saved_job(base, job_id):
             or config.get("payload_hash") != _payload_hash(config.get("payload"))
             or job.get("payload_hash") != config["payload_hash"]):
         raise StoreError("Local continuation configuration changed; inspect before continuing", 409)
-    project = base.parent
-    if (config.get("project") != str(project) or
-            config.get("project_identity") != [project.stat().st_dev, project.stat().st_ino] or
-            config.get("base_identity") != [base.stat().st_dev, base.stat().st_ino]):
-        raise StoreError("Saved local continuation belongs to a different project directory", 409)
-    identities = config.get("subdirectory_identities")
-    if not isinstance(identities, dict) or set(identities) != {"jobs", "requests"}:
-        raise StoreError("Saved local continuation directory binding is invalid", 409)
-    for name, identity in identities.items():
-        path = _safe_directory(base / name)
-        if identity != [path.stat().st_dev, path.stat().st_ino]:
-            raise StoreError("Saved local continuation subdirectory was replaced", 409)
+    RunContinueRuntime.validate(config.get("payload"))
+    _config_binding(config)
     for field in ("project_id", "input_hash", "expected_revision", "request_id", "retry"):
         if job.get(field) != config["payload"].get(field):
             raise StoreError("Local continuation scope record changed", 409)
-    return job
+    return job, config
+
+
+def _restoration(base):
+    pointer = _read(base / "restoration.json", optional=True)
+    if pointer is None:
+        return None
+    if set(pointer) != {"sha256"}:
+        raise StoreError("Invalid continuation restoration pointer", 409)
+    digest = pointer["sha256"]
+    directory = _safe_directory(base / "restorations")
+    current = None
+    seen = set()
+    while digest is not None:
+        if not isinstance(digest, str) or not HASH.fullmatch(digest) or digest in seen:
+            raise StoreError("Invalid continuation restoration history", 409)
+        seen.add(digest)
+        receipt = _read(directory / (digest + ".json"))
+        if receipt.get("schema") != RESTORE_SCHEMA or _payload_hash(receipt) != digest:
+            raise StoreError("Continuation restoration receipt changed", 409)
+        _config_binding(receipt.get("target", {}))
+        if not isinstance(receipt.get("jobs"), dict) or not isinstance(receipt.get("requests"), dict):
+            raise StoreError("Invalid continuation restoration inventory", 409)
+        if current is None:
+            current = dict(receipt, sha256=digest)
+        digest = receipt.get("previous_sha256")
+    return current
+
+
+def _job_hashes(base, job_id):
+    directory = _job_directory(base, job_id)
+    hashes = {}
+    for name in ("job.json", "config.json", "request.json", "response.json",
+                 "owner.json", "launch.json", "worker-exit.json"):
+        path = directory / name
+        if path.is_symlink() or path.exists() and not path.is_file():
+            raise StoreError("Saved continuation artifact was replaced by a link or directory", 409)
+        if path.exists():
+            hashes[name] = _sha(path)
+    return hashes
+
+
+def _saved_job(base, job_id):
+    job, config = _job_record(base, job_id)
+    binding = _directory_binding(base)
+    if _config_binding(config) == binding:
+        return job
+    receipt = _restoration(base)
+    restored = (receipt or {}).get("jobs", {}).get(job_id)
+    if (job["status"] not in TERMINAL or receipt is None or receipt["target"] != binding
+            or restored != {"hashes": _job_hashes(base, job_id), "binding": _config_binding(config)}):
+        raise StoreError("Saved local continuation belongs to a different project directory; "
+                         "restore terminal jobs explicitly with run_continue_runtime.py restore", 409)
+    # This receipt authorizes reading/replaying an immutable terminal record,
+    # never executing its old config or bypassing the R coordinator's checks.
+    return dict(job, restoration_sha256=receipt["sha256"])
 
 
 def _current(base):
@@ -225,12 +298,36 @@ def _owners_dead(base, job):
     return r_pid is None or _alive(r_pid) is False
 
 
+def _restoration_owners_exited(base, job):
+    if _owners_dead(base, job):
+        return True
+    directory = _job_directory(base, job["job_id"])
+    owner = _read(directory / "owner.json", optional=True) or {}
+    launch = _read(directory / "launch.json", optional=True) or {}
+    exited = _read(directory / "worker-exit.json", optional=True) or {}
+    # Exit receipts can distinguish an already reaped worker from a PID reused
+    # by an unrelated process. They do not prove that all descendants stopped:
+    # the operator must separately confirm that before restoring a backup.
+    pid = owner.get("worker_pid", launch.get("worker_pid"))
+    worker_done = (isinstance(pid, int) and not isinstance(pid, bool) and pid > 0
+                   and exited.get("worker_pid") == pid
+                   and isinstance(exited.get("exit_code"), int)
+                   and not isinstance(exited.get("exit_code"), bool)
+                   and isinstance(exited.get("finished_at"), str) and bool(exited["finished_at"]))
+    r_done = (owner.get("r_pid") is None or
+              isinstance(owner.get("r_exit_code"), int) and not isinstance(owner.get("r_exit_code"), bool)
+              and isinstance(owner.get("r_finished_at"), str) and bool(owner["r_finished_at"]))
+    return worker_done and r_done
+
+
 def _public_job(job, retry_permitted=False):
     if job is None:
         return None
     fields = ("job_id", "status", "request_id", "project_id", "input_hash", "expected_revision", "retry",
               "created_at", "updated_at", "next_run_status", "next_run_stage", "next_run_revision", "error")
     result = {field: job.get(field) for field in fields}
+    if job.get("restoration_sha256"):
+        result["restoration_sha256"] = job["restoration_sha256"]
     result["retry_permitted"] = bool(retry_permitted)
     return result
 
@@ -265,6 +362,139 @@ class RunContinueRuntime:
         self._workers = {}
         self._worker_lock = threading.Lock()
         self._fresh()
+
+    def restore(self, reviewer, reason, *, original_workers_stopped=False):
+        """Explicitly rebind terminal local jobs after a same-path backup restore.
+
+        No R process, model request, scientific state write or approval occurs.
+        Hashes are observed audit context, not an atomic R snapshot. A copied
+        flock cannot prove that descendants on the original filesystem stopped.
+        """
+        if original_workers_stopped is not True:
+            raise StoreError("Confirm that the original service, worker, R processes and their "
+                             "descendants have stopped before restoring terminal jobs", 400)
+        for name, value, limit in (("reviewer", reviewer, 200), ("reason", reason, 4000)):
+            if (not isinstance(value, str) or not value.strip() or len(value) > limit
+                    or any(ord(char) < 32 for char in value)):
+                raise StoreError("Restoration requires bounded nonempty " + name, 400)
+        self._fresh()
+        fd = _lock(self.lock_file)
+        if fd is None:
+            raise StoreError("A local continuation still owns its lock; restoration was not performed", 409)
+        try:
+            previous = _restoration(self.base)
+            snapshot = self._restore_snapshot(previous)
+            if previous is not None and previous["target"] == snapshot["target"]:
+                return {"schema": RESTORE_SCHEMA, "sha256": previous["sha256"],
+                        "restored_jobs": len(previous["jobs"]), "boundary": previous["boundary"]}
+            if all(record["binding"] == snapshot["target"] for record in snapshot["jobs"].values()):
+                raise StoreError("Terminal jobs already match this directory; restoration is unnecessary", 409)
+            receipt = dict(snapshot, schema=RESTORE_SCHEMA, created_at=_time(),
+                           reviewer=reviewer, reason=reason,
+                           previous_sha256=previous["sha256"] if previous else None,
+                           original_workers_stopped=True,
+                           boundary="Local terminal-job directory binding only. Hashes record an "
+                                    "observed audit snapshot, not atomic R validation or proof that "
+                                    "original processes stopped. R must still verify scientific state, "
+                                    "checkpoints and approvals before continuation.")
+            if len(canonical(receipt).encode("utf-8")) + 1 > MAX_JSON:
+                raise StoreError("Restoration inventory exceeds the bounded local receipt size", 409)
+            self._fresh()
+            if snapshot != self._restore_snapshot(previous):
+                raise StoreError("Project changed during restoration; no binding was published", 409)
+            digest = _payload_hash(receipt)
+            directory = _safe_directory(self.base / "restorations", create=True)
+            _once(directory / (digest + ".json"), receipt)
+            _atomic(self.base / "restoration.json", {"sha256": digest})
+            return {"schema": RESTORE_SCHEMA, "sha256": digest,
+                    "restored_jobs": len(snapshot["jobs"]), "boundary": receipt["boundary"]}
+        finally:
+            os.close(fd)
+
+    def _restore_snapshot(self, previous):
+        lock = self.project / ".run-lock"
+        if lock.exists() or lock.is_symlink():
+            raise StoreError("The R project lock must be resolved in R before restoring local jobs", 409)
+        state_file = self.project / "state.rds"
+        if state_file.is_symlink() or not state_file.is_file():
+            raise StoreError("Restoration requires the unchanged local state.rds file", 409)
+        run = _projection(self.project)
+        jobs = {}
+        bindings = []
+        for directory in sorted((self.base / "jobs").iterdir()):
+            job, config = _job_record(self.base, directory.name)
+            if job["status"] not in TERMINAL:
+                raise StoreError("Queued or running jobs cannot be restored; reconcile the original "
+                                 "worker at its original directory before taking a terminal backup", 409)
+            if not _restoration_owners_exited(self.base, job):
+                raise StoreError("A recorded worker/R PID is alive or its exit cannot be established. "
+                                 "Inspect the original processes, including possible PID reuse, "
+                                 "before restoring terminal jobs", 409)
+            binding = _config_binding(config)
+            if binding["project"] != str(self.project):
+                raise StoreError("Restore the backup at its recorded project path; project relocation "
+                                 "and scientific path migration are not supported by this command", 409)
+            if (job["project_id"] != run["project_id"] or job["input_hash"] != run["input_hash"]
+                    or job["expected_revision"] > run["revision"]):
+                raise StoreError("Restored jobs do not belong to the saved project/input/revision", 409)
+            # Failed/interrupted responses can be malformed or foreign: that
+            # may be why the worker failed. Preserve their bytes as evidence,
+            # never reinterpret them as a successful scientific result.
+            if job["status"] == "succeeded":
+                result = _read(directory / "response.json")
+                summary = (result or {}).get("result")
+                if (set(result) != {"ok", "result", "error"} or result.get("ok") is not True
+                        or not isinstance(summary, dict) or summary.get("schema") != "scagentkit.run.v1"
+                        or summary.get("project_id") != run["project_id"]
+                        or summary.get("input_hash") != run["input_hash"]
+                        or not isinstance(summary.get("status"), str)
+                        or summary.get("status") not in {"complete", "awaiting_review", "awaiting_configuration",
+                                                        "failed", "rejected", "ready"}
+                        or not isinstance(summary.get("stage"), str)
+                        or isinstance(summary.get("revision"), bool)
+                        or not isinstance(summary.get("revision"), int)
+                        or not job["expected_revision"] <= summary["revision"] <= run["revision"]
+                        or any(job.get("next_run_" + field) != summary.get(field)
+                               for field in ("status", "stage", "revision"))):
+                    raise StoreError("Restored worker result differs from the saved project or job", 409)
+            record = {"hashes": _job_hashes(self.base, job["job_id"]), "binding": binding}
+            old = (previous or {}).get("jobs", {}).get(job["job_id"])
+            if previous and (old != record if old is not None else binding != previous["target"]):
+                raise StoreError("Job changed since the previous restoration receipt", 409)
+            jobs[job["job_id"]] = record
+            bindings.append(binding)
+        if not jobs:
+            raise StoreError("There are no saved terminal continuation jobs to restore", 409)
+        if previous is None and any(binding != bindings[0] for binding in bindings):
+            raise StoreError("Saved jobs contain inconsistent original directory bindings", 409)
+        if previous and set(previous["jobs"]) - set(jobs):
+            raise StoreError("A previously restored job is missing", 409)
+        pointer = _read(self.base / "current.json")
+        if (set(pointer) != {"job_id"} or not isinstance(pointer["job_id"], str)
+                or pointer["job_id"] not in jobs):
+            raise StoreError("Current continuation pointer does not name a verified terminal job", 409)
+        requests = {}
+        for path in sorted((self.base / "requests").iterdir()):
+            alias = _read(path)
+            if (not re.fullmatch(r"[a-f0-9]{64}\.json", path.name)
+                    or set(alias) != {"job_id", "payload_hash"} or not isinstance(alias["job_id"], str)
+                    or alias["job_id"] not in jobs
+                    or not isinstance(alias["payload_hash"], str) or not HASH.fullmatch(alias["payload_hash"])):
+                raise StoreError("Restored request alias does not name a verified terminal job", 409)
+            requests[path.name] = {"sha256": _sha(path), **alias}
+        if previous and any(requests.get(name) != record for name, record in previous["requests"].items()):
+            raise StoreError("A previously restored request alias changed or is missing", 409)
+        for job_id in jobs:
+            job, config = _job_record(self.base, job_id)
+            name = hashlib.sha256(job["request_id"].encode("utf-8")).hexdigest() + ".json"
+            alias = requests.get(name)
+            if alias is None or alias["job_id"] != job_id or alias["payload_hash"] != config["payload_hash"]:
+                raise StoreError("Restored job has no matching original request alias", 409)
+        return {"target": _directory_binding(self.base), "jobs": jobs, "requests": requests,
+                "current_job_id": pointer["job_id"], "project_id": run["project_id"],
+                "input_hash": run["input_hash"], "revision": run["revision"],
+                "observed_state_sha256": _sha(state_file),
+                "observed_status_sha256": _sha(self.project / "status.json")}
 
     def _fresh(self):
         for path, expected in ((self.project, self.project_identity), (self.base, self.base_identity)):
@@ -356,10 +586,20 @@ class RunContinueRuntime:
             job = _current(self.base)
             request_path = self.base / "requests" / (hashlib.sha256(payload["request_id"].encode("utf-8")).hexdigest() + ".json")
             recorded = _read(request_path, optional=True)
+            receipt = _restoration(self.base)
+            protected_alias = (receipt or {}).get("requests", {}).get(request_path.name)
+            if protected_alias is not None and (recorded is None or
+                    protected_alias != {"sha256": _sha(request_path), **recorded}):
+                raise StoreError("Restored Continue request alias changed or is missing", 409)
             if recorded is not None:
                 if set(recorded) != {"job_id", "payload_hash"} or recorded.get("payload_hash") != _payload_hash(payload):
                     raise StoreError("This Continue request ID was already used for different fields", 409)
                 previous = _saved_job(self.base, recorded.get("job_id"))
+                if previous.get("restoration_sha256"):
+                    receipt = _restoration(self.base)
+                    expected = receipt["requests"].get(request_path.name)
+                    if expected != {"sha256": _sha(request_path), **recorded}:
+                        raise StoreError("Restored Continue request alias changed", 409)
                 if any(previous[key] != payload[key] for key in ("project_id", "input_hash", "expected_revision", "retry")):
                     raise StoreError("Saved Continue request/job binding changed", 409)
                 return self._answer(previous, run, fd is None, duplicate=True)
@@ -394,7 +634,20 @@ class RunContinueRuntime:
             # A replay may claim this request ID while the previous worker
             # releases its flock. Preserve that claim before publishing or
             # launching a new job; a conflict must leave current.json intact.
-            _once(request_path, {"job_id": job_id, "payload_hash": _payload_hash(payload)})
+            alias = {"job_id": job_id, "payload_hash": _payload_hash(payload)}
+            try:
+                _once(request_path, alias)
+            except StoreError:
+                # A competing replay may own this ID before publication. This
+                # directory was never accepted, published or given to a worker.
+                # Remove only our two known new files after proving another
+                # claim won; retain ambiguous disk failures for inspection.
+                claim = _read(request_path, optional=True)
+                if claim is not None and claim != alias:
+                    (directory / "job.json").unlink()
+                    (directory / "config.json").unlink()
+                    directory.rmdir()
+                raise
             _atomic(self.base / "current.json", {"job_id": job_id})
             env = scrub_secrets(dict(os.environ))
             env.update({name: str(self.threads) for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS")})
@@ -431,3 +684,31 @@ class RunContinueRuntime:
         finally:
             if fd is not None:
                 os.close(fd)
+
+
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser(description="Explicit local continuation metadata recovery; "
+                                     "does not verify or alter scientific state.")
+    commands = parser.add_subparsers(dest="command", required=True)
+    restore = commands.add_parser("restore", help="Rebind only terminal jobs after restoring a backup "
+                                  "at its original path; active jobs and project relocation are refused.")
+    restore.add_argument("project", help="Project restored at its recorded absolute path")
+    restore.add_argument("--reviewer", required=True)
+    restore.add_argument("--reason", required=True)
+    restore.add_argument("--confirm-original-stopped", action="store_true", required=True,
+                         help="Confirm the original service, worker, R processes and all descendants "
+                              "are stopped; a copied lock cannot establish this.")
+    args = parser.parse_args(argv)
+    try:
+        result = RunContinueRuntime(args.project).restore(args.reviewer, args.reason,
+                                                         original_workers_stopped=args.confirm_original_stopped)
+    except (StoreError, OSError, ValueError) as problem:
+        print(str(problem), file=sys.stderr)
+        return 1
+    print(canonical(result))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

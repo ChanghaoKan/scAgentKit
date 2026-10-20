@@ -107,7 +107,8 @@ The native coordinator defaults to FindAllMarkers with both directions enabled,
 min.pct=0.25 and logfc.threshold=0. The detection prefilter uses
 `max(pct.1, pct.2) >= min.pct`: either side can qualify, not both sides required.
 The supplied summary then keeps strict `avg_log2FC > 1` and `p_val_adj < 0.05`,
-ranks descending by `pct.1 - pct.2`, and keeps at most 30 genes per cluster.
+ranks by descending `avg_log2FC`, then descending `pct.1 - pct.2`, with ascending
+`gene` as the final tie-break, and keeps at most 30 genes per cluster.
 Explicit marker settings are recorded with native evidence. A manually supplied
 table without this provenance is labelled unrecorded rather than assigned the
 default policy.
@@ -164,7 +165,8 @@ reports omitted blocks and keeps the full local evidence. Ribosomal/MT/cycle
 fractions describe programs, not noisy-cluster or identity classifiers. Resolution
 fallbacks require a value actually scanned; no composite optimum is claimed.
 
-The annotation query pool ranks fold change first and detection difference second;
+The annotation query pool ranks fold change descending first and detection
+difference descending second, with ascending gene names as the final tie-break;
 shared ribosomal/MT exclusions are configurable and recorded, with the native full
 marker table preserved. ACT coverage deduplicates genes while publication evidence
 retains original PMID strings and source rows. Fisher evidence is conditional on a

@@ -1,3 +1,16 @@
+# Development changes (unreleased)
+
+- Add explicit same-path restoration of complete terminal continuation-job
+  backups, retaining old records and a separate restoration receipt. Active jobs
+  and project relocation remain rejected; scientific state and approvals retain
+  their existing verification.
+- Correct the bilingual default-budget instructions and the unconfirmed model
+  example. Document annotation marker ordering consistently with the existing
+  fold-change-first implementation; scientific defaults are unchanged.
+- Distinguish recorded workflow checks from unmeasured biological and human-time
+  benefits. Add a proposed, unexecuted three-arm annotation evaluation protocol;
+  historical benchmark results are unchanged.
+
 # scAgentKit 0.8.1 (experimental prerelease)
 
 - Align package metadata, bilingual installation and operator instructions, and
