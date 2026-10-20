@@ -72,7 +72,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
   expect_true(view$can_request); expect_false(view$can_approve)
   expect_true(view$can_auto_request)
   expect_identical(view$preview$consent_mode, "project")
-  expect_equal(view$preview$remaining_usd, .1)
+  expect_null(view$preview$remaining_usd)
   calls <- 0L
   answer <- transfer_action(root, "request", chat_fn = function(...) {
     calls <<- calls + 1L

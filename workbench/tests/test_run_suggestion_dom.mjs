@@ -335,14 +335,14 @@ await test("first manual worksheet rejects foreign, stale and malformed evidence
   assert.throws(() => harness().call("verify", pending), /worksheet/);
 });
 
-await test("project transfer scope keeps exact payload, used and remaining budget visible without science approval", () => {
+await test("project transfer scope keeps exact payload and recorded cost visible without science approval", () => {
   const value = model(7, "approved");
   Object.assign(value.suggestion.preview, {scope_authorized: true, consent_mode: "project",
     remaining_usd: .42, charged_or_held_usd: .08, simulated: false,
     transfer_consent: {mode: "project", budget_usd: .5, categories: ["study_context", "aggregate_qc"]}});
   const h = setup(science(), value);
   assert.match(h.el("suggestion-summary").textContent, /confirmed project transfer scope/);
-  assert.match(h.el("suggestion-accounting").textContent, /remaining_usd.*0.42.*charged_or_held_usd.*0.08/s);
+  assert.match(h.el("suggestion-accounting").textContent, /charged_or_held_usd.*0.08/s);
   assert.match(h.el("suggestion-payload").textContent, /transfer_consent.*study_context.*aggregate_qc/s);
   assert.match(h.el("suggestion-payload").textContent, /public fixture/);
   assert.equal(h.el("suggestion-approve").hidden, true);

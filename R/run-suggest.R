@@ -132,8 +132,7 @@
     can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE, can_review_conflicts = FALSE)
   if (!is.null(context$blocked_reason)) return(result)
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
-  # This preview is for the existing one-shot request allowance. ReAct usage
-  # remains in the same ledger, but its post-call costs do not spend that cap.
+  # One-shot and ReAct calls share actual post-call accounting.
   entries <- ledger$entries
   amount <- function(field, known = NULL) sum(vapply(entries, function(entry) {
     if (!is.null(known) && !identical(identical(entry$cost_state, "known"), known)) return(0)
@@ -198,6 +197,11 @@
     state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan, guided_review_hash=context$binding$guided_review_hash))
+  if (same_evidence && !is.null(saved$fallback)) {
+    result$fallback <- saved$fallback
+    result$status <- saved$status
+    result$response <- .sc_run_suggestion_response(saved$response)
+  }
   if (same_evidence && !is.null(saved$fallback) && !identical(saved$response$status, "needs_provider")) {
     result$fallback <- saved$fallback
     # A local draft may change the scientific proposal binding. The terminal
@@ -455,5 +459,9 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
         simulated = simulate, source = "adopted_typed_suggestion"))
     return(sc_run_inspect(root))
   }
-  .sc_run_suggestion_view(root, state, simulate)
+  result <- .sc_run_suggestion_view(root, state, simulate)
+  # The worker receipt binds the request just dispatched; a subsequent preview
+  # may expose the refreshed rule draft for an explicit missing-key retry.
+  if (action == "request") result$suggestion_hash <- suggestion_hash
+  result
 }
