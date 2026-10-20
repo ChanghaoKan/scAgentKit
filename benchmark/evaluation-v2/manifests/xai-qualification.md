@@ -60,3 +60,16 @@ Responses 的 `max_output_tokens` 以及 legacy Chat 的 `max_completion_tokens`
 M1-xAI 的 mock 验收覆盖完整 item 顺序/续传、call_id、非法参数、未知 item、usage 变体/ticks、拒绝、截断/断流、投递不明、完整历史隐私/大小限制、无需远端历史的离线重放。真实资格还须验证账号型号可用性、至少两轮工具调用和合法 final JSON、实际 usage/收费字段、固定工作量的耗时/超时率。真实调用不进 CI；本次均未执行。
 
 公开 OpenAPI 快照 SHA256：`ee418da1de9d6b66648250e1ecb9fdd98cef472dde7b05c66cc9d0db8dad7f1f`。官方 SDK 查阅 commit：`1d9e1dffc9a0521ede0e6bc7f2b906177b940d34`，[chat.py 固定来源](https://github.com/xai-org/xai-sdk-python/blob/1d9e1dffc9a0521ede0e6bc7f2b906177b940d34/src/xai_sdk/chat.py)。这些证明查阅来源与接口声明，不证明 live 服务或单细胞性能。产品清单和正式实验记录须继续区分 source、offline、live 和完整 preset 状态。
+
+## 2026-10-20 后续实现与协议冒烟记录
+
+前文是 E0 的离线资格记录，保留其时间边界。其后 Core #4 实现了原生
+Responses，`bc349db` 离线 238 条断言及完整 R-CMD-check 通过。维护者授权的
+两轮合成汇总数据协议冒烟在 `8a48825` 上通过：grok-4.7、temperature 0、
+effort high、每轮可见输出上限 512、timeout 60 秒，工具调用后返回合法 JSON，
+完整 output / encrypted reasoning 原样续传。耗时 6.107 秒，input 2928、
+output 165、total 3093、reasoning 134（不重复加到 total），费用由服务 ticks
+返回为 $0.003198。没有私有数据、留出集或生物学效果实验。
+
+scAgentKit M1 原生会话与 2B 集成仍为独立草稿；完整公开数据验收和 CASSIA
+真实 preset 尚未完成，不标为产品正式支持，也不将开发参数写成正式实验冻结值。
