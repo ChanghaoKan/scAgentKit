@@ -194,7 +194,9 @@
         break
       }
       if (as.numeric(Sys.time()) > trace$deadline) { trace$fallback_reason <- "cluster_timeout"; break }
-      trace$messages <- append(trace$messages, list(answer$turn_response$message))
+      native <- identical(session$capability_profile$native_protocol, "xai.responses.v1")
+      trace$messages <- append(trace$messages, if (native) answer$turn_response$protocol$output else
+        list(answer$turn_response$message))
       calls <- answer$content$tool_calls
       if (!length(calls)) {
         parsed <- tryCatch(jsonlite::fromJSON(answer$content$content, simplifyVector = FALSE), error = identity)
@@ -223,8 +225,11 @@
         trace$tools <- append(trace$tools, list(list(call_id = call$id, source = paste0("tool:", number),
           tool = call$`function`$name, arguments = arguments, response = result)))
         run$tool_calls <- run$tool_calls + 1L
-        trace$messages <- append(trace$messages, list(list(role = "tool", tool_call_id = call$id,
-          content = .sc_project_json(list(source = paste0("tool:", number), evidence = result)))))
+        content <- .sc_project_json(list(source = paste0("tool:", number), evidence = result))
+        item <- if (identical(session$capability_profile$native_protocol, "xai.responses.v1"))
+          list(type = "function_call_output", call_id = call$id, output = content) else
+          list(role = "tool", tool_call_id = call$id, content = content)
+        trace$messages <- append(trace$messages, list(item))
         trace$pending_calls <- trace$pending_calls[-1L]
         run <- .sc_run_react_save(root, run, trace)
         if (identical(result$error$code, "timeout")) { trace$fallback_reason <- "tool_timeout"; break }

@@ -2,7 +2,15 @@
 
 - Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
 - Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
-- Require released agentomicsCore v0.3.0, including DeepSeek tool-call index compatibility. The user-facing `sc_start` default, trace UI and offline replay remain later stages.
+- Require released agentomicsCore v0.3.0. The user-facing `sc_start` default, trace UI and offline replay remain later stages.
+- Add an internal native xAI Responses session adapter for the explicit
+  `grok-4.7` candidate. Preserve complete native output, including opaque
+  reasoning, with committed-history verification and visible-content privacy
+  checks. Reuse the existing turn ledger, checkpoints and consent.
+  Record provider-reported USD ticks after calls; missing cost stays unknown.
+  The native adapter is provided by released agentomicsCore v0.3.0.
+  It integrates with the opt-in ReAct loop; formal product qualification remains pending. The
+  implementation hash changes.
 
 - Upgrade agentomicsCore to v0.2.0 and add the internal single-turn annotation
   transport foundation: state-bound read-only scope, complete-conversation

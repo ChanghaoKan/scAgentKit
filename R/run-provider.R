@@ -125,7 +125,7 @@
   if (!is.null(generation$reasoning_effort)) {
     value <- generation$reasoning_effort
     if (!is.character(value) || length(value) != 1L ||
-        !value %in% c("none", "minimal", "low", "medium", "high")) stop("Unsupported reasoning_effort.")
+        !value %in% c("none", "minimal", "low", "medium", "high", "xhigh")) stop("Unsupported reasoning_effort.")
   }
   generation <- generation[sort(names(generation))]
   reserve <- if (is.null(provider$reservation_usd)) if (external) 0.05 else 0 else provider$reservation_usd
@@ -838,7 +838,8 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
     'prompt_cache_hit_tokens','prompt_cache_miss_tokens','cache_read_input_tokens',
     'cache_creation_input_tokens','cached_tokens','prompt_tokens_details','completion_tokens_details',
     'input_tokens_details','output_tokens_details','reasoning_tokens','audio_tokens',
-    'text_tokens','image_tokens','video_tokens','accepted_prediction_tokens','rejected_prediction_tokens')
+    'text_tokens','image_tokens','video_tokens','accepted_prediction_tokens','rejected_prediction_tokens',
+    'cost_in_usd_ticks')
   clean <- function(x, depth=0L) {
     if (is.numeric(x) && length(x)==1L && is.finite(x) && x>=0 && x==floor(x)) return(as.numeric(x))
     if (!is.list(x) || is.null(names(x)) || depth>3L || anyDuplicated(names(x))) return(NULL)
