@@ -29,13 +29,29 @@ owns the project lock; it does not terminate another process.
 
 ## Validation status
 
-The final installed-source test pass and exact-head CI are recorded in the delivery
-report. Earlier tests run while source and installed runtime differed are not treated
-as final validation. A development PBMC3k mock run completed three scripted approvals,
-8 clusters and replay with no fallback in 342.803 seconds, implementation hash
-`5460cf4d4630e32b31a4fe06938f5a6c83ada9ff405864213b0a32734dec3bfa`.
-That receipt predates the final provider authorization cleanup; it is not a final-head
-live provider test and makes no biological accuracy claim.
+PR #29: https://github.com/ChanghaoKan/scAgentKit/pull/29. No merge.
+PR #26 (1675887), #27 (b5c468f), #28 (1face3a): all four exact-head workflows passed.
+Local final targeted R tests passed (four old Core 0.1.1 tests skipped). Python:
+397 tests passed, 15 environment-dependent skips. All 21 Node scripts passed.
+Actual Chrome/R bridge storage and effective-limit checks passed.
+
+The final installed-code public PBMC3k mock run completed three explicit scripted
+approvals, 2,683 retained cells, eight clusters/eight tool calls, no fallback and
+matching offline replay in 465.663 seconds. Implementation hash:
+`23fed9ead6a12828c9370796c7ec2c5b9135b9428b1cebcf7b3e4cb264b15512`.
+No paid provider call or accuracy experiment was run.
+
+CI on da51a51 passed workbench, installed-runtime-contract and release-archive.
+The complete R check passed 10,138 assertions but found one stale child-context
+expectation of a $0.01 reservation. This follow-up changes that expectation to
+zero; delivery-uncertainty and no-duplicate-callback checks remain. The matching
+old-Core-only assertion is also updated. Production code is unchanged from da51a51.
+The final follow-up CI status is recorded in the PR/delivery report.
+
+Auxiliary local package check with optional Suggests allowed and tests/vignettes
+omitted: zero errors, two missing-vignette warnings and one existing namespace note.
+This is not substituted for complete CI. Earlier source/install mismatch failures
+and obsolete-budget fixture failures are preserved in work logs, not counted as passes.
 
 ## Acceptance changes and paper milestone
 

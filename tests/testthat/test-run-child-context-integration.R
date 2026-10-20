@@ -544,7 +544,7 @@ test_that("context crash recovery keeps prior pointers and an uncertain provider
     })
   expect_identical(callbacks, 1L)
   expect_identical(held$response$status, "delivery_uncertain")
-  expect_equal(held$preview$held_usd, .01)
+  expect_equal(held$preview$held_usd, 0)
   ledger <- child_context_integration_files(child)
   ledger <- ledger[startsWith(names(ledger), "provider/")]
   expect_true("provider/ledger.json" %in% names(ledger))
