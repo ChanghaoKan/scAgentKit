@@ -6,6 +6,7 @@ Start with the [English README](../README.md) or [中文 README](../README.zh-CN
 - [English operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md) · [中文操作协议](RESEARCHER_PROTOCOL_ZH.md)
 - [10x input and sample metadata](TENX_INPUT.md)
 - [Local ACT reference and provenance](ACT_LOCAL_REFERENCE.md)
+- [ReAct evidence checks](REACT.md) · [ReAct 查证指南](REACT_ZH.md) (development)
 - [Annotation evaluation and offline replay](REACT_EVALUATION.md) · [注释评估与离线重放](REACT_EVALUATION_ZH.md) (development)
 - [Scientific methods and limits](SCIENTIFIC_METHODS_APPENDIX.md)
 - [R-only analysis](R_ANALYSIS_PROTOCOL.md) · [Scoped subcluster review](SUBCLUSTER_REVIEW.md)

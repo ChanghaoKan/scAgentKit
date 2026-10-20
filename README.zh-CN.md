@@ -74,40 +74,30 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 
 <a id="一个项目工作流"></a>
 
-## 分析步骤
+<a id="分析步骤"></a>
 
-在新项目创建前决定模型策略。已有 key 只放在分析机器的环境变量
-`DEEPSEEK_API_KEY` 或 `XAI_API_KEY` 中，不写进代码、研究备注、网页或项目文件。
-`sc_start()` 直接接收 provider，不需另行初始化。缺少可用 key 时进入人工路径；
-检测到两个 provider key 时须明确选择。
+## 开发版快速开始
 
-省略 `budget` 时，`sc_start()` 和 `sc_analyze()` 对标准内置 DeepSeek
-`deepseek-flash` 设置选择**每个新项目 USD1.00** 上限；
-适用设置见[实测费用与限制](docs/MODEL_BUDGET.md)。
-其他配置默认 USD0，需要显式设置上限才能发送付费请求。
-显式指定的非负有限 `budget`（包括 `budget=0`）优先；已有项目的上限保持冻结。
-预算上限不授权传输：仍须单独复核数据范围与预算，项目级同意必须显式指定上限。
-
-需要模型辅助时，先 source 下方 helper，检查实际研究信息、聚合类别、provider/model、
-已核实价格和自行选择的 USD 上限，再在调用中确认 `confirmed=TRUE`。
-Source 本身不会发送内容。下例设定 `budget=1`，但保留 `confirmed=FALSE`，
-因此 helper 会在启动项目或请求模型前停止。
+以下默认配置适用于开发分支，尚未包含在历史 0.8.1 发布归档中。
+在 R 环境中设好所选 provider 的 API key，然后运行：
 
 ```r
-source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
-service <- full_llm_start("input.rds", "new-project",
-  context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
-  provider=list(name="deepseek", model="deepseek-flash"), budget=1,
-  reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
-  categories=c("study_context", "aggregate_qc", "aggregate_markers",
-    "aggregate_design", "aggregate_expression"), confirmed=FALSE)
+library(scAgentKit)
+sc_start("input.rds", "new-project",
+  context=list(species="human", tissue="实际组织", research_goal="实际研究目的"),
+  provider="deepseek")
 ```
 
-`confirmed=FALSE` 会要求先检查配置。项目级同意只允许在已保存类别、provider/model 和预算内
-自动准备候选，确切 payload 仍可查看。若要逐次同意确切 payload，使用
-`sc_start(..., provider=..., budget=..., review=list(allow_external=TRUE))`，省略项目级同意。
-两种方式均保留下面三次科学审批。人工路径使用 `provider="manual"`、省略同意并保持零预算。
-详见[模型契约](docs/dev/UNIFIED_MODEL_REVIEW.md)。
+交互式 R 会话中，一次确认汇总数据外发范围，然后在网页审阅三道审批的草稿。
+采纳或保存草稿不等于批准。新建原始数据项目默认提供 QC/批次诊断证据，
+并用 `react="auto"` 查证不确定注释；`react="off"` 可关闭查证。
+费用和 token 事后记录，默认不设金额上限、不做预留。投递状态不确定时不自动重发；
+没有 key 时明确退回手动模式。
+
+非交互运行使用[完整模型示例](inst/examples/full-llm-workflow.R)，显式确认项目范围。
+`review=list(allow_external=TRUE)` 保留逐次 payload 确认模式。
+重开项目保留原配置；显式填写旧参数 `budget` 仍保留旧的封顶行为。
+[ReAct 用户指南](docs/REACT_ZH.md) · [评估与重放](docs/REACT_EVALUATION_ZH.md)。
 
 ### 1. 选择输入，声明样本事实
 

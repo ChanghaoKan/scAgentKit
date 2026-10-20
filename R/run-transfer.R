@@ -14,7 +14,7 @@
     kind = kind, categories = .sc_run_transfer_categories(kind))
 }
 
-.sc_run_transfer_options <- function(value, provider, budget) {
+.sc_run_transfer_options <- function(value, provider, budget, cost_mode = "legacy_cap") {
   if (is.null(value)) return(NULL)
   value <- .sc_run_provider_plain(value)
   if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
@@ -29,7 +29,7 @@
   if (!is.character(categories) || !length(categories) || anyNA(categories) ||
       anyDuplicated(categories) || any(!categories %in% allowed))
     stop("Choose explicit aggregate transfer categories; cell IDs, matrices and per-cell metadata cannot be authorized.", call. = FALSE)
-  if ((!isTRUE(provider$external) && !identical(provider$name, "mock")) || budget <= 0)
+  if ((!isTRUE(provider$external) && !identical(provider$name, "mock")) || (budget <= 0 && cost_mode != "posthoc"))
     stop("Project transfer consent requires an external provider (or explicit offline mock) and an explicit positive USD cap.", call. = FALSE)
   out <- list(schema = "scagentkit.transfer-consent.v2", mode = "project", confirmed = TRUE,
     reviewer = value$reviewer, reason = value$reason, categories = sort(categories),
@@ -39,6 +39,7 @@
       policy = .sc_run_turn_policy(value$react),
       category_meaning = "Aggregate markers include bounded local ACT reference entries; aggregate QC includes cluster-context summaries. No identifiers, matrices, paths or writable tools.",
       authority = "Read-only bounded annotation turns only; saving a draft never approves it."))
+  if (cost_mode == "posthoc") out$cost_mode <- "posthoc"
   if (.sc_run_provider_contains_secret(out, provider$api_key_env))
     stop("Credential-like transfer consent is forbidden.", call. = FALSE)
   out$hash <- .sc_run_provider_hash(out)
@@ -54,6 +55,7 @@
   if (!identical(consent$hash, .sc_run_provider_hash(without_hash)) ||
       !identical(consent$provider_hash, .sc_run_provider_hash(config$provider)) ||
       !identical(consent$budget_usd, as.numeric(config$budget))) return(FALSE)
+  if (identical(consent$cost_mode, "posthoc") != identical(config$cost_mode, "posthoc")) return(FALSE)
   kind <- request$purpose
   if (!is.character(kind) || length(kind) != 1L || !kind %in% c("strategy", "qc", "annotation", "simulated_strategy", "simulated_qc", "simulated_annotation")) return(FALSE)
   if (startsWith(kind, "simulated_") && !identical(config$provider$name, "mock")) return(FALSE)

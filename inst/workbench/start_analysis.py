@@ -104,7 +104,7 @@ def main(argv=None):
         if setup_path.stat().st_size > 65536:
             parser.error("Provider configuration exceeds 64 KB")
         setup = strict_json(setup_path.read_text(encoding="utf-8"))
-        if not isinstance(setup, dict) or set(setup) != {"provider", "budget", "review"}:
+        if not isinstance(setup, dict) or not {"provider", "budget", "review"}.issubset(setup) or set(setup) - {"provider", "budget", "review", "cost_mode", "react", "biological_diagnostics"}:
             parser.error("Provider configuration requires provider, budget and review")
         request["model_setup"] = setup
     env = scrub_secrets(dict(os.environ))

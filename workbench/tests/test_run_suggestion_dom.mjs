@@ -463,3 +463,11 @@ const report = {schema: "scagentkit.unified-suggestion.offline-dom-tests.v1", ac
 if (process.argv[2]) fs.writeFileSync(path.resolve(process.argv[2]), JSON.stringify(report, null, 2) + "\n");
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");
 if (report.failed) process.exitCode = 1;
+
+await test("posthoc startup shows recorded usage without a monetary cap", async () => {
+ const value=model(7,"preview");Object.assign(value.suggestion.preview,{cost_mode:"posthoc",budget:null,known_cost_usd:.006,remaining_usd:0});
+ const h=setup(scientificReview(7),value);await h.call("renderSuggestion");
+ assert.match(h.el("suggestion-summary").textContent,/Recorded cost \$0.0060/);
+ assert.match(h.el("suggestion-summary").textContent,/No monetary cap or reservation/);
+ assert.doesNotMatch(h.el("suggestion-summary").textContent,/remaining|Budget/);
+});

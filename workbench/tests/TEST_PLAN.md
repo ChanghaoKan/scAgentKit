@@ -183,3 +183,20 @@ Private final artifacts on the development Mac:
 `/tmp/scagentkit-directed-browser-qa-final/directed-browser-report.json` and the
 `01`–`05` PNG screenshots in that directory. Core evidence fingerprint:
 `d6e18dc8f98b570478e0e2a193d4df693fff00d36176df76a239364063b1c3e2`.
+
+## Integrated startup / three human gates
+
+`test-react-start-e2e.R` runs the installed public `react-three-gate-mock.R`
+example in ordinary R test discovery. It uses `pbmc_small`, mock drafts,
+separate explicit scripted approvals, ReAct all, and offline replay.
+
+For actual Chrome acceptance, prepare a **fresh public mock** project with
+`sc_start(..., provider="mock", react="all", doublet="off", browse=FALSE)`
+and explicit project transfer consent. Stop only the returned service PID.
+Run `browser_start_three_gate.mjs` with `--project`, fresh `--output`, absolute
+colon-separated `--r-library`, `--playwright`, and `--chrome` paths; optional
+`--port` selects a free loopback port. The driver starts its own local service,
+blocks remote requests, accepts each draft unchanged, separately approves it,
+and records all three snapshots. Busy/stale reads during local computation are
+retried read-only; no approval or model request is retried. This manual browser
+check is distinct from Node DOM coverage in CI and from biological validation.

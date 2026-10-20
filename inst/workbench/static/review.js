@@ -384,13 +384,14 @@ function renderSuggestion() {
   $("suggestion-summary").textContent = preview ? `${provider || "Configured provider"} · ${preview.model} · ${item.kind || "analysis"} suggestion. ${preview.scope_authorized ? "Within your confirmed project transfer scope; review the exact payload at any time." : preview.external ? "Review and approve this exact aggregate before transmission." : "This declared local provider does not transmit to an external model."}` : answer?.enabled === false || disabled ? "Model suggestions are disabled for this server. Configure a supported provider on the analysis machine and explicitly enable the suggestion worker; no request has been sent. Scientific review and local Continue remain available." : item?.blocked_reason || "Preview the provider already configured on the analysis machine. This page cannot change the current project’s key, endpoint, model or budget.";
   if (preview) {
     const usd = value => Number.isFinite(value) ? "$" + value.toFixed(4) : "unavailable";
-    $("suggestion-summary").textContent += ` Budget ${budgetAmount(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
+    if (preview.cost_mode === "posthoc") $("suggestion-summary").textContent += ` Recorded cost ${usd(preview.known_cost_usd)}. Usage is recorded after calls; missing cost is unknown. No monetary cap or reservation.`;
+    else $("suggestion-summary").textContent += ` Budget ${budgetAmount(preview.budget)} · estimated used ${usd(preview.known_cost_usd)} · held ${usd(preview.held_usd)} · remaining ${usd(preview.remaining_usd)}. Estimates are not invoices.`;
   }
   $("suggestion-notice").textContent = preview?.notice || "";
   const savedScope = preview?.transfer_consent?.schema === "scagentkit.transfer-consent.v2" ? preview.transfer_consent.react_scope?.policy : null;
   if (savedScope && Array.isArray(savedScope.tools) && savedScope.tools.every(name => typeof name === "string") &&
       Number.isFinite(savedScope.max_steps_per_cluster) && Number.isFinite(savedScope.max_steps)) {
-    $("suggestion-notice").textContent += ` Saved annotation transfer scope: read-only ${savedScope.tools.join(", ") || "no tools"}; ACT evidence ${savedScope.act_enabled === true ? "on" : "off"}; up to ${savedScope.max_steps_per_cluster} turns per cluster and ${savedScope.max_steps} per session. Only aggregate marker, expression, QC, design and reference evidence may be sent. No cell IDs, cell-level matrices or local paths. Annotation evidence checks record usage and cost after calls; they have no monetary cap. The one-shot budget shown above is unchanged. Saving a draft never approves it. This scope does not itself start an evidence-checking session.`;
+    $("suggestion-notice").textContent += ` Saved annotation transfer scope: read-only ${savedScope.tools.join(", ") || "no tools"}; ACT evidence ${savedScope.act_enabled === true ? "on" : "off"}; up to ${savedScope.max_steps_per_cluster} turns per cluster and ${savedScope.max_steps} per session. Only aggregate marker, expression, QC, design and reference evidence may be sent. No cell IDs, cell-level matrices or local paths. Annotation evidence checks record usage and cost after calls; they have no monetary cap. ${preview.cost_mode === "posthoc" ? "One-shot drafts also use post-call accounting." : "The one-shot budget shown above is unchanged."} Saving a draft never approves it. This scope does not itself start an evidence-checking session.`;
   }
   $("suggestion-approve").textContent = preview?.simulated ? "Approve and run this exact simulated suggestion" : preview?.external ? "Approve and request this exact aggregate transfer" : "Approve and request this exact local suggestion";
   $("suggestion-request").textContent = preview?.simulated ? "Run this approved simulated suggestion" : "Request this approved suggestion";
@@ -404,7 +405,7 @@ function renderSuggestion() {
   if (!risks.length) risks.push("No candidate-specific risks were supplied. Inspect the rebuilt scientific evidence before approval.");
   $("suggestion-risks").replaceChildren(...risks.map(text => element("li", text)));
   if(array(item?.reference_comparison).length)$("suggestion-candidate").append(raw({reference_mode:item.reference_mode,comparison:item.reference_comparison,
-    notice:"Reference label differences are descriptive; agreement is not biological validation. At most one separately budgeted guided follow-up is available."}));
+    notice:"Reference label differences are descriptive; agreement is not biological validation. At most one explicitly reviewed guided follow-up is available."}));
   const response = item?.response;
   let note = state.suggestionError || item?.blocked_reason || "";
   if (!note && activeSuggestion()) note = "The request is saved on the analysis machine. Closing or reloading the page does not submit another request. Scientific decisions are disabled while this task is active.";

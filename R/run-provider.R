@@ -464,6 +464,8 @@
                          project_lock_owner = NULL, react_runtime = NULL) {
   spec <- .sc_run_provider_spec(provider, chat_fn)
   turn <- identical(request$schema, "scagentkit.provider-turn.v1")
+  posthoc <- turn || (file.exists(file.path(project_dir, "state.rds")) &&
+    identical(.sc_run_load(project_dir)$config$cost_mode, "posthoc"))
   prepared <- if (turn) tryCatch(.sc_run_turn_prepare(request, spec$metadata), error = function(e) e) else NULL
   if (inherits(prepared, "error")) return(list(status = if (inherits(prepared, "sc_run_turn_error"))
     prepared$code else "invalid_request", content = NULL, raw = NULL, cached = FALSE,
@@ -506,7 +508,7 @@
   if (length(hits)) {
     prior <- ledger$entries[[tail(hits, 1L)]]
     if (!retry || identical(prior$status, "ok")) {
-      if (identical(prior$status, "dispatched")) return(result(if (turn) "delivery_uncertain" else "accounting_hold",
+      if (identical(prior$status, "dispatched")) return(result(if (posthoc) "delivery_uncertain" else "accounting_hold",
         "A previous dispatch has no confirmed response and will not be resent automatically."))
       if (turn) {
         # The validated structured response is the sole content source. Never
@@ -587,19 +589,19 @@
     unresolved <- vapply(ledger$entries, function(x) {
       if (!isTRUE(x$provider$external) || !identical(x$provider$name, spec$metadata$name)) return(FALSE)
       uncertain <- identical(x$delivery, "unknown") || x$status %in% c("dispatched", "delivery_uncertain")
-      if (turn || identical(x$cost_mode, "posthoc")) uncertain else
+      if (posthoc || identical(x$cost_mode, "posthoc")) uncertain else
         !identical(x$cost_state, "known") || isTRUE(x$accounting_issue)
     }, logical(1))
-    if (any(unresolved)) return(result(if (turn) "delivery_uncertain" else "accounting_hold",
-      if (turn) "An earlier request has uncertain delivery; it will not be resent automatically." else
+    if (any(unresolved)) return(result(if (posthoc) "delivery_uncertain" else "accounting_hold",
+      if (posthoc) "An earlier request has uncertain delivery; it will not be resent automatically." else
         "This provider has unresolved delivery, usage or cost; cached responses remain available, but new external dispatch is paused."))
   }
   # Existing one-shot caps retain their original scope. Post-hoc turns are
   # recorded in the same ledger but do not reserve or consume a monetary cap.
   capped <- Filter(function(x) !identical(x$cost_mode, "posthoc"), ledger$entries)
   total <- sum(vapply(capped, function(x) x$charged_or_held_usd, numeric(1)))
-  reserve <- if (turn) 0 else spec$metadata$reservation_usd
-  if (!turn && total + reserve > budget + 1e-12) return(result("budget_stop", "Project budget cannot cover this request reservation.", list(charged_or_held_usd = total, requested_reservation_usd = reserve)))
+  reserve <- if (posthoc) 0 else spec$metadata$reservation_usd
+  if (!posthoc && total + reserve > budget + 1e-12) return(result("budget_stop", "Project budget cannot cover this request reservation.", list(charged_or_held_usd = total, requested_reservation_usd = reserve)))
   if (turn) {
     sequence <- tryCatch(.sc_run_turn_sequence(request, ledger$entries, prepared), error = function(e) e)
     if (inherits(sequence, "error")) return(result(sequence$code, conditionMessage(sequence)))
@@ -625,6 +627,7 @@
     model_reported = NULL, cost_state = "unknown", cost_usd = NULL,
     reservation_usd = reserve, charged_or_held_usd = reserve, accounting_issue = FALSE,
     response_metadata = .sc_run_provider_response_metadata(NULL), response_audit = NULL)
+  if (posthoc) entry$cost_mode <- "posthoc"
   entry$prompt_version <- if (turn) request$session$prompt_version else
     if (is.null(request$prompt_version)) "unversioned_custom" else request$prompt_version
   entry$payload_hash <- .sc_run_provider_hash(if (turn) prepared$payload else .sc_run_provider_request(request, spec$metadata$api_key_env))
@@ -710,12 +713,12 @@
         cost <- .sc_run_provider_cost(value, entry$usage, spec$metadata)
         entry$cost_state <- cost$state; entry$cost_usd <- cost$cost_usd
         if (identical(cost$state, "known")) entry$charged_or_held_usd <- cost$cost_usd
-        entry$accounting_issue <- entry$charged_or_held_usd > reserve + 1e-12 ||
+        entry$accounting_issue <- (!posthoc && entry$charged_or_held_usd > reserve + 1e-12) ||
           (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > spec$metadata$generation$max_tokens)
         entry$error <- "The provider returned an unusable response; available usage was retained without retry."
         entry$response_audit$json_status <- "received_invalid"
         if (isTRUE(entry$accounting_issue)) {
-          entry$status <- "budget_stop"
+          entry$status <- if (posthoc) "invalid_response" else "budget_stop"
           entry$error <- "The received response exceeded its reservation or output cap; further transmission is paused."
         }
       }
@@ -742,10 +745,10 @@
     cost <- .sc_run_provider_cost(value, entry$usage, spec$metadata)
     entry$cost_state <- cost$state; entry$cost_usd <- cost$cost_usd
     if (cost$state == "known") entry$charged_or_held_usd <- cost$cost_usd
-    entry$accounting_issue <- entry$charged_or_held_usd > reserve + 1e-12 ||
+    entry$accounting_issue <- (!posthoc && entry$charged_or_held_usd > reserve + 1e-12) ||
       (!is.null(entry$usage$output_tokens) && entry$usage$output_tokens > spec$metadata$generation$max_tokens)
     if (entry$accounting_issue) {
-      entry$status <- "budget_stop"
+      entry$status <- if (posthoc) "invalid_response" else "budget_stop"
       entry$error <- "Provider cost or output usage exceeded its reservation or configured cap; further dispatch is paused."
     }
   }

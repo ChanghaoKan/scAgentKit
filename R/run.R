@@ -42,6 +42,7 @@
 #' @param scientific_review Optional local PC sensitivity, resampling, resolution
 #'   extension and extended expression diagnostics; disabled by default. New raw
 #'   strategy projects retain applicable declared-human classic panel evidence.
+#' @param cost_mode Legacy capped accounting or post-call accounting without monetary reservation.
 #' @param react Optional bounded annotation evidence session configuration.
 #'   NULL preserves the legacy one-shot path; a list records mode and limits.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
@@ -59,7 +60,8 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
-                   biological_diagnostics = NULL) {
+                   biological_diagnostics = NULL, cost_mode = c("legacy_cap", "posthoc")) {
+  cost_mode <- match.arg(cost_mode)
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -114,7 +116,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(review$transfer_consent)) {
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
     if (!is.null(subcluster_origin)) stop("Scoped children retain strict transfer review; project transfer consent cannot be inherited.", call. = FALSE)
-    review$transfer_consent <- .sc_run_transfer_options(review$transfer_consent, spec$metadata, budget)
+    review$transfer_consent <- .sc_run_transfer_options(review$transfer_consent, spec$metadata, budget, cost_mode)
   }
   root <- .sc_run_root(project_dir, create = TRUE)
   if (is.null(.subcluster_lock_owner)) {
@@ -132,6 +134,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
+  if (cost_mode == "posthoc") config$cost_mode <- cost_mode
   if (!is.null(react)) config$react <- .sc_run_turn_policy(react)
   biology <- .sc_run_biology_options(biological_diagnostics)
   if (!is.null(biology)) {

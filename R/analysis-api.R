@@ -200,12 +200,12 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     on.exit(unlink(transport),add=TRUE)
     saveRDS(input,transport,version=2L);input<-transport
   }
-  if (is.null(budget) && !is.null(review$transfer_consent))
+  extra <- list(...)
+  if (is.null(budget) && !is.null(review$transfer_consent) && !identical(extra$cost_mode, "posthoc"))
     stop("Project transfer consent requires an explicit USD cap after reviewing data categories; supply budget=1 or another chosen cap.", call. = FALSE)
   selected_budget <- .sc_run_new_budget(provider, budget, chat_fn)
   provider <- selected_budget$provider; budget <- selected_budget$budget
   chat_fn <- selected_budget$chat_fn
-  extra <- list(...)
   if (is.null(extra$reference_review)) extra$reference_review <- list()
   extra$reference_review$strict_scope <- TRUE
   # Only a new modern project gets the private default. Explicit reference=NULL

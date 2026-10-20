@@ -81,52 +81,32 @@ and example logs.
 
 <a id="one-project-workflow"></a>
 
-## Analysis protocol
+<a id="analysis-protocol"></a>
 
-Choose the model policy before creating the project. Keep an existing provider
-key in the analysis machine's environment (`DEEPSEEK_API_KEY` or `XAI_API_KEY`),
-never in code, study notes, browser fields or project files. `sc_start()` can
-configure the provider directly; a separate initialization call is unnecessary.
-Without a usable key it opens the manual workflow. Two detected provider keys
-require an explicit provider choice.
+## Development quick start
 
-When `budget` is omitted, `sc_start()` and `sc_analyze()` select **USD1.00 per
-new project** for the standard built-in DeepSeek `deepseek-flash` settings
-defined in [measured costs and limits](docs/MODEL_BUDGET.md). Other configurations
-default to USD0 and need an explicit cap for paid requests. An explicit
-nonnegative finite `budget`, including `budget=0`, takes precedence. Existing
-project caps stay frozen. The cap does not authorize transmission: review the
-data scope and budget separately. Project-level consent requires an explicit cap.
-
-For model assistance, source the helper below, inspect the actual study context
-and aggregate categories, select a provider/model with verified pricing and set
-your own USD cap. Only then set `confirmed=TRUE` in your call. Sourcing sends
-nothing. The example below sets `budget=1` but keeps `confirmed=FALSE`, so the
-helper stops before starting the project or making a model request.
+The following defaults are on the development branch, not the historical 0.8.1
+release archive. Set your provider's API key in the R environment, then run:
 
 ```r
-source(system.file("examples", "full-llm-workflow.R", package="scAgentKit"))
-service <- full_llm_start("input.rds", "new-project",
+library(scAgentKit)
+sc_start("input.rds", "new-project",
   context=list(species="human", tissue="Actual tissue", research_goal="Actual question"),
-  provider=list(name="deepseek", model="deepseek-flash"), budget=1,
-  reviewer="Your name", reason="Reviewed aggregate transfer scope and USD cap",
-  categories=c("study_context", "aggregate_qc", "aggregate_markers",
-    "aggregate_design", "aggregate_expression"), confirmed=FALSE)
+  provider="deepseek")
 ```
 
-`confirmed=FALSE` deliberately asks you to review the setup before starting.
-Project consent permits automatic drafts only within the saved categories,
-provider/model and budget; exact payloads remain inspectable. To require separate
-permission for every payload, use `sc_start(..., provider=..., budget=...,
-review=list(allow_external=TRUE))` without project consent. Neither mode replaces
-the three scientific approvals below. Use `provider="manual"`, omit consent and keep budget zero
-for local manual review. See the [model contract](docs/dev/UNIFIED_MODEL_REVIEW.md).
+In an interactive R session, confirm aggregate data transfer once. Review the
+three prepared drafts in the browser; adopting a draft does not approve it.
+New raw projects include diagnostic QC/batch evidence and `react="auto"` checks
+for uncertain annotations; use `react="off"` to disable those checks. Costs and
+tokens are recorded after calls, without a default monetary cap or reservation.
+Uncertain delivery is never automatically resent; missing keys use manual mode.
 
-If a suggestion fails validation, has no usable key or exceeds its budget, the
-configured suggestion workflow saves a local rule draft and its reason without
-approval or retry. Complete suitable MAD evidence uses conservative AND3;
-otherwise QC stays unassessed with keep-all. Saved human edits take precedence.
-Review the effective draft before approving it. Usage estimates are not invoices.
+For noninteractive startup, use the [complete model example](inst/examples/full-llm-workflow.R)
+with explicit creation-time confirmation. Strict payload review remains available
+with `review=list(allow_external=TRUE)`. Existing projects retain saved settings.
+An explicitly supplied legacy `budget` keeps its historical capped behavior.
+[ReAct guide](docs/REACT.md) · [Evaluation and replay](docs/REACT_EVALUATION.md).
 
 ### 1. Choose input and declare sample facts
 
@@ -198,7 +178,7 @@ Open the worksheet and read each cluster's markers, DotPlot/FeaturePlot evidence
 and reference candidates. This build loads its pinned ACT snapshot offline for new modern projects,
 with exact declared species/tissue and original PMIDs. [Source and usage](docs/ACT_LOCAL_REFERENCE.md). Missing or unmatched ACT data is visibly
 unavailable and leaves marker/Unknown review usable. The first model draft is
-marker-only; at most one separately budgeted guided difference review may follow.
+marker-only; at most one separately reviewed guided difference review may follow.
 Cell Ontology IDs use the pinned exact-name/synonym dictionary; ambiguous or
 unmapped labels retain a missing CLID.
 Fill every row with a label or **Unknown**, confidence, a reason and supplied
