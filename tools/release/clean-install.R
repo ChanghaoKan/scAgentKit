@@ -21,7 +21,7 @@ local({
     stopifnot(!length(list.files(path, all.files=TRUE, no..=TRUE)))
   cat("PASS: no pre-existing non-base/recommended dependencies or restored R cache\n")
   cat("Repository configuration:\n"); print(getOption("repos"))
-  # These bytes came directly from the README inside the downloaded archive.
+  # These bytes came directly from the installation guide inside the downloaded archive.
   sys.source("README-install.R", envir=environment())
   stopifnot(as.character(packageVersion("scAgentKit")) == expected_version,
     identical(normalizePath(dirname(find.package("scAgentKit"))), normalizePath(lib)))
@@ -32,7 +32,7 @@ local({
   print(external[,c("Package","Version")])
   runtime <- system.file("workbench", package="scAgentKit", mustWork=TRUE)
   getFromNamespace(".sc_start_runtime_check", "scAgentKit")(runtime)
-  cat("Running the README offline example from the installed package\n")
+  cat("Running the bundled offline example from the installed package\n")
   sys.source("README-offline.R", envir=environment())
   stopifnot(inherits(result,"Seurat"), ncol(result)>0L)
   pid <- NULL
@@ -58,5 +58,5 @@ local({
     package_versions=external[,c("Package","Version")]),
     "clean-install-receipt.json", auto_unbox=TRUE, pretty=TRUE)
   print(sessionInfo())
-  cat("PASS: README dependency/package installation, offline example and installed entry\n")
+  cat("PASS: Documented dependency/package installation, offline example and installed entry\n")
 })

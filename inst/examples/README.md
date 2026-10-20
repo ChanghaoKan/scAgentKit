@@ -1,4 +1,4 @@
-# scAgentKit 0.8.1 — User examples
+# scAgentKit — User examples
 
 - `react-three-gate-mock.R`: real local startup plus three scripted accept-draft approvals, ReAct all and API-free replay; public fixture only, no paid calls.
 - `three-gate-analysis.R`: explicit offline public `pbmc_small` software control, three approvals and Unknown labels; no biological recommendation or model call.

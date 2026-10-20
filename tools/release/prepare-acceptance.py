@@ -66,7 +66,10 @@ def main():
         description = archive.extractfile("scAgentKit/DESCRIPTION").read().decode()
         assert "Version: " + version + "\n" in description
         assert "Packaged:" in description, "Use ordinary, unmodified R CMD build output"
-        readme = archive.extractfile("scAgentKit/README.md").read().decode()
+        guide_path = "scAgentKit/inst/INSTALL.md"
+        if guide_path not in archive.getnames():
+            guide_path = "scAgentKit/README.md"  # Already-published immutable archives.
+        readme = archive.extractfile(guide_path).read().decode()
 
     def block(heading):
         section = readme.split(heading, 1)[1]
@@ -77,7 +80,9 @@ def main():
     receipt = dict(status="passed", mode=args.mode, anonymous_public_download=args.mode == "public",
                    tag=tag if args.mode == "public" else None, version=version, source_commit=args.commit, sha256=sha, checksum_matches=True,
                    archive_modified=False, build_sha256_matches=True,
-                   readme_commands_extracted_verbatim=True)
+                   installation_guide=guide_path,
+                   readme_commands_extracted_verbatim=guide_path.endswith("README.md"),
+                   installation_commands_extracted_verbatim=True)
     Path("download-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt))
 
