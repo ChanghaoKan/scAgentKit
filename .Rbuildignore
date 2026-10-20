@@ -15,4 +15,5 @@
 ^tools/acceptance$
 ^tools/release$
 ^tools/environment$
+^tools/benchmark-react-tools\.R$
 
