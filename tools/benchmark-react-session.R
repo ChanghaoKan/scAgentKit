@@ -29,6 +29,17 @@ state <- internal(".sc_run_event")(state, "synthetic_session_benchmark_reconstru
   list(scientific_approval = FALSE, source_file_hashes = state$files))
 internal(".sc_run_save")(root, state)
 environment <- jsonlite::read_json(file.path(source_dir, "environment.json"))
+command_value <- function(command, arguments) {
+  if (!nzchar(Sys.which(command))) return("unknown")
+  value <- tryCatch(suppressWarnings(system2(command, arguments, stdout = TRUE, stderr = FALSE)),
+    error = function(e) character())
+  if (!length(value) || !is.null(attr(value, "status"))) "unknown" else paste(value, collapse = " ")
+}
+environment$machine$os <- as.list(Sys.info()[c("sysname", "release", "version", "machine")])
+environment$machine$macos_version <- command_value("sw_vers", "-productVersion")
+environment$machine$cpu <- command_value("sysctl", c("-n", "machdep.cpu.brand_string"))
+environment$machine$memory_bytes <- command_value("sysctl", c("-n", "hw.memsize"))
+environment$machine$logical_cpus <- parallel::detectCores(logical = TRUE)
 environment$machine$r <- R.version.string
 environment$machine$package_versions <- lapply(names(environment$machine$package_versions), function(p)
   as.character(utils::packageVersion(p))) |>

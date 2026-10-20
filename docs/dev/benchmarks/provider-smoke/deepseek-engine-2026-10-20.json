@@ -1,0 +1,84 @@
+{
+  "schema": "scagentkit.react-engine-smoke.v1",
+  "model": "deepseek-flash",
+  "scope": "Synthetic aggregate fixture; no biological validation",
+  "status": "completed",
+  "elapsed_seconds": 8.409,
+  "tool_calls": 4,
+  "clusters": {
+    "0": {
+      "status": "fallback",
+      "fallback_reason": "invalid_draft",
+      "label": "Unknown",
+      "tool_names": [
+        "cluster_context",
+        "cluster_markers",
+        "act_lookup",
+        "gene_expression"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 2353,
+        "output_tokens": 94,
+        "cached_tokens": 2176
+      },
+      "cost_state": "unknown",
+      "delivery": "received",
+      "raw_usage": {
+        "prompt_tokens": 2353,
+        "completion_tokens": 94,
+        "total_tokens": 2447,
+        "prompt_tokens_details": {
+          "cached_tokens": 2176
+        },
+        "prompt_cache_hit_tokens": 2176,
+        "prompt_cache_miss_tokens": 177
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 4610,
+        "output_tokens": 157,
+        "cached_tokens": 2432
+      },
+      "cost_state": "unknown",
+      "delivery": "received",
+      "raw_usage": {
+        "prompt_tokens": 4610,
+        "completion_tokens": 157,
+        "total_tokens": 4767,
+        "prompt_tokens_details": {
+          "cached_tokens": 2432
+        },
+        "prompt_cache_hit_tokens": 2432,
+        "prompt_cache_miss_tokens": 2178
+      }
+    },
+    {
+      "status": "ok",
+      "usage": {
+        "input_tokens": 5394,
+        "output_tokens": 315,
+        "cached_tokens": 4736
+      },
+      "cost_state": "unknown",
+      "delivery": "received",
+      "raw_usage": {
+        "prompt_tokens": 5394,
+        "completion_tokens": 315,
+        "total_tokens": 5709,
+        "prompt_tokens_details": {
+          "cached_tokens": 4736
+        },
+        "prompt_cache_hit_tokens": 4736,
+        "prompt_cache_miss_tokens": 658
+      }
+    }
+  ],
+  "approved": false
+}
