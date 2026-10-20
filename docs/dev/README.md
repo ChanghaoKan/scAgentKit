@@ -18,6 +18,7 @@ These repository-only documents describe internal contracts, diagnostic drivers 
 - [OFFLINE COMPARISON CONTRACT](OFFLINE_COMPARISON_CONTRACT.md)
 - [PARAMETER CONTEXT CONTROLS](PARAMETER_CONTEXT_CONTROLS.md)
 - [QC-review](QC-review.md)
+- [ReAct implementation plan](REACT_IMPLEMENTATION_PLAN.md)
 - [UNIFIED MODEL REVIEW](UNIFIED_MODEL_REVIEW.md)
 - [annotation-response-recovery](annotation-response-recovery.md)
 

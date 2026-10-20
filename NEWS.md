@@ -10,6 +10,14 @@
 - Distinguish recorded workflow checks from unmeasured biological and human-time
   benefits. Add a proposed, unexecuted three-arm annotation evaluation protocol;
   historical benchmark results are unchanged.
+- Add the internal, read-only evidence-tool foundation for annotation:
+  cluster markers, descriptive gene expression, project-scoped ACT lookup and
+  cluster context. Model-driven retrieval and public ReAct options are separate
+  planned changes; the three scientific approvals remain unchanged.
+- Bind tool inputs and caches to saved scientific checkpoints, with strict
+  argument and aggregate-result contracts and isolated bounded execution.
+  Add callr/processx to the execution fingerprint. Existing project fingerprints
+  and approvals are not migrated or rewritten.
 
 # scAgentKit 0.8.1 (experimental prerelease)
 

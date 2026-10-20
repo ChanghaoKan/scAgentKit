@@ -1,0 +1,379 @@
+{
+  "schema": "scagentkit.react-tools-benchmark.v1",
+  "machine": {
+    "os": {
+      "sysname": "Darwin",
+      "release": "25.5.0",
+      "version": "Darwin Kernel Version 25.5.0: Mon Apr 27 20:39:29 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8142",
+      "machine": "arm64"
+    },
+    "macos_version": "26.5.1",
+    "cpu": "Apple M5",
+    "memory_bytes": "17179869184",
+    "logical_cpus": 10,
+    "r": "R version 4.6.1 (2026-06-24)",
+    "package_versions": {
+      "scAgentKit": "0.8.1",
+      "Seurat": "5.6.0",
+      "SeuratObject": "5.4.0",
+      "Matrix": "1.7.5",
+      "digest": "0.6.39",
+      "callr": "3.8.0",
+      "agentomicsCore": "0.1.1",
+      "jsonlite": "2.0.0",
+      "processx": "3.9.0",
+      "ps": "1.9.3"
+    }
+  },
+  "dataset": {
+    "kind": "synthetic_sparse_Seurat",
+    "seed": 20261020,
+    "cells": 50000,
+    "implementation_hash": "dc7d34210cd191890341613d0a0444e73a2f8dcc964f3200e14cac915d8524a8",
+    "features": 20000,
+    "target_density": 0.05,
+    "actual_density": 0.05,
+    "nonzero_counts": 50000000,
+    "clusters": 20,
+    "samples": 8,
+    "detected_features_per_cell": [
+      859,
+      979,
+      1000,
+      1021,
+      1152
+    ],
+    "markers_per_cluster": 1000,
+    "saved_marker_statistics": "synthetic; FindAllMarkers was not executed",
+    "normalization": "log1p(counts / cell_total * 10000)",
+    "optional_doublet_cycle": "synthetic saved per-cell scores; no classifier or cycle scorer was run",
+    "act": {
+      "snapshot": "local-download-2026-10-20",
+      "tissue": "Blood",
+      "rows": 2021
+    },
+    "checkpoint_bytes": 565164011,
+    "setup_seconds": 106.459
+  },
+  "passed": true,
+  "cache_correct": true,
+  "timings": [
+    {
+      "package_load_seconds": 0.014,
+      "context_load_seconds": 13.481,
+      "in_process_total_seconds": 33.01,
+      "rows": [
+        {
+          "tool": "cluster_markers",
+          "phase": "cold",
+          "repetition": 1,
+          "elapsed_seconds": 5.271,
+          "ok": true,
+          "cached": false,
+          "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c",
+          "result_bytes": 6759,
+          "error": null
+        },
+        {
+          "tool": "cluster_markers",
+          "phase": "warm_same_process",
+          "repetition": 1,
+          "elapsed_seconds": 4.886,
+          "ok": true,
+          "cached": true,
+          "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c",
+          "result_bytes": 6758,
+          "error": null
+        },
+        {
+          "tool": "cluster_markers",
+          "phase": "warm_same_process",
+          "repetition": 2,
+          "elapsed_seconds": 4.646,
+          "ok": true,
+          "cached": true,
+          "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c",
+          "result_bytes": 6758,
+          "error": null
+        },
+        {
+          "tool": "cluster_markers",
+          "phase": "warm_same_process",
+          "repetition": 3,
+          "elapsed_seconds": 4.677,
+          "ok": true,
+          "cached": true,
+          "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c",
+          "result_bytes": 6758,
+          "error": null
+        }
+      ],
+      "tool": "cluster_markers",
+      "process_phase": "cold",
+      "process_wall_seconds": 33.218,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4403494912
+    },
+    {
+      "package_load_seconds": 0.01,
+      "context_load_seconds": 12.986,
+      "in_process_total_seconds": 19.328,
+      "rows": [
+        {
+          "tool": "cluster_markers",
+          "phase": "warm_restart",
+          "repetition": 1,
+          "elapsed_seconds": 6.321,
+          "ok": true,
+          "cached": true,
+          "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c",
+          "result_bytes": 6758,
+          "error": null
+        }
+      ],
+      "tool": "cluster_markers",
+      "process_phase": "restart",
+      "process_wall_seconds": 19.479,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4006641664
+    },
+    {
+      "package_load_seconds": 0.01,
+      "context_load_seconds": 12.71,
+      "in_process_total_seconds": 37.014,
+      "rows": [
+        {
+          "tool": "gene_expression",
+          "phase": "cold",
+          "repetition": 1,
+          "elapsed_seconds": 10.328,
+          "ok": true,
+          "cached": false,
+          "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58",
+          "result_bytes": 5267,
+          "error": null
+        },
+        {
+          "tool": "gene_expression",
+          "phase": "warm_same_process",
+          "repetition": 1,
+          "elapsed_seconds": 4.644,
+          "ok": true,
+          "cached": true,
+          "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58",
+          "result_bytes": 5266,
+          "error": null
+        },
+        {
+          "tool": "gene_expression",
+          "phase": "warm_same_process",
+          "repetition": 2,
+          "elapsed_seconds": 4.696,
+          "ok": true,
+          "cached": true,
+          "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58",
+          "result_bytes": 5266,
+          "error": null
+        },
+        {
+          "tool": "gene_expression",
+          "phase": "warm_same_process",
+          "repetition": 3,
+          "elapsed_seconds": 4.605,
+          "ok": true,
+          "cached": true,
+          "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58",
+          "result_bytes": 5266,
+          "error": null
+        }
+      ],
+      "tool": "gene_expression",
+      "process_phase": "cold",
+      "process_wall_seconds": 37.139,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4107747328
+    },
+    {
+      "package_load_seconds": 0.011,
+      "context_load_seconds": 12.677,
+      "in_process_total_seconds": 17.779,
+      "rows": [
+        {
+          "tool": "gene_expression",
+          "phase": "warm_restart",
+          "repetition": 1,
+          "elapsed_seconds": 5.082,
+          "ok": true,
+          "cached": true,
+          "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58",
+          "result_bytes": 5266,
+          "error": null
+        }
+      ],
+      "tool": "gene_expression",
+      "process_phase": "restart",
+      "process_wall_seconds": 17.948,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4189405184
+    },
+    {
+      "package_load_seconds": 0.01,
+      "context_load_seconds": 12.345,
+      "in_process_total_seconds": 31.224,
+      "rows": [
+        {
+          "tool": "act_lookup",
+          "phase": "cold",
+          "repetition": 1,
+          "elapsed_seconds": 4.972,
+          "ok": true,
+          "cached": false,
+          "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027",
+          "result_bytes": 30320,
+          "error": null
+        },
+        {
+          "tool": "act_lookup",
+          "phase": "warm_same_process",
+          "repetition": 1,
+          "elapsed_seconds": 4.628,
+          "ok": true,
+          "cached": true,
+          "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027",
+          "result_bytes": 30319,
+          "error": null
+        },
+        {
+          "tool": "act_lookup",
+          "phase": "warm_same_process",
+          "repetition": 2,
+          "elapsed_seconds": 4.625,
+          "ok": true,
+          "cached": true,
+          "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027",
+          "result_bytes": 30319,
+          "error": null
+        },
+        {
+          "tool": "act_lookup",
+          "phase": "warm_same_process",
+          "repetition": 3,
+          "elapsed_seconds": 4.622,
+          "ok": true,
+          "cached": true,
+          "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027",
+          "result_bytes": 30319,
+          "error": null
+        }
+      ],
+      "tool": "act_lookup",
+      "process_phase": "cold",
+      "process_wall_seconds": 31.378,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 3833413632
+    },
+    {
+      "package_load_seconds": 0.01,
+      "context_load_seconds": 12.374,
+      "in_process_total_seconds": 17.768,
+      "rows": [
+        {
+          "tool": "act_lookup",
+          "phase": "warm_restart",
+          "repetition": 1,
+          "elapsed_seconds": 5.377,
+          "ok": true,
+          "cached": true,
+          "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027",
+          "result_bytes": 30319,
+          "error": null
+        }
+      ],
+      "tool": "act_lookup",
+      "process_phase": "restart",
+      "process_wall_seconds": 17.923,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4107124736
+    },
+    {
+      "package_load_seconds": 0.01,
+      "context_load_seconds": 12.294,
+      "in_process_total_seconds": 32.87,
+      "rows": [
+        {
+          "tool": "cluster_context",
+          "phase": "cold",
+          "repetition": 1,
+          "elapsed_seconds": 6.757,
+          "ok": true,
+          "cached": false,
+          "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd",
+          "result_bytes": 2075,
+          "error": null
+        },
+        {
+          "tool": "cluster_context",
+          "phase": "warm_same_process",
+          "repetition": 1,
+          "elapsed_seconds": 4.615,
+          "ok": true,
+          "cached": true,
+          "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd",
+          "result_bytes": 2074,
+          "error": null
+        },
+        {
+          "tool": "cluster_context",
+          "phase": "warm_same_process",
+          "repetition": 2,
+          "elapsed_seconds": 4.585,
+          "ok": true,
+          "cached": true,
+          "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd",
+          "result_bytes": 2074,
+          "error": null
+        },
+        {
+          "tool": "cluster_context",
+          "phase": "warm_same_process",
+          "repetition": 3,
+          "elapsed_seconds": 4.599,
+          "ok": true,
+          "cached": true,
+          "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd",
+          "result_bytes": 2074,
+          "error": null
+        }
+      ],
+      "tool": "cluster_context",
+      "process_phase": "cold",
+      "process_wall_seconds": 32.985,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4142743552
+    },
+    {
+      "package_load_seconds": 0.01,
+      "context_load_seconds": 12.627,
+      "in_process_total_seconds": 17.963,
+      "rows": [
+        {
+          "tool": "cluster_context",
+          "phase": "warm_restart",
+          "repetition": 1,
+          "elapsed_seconds": 5.32,
+          "ok": true,
+          "cached": true,
+          "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd",
+          "result_bytes": 2074,
+          "error": null
+        }
+      ],
+      "tool": "cluster_context",
+      "process_phase": "restart",
+      "process_wall_seconds": 18.11,
+      "exit_status": 0,
+      "process_maximum_resident_bytes": 4156866560
+    }
+  ],
+  "scope": "Offline synthetic performance only. Cold means new R process and empty application cache; OS disk cache is not flushed. Dispatch includes checksum validation, isolated worker startup, tool computation, privacy/size checks and cache writes. Context and package load are separately measured. No provider call, scientific annotation, DE, or biological accuracy validation was performed."
+}

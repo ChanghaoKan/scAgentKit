@@ -263,7 +263,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   # Seurat's default Wilcoxon marker method automatically chooses presto,
   # limma or stats from installed availability. These are basic marker kernels,
   # not optional diagnostics whose fixed evidence can be generated later.
-  .sc_run_hash(list(code = code, versions = lapply(c("Seurat", "SeuratObject", "agentomicsCore", "Matrix", "irlba", "RcppAnnoy", "uwot", "presto", "limma"),
+  .sc_run_hash(list(code = code, versions = lapply(c("Seurat", "SeuratObject", "agentomicsCore", "Matrix", "irlba", "RcppAnnoy", "uwot", "presto", "limma", "callr", "processx"),
     function(p) if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else "unavailable")))
 }
 

@@ -1,5 +1,5 @@
-for (kernel in c("presto", "limma")) test_that(paste(kernel,
-  "automatic marker kernel presence and version affect implementation fingerprint"), {
+for (kernel in c("presto", "limma", "callr", "processx")) test_that(paste(kernel,
+  "execution dependency presence and version affect implementation fingerprint"), {
   require_original <- base::requireNamespace
   version_original <- utils::packageVersion
   present <- FALSE
