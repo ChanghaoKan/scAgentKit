@@ -40,6 +40,8 @@
 #' @param scientific_review Optional local PC sensitivity, resampling, resolution
 #'   extension and extended expression diagnostics; disabled by default. New raw
 #'   strategy projects retain applicable declared-human classic panel evidence.
+#' @param react Optional bounded annotation evidence session configuration.
+#'   NULL preserves the legacy one-shot path; a list records mode and limits.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
 #'   creation receipts supplied by sc_run_subcluster, not analysis settings.
 #' @return Durable run status. Use sc_run_inspect, sc_run_approve and sc_run_resume.
@@ -54,7 +56,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    strategy = FALSE, strategy_proposal = NULL, cycle_diagnostics = NULL,
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
-                   .subcluster_lock_owner = NULL, input_policy = NULL) {
+                   .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL) {
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -127,6 +129,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                  budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
+  if (!is.null(react)) config$react <- .sc_run_turn_policy(react)
   if (!is.null(input_policy)) {
     config$input_policy <- .sc_run_input_policy(input_policy)
     config$input_policy$metadata_key <- checked$diagnostics$preserved_metadata$key
@@ -263,7 +266,10 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   # Seurat's default Wilcoxon marker method automatically chooses presto,
   # limma or stats from installed availability. These are basic marker kernels,
   # not optional diagnostics whose fixed evidence can be generated later.
-  .sc_run_hash(list(code = code, versions = lapply(c("Seurat", "SeuratObject", "agentomicsCore", "Matrix", "irlba", "RcppAnnoy", "uwot", "presto", "limma", "callr", "processx"),
+  .sc_run_hash(list(code = code, react_prompt = .sc_run_react_prompt()[c("version", "hash")],
+    baseline_risk_prompt = .sc_run_react_prompt("annotation-baseline-risk.v1")[c("version", "hash")],
+    react_tools = lapply(.sc_run_react_tools(), function(tool) tool[setdiff(names(tool), "execute")]),
+    versions = lapply(c("Seurat", "SeuratObject", "agentomicsCore", "Matrix", "irlba", "RcppAnnoy", "uwot", "presto", "limma", "callr", "processx"),
     function(p) if (requireNamespace(p, quietly = TRUE)) as.character(utils::packageVersion(p)) else "unavailable")))
 }
 
@@ -317,6 +323,12 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
 }
 .sc_run_request <- function(kind, evidence, config) {
   .sc_run_transfer_privacy_check(config)
+  if (kind == "annotation" && !is.null(config$react) && !isTRUE(config$react$act_enabled)) {
+    evidence$reference_candidates <- NULL
+    evidence$reference_comparison <- NULL
+    evidence$reference_mode <- "independent"
+    evidence$reference_dependency <- "ACT evidence disabled for this configuration."
+  }
   schema <- if (kind == "strategy") {
     paste("Return one JSON object with exactly schema='scagentkit.strategy.v1', rationale, risks (array), inferences (array), choice_reasons, qc, analysis, pcs, batch, clustering, umap.",
       "choice_reasons contains exactly qc, doublet, cycle, batch, hvg, pcs, clustering and umap, each a nonempty reason of at most 700 characters based on supplied evidence and study purpose.",
@@ -392,6 +404,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     for (name in c("s_genes", "g2m_genes", "canonical_s_genes", "canonical_g2m_genes", "symbol_mapping"))
       payload_evidence$cycle_diagnostics$gene_set[[name]] <- NULL
   }
+  if (kind == "annotation" && !is.null(config$react))
+    schema <- paste(schema, .sc_run_react_prompt("annotation-baseline-risk.v1")$text)
   request <- list(system_prompt = paste("You assist a single-cell analyst using only supplied aggregate evidence.", schema, dependency),
        user_prompt = .sc_project_json(list(context = if (kind == "annotation" && !is.null(evidence$child_context)) evidence$context else config$context, evidence = payload_evidence)),
        purpose = kind, evidence_hash = .sc_run_hash(evidence), prompt_version = .sc_run_prompt_version())
@@ -448,7 +462,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   request$approved_payload_hash <- if (external) request_hash else NULL
   local_evidence <- .sc_run_get(root, state, paste0(kind, "_evidence"))
-  request$validator <- if (kind == "strategy") function(x) .sc_run_strategy_validate(x, local_evidence)$proposal else if (kind == "qc") function(x) .sc_run_qc_validate(x, local_evidence)$proposal else function(x) { value <- .sc_run_annotation_response_validate(x, local_evidence); list(schema = value$schema, annotations = value$annotations) }
+  request$validator <- if (kind == "strategy") function(x) .sc_run_strategy_validate(x, local_evidence)$proposal else if (kind == "qc") function(x) .sc_run_qc_validate(x, local_evidence)$proposal else function(x) {
+    if (!is.null(state$config$react)) return(.sc_run_react_baseline(x, local_evidence)$proposal)
+    value <- .sc_run_annotation_response_validate(x, local_evidence)
+    list(schema = value$schema, annotations = value$annotations)
+  }
   .sc_run_save(root, state)
   answer <- .sc_run_call(root, request, provider, chat_fn, state$config$budget,
                          allow_external = external, retry = retry)
@@ -460,11 +478,36 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
            dispatch = "not_sent", retry = "Configure the runtime provider, then explicitly resume."))
     .sc_run_save(root, state); return(list(state = state, proposal = NULL))
   }
-  if (!identical(answer$status, "ok")) stop(paste0("Provider request stopped: ", answer$status), call. = FALSE)
+  if (!identical(answer$status, "ok")) {
+    if (kind == "annotation" && !is.null(state$config$react)) {
+      state$status <- "awaiting_configuration"
+      state$diagnostics$react <- list(status = "baseline_unavailable", reason = answer$status)
+      state <- .sc_run_event(state, "react_baseline_unavailable", list(response_status = answer$status))
+      .sc_run_save(root, state)
+      return(list(state = state, proposal = NULL))
+    }
+    stop(paste0("Provider request stopped: ", answer$status), call. = FALSE)
+  }
   state$diagnostics$provider_configuration_needed <- NULL
   state <- .sc_run_put(root, state, paste0(kind, "_response"), answer)
   state <- .sc_run_event(state, "proposal_received", list(request_hash = request_hash,
                                                         provider = answer$provider, cost = answer$cost_usd))
+  if (kind == "annotation" && !is.null(state$config$react)) {
+    state <- .sc_run_react_record_baseline(root, state, answer)
+    .sc_run_save(root, state)
+    owner <- readRDS(file.path(root, ".run-lock", "owner.rds"))
+    refined <- .sc_run_react_refine(root, answer$content, project_lock_owner = owner)
+    state <- .sc_run_load(root, verify = FALSE)
+    state$diagnostics$react <- list(status = refined$status, clusters = length(refined$targets),
+      tool_calls = refined$tool_calls, fallback_reason = refined$fallback_reason,
+      completed = as.list(refined$completed))
+    if (identical(refined$status, "awaiting_external_approval")) {
+      state$status <- "awaiting_configuration"
+      .sc_run_save(root, state)
+      return(list(state = state, proposal = NULL))
+    }
+    return(list(state = state, proposal = refined$proposal))
+  }
   list(state = state, proposal = answer$content)
 }
 .sc_run_drive <- function(root, state, provider, chat_fn, retry, local_only = FALSE) {
@@ -670,6 +713,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         proposed <- .sc_run_get_proposal(root, state, "annotation", evidence$summary, provider, chat_fn, retry, local_only)
         state <- proposed$state
         if (is.null(proposed$proposal)) return(.sc_run_public(state))
+        evidence <- .sc_run_react_review_evidence(root, state, evidence)
         validated <- .sc_run_annotation_validate(proposed$proposal, evidence)
         state <- .sc_run_put(root, state, "annotation_validated", validated)
         state <- .sc_run_annotation_review_publish(root, state, validated, evidence)
@@ -694,7 +738,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       # If publication succeeded before an injected crash, recover its committed state.
       published <- .sc_run_load(root)
       if (stage %in% published$completed && published$stage != stage) return(.sc_run_public(published))
-      state <- if (stage == "strategy_evidence") published else before
+      state <- if (stage == "strategy_evidence" ||
+        (stage == "annotation_propose" && !is.null(published$files$annotation_react_run))) published else before
       # Roll back the stage's in-memory effects but never the persisted
       # history: the running event (and any mid-stage saves) are already
       # committed, so the failure must append after them, not reuse their
@@ -910,6 +955,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
   if (!state$stage %in% c("qc_propose", "annotation_propose")) stop("Manual proposals are only accepted at a proposal stage.", call. = FALSE)
   kind <- if (state$stage == "qc_propose") "qc" else "annotation"
   evidence <- .sc_run_get(root, state, paste0(kind, "_evidence"))
+  if (kind == "annotation") evidence <- .sc_run_react_review_evidence(root, state, evidence)
   if (kind == "qc") {
     if (!identical(state$config_hash, .sc_run_hash(state$config)) ||
         !identical(state$implementation_hash, .sc_run_implementation()))
@@ -927,6 +973,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     previous <- if (is.null(state$files$annotation_validated)) NULL else .sc_run_get(root, state, "annotation_validated")
     state <- .sc_run_draft_track(root, state, kind, previous, .sc_run_annotation_validate(proposal, evidence))
   }
+  if (kind == "annotation") state <- .sc_run_react_retain_citations(root, state, proposal)
   state <- .sc_run_put(root, state, paste0("manual_", kind), proposal)
   previous_proposal_hash <- state$pending$hash
   previous_preview_hash <- if (kind == "qc" && !is.null(state$files$qc_preview)) .sc_run_get(root, state, "qc_preview")$hash else NULL

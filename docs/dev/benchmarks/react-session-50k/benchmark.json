@@ -1,0 +1,154 @@
+{
+  "schema": "scagentkit.react-session-benchmark.v1",
+  "passed": true,
+  "context_seconds": 12.128,
+  "startup_seconds": 13.762,
+  "final_verify_seconds": 1.8,
+  "timings": [
+    {
+      "tool": "cluster_markers",
+      "phase": "cold",
+      "repetition": 1,
+      "elapsed_seconds": 0.0609999999999999,
+      "ok": true,
+      "cached": false,
+      "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c"
+    },
+    {
+      "tool": "cluster_markers",
+      "phase": "hot",
+      "repetition": 2,
+      "elapsed_seconds": 0.054000000000002,
+      "ok": true,
+      "cached": true,
+      "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c"
+    },
+    {
+      "tool": "cluster_markers",
+      "phase": "hot",
+      "repetition": 3,
+      "elapsed_seconds": 0.0640000000000001,
+      "ok": true,
+      "cached": true,
+      "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c"
+    },
+    {
+      "tool": "cluster_markers",
+      "phase": "hot",
+      "repetition": 4,
+      "elapsed_seconds": 0.0559999999999974,
+      "ok": true,
+      "cached": true,
+      "result_hash": "ae7072054820b226de14ec8d0bbbcc62da43049afbf8ec256ac313930678cd9c"
+    },
+    {
+      "tool": "gene_expression",
+      "phase": "cold",
+      "repetition": 1,
+      "elapsed_seconds": 2.348,
+      "ok": true,
+      "cached": false,
+      "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58"
+    },
+    {
+      "tool": "gene_expression",
+      "phase": "hot",
+      "repetition": 2,
+      "elapsed_seconds": 0.0519999999999996,
+      "ok": true,
+      "cached": true,
+      "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58"
+    },
+    {
+      "tool": "gene_expression",
+      "phase": "hot",
+      "repetition": 3,
+      "elapsed_seconds": 0.0420000000000016,
+      "ok": true,
+      "cached": true,
+      "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58"
+    },
+    {
+      "tool": "gene_expression",
+      "phase": "hot",
+      "repetition": 4,
+      "elapsed_seconds": 0.0449999999999982,
+      "ok": true,
+      "cached": true,
+      "result_hash": "b78220c0e450af1fb6fd1ff76a96408af4b70dedf04052e66127a38c2f27fb58"
+    },
+    {
+      "tool": "act_lookup",
+      "phase": "cold",
+      "repetition": 1,
+      "elapsed_seconds": 0.0550000000000033,
+      "ok": true,
+      "cached": false,
+      "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027"
+    },
+    {
+      "tool": "act_lookup",
+      "phase": "hot",
+      "repetition": 2,
+      "elapsed_seconds": 0.0549999999999997,
+      "ok": true,
+      "cached": true,
+      "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027"
+    },
+    {
+      "tool": "act_lookup",
+      "phase": "hot",
+      "repetition": 3,
+      "elapsed_seconds": 0.0809999999999995,
+      "ok": true,
+      "cached": true,
+      "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027"
+    },
+    {
+      "tool": "act_lookup",
+      "phase": "hot",
+      "repetition": 4,
+      "elapsed_seconds": 0.0509999999999984,
+      "ok": true,
+      "cached": true,
+      "result_hash": "1dc1238b5e2a85b8da9394c9a041b41aee14dceca2ce948ce7304ac1b5475027"
+    },
+    {
+      "tool": "cluster_context",
+      "phase": "cold",
+      "repetition": 1,
+      "elapsed_seconds": 0.044000000000004,
+      "ok": true,
+      "cached": false,
+      "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd"
+    },
+    {
+      "tool": "cluster_context",
+      "phase": "hot",
+      "repetition": 2,
+      "elapsed_seconds": 0.036999999999999,
+      "ok": true,
+      "cached": true,
+      "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd"
+    },
+    {
+      "tool": "cluster_context",
+      "phase": "hot",
+      "repetition": 3,
+      "elapsed_seconds": 0.036999999999999,
+      "ok": true,
+      "cached": true,
+      "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd"
+    },
+    {
+      "tool": "cluster_context",
+      "phase": "hot",
+      "repetition": 4,
+      "elapsed_seconds": 0.0360000000000014,
+      "ok": true,
+      "cached": true,
+      "result_hash": "7461249aa82051eee14e3f5e3e92a155bef0d7be5b443dad6f82e139b9bbe6cd"
+    }
+  ],
+  "scope": "Synthetic saved counts and statistics only. No biological validation or provider calls. One worker; cold means empty application cache, not flushed OS cache. Hot includes file-state alarms. Full checkpoint SHA checks measured separately; no research project migration."
+}

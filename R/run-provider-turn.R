@@ -6,7 +6,7 @@
 }
 
 .sc_run_turn_policy <- function(value = NULL) {
-  defaults <- list(tools = names(.sc_run_react_tools()), act_enabled = TRUE,
+  defaults <- list(mode = "auto", tools = names(.sc_run_react_tools()), act_enabled = TRUE,
     max_steps = 60L, max_steps_per_cluster = 6L, cluster_timeout_seconds = 180,
     tool_timeout_seconds = 60, max_payload_bytes = 100000L)
   if (!is.null(value)) {
@@ -16,6 +16,9 @@
     defaults[names(value)] <- value
   }
   value <- .sc_run_provider_plain(defaults)
+  if (!is.character(value$mode) || length(value$mode) != 1L ||
+      is.na(value$mode) || !value$mode %in% c("auto", "all", "off"))
+    stop("ReAct mode must be auto, all or off.", call. = FALSE)
   selected <- if (!length(value$tools)) character() else unlist(value$tools, use.names = FALSE)
   if (!is.character(selected) || anyNA(selected) || anyDuplicated(selected) ||
       any(!selected %in% names(.sc_run_react_tools())) ||
@@ -64,10 +67,21 @@
     max_tokens = g$max_tokens, timeout_secs = g$timeout_secs)
 }
 
-.sc_run_turn_session <- function(root, prompt_version, prompt_hash, policy = NULL) {
-  root <- .sc_run_root(root); owner <- .sc_run_lock(root)
-  on.exit(.sc_run_release(root, owner), add = TRUE)
-  context <- .sc_run_react_context(root)
+.sc_run_turn_session <- function(root, prompt_version, prompt_hash, policy = NULL,
+                                  project_lock_owner = NULL, react_runtime = NULL) {
+  root <- .sc_run_root(root)
+  if (is.null(project_lock_owner)) {
+    owner <- .sc_run_lock(root)
+    on.exit(.sc_run_release(root, owner), add = TRUE)
+  } else {
+    owner <- readRDS(file.path(root, ".run-lock", "owner.rds"))
+    if (!identical(owner, project_lock_owner) || !identical(owner$pid, Sys.getpid()))
+      .sc_run_turn_error("invalid_session", "The session requires the current coordinator lock.")
+  }
+  context <- if (is.null(react_runtime)) .sc_run_react_context(root) else {
+    .sc_run_react_worker_check(react_runtime)
+    react_runtime$context
+  }
   state <- .sc_run_load(root, verify = FALSE)
   .sc_run_provider_scalar(prompt_version, "prompt_version", "^[A-Za-z0-9._-]{1,80}$")
   .sc_run_provider_scalar(prompt_hash, "prompt_hash", "^[a-f0-9]{64}$")
@@ -110,7 +124,7 @@
 
 .sc_run_turn_prepare <- function(request, provider) {
   allowed <- c("schema", "purpose", "session", "messages", "cluster_id", "ordinal",
-    "previous_response_hash", "approved_payload_hash")
+    "previous_response_hash", "approved_payload_hash", "timeout_seconds")
   if (!is.list(request) || is.null(names(request)) || anyDuplicated(names(request)) ||
       any(!names(request) %in% allowed) || !identical(request$schema, "scagentkit.provider-turn.v1") ||
       !identical(request$purpose, "annotation_react"))
@@ -143,6 +157,9 @@
     parallel_tool_calls = if (is.null(session$tools)) NULL else FALSE,
     max_tokens = g$max_tokens,
     timeout_secs = min(g$timeout_secs, session$policy$cluster_timeout_seconds))
+  if (!is.null(request$timeout_seconds)) args$timeout_secs <- min(args$timeout_secs,
+    .sc_run_provider_number(request$timeout_seconds, "timeout_seconds", .001,
+      session$policy$cluster_timeout_seconds))
   prepared <- do.call(agentomicsCore::prepare_turn_request, c(list(turn_fn = fn), args))
   bytes <- nchar(enc2utf8(prepared$json), type = "bytes")
   if (bytes > session$policy$max_payload_bytes)
@@ -154,6 +171,7 @@
     prompt_version = session$prompt_version, prompt_hash = session$prompt_hash,
     endpoint = if (provider$external) "https://api.deepseek.com/v1/chat/completions" else "offline-mock",
     wire_json = prepared$json)
+  if (!is.null(request$timeout_seconds)) payload$timeout_seconds <- args$timeout_secs
   list(args = args, body = prepared$body, json = prepared$json, payload = payload,
     request_hash = .sc_run_provider_hash(payload), bytes = bytes)
 }
@@ -211,8 +229,13 @@
   invisible(TRUE)
 }
 
-.sc_run_turn_guard <- function(root, request, provider, prepared) {
-  context <- .sc_run_react_context(root)
+.sc_run_turn_guard <- function(root, request, provider, prepared, react_runtime = NULL) {
+  context <- if (is.null(react_runtime)) .sc_run_react_context(root) else {
+    .sc_run_react_worker_check(react_runtime)
+    if (!identical(root, react_runtime$context$root))
+      .sc_run_turn_error("invalid_session", "Foreign evidence worker.")
+    react_runtime$context
+  }
   state <- .sc_run_load(root, verify = FALSE)
   session <- request$session; key <- paste0("react_session_", session$id)
   if (is.null(state$files[[key]]) ||

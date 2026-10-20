@@ -1,0 +1,57 @@
+{
+  "machine": {
+    "os": {
+      "sysname": "Darwin",
+      "release": "25.5.0",
+      "version": "Darwin Kernel Version 25.5.0: Mon Apr 27 20:39:29 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8142",
+      "machine": "arm64"
+    },
+    "macos_version": "26.5.1",
+    "cpu": "Apple M5",
+    "memory_bytes": "17179869184",
+    "logical_cpus": 10,
+    "r": "R version 4.6.1 (2026-06-24)",
+    "package_versions": {
+      "scAgentKit": "0.8.1",
+      "Seurat": "5.6.0",
+      "SeuratObject": "5.4.0",
+      "Matrix": "1.7.5",
+      "digest": "0.6.39",
+      "callr": "3.8.0",
+      "agentomicsCore": "0.2.0",
+      "jsonlite": "2.0.0",
+      "processx": "3.9.0",
+      "ps": "1.9.3"
+    }
+  },
+  "dataset": {
+    "kind": "synthetic_sparse_Seurat",
+    "seed": 20261020,
+    "cells": 50000,
+    "implementation_hash": "7d9bf42b6a77efc32f5cb148a4235af58089ea870111c2e1464971a5b7e9bd94",
+    "features": 20000,
+    "target_density": 0.05,
+    "actual_density": 0.05,
+    "nonzero_counts": 50000000,
+    "clusters": 20,
+    "samples": 8,
+    "detected_features_per_cell": [
+      859,
+      979,
+      1000,
+      1021,
+      1152
+    ],
+    "markers_per_cluster": 1000,
+    "saved_marker_statistics": "synthetic; FindAllMarkers was not executed",
+    "normalization": "log1p(counts / cell_total * 10000)",
+    "optional_doublet_cycle": "synthetic saved per-cell scores; no classifier or cycle scorer was run",
+    "act": {
+      "snapshot": "local-download-2026-10-20",
+      "tissue": "Blood",
+      "rows": 2021
+    },
+    "checkpoint_bytes": 565164011,
+    "setup_seconds": 106.459
+  }
+}

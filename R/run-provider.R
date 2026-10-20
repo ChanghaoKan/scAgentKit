@@ -461,7 +461,7 @@
 # is never sent again automatically, even in a fresh R process.
 .sc_run_call <- function(project_dir, request, provider = NULL, chat_fn = NULL,
                          budget = 0, allow_external = FALSE, retry = FALSE,
-                         project_lock_owner = NULL) {
+                         project_lock_owner = NULL, react_runtime = NULL) {
   spec <- .sc_run_provider_spec(provider, chat_fn)
   turn <- identical(request$schema, "scagentkit.provider-turn.v1")
   prepared <- if (turn) tryCatch(.sc_run_turn_prepare(request, spec$metadata), error = function(e) e) else NULL
@@ -496,7 +496,7 @@
     created_at = format(Sys.time(), tz = "UTC", usetz = TRUE)), file.path(lock, "owner.json"))
   path <- file.path(base, "ledger.json")
   ledger <- .sc_run_provider_read(path)
-  guard <- if (turn) .sc_run_turn_guard(project_dir, request, spec$metadata, prepared) else NULL
+  guard <- if (turn) .sc_run_turn_guard(project_dir, request, spec$metadata, prepared, react_runtime) else NULL
   if (turn) ledger <- .sc_run_turn_recover_ledger(project_dir, guard$state, ledger, path)
   if (turn && (!identical(as.numeric(budget), as.numeric(guard$state$config$budget)) ||
       (isTRUE(allow_external) && !isTRUE(guard$state$config$review$allow_external))))

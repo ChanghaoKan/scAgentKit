@@ -93,6 +93,19 @@
     interpretation = "Guided suggestions depend on supplied database candidates; independent means candidates were excluded by this coordinator, not independent biological validation.")
   if (!is.null(adopted) && isTRUE(adopted$matches_current))
     source$reference_prompt$simulated <- isTRUE(adopted$simulated)
+  if (!is.null(state$files$annotation_react_run)) {
+    run <- .sc_run_get(root, state, "annotation_react_run")
+    source$react <- list(schema = "scagentkit.react-source.v1",
+      run_id = run$id, checkpoint = state$files$annotation_react_run,
+      citations = state$files$annotation_react_citations,
+      baseline_risks = state$files$annotation_baseline_risks,
+      session_id = run$session$id, status = run$status,
+      matches_current = identical(.sc_run_annotation_review_plain(proposal), run$proposal),
+      authority = "Model draft only; scientific approval remains a separate human action.")
+    if (isTRUE(source$react$matches_current) && any(vapply(run$traces, function(record)
+      identical(readRDS(file.path(root, record$path))$status, "completed"), logical(1))))
+      source$kind <- if (identical(state$config$provider$name, "mock")) "mock" else "model"
+  }
   .sc_project_json_check(source)
   source
 }
@@ -161,7 +174,8 @@
     cited_stats <- supplied[match(cited, supplied_genes)]
     local <- Filter(function(candidate) identical(candidate$clusterId, id), candidates)
     local_all <- Filter(function(candidate) identical(candidate$clusterId, id), all_candidates)
-    reference_status <- if (identical(provenance$status, "not_supplied")) "not_supplied" else
+    reference_status <- if (identical(provenance$status, "unassessed")) "unassessed" else
+      if (identical(provenance$status, "not_supplied")) "not_supplied" else
       if (identical(provenance$status, "provenance_unavailable")) "provenance_unavailable" else
         if (!length(local) && !length(local_all)) "no_candidates" else "available"
     list(clusterId = id, cell_count = length(cells), cell_ids = cells, proposal = row,
@@ -238,7 +252,7 @@
       !identical(record$input_hash, state$input_hash) || !identical(record$config_hash, state$config_hash) ||
       !identical(record$implementation_hash, state$implementation_hash))
     stop("Annotation review/input/configuration/implementation fingerprint changed; review is stale.", call. = FALSE)
-  evidence <- .sc_run_get(root, state, "annotation_evidence")
+  evidence <- .sc_run_react_review_evidence(root, state)
   historical <- is.null(state$files$annotation_validated)
   if (historical) {
     undos <- .sc_run_annotation_review_undos(state, .sc_run_annotation_review_decisions(state, record))
