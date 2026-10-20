@@ -1,0 +1,25 @@
+test_that('startup rejects invalid bounded controls before inspecting inputs', {
+  expect_error(sc_start('absent', 'absent', react=list(max_payload_bytes=1000001)), 'max_payload_bytes')
+  expect_error(sc_start('absent', 'absent', model_timeout=3601), 'model_timeout')
+  expect_error(sc_start('absent', 'absent', model_timeout=1.5), 'whole seconds')
+})
+
+test_that('startup binds custom ReAct policy and whole-worker timeout', {
+  skip_if(Sys.which('python3') == '')
+  data('pbmc_small', package='SeuratObject')
+  folder <- tempfile('start-controls-'); dir.create(folder)
+  on.exit(unlink(folder, recursive=TRUE))
+  input <- file.path(folder,'input.rds'); saveRDS(pbmc_small,input)
+  root <- file.path(folder,'project')
+  policy <- list(mode='off', max_steps=90L, max_steps_per_cluster=9L, max_payload_bytes=200000L)
+  launch <- suppressWarnings(suppressMessages(sc_start(input,root,
+    context=list(species='human',tissue='blood',research_goal='Offline control test'),
+    provider='manual',doublet='off',biological_diagnostics=FALSE,
+    react=policy,model_timeout=1200L,browse=FALSE)))
+  on.exit(if(is.numeric(launch$pid)) tools::pskill(launch$pid),add=TRUE)
+  expect_identical(.sc_run_load(root)$config$react,.sc_run_turn_policy(policy))
+  config <- jsonlite::read_json(file.path(root,'.workbench-review-launcher','config.json'))
+  expect_equal(config$model_timeout,1200)
+  expect_equal(config$identity$model_timeout,1200)
+  expect_error(sc_start(input,root,react=list(mode='off'),browse=FALSE),'saved ReAct')
+})

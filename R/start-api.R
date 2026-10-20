@@ -15,7 +15,8 @@
 #' @param browse Open the local URL in the browser.
 #' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
 #' @param budget Legacy optional USD cap. NULL uses post-call accounting without a monetary cap. Saved projects retain their frozen mode.
-#' @param react Annotation evidence checks: auto (default), all or off.
+#' @param react Auto (default), all, off, or a validated ReAct policy list.
+#' @param model_timeout Whole suggestion-worker limit in seconds (1–3600); default 300.
 #' @param biological_diagnostics Diagnostic-only QC/batch evidence for raw input; TRUE by default.
 #' @param review Creation-time transfer policy; optional explicit project scope skips repeated
 #'   transfer approvals within its provider/categories/budget. Payloads remain inspectable.
@@ -34,10 +35,13 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
   provider = NULL, budget = NULL, review = list(allow_external = FALSE),
   doublet = c("auto", "off", "flag", "remove"),
-  react = c("auto", "all", "off"), biological_diagnostics = TRUE) {
+  react = c("auto", "all", "off"), biological_diagnostics = TRUE,
+  model_timeout = 300L) {
   react_supplied <- !missing(react)
   biology_supplied <- !missing(biological_diagnostics)
-  react <- .sc_run_turn_policy(list(mode = match.arg(react)))
+  react <- .sc_run_turn_policy(if (is.list(react)) react else list(mode = match.arg(react)))
+  model_timeout <- .sc_run_provider_number(model_timeout, "model_timeout", 1, 3600)
+  if (model_timeout != floor(model_timeout)) stop("model_timeout must be whole seconds.", call. = FALSE)
   biology <- .sc_run_biology_options(biological_diagnostics)
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !is.null(context$species) && !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
@@ -98,6 +102,11 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     cost_mode = if (is.null(budget)) "posthoc" else "legacy_cap", react = react)
   if (model_suggestions == "auto") model_suggestions <- if (identical(setup$provider$name, "manual")) "off" else
     if (identical(setup$provider$name, "mock")) "simulate" else "configured"
+  message("Effective ReAct limits: ", react$max_steps_per_cluster, " turns/cluster; ",
+    react$max_steps, " turns/session; ", react$cluster_timeout_seconds,
+    " seconds/cluster; ", react$tool_timeout_seconds, " seconds/tool; ",
+    react$max_payload_bytes, " conversation bytes. Whole suggestion worker: ",
+    model_timeout, " seconds. One-shot request limit remains 100000 bytes.")
   if (model_suggestions == "simulate" && !identical(setup$provider$name, "mock"))
     stop("Simulation requires provider='mock'; choose a new project for another provider.", call. = FALSE)
   if (!is.list(context) || anyDuplicated(names(context)) || !all(c("species", "tissue", "research_goal") %in% names(context)) ||
@@ -129,6 +138,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     "--rscript", shQuote(file.path(R.home("bin"), "Rscript")),
     "--r-library", shQuote(paste(.libPaths(), collapse=.Platform$path.sep)), "--background",
     "--context-file",shQuote(context_file),
+    "--model-timeout", as.character(model_timeout),
     if (!is.null(checkout)) c("--source-checkout",shQuote(checkout)),
     "--cluster-column", shQuote(if (!existing && !reuse_processed && missing(cluster_column)) "sc_strategy_clusters" else cluster_column),
     if (!browse) "--no-browser", if (existing) "--reopen",

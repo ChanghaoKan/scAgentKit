@@ -10,10 +10,12 @@ sc_start(input, project_dir, context = NULL, checkout = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
   provider = NULL, budget = NULL, review = list(allow_external = FALSE),
   doublet = c("auto", "off", "flag", "remove"),
-  react = c("auto", "all", "off"), biological_diagnostics = TRUE)
+  react = c("auto", "all", "off"), biological_diagnostics = TRUE,
+  model_timeout = 300L)
 }
 \arguments{
-\item{react}{Annotation evidence checks: auto for difficult clusters (default), all, or off. Saved settings are immutable on reopening.}
+\item{model_timeout}{Whole workbench suggestion-worker limit, integer seconds from 1 to 3600, default 300. Includes baseline and all ReAct clusters. This operator setting does not change saved scientific policy or provider timeouts. The launcher identity binds this operator setting, so a service with a different timeout is not reused.}
+\item{react}{Annotation evidence checks: auto for difficult clusters (default), all, or off; alternatively a list accepted by the ReAct policy validator (for example mode, max_steps, max_steps_per_cluster, cluster_timeout_seconds, tool_timeout_seconds, max_payload_bytes). This does not change the independent one-shot request bound. Saved settings are immutable on reopening.}
 \item{biological_diagnostics}{Diagnostic-only coarse clusters and batch evidence for raw entry, TRUE by default. FALSE disables both; a list may independently disable cluster_qc or batch_assessment. Processed reuse defaults to disabled.}
 \item{scientific_review}{Explicit optional rebuilding/extended expression diagnostics for a new raw project, disabled by default. Applicable declared-human blood/PBMC or pancreas classic panels remain baseline evidence. Reopening cannot replace saved settings.}
 \item{input}{Local RDS file containing raw counts or a Seurat object, a 10x MEX directory, or a sample table data.frame/CSV/TSV.}
