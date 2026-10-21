@@ -80,7 +80,7 @@ class WorkbenchServer(ThreadingHTTPServer):
 
     def select_project(self, key):
         if not self.registry:
-            raise StoreError("This server is using the legacy PBMC evidence adapter", 409)
+            raise StoreError("This server has no portable-project registry", 409)
         with self.context_lock:
             context = self.project_context(key)
             evidence = context[0].load()
@@ -100,7 +100,7 @@ class WorkbenchServer(ThreadingHTTPServer):
 
     def project_list(self):
         return {"projects": self.registry.list() if self.registry else [],
-                "selected": self.selected_key, "legacy": self.registry is None}
+                "selected": self.selected_key, "registry_available": self.registry is not None}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -151,7 +151,7 @@ class Handler(BaseHTTPRequestHandler):
             route = urlsplit(self.path).path
             if key is not None and route not in ("/api/projects", "/api/project/select", "/api/project/import"):
                 if not self.server.registry:
-                    raise StoreError("A legacy PBMC server cannot bind a generic project", 409)
+                    raise StoreError("Project binding requires a configured portable-project registry", 409)
                 self.loader, self.store, self.directed = self.server.project_context(key)
                 self.project_key = key
             else:
@@ -622,7 +622,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--results-root", help="Legacy PBMC phase-one results root; explicit evidence allowlist only")
+    parser.add_argument("--results-root", help="Frozen PBMC phase-one evidence root; explicit evidence allowlist only")
     parser.add_argument("--project", action="append", help="Verified portable project directory; repeat to register multiple projects")
     parser.add_argument("--run-project", help="Existing server-side sc_run directory; unified QC/annotation review, no ZIP or browser provider")
     parser.add_argument("--subcluster-workspace", help="Separate existing directory for registered child projects; parent review stays available until completion, then becomes read-only")
@@ -679,7 +679,7 @@ def main(argv=None):
             evidence = None
         elif args.project:
             if args.directed_source:
-                parser.error("Generic projects replay explicitly exported RNA assets; --directed-source belongs to the legacy adapter")
+                parser.error("--directed-source requires frozen-results mode; portable projects replay explicitly exported RNA assets")
             for path in args.project:
                 ProjectLoader(path).load()
             registry = ProjectRegistry(args.project_cache, args.journal_root, initial_project=args.project[0])

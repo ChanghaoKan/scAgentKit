@@ -327,7 +327,7 @@
   .sc_review_string(journal, "journal file", 8192L); data <- .sc_review_file_json(journal, integer_sequence = TRUE)
   fields <- c("schema", "projectId", "sourceFingerprint", "bundleDigest", "events", "artifacts")
   .sc_review_object(data, "journal", fields, fields)
-  if (!identical(data$schema, "scagentkit.review-journal.v1")) .sc_review_fail("unsupported_schema", "Legacy PBMC handoffs have no generic source identity and cannot be written back.", "journal.schema")
+  if (!identical(data$schema, "scagentkit.review-journal.v1")) .sc_review_fail("unsupported_schema", "Review journal schema must be scagentkit.review-journal.v1 and bind the exact project source identity.", "journal.schema")
   for (name in c("projectId", "sourceFingerprint", "bundleDigest")) if (!identical(data[[name]], project$manifest[[name]])) .sc_review_fail("journal_identity", "Journal belongs to a different source or snapshot.", paste0("journal.", name))
   artifacts <- .sc_review_object(data$artifacts, "journal.artifacts"); artifact_contents <- list()
   if (length(artifacts) > 1000L) .sc_review_fail("file_limit", "Too many artifacts.", "journal.artifacts")

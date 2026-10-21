@@ -14,6 +14,8 @@
   metadata hashes. Built-in single requests use structured provider responses.
   Current unassessed risks and analysis paths use names that describe their
   behavior; incomplete historical preview shapes are rejected or unavailable.
+  Workbench project discovery reports explicit registry availability; review
+  journals require the current schema and exact project source identity.
 
 ## Development: trial run controls
 

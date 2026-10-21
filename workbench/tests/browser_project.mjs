@@ -247,6 +247,14 @@ try {
   await page.goto(origin, {waitUntil: 'networkidle'}); await waitIdle();
   if(resumeRoot)await selectProject('synthetic');
 
+  await test('Portable registry is available and project controls show its verified snapshots', async () => {
+    const value = await projects();
+    assert.equal(value.registry_available, true);
+    assert.equal(Object.hasOwn(value, 'legacy'), false);
+    assert.equal(await page.locator('#project-controls').isVisible(), true);
+    assert.equal(await ui('project-select').locator('option').count(), value.projects.length);
+  });
+
   await test('Real PBMC project loads without a hardcoded path or fabricated model results', async () => {
     await selectProject('pbmc');
     const value = await evidence();

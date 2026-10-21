@@ -104,8 +104,8 @@ async function refreshProjects() {
   try {
     const data = await request("/api/projects");
     state.projects = data.projects || [];
-    state.registryAvailable = !data.legacy;
-    if (data.legacy) { setSelectedProject(null); $("project-controls").hidden = true; return; }
+    state.registryAvailable = data.registry_available === true;
+    if (!state.registryAvailable) { setSelectedProject(null); $("project-controls").hidden = true; return; }
     setSelectedProject(isGeneric() ? state.evidence.revision : state.selectedProject || (typeof data.selected === "string" ? data.selected : data.selected?.key));
     const select = $("project-select"); select.replaceChildren();
     for (const project of state.projects) {
@@ -172,7 +172,7 @@ function renderOverview() {
   $("failure-count").textContent = number((summary.formatRejected || 0) + (summary.networkFailed || 0));
   $("failure-detail").textContent = `${summary.formatRejected || 0} format rejected · ${summary.networkFailed || 0} transport failed`;
   $("revision").textContent = short(revision); $("revision").title = revision;
-  $("project-context").textContent = generic ? `Project ${dataset.id} · source ${short(state.evidence.sourceFingerprint || state.evidence.identity?.fingerprint)} · snapshot ${short(revision)}. Project ZIP carries source evidence; review JSON carries your decisions.` : "Legacy frozen project. Its handoff remains separate from a portable project's source identity.";
+  $("project-context").textContent = generic ? `Project ${dataset.id} · source ${short(state.evidence.sourceFingerprint || state.evidence.identity?.fingerprint)} · snapshot ${short(revision)}. Project ZIP carries source evidence; review JSON carries your decisions.` : "Frozen PBMC evidence project. Its handoff binds decisions to the exact evidence revision and cell scope.";
   const priority = state.evidence.clusters.filter(c => (c.issueKinds || []).some(kind => /conflict|biological|failure|rejected/.test(kind))).map(c => c.id);
   $("review-priority").textContent = priority.length ? `Evidence issues in clusters ${priority.join(", ")}. Agreement alone is not biological validation.` : "Inspect evidence gaps and disagreements. Agreement alone is not biological validation.";
   const sourceContent = $("source-content"); sourceContent.replaceChildren();

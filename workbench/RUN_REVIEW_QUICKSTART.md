@@ -21,7 +21,7 @@ python3 workbench/server.py \
   --port 8772
 ```
 
-Open `http://127.0.0.1:8772/` (or `/review`) for the unified review page. `--local-continue` explicitly enables the local worker; omit it to retain the review-only service and resume from R. Its fixed QC pane reuses the existing QC preview interface with fully bound unified requests. On a unified `--run-project` server, `/qc` and `/api/qc/inspect` retain the legacy saved view, while `/api/qc/decision` is rejected: submit decisions through `/review`. The separate legacy QC-only server handler remains compatible. The unified page uses `/api/run-review/` and `sc_run_review()`.
+Open `http://127.0.0.1:8772/` (or `/review`) for the unified review page. `--local-continue` explicitly enables the local worker; omit it to use the review-only service and resume from R. Its QC pane submits fully bound unified requests. On a unified `--run-project` server, `/qc` and `/api/qc/inspect` expose the saved QC review, while `/api/qc/decision` is rejected: submit decisions through `/review`. The standalone QC handler accepts direct QC decisions in its own server context. The unified page uses `/api/run-review/` and `sc_run_review()`.
 
 For a remote machine, run this command on your own computer and open the same URL:
 

@@ -1,8 +1,9 @@
 # Generic local project protocol v1
 
-This is the implementation contract for the generic round trip. Legacy PBMC
-loaders and handoffs remain separate; they cannot acquire a source identity by
-being attached to a new project. All files stay local.
+This is the implementation contract for the portable project round trip.
+Writeback requires a verified project and a `scagentkit.review-journal.v1`
+journal bound to its exact project, source and snapshot identities. All files
+stay local.
 
 ## Three identities
 
@@ -101,9 +102,10 @@ payloads, whose SHA256 verifies without cross-language floating-point changes.
 Every event scope must match the verified current project. Import may initialize
 an empty store or preserve the exact existing envelope prefix and append.
 It never truncates or rewrites history/artifacts. Idempotent request IDs,
-interprocess locks, atomic writes and size limits are retained. Unknown versions,
-duplicate keys/IDs, inconsistent scopes or hashes fail closed. Old PBMC v1/v2
-journals lack generic source identity and cannot be used for generic writeback.
+interprocess locks, atomic writes and size limits protect journal updates.
+Unknown versions, duplicate keys/IDs, inconsistent scopes or hashes fail closed.
+The required schema is `scagentkit.review-journal.v1`; all three identity fields
+must match the verified project before writeback.
 
 ## R APIs and writeback
 
@@ -136,11 +138,12 @@ correct previous state. Original annotations, factor levels/NA, Idents,
 assays/reductions and unrelated metadata remain unchanged. SaveRDS is a separate
 explicit operation to a new path, never a side effect of apply.
 
-## Local security / compatibility
+## Local security and portability
 
 ZIP import rejects traversal, absolute/drive paths, duplicate members, symlinks,
 unlisted files, unknown schemas, bad checksums and bounded-size/ratio violations.
-No full RDS deserialization from the GUI. Host/Origin/CSP/plain-text rendering
-remain. Moving an exported directory/zip to another local folder is supported;
-no task-2 path occurs in the generic schema. The legacy adapter and stable old
-servers remain independent; it is never relabeled as a generic project.
+The GUI does not deserialize full RDS files. The service enforces Host/Origin
+checks, CSP and plain-text rendering. Moving an exported directory/zip to another
+local folder is supported; source paths do not determine project identity.
+The frozen PBMC evidence service uses its own handoff format. Portable-project
+writeback accepts only the journal schema and identity binding defined above.

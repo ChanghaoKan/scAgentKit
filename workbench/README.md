@@ -196,8 +196,7 @@ use headless R when that is unavailable. Runtime scope is described in
 
 ## Technical reference
 
-These interfaces remain available for specific export-based or developer workflows;
-they are separate from the project route above:
+These interfaces support export-based and developer workflows:
 
 - [Coordinator review and worker details](RUN_REVIEW_QUICKSTART.md)
 - [Portable project adapter](PROJECT_QUICKSTART.md) and [schema](PROJECT_SCHEMA.md)
@@ -205,16 +204,17 @@ they are separate from the project route above:
 - [Backend and browser checks](tests/TEST_PLAN.md), [project adapter checks](tests/PROJECT_TEST_PLAN.md)
 - [Mouse ortholog snapshot](data/mouse-orthologs/README.md)
 
-The historical frozen PBMC adapter can still be started with
+Start the frozen PBMC evidence adapter for local regression checks with
 `sh workbench/run-local.sh /path/to/frozen/phase1/results --port 8765`.
-It expects the exact fixture allowlist in `evidence.py`, rather than arbitrary
-input data. Its test requirements are documented in the test plans above.
-The workbench is excluded from R package builds.
+It reads the exact fixture allowlist in `evidence.py`. The browser smoke and
+directed-evidence checks use this `--results-root` mode; their fixture and
+execution requirements are documented in the test plans above.
+`workbench/` development files are excluded from R package builds.
 
 ## Runtime distribution
 
 `inst/workbench/` is the single canonical production source. The root
-`workbench/` entry points and assets are compatibility symlinks for development;
+`workbench/` entry points and assets are development symlinks to that source;
 they are excluded from R packages. Installation generates a manifest from the
 R function signatures and every shipped runtime asset. Startup checks both
 against the selected installed R namespace before execution. Missing, extra or

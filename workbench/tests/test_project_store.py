@@ -1,4 +1,4 @@
-"""Immutable raw-payload generic journals, independent of legacy PBMC ledgers."""
+"""Immutable raw-payload review journals bound to portable-project identity."""
 import copy
 import hashlib
 import json
@@ -253,9 +253,18 @@ class ProjectStoreTests(unittest.TestCase):
         duplicated["events"].append(copy.deepcopy(duplicated["events"][0]))
         with self.assertRaises(ProjectStoreError):
             validate_package(duplicated, self.evidence)
-        legacy = {"format": "scagentkit.handoff.v2", "datasetId": self.evidence["projectId"], "events": []}
+        unsupported_handoff = {"format": "scagentkit.handoff.v2", "datasetId": self.evidence["projectId"], "events": []}
         with self.assertRaises(ProjectStoreError):
-            self.store.import_package(legacy, self.evidence)
+            self.store.import_package(unsupported_handoff, self.evidence)
+
+    def test_unknown_schema_with_current_structure_is_rejected_without_replacing_journal(self):
+        self.accept()
+        package = self.store.export(self.evidence)
+        package["schema"] = "scagentkit.review-journal.v0"
+        original = self.store.path.read_bytes()
+        with self.assertRaisesRegex(ProjectStoreError, "Review journal schema must be scagentkit.review-journal.v1"):
+            self.store.import_package(package, self.evidence)
+        self.assertEqual(self.store.path.read_bytes(), original)
 
     def test_size_guard_rejects_before_replace_preserves_history_and_readonly_false(self):
         known = self.accept()

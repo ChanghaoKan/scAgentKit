@@ -87,7 +87,7 @@ def _validate_impl(package, evidence=None):
     if not isinstance(package, dict) or set(package) != {"schema", "projectId", "sourceFingerprint", "bundleDigest", "events", "artifacts"}:
         raise ProjectStoreError("Unknown generic review journal structure")
     if package["schema"] != SCHEMA:
-        raise ProjectStoreError("Unknown journal schema; legacy PBMC journals cannot acquire generic identity")
+        raise ProjectStoreError("Review journal schema must be scagentkit.review-journal.v1")
     _string(package["projectId"], "projectId")
     _hash(package["sourceFingerprint"], "sourceFingerprint")
     _hash(package["bundleDigest"], "bundleDigest")

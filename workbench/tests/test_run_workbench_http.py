@@ -393,6 +393,7 @@ class RunWorkbenchHTTPTests(unittest.TestCase):
         self.assert_no_mutation()
 
     def test_evidence_project_and_generic_store_routes_keep_the_run_only_guard(self):
+        self.assertEqual(self.server.project_list(), {"projects": [], "selected": None, "registry_available": False})
         for route in ("/api/evidence", "/api/session", "/api/export", "/api/projects"):
             with self.subTest(route=route):
                 self.assertEqual(self.request(route, "parent")[0], 409)

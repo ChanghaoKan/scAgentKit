@@ -20,9 +20,9 @@ Choose a free port; starting this mode does not modify an existing workbench.
 
 Open `http://127.0.0.1:8772/review` locally. The unified page embeds the QC pane
 and later shows the same project's annotation review after explicit R resume.
-The legacy `/qc` view and `/api/qc/inspect` remain readable, while legacy QC
-POSTs on a unified server are rejected; use `/review` for decisions. On a server, create an SSH tunnel yourself
-from the client, for example:
+The `/qc` view and `/api/qc/inspect` expose the saved QC review. The unified
+server rejects direct QC decision POSTs; submit decisions through `/review`.
+For a remote server, create an SSH tunnel from the client, for example:
 
 ```sh
 ssh -N -L 8772:127.0.0.1:8772 your-configured-ssh-host
