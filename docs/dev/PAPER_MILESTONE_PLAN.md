@@ -18,7 +18,7 @@
 | --- | --- | --- | --- |
 | 阶段 1 / #15 | 四工具、dispatcher、严格参数/隐私/大小限制、cache、worker、测试和 50k 合成性能记录；`R/run-react-tools.R`、`run-react-dispatch.R`、`run.R`、DESCRIPTION、测试及开发文档 | registry/context/dispatcher；复用 state、SHA、原子写入、实现指纹；未接 LLM loop | 两项指定 CI 通过、Ready、合并；报告审阅与最终 commit |
 | Core 2A / Core #2 | 结构化 turn、请求预览、tool_calls/usage/投递状态；`R/chat-turn.R`、旧 factory 兼容、导出/help、tests、版本/NEWS | 单 turn 协议，保留旧文本接口和 token 记录，无工具执行/审批 | 合并并发布 v0.2.0 |
-| scAgentKit 2A | DESCRIPTION Remotes/Imports；provider/start/transfer/suggest、账本与授权 tests | 受限多轮会话和 turn 绑定；复用 ledger/consent/event | Core 已发布；全消息隐私；新结构化 turn 只记录调用后的 usage/费用，无金额上限或发送前费用估算；旧一次性预算兼容保留；不确定投递不重发 |
+| scAgentKit 2A | DESCRIPTION Remotes/Imports；provider/start/transfer/suggest、账本与授权 tests | 受限多轮会话和 turn 绑定；复用 ledger/consent/event | Core 已发布；全消息隐私；单次请求和结构化 turn 只记录调用后的 usage/费用，无金额上限或发送前费用估算；不确定投递不重发 |
 | 2B | `R/run-react.R`、外层引用/风险记录、`inst/prompts/`、annotation prepare/review/history、配置/hash、mock tests；更新现有 dispatcher | 顺序 loop；保留 annotation.v1；第三关外层五项风险枚举及生产格式校验必须在 2B 交付；会话常驻 worker 复用既有进程机制 | baseline→auto/all/off；6 turn/簇、60/session、3 分钟/簇；白名单/ACT 消融与逐簇恢复；开始/结束完整 SHA、同字节加载、中途 stat 报警；重测热缓存/全会话性能 |
 | 3 | 现有 audit 投影、workbench 前端/桥接、R/DOM tests、runtime manifest | state 权威，JSON 投影；不新增状态库 | 查证折叠区、引用跳转、费用/回退统计；人工编辑保留 `(簇,基因)` 来源；审批流程不变 |
 | 4E | `R/react-eval.R`、`R/react-replay.R`（暂定）、导出/help/tests；扩展 v1 共用评分 | 公开 eval/replay；一个 CL 映射/评分实现；复用生产工具/引用 validator | 全簇/难簇；CL 距离≤3；簇真值 80/80；主版/严格版准确率并列；外部 CSV、费用/token/步骤/回退；无 key 重放与差异报告 |
@@ -26,7 +26,7 @@
 
 第一版四工具是 `cluster_markers`、`gene_expression`、`act_lookup`、`cluster_context`。工具引用只能来自本次会话同簇的合法 cluster_markers 保存行（padj<.05、FC>0、pct1>pct2、非排除基因）；gene_expression 是未检验背景证据。人工改 label/置信度/理由保留已验证来源，删除引用即删除来源，新增人工引用遵循原 pool 规则。
 
-有合法 baseline 时，模型能力、步数、时间或结果校验失败逐簇回退；旧一次性预算失败保留其来源；没有 baseline 标 `baseline_unavailable`。完整性错误继续阻断。会话性能优化不改变这条边界，缓存和固定内存必须具有同一已验证科学身份。第三关风险枚举进入版本化草稿外层，annotation.v1 内层不变，旧/人工记录缺项显式未评估。
+有合法 baseline 时，模型能力、步数、时间或结果校验失败逐簇回退；没有 baseline 标 `baseline_unavailable`。完整性错误继续阻断。会话性能优化不改变这条边界，缓存和固定内存必须具有同一已验证科学身份。第三关风险枚举进入版本化草稿外层，annotation.v1 内层不变，旧/人工记录缺项显式未评估。
 
 ## 论文里程碑的评估与生物学功能
 
@@ -88,5 +88,5 @@ B1/B2 的规则兜底、最小预筛、用户批准是强制边界。B1 放宽�
 阶段 4 的启动/示例/三关 mock 验收在 #22–24 的本地整合基线上实现，
 详见 `reports/REACT_START_STAGE_REPORT.md`。新 `sc_start` 默认 ReAct auto、
 启用诊断证据、一次外发确认，并对一次性草稿和 ReAct 统一事后记账。
-旧项目与显式旧预算参数保留原义。正式发布所需的真实 PBMC3k 手动冒烟、
+正式发布所需的真实 PBMC3k 手动冒烟、
 ACT 清单复核和完整 CI 仍需独立验收；此候选不宣告整个阶段 4 或论文里程碑完成。

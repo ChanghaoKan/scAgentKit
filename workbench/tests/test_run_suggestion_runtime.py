@@ -29,13 +29,13 @@ def atomic(path,value):
 call={'operation':operation,'pid':os.getpid(),'present_keys':[k for k in %s if os.environ.get(k)],'profiles':[os.environ.get(k) for k in ('R_PROFILE','R_PROFILE_USER','R_ENVIRON','R_ENVIRON_USER')],'simulation':payload.get('simulate'),'payload_fields':sorted(payload)}
 with (project/'calls.jsonl').open('a') as f: f.write(json.dumps(call)+'\n')
 if operation=='suggestion_request':
- atomic(project/'fake-ledger.json',{'dispatch':'sent_simulated','usage':'unknown','hold':True})
+ atomic(project/'fake-ledger.json',{'dispatch':'sent_simulated','usage':'unknown','delivery_uncertain':True})
  time.sleep(mode.get('sleep',0.03))
  if mode.get('request')=='exit': sys.exit(7)
  if mode.get('request')=='badjson': output.write_text('{truncated'); sys.exit(0)
  descriptor.update(revision=descriptor['revision']+1,status='failed' if mode.get('request')=='truncated' else 'validated',can_request=False,can_adopt=mode.get('request')!='truncated',candidate=None if mode.get('request')=='truncated' else {'schema':'typed-fixture'})
- descriptor['response']={'status':'truncated' if mode.get('request')=='truncated' else 'ok','cost_state':'held_unknown' if mode.get('request')=='truncated' else 'known_zero','simulated':True}
- if mode.get('request')!='truncated': atomic(project/'fake-ledger.json',{'dispatch':'sent_simulated','usage':'known_zero','hold':False})
+ descriptor['response']={'status':'truncated' if mode.get('request')=='truncated' else 'ok','cost_state':'unknown' if mode.get('request')=='truncated' else 'known','simulated':True}
+ if mode.get('request')!='truncated': atomic(project/'fake-ledger.json',{'dispatch':'sent_simulated','usage':'known_zero','delivery_uncertain':False})
  atomic(project/'fixture.json',descriptor)
  run=json.loads((project/'status.json').read_text());run['revision']=descriptor['revision'];atomic(project/'status.json',run)
 elif operation=='suggestion_approve':
@@ -59,7 +59,7 @@ class SuggestionRuntimeTests(unittest.TestCase):
         (self.project / "project-format.json").write_text('{"project_format_version":2}')
         self.run = {'schema':'scagentkit.run.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'status':'awaiting_configuration','stage':'strategy_propose'}
         module._atomic(self.project/'status.json',self.run)
-        self.descriptor = {'schema':'scagentkit.run-suggestion.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'kind':'strategy','available':True,'blocked_reason':None,'suggestion_hash':'b'*64,'status':'approved','preview':{'request_hash':'c'*64,'provider':{'name':'mock','model':'simulated','generation':{},'external':False,'reservation_usd':0,'pricing':{},'api_key_env':None},'external':False,'simulated':True,'system_prompt':'Simulated aggregate-only fixture','user_prompt':'No raw cells or barcodes','budget':{'max_usd':0}},'candidate':None,'response':None,'can_approve':False,'can_request':True,'can_adopt':False,'can_discard':False}
+        self.descriptor = {'schema':'scagentkit.run-suggestion.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'kind':'strategy','available':True,'blocked_reason':None,'suggestion_hash':'b'*64,'status':'approved','preview':{'request_hash':'c'*64,'provider':{'name':'mock','model':'simulated','generation':{},'external':False,'pricing':{},'api_key_env':None},'external':False,'simulated':True,'system_prompt':'Simulated aggregate-only fixture','user_prompt':'No raw cells or barcodes','known_cost_usd':0,'unknown_cost_count':0},'candidate':None,'response':None,'can_approve':False,'can_request':True,'can_adopt':False,'can_discard':False}
         module._atomic(self.project/'fixture.json',self.descriptor)
         module._atomic(self.project/'mode.json',{})
         self.fake = self.root/'fake-rscript'; self.fake.write_text(FAKE_R); self.fake.chmod(0o700)
@@ -193,35 +193,35 @@ class SuggestionRuntimeTests(unittest.TestCase):
             if path.is_file():self.assertNotIn(sentinel.encode(),path.read_bytes())
         self.assertNotIn('request_id',requests[0]['payload_fields'])
 
-    def test_truncated_json_response_is_durable_failure_no_retry_and_simulated_hold(self):
+    def test_truncated_json_response_is_durable_failure_no_retry_and_simulated_delivery_uncertainty(self):
         self.mode(request='truncated')
         self.runtime.submit(self.payload);view=self.terminal()
         self.assertEqual(view['job']['status'],'failed');self.assertTrue(view['job']['requires_reconciliation'])
         self.assertFalse(view['job']['retry_permitted']);self.assertFalse(view['suggestion']['can_request'])
-        ledger=json.loads((self.project/'fake-ledger.json').read_text());self.assertTrue(ledger['hold'])
+        ledger=json.loads((self.project/'fake-ledger.json').read_text());self.assertTrue(ledger['delivery_uncertain'])
         self.runtime.submit(dict(self.payload,request_id='again'))
         self.assertEqual(len(self.calls('suggestion_request')),1)
-        self.assertEqual(view['suggestion']['response']['cost_state'],'held_unknown')
+        self.assertEqual(view['suggestion']['response']['cost_state'],'unknown')
 
     def test_bad_response_persists_sanitized_failure_no_auto_retry(self):
         self.mode(request='badjson');self.runtime.submit(self.payload);view=self.terminal()
-        self.assertEqual(view['job']['status'],'failed');self.assertEqual(view['job']['dispatch_state'],'unknown_hold_possible')
+        self.assertEqual(view['job']['status'],'failed');self.assertEqual(view['job']['dispatch_state'],'delivery_unknown')
         self.runtime.describe();self.runtime.describe();self.assertEqual(len(self.calls('suggestion_request')),1)
 
     def test_early_request_process_exit_persists_failure_no_auto_retry(self):
         self.mode(request='exit');self.runtime.submit(self.payload);view=self.terminal()
-        self.assertEqual(view['job']['status'],'failed');self.assertEqual(view['job']['dispatch_state'],'unknown_hold_possible')
+        self.assertEqual(view['job']['status'],'failed');self.assertEqual(view['job']['dispatch_state'],'delivery_unknown')
         self.assertTrue(view['job']['requires_reconciliation'])
         self.runtime.submit(dict(self.payload,request_id='after-exit'));self.assertEqual(len(self.calls('suggestion_request')),1)
 
-    def test_operator_timeout_kills_only_owned_process_and_retains_unknown_hold(self):
+    def test_operator_timeout_kills_only_owned_process_and_retains_unknown_delivery(self):
         self.runtime=RunSuggestionRuntime(self.project,rscript=str(self.fake),simulate=True,worker_timeout=1)
         self.mode(sleep=3)
         self.runtime.submit(self.payload);view=self.terminal()
         self.assertEqual(view['job']['status'],'timed_out');self.assertTrue(view['job']['requires_reconciliation'])
         owner=module._read(module._job_dir(self.runtime.base,view['job']['job_id'])/'owner.json')
         self.assertFalse(module._alive(owner['r_pid']))
-        self.assertTrue(json.loads((self.project/'fake-ledger.json').read_text())['hold'])
+        self.assertTrue(json.loads((self.project/'fake-ledger.json').read_text())['delivery_uncertain'])
         self.runtime.submit(dict(self.payload,request_id='timeout-repeat'))
         self.assertEqual(len(self.calls('suggestion_request')),1)
 

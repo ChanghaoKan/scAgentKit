@@ -3,7 +3,7 @@ guided_action <- function(root,action,...) {
   sc_run_suggest(root,action,project_id=view$project_id,input_hash=view$input_hash,
     expected_revision=view$revision,suggestion_hash=view$suggestion_hash,...)
 }
-guided_fixture <- function(strict=FALSE,budget=.1) {
+guided_fixture <- function(strict=FALSE) {
   env<-new.env();utils::data("pbmc_small",package="SeuratObject",envir=env)
   seu<-env$pbmc_small;seu$seurat_clusters<-as.character(SeuratObject::Idents(seu))
   root<-tempfile();on.exit(if(!dir.exists(root))unlink(root,recursive=TRUE))
@@ -11,8 +11,8 @@ guided_fixture <- function(strict=FALSE,budget=.1) {
     categories=c("study_context","aggregate_qc","aggregate_markers","aggregate_design","aggregate_expression"))
   suppressWarnings(sc_run(seu,root,context=list(species="human",tissue="blood"),
     start_stage="processed",processed_reason="Offline public annotation boundary.",
-    input_policy=list(preserve_metadata=TRUE),provider=list(name="offline_remote",external=TRUE,model="offline-guidance",reservation_usd=.01),
-    budget=budget,review=list(allow_external=TRUE,transfer_consent=confirmation)))
+    input_policy=list(preserve_metadata=TRUE),provider=list(name="offline_remote",external=TRUE,model="offline-guidance"),
+    review=list(allow_external=TRUE,transfer_consent=confirmation)))
   state<-.sc_run_load(root);evidence<-.sc_run_get(root,state,"annotation_evidence")
   eligible<-Filter(function(row)length(Filter(function(marker)marker$avgLog2FC>0&&marker$pct1>marker$pct2,row$markers))>0L,evidence$summary$clusters)
   stopifnot(length(eligible)>0L)
@@ -75,9 +75,9 @@ test_that("literal cell IDs in an aggregate are blocked before transfer", {
   expect_silent(.sc_run_transfer_check_literal_ids(list(user_prompt='{"label":"Unknown"}'),evidence))
 })
 
-test_that("guided invalid responses, uncertain delivery and insufficient budget never unlock retries", {
-  for(mode in c("invalid","uncertain","budget")) {
-    fixture<-guided_fixture(budget=if(mode=="budget").015 else .1);root<-fixture$root
+test_that("guided invalid responses and uncertain delivery never unlock retries", {
+  for(mode in c("invalid","uncertain")) {
+    fixture<-guided_fixture();root<-fixture$root
     on.exit(unlink(root,recursive=TRUE),add=TRUE)
     guided_action(root,"request",chat_fn=function(...)list(content=.sc_run_provider_json(fixture$proposal),cost_usd=.01))
     guided_action(root,"review_conflicts",reviewer="offline-human",reason="One bounded optional follow-up.")
@@ -92,7 +92,6 @@ test_that("guided invalid responses, uncertain delivery and insufficient budget 
     expect_error(guided_action(root,"request",chat_fn=function(...)stop("must not retry")),"already attempted")
     expect_true(.sc_run_load(root)$annotation_guided_attempted)
     expect_length(.sc_run_load(root)$approvals,0L)
-    if(mode=="budget")expect_identical(result$response$status,"invalid_response")
     if(mode=="invalid")expect_identical(result$response$status,"invalid_response")
     if(mode=="uncertain")expect_identical(result$response$status,"delivery_uncertain")
   }

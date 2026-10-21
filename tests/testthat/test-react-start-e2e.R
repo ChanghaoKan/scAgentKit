@@ -8,7 +8,7 @@ test_that("sc_start mock defaults traverse three human gates and replay without 
   state <- .sc_run_load(file.path(folder, "project"))
   expect_identical(state$status, "complete")
   expect_identical(state$config$react$mode, "all")
-  expect_identical(state$config$cost_mode, "posthoc")
+  expect_false(any(c("cost_mode", "budget") %in% names(state$config)))
   expect_true(state$config$biological_diagnostics$diagnostic_only)
   expect_length(state$approvals, 3L)
   expect_true(result$replay$matches)

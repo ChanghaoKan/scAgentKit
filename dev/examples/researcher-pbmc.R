@@ -55,7 +55,7 @@ researcher_pbmc_start <- function(project_dir, chat_fn = make_researcher_pbmc_mo
       research_goal = "Learn the offline reviewed analysis workflow, not establish biological labels.",
       notes = "Public tutorial subset. orig.ident is a project label; donor and capture are unknown. No complete called-cell cohort is claimed."),
     provider = list(name = "mock", model = "protocol-mock-v1", external = FALSE),
-    chat_fn = chat_fn, budget = 0, review = list(allow_external = FALSE),
+    chat_fn = chat_fn, review = list(allow_external = FALSE),
     strategy = TRUE, annotation_column = "protocol_annotation")
 }
 

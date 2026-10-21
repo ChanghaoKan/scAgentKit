@@ -96,8 +96,7 @@ doublet_integration_begin <- function(root, object = doublet_integration_fixture
   suppressWarnings(do.call(sc_run, c(list(input = object, project_dir = root,
     context = context, strategy = TRUE, strategy_proposal = proposal,
     doublet_diagnostics = options, cycle_diagnostics = cycle,
-    provider = provider, chat_fn = chat_fn, budget = 0,
-    annotation_column = "reviewed_type", start_stage = start_stage), extra)))
+    provider = provider, chat_fn = chat_fn, annotation_column = "reviewed_type", start_stage = start_stage), extra)))
 }
 
 doublet_integration_continue <- function(root, snapshot = sc_run_inspect(root), retry = FALSE) {
@@ -909,9 +908,9 @@ test_that("a local mock proposal sees aggregates only and cannot delete or repea
   request$validator <- function(value) scAgentKit:::.sc_run_strategy_validate(value, evidence)$proposal
   ledger <- file.path(root, "provider", "ledger.json")
   ledger_hash <- scAgentKit:::.sc_project_sha_file(ledger)
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback, budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback)
   expect_identical(cached$status, "ok"); expect_true(cached$cached)
-  expect_equal(cached$charged_or_held_usd, 0)
+  expect_equal(cached$cost_usd, 0)
   expect_identical(calls, 1L); expect_identical(detector$detector, 2L)
   expect_identical(scAgentKit:::.sc_project_sha_file(ledger), ledger_hash)
   doublet_integration_decide(root)

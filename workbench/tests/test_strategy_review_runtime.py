@@ -140,7 +140,7 @@ class StrategyReviewBoundaryTests(unittest.TestCase):
 
     def test_waiting_strategy_and_manual_configuration_cannot_continue(self):
         runtime = object.__new__(RunContinueRuntime)
-        for status in ("awaiting_review", "awaiting_configuration", "rejected", "complete", "budget_exceeded"):
+        for status in ("awaiting_review", "awaiting_configuration", "rejected", "complete"):
             run = {"project_id": "strategy-fixture", "input_hash": "a" * 64, "revision": 12,
                    "status": status, "stage": "strategy_apply"}
             with self.subTest(status=status):

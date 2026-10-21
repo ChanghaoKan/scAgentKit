@@ -28,9 +28,8 @@ existing projects and approvals are not silently migrated.
 ## Consent, sequence and privacy
 
 Creation-time `transfer-consent.v2` explicitly describes bounded read-only tools,
-ACT scope, turn/time/byte limits and `cost_mode=posthoc`. It states that ReAct
-costs are recorded after the call and have no monetary cap. Old v1 consent is
-valid only for its original text path. Strict mode requires the exact outgoing
+ACT scope and turn/time/byte limits. Costs are recorded after each call without
+a monetary cap. Strict mode requires the exact outgoing
 hash in a saved `suggestion_transfer_approved` state event matching session,
 cluster, ordinal and inspected revision. A hash on the request alone cannot
 provide authorization. Saving evidence or a draft never approves science.

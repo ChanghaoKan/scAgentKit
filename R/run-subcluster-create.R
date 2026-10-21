@@ -226,8 +226,8 @@
 #' @param reviewer,reason Analyst identity and selection rationale.
 #' @param request_id Stable literal creation identifier for retry/idempotence.
 #' @param inherit_model Explicit TRUE to copy the parent's immutable provider,
-#'   per-project budget and transfer policy into a new child. No keys or runtime
-#'   callbacks are copied. Default FALSE creates a manual, zero-budget child.
+#'   transfer policy into a new child. No keys or runtime callbacks are copied.
+#'   Default FALSE creates a manual child with external transfer disabled.
 #' @param cluster_column Parent cluster column used for selection; NULL uses the
 #'   parent's saved column. Must match the column given to sc_run_subcluster_scope.
 #' @return Durable child status; no computation beyond local diagnostic evidence
@@ -255,7 +255,6 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
   parent <- .sc_run_subcluster_parent(paths$parent, cluster_column)
   model_policy <- if (inherit_model) list(inherit_model = TRUE,
     provider = .sc_run_provider_spec(parent$state$config$provider)$metadata,
-    budget = parent$state$config$budget,
     allow_external = isTRUE(parent$state$config$review$allow_external)) else NULL
   .sc_run_qc_revision_check(parent$state, expected_parent_revision)
   origin <- .sc_run_subcluster_selection(parent, clusters)
@@ -372,7 +371,6 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
   .sc_run_subcluster_check_parent(origin)
   sc_run(child, paths$child, context = context,
     provider = if (inherit_model) model_policy$provider else NULL, chat_fn = NULL,
-    budget = if (inherit_model) model_policy$budget else 0,
     review = list(allow_external = if (inherit_model) model_policy$allow_external else FALSE), assay = assay,
     counts_layer = "counts", normalized_layer = "data", cluster_column = child_cluster,
     reference = inherited$reference, reference_review = inherited$options,

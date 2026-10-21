@@ -169,7 +169,7 @@ BLAS remain unverified here. Record optional dependency skips explicitly.
   replicate unit, metrics and uncertainty plan. Cells from one donor are not
   independent biological replicates.
 - For any later provider comparison, separate explicit authorization for the
-  exact payload, provider/model/version, budget and repeat plan. None is needed
+  exact payload, provider/model/version and repeat plan. None is needed
   or granted by running this offline contract.
 - For a user-effort claim, independent participants and a controlled same-task
   protocol. Developer self-tests and runtime measurements are insufficient.

@@ -94,7 +94,7 @@ server_demo_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     toy <- make_server_demo_input()
     source_hash <- digest::digest(toy, algo = "sha256")
     result <- sc_run(toy, project_dir = project_dir, context = server_demo_context(),
-      provider = server_demo_provider(), chat_fn = server_demo_chat, budget = 0,
+      provider = server_demo_provider(), chat_fn = server_demo_chat,
       analysis = list(nfeatures = 200L, npcs = 12L, dims = 1:10,
         resolution = 0.3, seed = 73031L, umap_neighbors = 20L))
     stopifnot(identical(source_hash, digest::digest(toy, algo = "sha256")))

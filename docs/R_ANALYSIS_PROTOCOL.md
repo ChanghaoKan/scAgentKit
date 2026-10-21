@@ -5,9 +5,9 @@ The raw-count workflow has three scientific approvals. Existing projects retain
 their saved configuration and implementation identity when reopened.
 
 Choose manual or model-assisted initialization before creating the project.
-This example uses the manual default (`provider=NULL`, zero budget); you supply
+This example uses the manual default (`provider=NULL`); you supply
 annotation labels and confidence. For a model project, initialize the immutable
-provider/model/settings/budget directly in `sc_start()` for the browser, or in `sc_analyze()` for R-only review, following
+provider/model/settings directly in `sc_start()` for the browser, or in `sc_analyze()` for R-only review, following
 [model configuration](dev/UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call).
 Enabling a browser component later cannot add a provider to a manual project.
 

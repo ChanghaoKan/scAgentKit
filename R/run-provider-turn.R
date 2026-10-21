@@ -118,7 +118,6 @@
     prompt_version = prompt_version, prompt_hash = prompt_hash, policy = policy,
     tools = tools, tools_hash = .sc_run_provider_hash(tools),
     capability_profile = profile, capability_hash = .sc_run_provider_hash(profile),
-    cost_mode = "posthoc",
     created_revision = state$revision,
     authority = "Bound read-only evidence session; no scientific approval or tool execution.")
   record$id <- paste0("session-", .sc_run_provider_hash(record))
@@ -152,7 +151,6 @@
       !identical(session$provider_hash, .sc_run_provider_hash(provider)) ||
       !identical(session$policy, .sc_run_turn_policy(session$policy)) ||
       !identical(session$tools_hash, .sc_run_provider_hash(session$tools)) ||
-      !identical(session$cost_mode, "posthoc") ||
       !identical(session$capability_hash, .sc_run_provider_hash(session$capability_profile)))
     .sc_run_turn_error("invalid_session", "The structured-turn session binding is invalid.")
   .sc_run_provider_scalar(request$cluster_id, "cluster_id")
@@ -185,7 +183,7 @@
   if (bytes > .sc_run_capacity_bytes(session$policy$max_payload_bytes))
     .sc_run_turn_error("payload_too_large", "The complete conversation exceeds its authorized byte limit.")
   payload <- list(schema = request$schema, purpose = request$purpose,
-    session_id = session$id, session_hash = session$hash, cost_mode = "posthoc",
+    session_id = session$id, session_hash = session$hash,
     cluster_id = request$cluster_id, ordinal = as.integer(ordinal),
     previous_response_hash = request$previous_response_hash,
     prompt_version = session$prompt_version, prompt_hash = session$prompt_hash,
@@ -283,8 +281,7 @@
       !identical(consent$provider_hash, .sc_run_provider_hash(config$provider)) ||
       !identical(consent$prompt_version, .sc_run_prompt_version())) return(FALSE)
   scope <- consent$react_scope; policy <- request$session$policy
-  if (!is.list(scope) || !identical(scope$schema, "scagentkit.react-scope.v1") ||
-      !identical(scope$cost_mode, "posthoc")) return(FALSE)
+  if (!is.list(scope) || !identical(scope$schema, "scagentkit.react-scope.v1")) return(FALSE)
   allowed <- scope$policy
   all(c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression") %in% consent$categories) &&
     all(unlist(policy$tools, use.names = FALSE) %in% unlist(allowed$tools, use.names = FALSE)) &&
@@ -426,7 +423,7 @@
   list(schema = "scagentkit.turn-outcome.v1", delivery = entry$delivery,
     status = entry$status, response_hash = entry$turn_response_hash,
     usage_hash = .sc_run_provider_hash(entry$usage), cost_state = entry$cost_state,
-    cost_usd = entry$cost_usd, cost_mode = "posthoc")
+    cost_usd = entry$cost_usd)
 }
 
 # Commit the response through the same immutable checkpoints and state events
@@ -440,7 +437,7 @@
     request_hash = entry$request_hash, outcome_hash = entry$turn_outcome_hash,
     checkpoint = state$files[[key]], delivery = entry$delivery, status = entry$status,
     usage = entry$usage, cost_usd = entry$cost_usd, cost_basis = entry$cost_basis,
-    cost_mode = "posthoc", scientific_approval = FALSE), extra))
+    scientific_approval = FALSE), extra))
   .sc_run_save(root, state)
   state
 }
@@ -467,12 +464,12 @@
     if (!linked || !identical(saved$turn_outcome_hash, .sc_run_provider_hash(saved$turn_outcome)) ||
         !identical(saved$turn_outcome$response_hash, saved$turn_response_hash))
       .sc_run_turn_error("invalid_receipt", "The completed turn does not match its committed state event.")
-    # A crash after state commit can leave only the durable dispatch reservation
+    # A crash after state commit can leave only the durable dispatch record
     # in the ledger. Restore the committed response; never invoke the provider.
     if (identical(entry$status, "dispatched")) {
       if (!identical(entry$turn_payload_hash, saved$turn_payload_hash) ||
           !identical(entry$session_hash, saved$session_hash))
-        .sc_run_turn_error("invalid_receipt", "The held reservation differs from its committed response.")
+        .sc_run_turn_error("invalid_receipt", "The dispatch record differs from its committed response.")
       ledger$entries[[i]] <- saved; changed <- TRUE
       next
     }
@@ -484,9 +481,9 @@
       next
     }
     immutable <- c("request_hash", "provider", "purpose", "delivery", "session_id", "session_hash", "cluster_id", "ordinal",
-      "previous_response_hash", "turn_payload", "turn_payload_hash", "cost_mode",
-      "reservation_usd", "authorization", "effective_timeout_seconds", "turn_outcome", "turn_outcome_hash", "usage",
-      "raw_usage", "raw_usage_hash", "cost_state", "cost_usd", "charged_or_held_usd",
+      "previous_response_hash", "turn_payload", "turn_payload_hash",
+      "authorization", "effective_timeout_seconds", "turn_outcome", "turn_outcome_hash", "usage",
+      "raw_usage", "raw_usage_hash", "cost_state", "cost_usd",
       "accounting_issue", "cost_basis", "cost_estimated", "actual_cost_usd",
       "reconciliation")
     same <- all(vapply(immutable, function(name)
@@ -540,7 +537,7 @@
     if (!is.null(entry$turn_response)) entry$turn_response_hash <- .sc_run_provider_hash(entry$turn_response)
   }
   if (identical(entry$delivery, "not_sent") || !provider$external) {
-    entry$cost_state <- "known"; entry$cost_usd <- 0; entry$charged_or_held_usd <- 0
+    entry$cost_state <- "known"; entry$cost_usd <- 0
     entry$cost_basis <- if (provider$external) "confirmed_not_sent" else "offline_no_fee"
     entry$actual_cost_usd <- 0
   } else if (identical(entry$delivery, "received")) {
@@ -552,7 +549,6 @@
       .sc_run_provider_cost(value, if (consistent) entry$usage else NULL, provider)
     entry$cost_state <- cost$state; entry$cost_usd <- cost$cost_usd
     if (identical(cost$state, "known")) {
-      entry$charged_or_held_usd <- cost$cost_usd
       explicit <- native || (is.numeric(value$cost_usd) && length(value$cost_usd) == 1L &&
         is.finite(value$cost_usd) && value$cost_usd >= 0)
       entry$cost_basis <- if (explicit) "provider_reported" else "usage_configured_pricing"

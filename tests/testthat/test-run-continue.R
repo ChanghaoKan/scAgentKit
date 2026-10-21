@@ -23,7 +23,7 @@ continue_rule <- function() list(schema = "scagentkit.qc.v1",
 continue_begin <- function(root, object = continue_fixture(), provider = NULL, qc = continue_rule(), umap = FALSE) {
   sc_run(object, root, context = list(species = "human", tissue = "synthetic", columns = list(
     sample = "sample", capture = "capture", condition = "condition")),
-    provider = provider, budget = .2, review = list(allow_external = TRUE), qc_proposal = qc,
+    provider = provider, review = list(allow_external = TRUE), qc_proposal = qc,
     analysis = list(nfeatures = 40, npcs = 5, dims = 1:5, resolution = .4,
       run_umap = umap, umap_neighbors = 12, seed = 917), annotation_column = "reviewed_type")
 }

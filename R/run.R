@@ -8,7 +8,6 @@
 #' @param context Named list with species, tissue, columns and notes.
 #' @param provider Provider configuration list, provider name, or NULL.
 #' @param chat_fn Explicit provider function, retained only in caller memory.
-#' @param budget Deprecated compatibility argument; no monetary cap is applied.
 #' @param review Review policy; allow_external permits proposing an external
 #'   transfer for exact-payload approval; preapprove_qc is an explicit typed rule.
 #' @param start_stage 'qc' for raw counts or 'processed' to reuse analysis.
@@ -42,7 +41,6 @@
 #' @param scientific_review Optional local PC sensitivity, resampling, resolution
 #'   extension and extended expression diagnostics; disabled by default. New raw
 #'   strategy projects retain applicable declared-human classic panel evidence.
-#' @param cost_mode Legacy capped accounting or post-call accounting without monetary reservation.
 #' @param react Optional bounded annotation evidence session configuration.
 #'   NULL preserves the legacy one-shot path; a list records mode and limits.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
@@ -50,7 +48,7 @@
 #' @return Durable run status. Use sc_run_inspect, sc_run_approve and sc_run_resume.
 #' @export
 sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_fn = NULL,
-                   budget = 0, review = list(), start_stage = c("qc", "processed"),
+                   review = list(), start_stage = c("qc", "processed"),
                    processed_reason = NULL, assay = "RNA", counts_layer = "counts",
                    normalized_layer = "data", cluster_column = "seurat_clusters",
                    analysis = list(), reference = NULL, annotation_column = "sc_annotation", qc_proposal = NULL,
@@ -60,9 +58,8 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    doublet_diagnostics = NULL, qc_mad = NULL, scientific_review = NULL,
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
-                   biological_diagnostics = NULL, cost_mode = "posthoc") {
+                   biological_diagnostics = NULL) {
   .sc_project_format_entry(project_dir, allow_new = TRUE)
-  cost_mode <- "posthoc"
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
     stop("Built-in blood/pancreas panels require declared human species; supply explicit species-appropriate genes.",call.=FALSE)
@@ -87,11 +84,10 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     .sc_run_subcluster_check_parent(subcluster_origin)
     inherited_model <- isTRUE(subcluster_creation$model_policy$inherit_model)
     if (!strategy || start_stage != "qc" || !is.null(chat_fn) ||
-        !is.numeric(budget) || length(budget) != 1L || !is.finite(budget) ||
-        (!inherited_model && (!is.null(provider) || budget != 0 || isTRUE(review$allow_external))) ||
+        (!inherited_model && (!is.null(provider) || isTRUE(review$allow_external))) ||
         !is.null(review$preapprove_qc) ||
         !is.null(doublet_diagnostics) || mad_enabled || !is.null(annotation_history))
-      stop("Scoped children require raw typed strategy, explicit creation-time model inheritance or budget=0/no provider/external transfer, no preapproval, doublet refit, MAD/prefilter or parent annotation history.", call. = FALSE)
+      stop("Scoped children require raw typed strategy, explicit creation-time model inheritance or no provider/external transfer, no preapproval, doublet refit, MAD/prefilter or parent annotation history.", call. = FALSE)
     if (!is.list(subcluster_creation) ||
         !identical(subcluster_creation$schema, "scagentkit.subcluster-creation.v1"))
       stop("Scoped child creation receipt is required.", call. = FALSE)
@@ -99,16 +95,13 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     .sc_run_review_hash_string(subcluster_creation$request_hash, "subcluster creation request_hash")
     .sc_run_subcluster_choices(subcluster_creation$choices)
     if (inherited_model && (!identical(.sc_run_provider_spec(provider)$metadata, subcluster_creation$model_policy$provider) ||
-        !identical(as.numeric(budget), as.numeric(subcluster_creation$model_policy$budget)) ||
         !identical(isTRUE(review$allow_external), subcluster_creation$model_policy$allow_external)))
-      stop("Child provider, budget or transfer policy differ from its immutable creation receipt.", call. = FALSE)
+      stop("Child provider or transfer policy differ from its immutable creation receipt.", call. = FALSE)
   } else if (!is.null(subcluster_creation))
     stop("subcluster_creation requires its immutable subcluster_origin.", call. = FALSE)
   if (!is.null(.subcluster_lock_owner) && is.null(subcluster_origin))
     stop("An initialization lock is supported only for scoped child creation.", call. = FALSE)
   if (strategy && start_stage == "qc" && missing(cluster_column)) cluster_column <- "sc_strategy_clusters"
-  if (!is.numeric(budget) || length(budget) != 1L || !is.finite(budget) || budget < 0) stop("budget must be nonnegative USD.", call. = FALSE)
-  budget <- 0
   allowed_review <- c("allow_external", "preapprove_qc", "transfer_consent")
   if (!is.list(review) || any(!names(review) %in% allowed_review)) stop("Unsupported review policy.", call. = FALSE)
   if (!is.null(review$allow_external) && !identical(review$allow_external, TRUE) && !identical(review$allow_external, FALSE)) stop("allow_external must be logical.", call. = FALSE)
@@ -118,7 +111,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   if (!is.null(review$transfer_consent)) {
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
     if (!is.null(subcluster_origin)) stop("Scoped children retain strict transfer review; project transfer consent cannot be inherited.", call. = FALSE)
-    review$transfer_consent <- .sc_run_transfer_options(review$transfer_consent, spec$metadata, budget, cost_mode)
+    review$transfer_consent <- .sc_run_transfer_options(review$transfer_consent, spec$metadata)
   }
   root <- .sc_run_root(project_dir, create = TRUE)
   if (is.null(.subcluster_lock_owner)) {
@@ -133,10 +126,9 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   config <- list(context = checked$context, assay = assay, counts_layer = counts_layer,
                  normalized_layer = normalized_layer, cluster_column = cluster_column,
                  analysis = analysis, markers = list(), annotation_column = annotation_column,
-                 budget = budget, review = review, provider = spec$metadata, start_stage = start_stage,
+                 review = review, provider = spec$metadata, start_stage = start_stage,
                  processed_reason = processed_reason, qc_preview = qc_preview,
                  reference_review = reference_review)
-  config$cost_mode <- "posthoc"
   if (!is.null(react)) config$react <- .sc_run_turn_policy(react)
   biology <- .sc_run_biology_options(biological_diagnostics)
   if (!is.null(biology)) {
@@ -307,7 +299,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
 #' @param project_dir Server-side project directory.
 #' @param provider,chat_fn Provider configuration/function for new requests only.
 #' @param retry Explicitly retry a failed computation; uncertain external requests
-#'   remain held and require provider reconciliation rather than automatic replay.
+#'   require provider reconciliation before an explicit retry; no automatic replay.
 #' @return Updated durable status.
 #' @export
 sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = FALSE) {
@@ -528,7 +520,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
     list(schema = value$schema, annotations = value$annotations)
   }
   .sc_run_save(root, state)
-  answer <- .sc_run_call(root, request, provider, chat_fn, state$config$budget,
+  answer <- .sc_run_call(root, request, provider, chat_fn,
                          allow_external = external, retry = retry)
   if (identical(answer$status, "needs_provider")) {
     state$status <- "awaiting_configuration"; state$nodes[[state$stage]] <- "NEEDS_CONFIGURATION"
@@ -823,7 +815,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       # sequence and revision numbers.
       state$history <- published$history; state$revision <- published$revision
       state$status <- "failed"; state$nodes[[stage]] <- "FAILED"
-      state$failure <- list(stage = stage, message = result$error, retry = "Explicit retry only; external uncertain dispatches retain their reservations.")
+      state$failure <- list(stage = stage, message = result$error, retry = "Explicit retry only; reconcile uncertain external delivery before retrying.")
       state <- .sc_run_event(state, "failed", state$failure); .sc_run_save(root, state)
       return(.sc_run_public(state))
     }

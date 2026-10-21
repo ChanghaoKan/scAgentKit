@@ -164,11 +164,11 @@ test_that("typed invalid provider response can be explicitly retried without red
 
 test_that("external payload must be previewed and approved before dispatch or QC execution", {
   counter <- new.env(); counter$calls <- 0L
-  provider <- list(name="custom",external=TRUE,model="test",reservation_usd=.01)
+  provider <- list(name="custom",external=TRUE,model="test")
   known <- function(system_prompt,user_prompt) list(content=run_mock(counter)(system_prompt,user_prompt),cost_usd=.001,usage=list(input_tokens=100,output_tokens=100))
-  path <- tempfile(); out <- sc_run(run_fixture(),path,context=run_context(),provider=provider,chat_fn=known,budget=.02)
+  path <- tempfile(); out <- sc_run(run_fixture(),path,context=run_context(),provider=provider,chat_fn=known)
   expect_identical(out$status,"awaiting_configuration"); expect_equal(counter$calls,0)
-  path <- tempfile(); out <- sc_run(run_fixture(),path,context=run_context(),provider=provider,chat_fn=known,budget=.02,review=list(allow_external=TRUE))
+  path <- tempfile(); out <- sc_run(run_fixture(),path,context=run_context(),provider=provider,chat_fn=known,review=list(allow_external=TRUE))
   expect_identical(out$pending$kind,"external_transfer"); expect_equal(counter$calls,0)
   expect_false(grepl('cell[0-9]',out$pending$proposal$payload$user_prompt))
   run_approve(path); out <- sc_run_resume(path,chat_fn=known)

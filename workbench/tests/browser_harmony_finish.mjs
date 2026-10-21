@@ -54,7 +54,7 @@ async function protect() {
   assert.equal(sha(await fs.readFile(priorFile)), report.scientificBrowserAttempt.sha256);
   for (const [name, digest] of Object.entries(prior.immutableCheckpointSHA256)) assert.equal(sha(await fs.readFile(path.join(project, "checkpoints", name))), digest);
   assert.equal(await exists(ledgerFile), ledgerPresent); assert.equal(initialLedgerSHA256, prior.initialLedgerSHA256);
-  if (ledgerPresent) {const bytes = await fs.readFile(ledgerFile); assert.equal(sha(bytes), initialLedgerSHA256); for (const entry of array(JSON.parse(bytes).entries)) {assert.equal(entry.provider.external, false); assert.equal(entry.cost_usd, 0); assert.equal(entry.charged_or_held_usd, 0);}}
+  if (ledgerPresent) {const bytes = await fs.readFile(ledgerFile); assert.equal(sha(bytes), initialLedgerSHA256); for (const entry of array(JSON.parse(bytes).entries)) {assert.equal(entry.provider.external, false); assert.equal(entry.cost_usd, 0);}}
 }
 async function test(name, action) {const start = Date.now(); try {await action(); await protect(); report.tests.push({name, outcome: "passed", milliseconds: Date.now() - start}); console.log("PASS " + name);} catch (error) {report.tests.push({name, outcome: "failed", error: error.message}); throw error;}}
 async function startServer() {

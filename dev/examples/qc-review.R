@@ -110,7 +110,7 @@ qc_review_main <- function(args = commandArgs(trailingOnly = TRUE)) {
       context = list(species = "human", tissue = "synthetic epithelial/stromal/endothelial mixture",
         columns = list(sample = "sample_id", capture = "capture_id", condition = "condition"),
         notes = "Synthetic mechanism test. Literal captures are not donors; condition is not a batch. Integration is skipped."),
-      provider = NULL, budget = 0, review = list(allow_external = FALSE),
+      provider = NULL, review = list(allow_external = FALSE),
       qc_proposal = qc_review_rules(),
       qc_preview = list(sensitivity = list(
         list(id = "feature lower bound 1", proposal = qc_review_rules(feature_min = 1)),

@@ -4,6 +4,11 @@
   before opening, locking or writing; projects with a different or missing
   version must be opened in their original software environment or replaced
   with a new project. Development guidance follows the current contract.
+  Model APIs, provider metadata, project configuration, transfer consent and
+  child-project receipts no longer accept budget, reservation or cost-mode
+  fields. Accounting records known actual costs and counts unknown costs after
+  calls, without monetary limits; uncertain delivery still requires explicit
+  reconciliation and retry.
 
 ## Development: trial run controls
 

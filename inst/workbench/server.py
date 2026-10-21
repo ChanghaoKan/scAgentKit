@@ -630,7 +630,7 @@ def main(argv=None):
     parser.add_argument("--model-suggestions", action="store_true", help="Enable explicit async requests to the project's saved DeepSeek/Grok provider; keys only from runtime environment")
     parser.add_argument("--model-mock", action="store_true", help="Enable explicitly simulated suggestions for an immutable mock-provider project; zero API calls")
     parser.add_argument("--model-timeout", type=int, default=300, help="Operator bound for each dedicated suggestion worker, 1–86400 seconds; timeout requires R reconciliation")
-    parser.add_argument("--subcluster-inherit-model", action="store_true", help="Explicitly inherit the completed parent's safe provider/budget/transfer policy when creating a child; no keys are copied")
+    parser.add_argument("--subcluster-inherit-model", action="store_true", help="Explicitly inherit the completed parent's safe provider/transfer policy when creating a child; no keys are copied")
     parser.add_argument("--project-cache", default=str(STATIC.parent / ".local" / "projects"), help="Private local imported evidence cache")
     parser.add_argument("--journal-root", default=str(STATIC.parent / ".local" / "reviews"), help="Private per-project append-only review journals")
     parser.add_argument("--session", default=str(Path(__file__).resolve().parent / ".local" / "session.json"), help="Local append-only session file")

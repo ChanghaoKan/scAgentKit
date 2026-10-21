@@ -29,9 +29,9 @@ if (!"sc_run_review" %in% getNamespaceExports("scAgentKit") ||
 # The single starting call forwards the existing coordinator's validated input
 # and configuration contract. It does not infer metadata, rename IDs or tune QC.
 first_run_start <- function(input, project_dir, context = list(), provider = NULL,
-                            chat_fn = NULL, budget = 0, ...) {
+                            chat_fn = NULL, ...) {
   result <- sc_run(input, project_dir, context = context, provider = provider,
-                   chat_fn = chat_fn, budget = budget, ...)
+                   chat_fn = chat_fn, ...)
   .first_run_brief(result)
   invisible(result)
 }
@@ -154,7 +154,7 @@ first_run_unknown <- function(current, rationale = "Manual review retains unreso
 # Configuration only: built-in factories read the key at dispatch. Only its
 # environment variable NAME can enter this metadata. No key is returned/saved.
 first_run_provider <- function(name = c("deepseek", "grok"), model = Sys.getenv("SC_MODEL_ID"),
-                               pricing = NULL, reservation_usd = .05,
+                               pricing = NULL,
                                generation = list(temperature = 0, max_tokens = 4096L)) {
   name <- match.arg(name)
   key_env <- if (name == "deepseek") "DEEPSEEK_API_KEY" else "XAI_API_KEY"
@@ -163,12 +163,12 @@ first_run_provider <- function(name = c("deepseek", "grok"), model = Sys.getenv(
   if (!is.character(model) || length(model) != 1L || is.na(model) || !nzchar(model))
     stop("Supply the verified model ID or set SC_MODEL_ID. No call was made.", call. = FALSE)
   required <- c("input_per_million", "output_per_million", "cached_input_per_million")
-  if (!is.list(pricing) || is.null(names(pricing)) || !setequal(names(pricing), required) ||
+  if (!is.null(pricing) && (!is.list(pricing) || is.null(names(pricing)) || !setequal(names(pricing), required) ||
       anyDuplicated(names(pricing)) || any(!vapply(pricing, function(value)
-        is.numeric(value) && length(value) == 1L && is.finite(value) && value >= 0, logical(1))))
-    stop("Supply verified current USD-per-million input, output and cached-input rates in pricing. No call was made.", call. = FALSE)
+        is.numeric(value) && length(value) == 1L && is.finite(value) && value >= 0, logical(1)))))
+    stop("Supply verified current USD-per-million input, output and cached-input rates, or omit pricing when unavailable. No call was made.", call. = FALSE)
   list(name = name, model = model, api_key_env = key_env, external = TRUE,
-       reservation_usd = reservation_usd, pricing = pricing, generation = generation)
+       pricing = pricing, generation = generation)
 }
 
 .first_run_shared <- function() {
@@ -212,7 +212,7 @@ first_run_main <- function(args = commandArgs(trailingOnly = TRUE)) {
       tissue = "synthetic epithelial/stromal/endothelial mixture",
       columns = list(sample = "sample_id", capture = "capture_id", condition = "condition"),
       notes = "Entirely synthetic mechanism example with planted modules and six deliberately low-depth cells. Captures are not donors, condition is not batch, no reference supplied. Mock thresholds are not study recommendations."),
-      provider = shared$server_demo_provider(), chat_fn = first_run_demo_chat, budget = 0,
+      provider = shared$server_demo_provider(), chat_fn = first_run_demo_chat,
       review = list(allow_external = FALSE), annotation_column = "first_use_identity",
       analysis = list(nfeatures = 200L, npcs = 12L, dims = 1:10, resolution = .3,
                       seed = 73031L, umap_neighbors = 20L))

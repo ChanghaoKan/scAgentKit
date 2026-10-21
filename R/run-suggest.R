@@ -116,7 +116,7 @@
 .sc_run_suggestion_response <- function(answer) {
   if (is.null(answer)) return(NULL)
   answer[intersect(c("status", "cached", "cost_state", "cost_usd", "usage", "raw_usage",
-    "charged_or_held_usd", "reservation_usd", "accounting_issue", "error",
+    "accounting_issue", "error",
     "response_metadata", "response_audit", "request_hash", "attempt"), names(answer))]
 }
 
@@ -127,33 +127,26 @@
     input_hash = state$input_hash, revision = state$revision, kind = context$kind,
     available = is.null(context$blocked_reason), blocked_reason = context$blocked_reason,
     suggestion_hash = context$suggestion_hash, status = "preview", preview = NULL,
-    new_project_budget_default = NULL,
     candidate = NULL, response = NULL, can_approve = FALSE, can_request = FALSE,
     can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE, can_review_conflicts = FALSE)
   if (!is.null(context$blocked_reason)) return(result)
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
   # One-shot and ReAct calls share actual post-call accounting.
   entries <- ledger$entries
-  amount <- function(field, known = NULL) sum(vapply(entries, function(entry) {
-    if (!is.null(known) && !identical(identical(entry$cost_state, "known"), known)) return(0)
-    value <- entry[[field]]; if (is.null(value)) 0 else value
-  }, numeric(1)))
+  known <- vapply(entries, function(entry) identical(entry$cost_state, "known"), logical(1))
+  known_cost <- sum(vapply(entries[known], function(entry) entry$cost_usd, numeric(1)))
+  unknown_cost <- sum(vapply(entries, function(entry) identical(entry$cost_state, "unknown"), logical(1)))
   provider <- context$provider
   result$preview <- list(request_hash = context$request_hash, provider = provider,
     model = provider$model, generation = provider$generation,
     resource_limits = list(request_bytes = if (is.null(context$request$max_payload_bytes)) "unlimited" else context$request$max_payload_bytes,
       react = state$config$react, model_context_tokens = "unknown",
       context_notice = "Application bytes are not model tokens. Model context admission is not verified by this package; provider rejection falls back without automatic retry."),
-    cost_mode = "posthoc",
-    budget = NULL, remaining_usd = NULL,
     consent_mode = if (is.null(state$config$review$transfer_consent)) "strict" else "project",
     consent_hash = state$config$review$transfer_consent$hash,
     transfer_consent = state$config$review$transfer_consent,
     scope_authorized = .sc_run_transfer_authorized(context$request, state$config),
-    reservation_usd = 0,
-    charged_or_held_usd = amount("charged_or_held_usd"),
-    known_cost_usd = amount("charged_or_held_usd", TRUE),
-    held_usd = amount("charged_or_held_usd", FALSE), external = provider$external,
+    known_cost_usd = known_cost, unknown_cost_count = unknown_cost, external = provider$external,
     allow_external = isTRUE(state$config$review$allow_external), simulated = simulate,
     notice = if (simulate) "SIMULATED offline software-control response; no model request or biological inference." else
       if (.sc_run_transfer_authorized(context$request, state$config)) paste(
@@ -191,10 +184,10 @@
     identical(saved$binding$cluster_scan, context$binding$cluster_scan) &&
     identical(saved$binding$guided_review_hash, context$binding$guided_review_hash)
   attempted <- same_evidence && saved$status %in% c("requesting", "candidate", "adopted", "discarded", "failed", "paused")
-  held <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
+  delivery_uncertain <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
     (identical(entry$delivery, "unknown") || entry$status %in% c("dispatched", "delivery_uncertain")), logical(1)))
   result$can_auto_request <- isTRUE(result$preview$scope_authorized) && result$can_request &&
-    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held
+    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !delivery_uncertain
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan, guided_review_hash=context$binding$guided_review_hash))
   if (same_evidence && !is.null(saved$fallback)) {
@@ -398,7 +391,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       authority = "Stage a candidate only; no scientific computation."))
     .sc_run_save(root, state)
     answer <- tryCatch(.sc_run_call(root, request, state$config$provider, chat_fn,
-      budget = state$config$budget, allow_external = isTRUE(state$config$review$allow_external), retry = FALSE),
+      allow_external = isTRUE(state$config$review$allow_external), retry = FALSE),
       error = function(error) list(status = if (inherits(error, c("sc_run_cancelled", "sc_run_disk_limit"))) "paused" else "interrupted", content = NULL, cached = FALSE,
         error = "Suggestion request interrupted; inspect the durable ledger. No automatic retry.",
         request_hash = context$request_hash))
@@ -425,7 +418,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     state <- .sc_run_event(state, "suggestion_request_finished", list(
       suggestion_hash = suggestion_hash, request_hash = context$request_hash,
       response_status = answer$status, cached = isTRUE(answer$cached), simulated = simulate,
-      cost_state = answer$cost_state, charged_or_held_usd = answer$charged_or_held_usd))
+      cost_state = answer$cost_state, cost_usd = answer$cost_usd))
     if (!answer$status %in% c("ok", "paused"))
       state <- .sc_run_suggestion_fallback(root, state, context, answer)
     .sc_run_save(root, state)

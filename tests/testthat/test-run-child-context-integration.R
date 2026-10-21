@@ -127,8 +127,8 @@ child_context_integration_parent <- function(work, labels = c("01" = "Parent lin
       notes = "Planted expression programs establish no biological identity."),
     start_stage = "processed", processed_reason = "Fresh normalized synthetic counts and literal manually assigned parent clusters.",
     cluster_column = "parent_cluster", annotation_column = "parent_reviewed_type",
-    provider = list(name = "mock", model = "context-software-control-v1", external = TRUE, reservation_usd = .01),
-    budget = .05, review = list(allow_external = TRUE), annotation_proposal = unknown))
+    provider = list(name = "mock", model = "context-software-control-v1", external = TRUE),
+    review = list(allow_external = TRUE), annotation_proposal = unknown))
   stopifnot(identical(initial$status, "awaiting_review"))
   proposed <- child_context_integration_proposal(sc_run_inspect(root)$evidence, labels)
   sc_run_propose(root, proposed, "PRIVATE_REVIEWER_CONTEXT_SENTINEL", "Review supplied current parent marker evidence.")
@@ -534,7 +534,7 @@ test_that("context crash recovery keeps prior pointers and an uncertain provider
     suggestion_hash = preview$suggestion_hash, reviewer = "offline QA",
     reason = "Approve an exact offline callback software control.", simulate = FALSE)
   callbacks <- 0L
-  held <- sc_run_suggest(child, "request", project_id = approved$project_id,
+  uncertain <- sc_run_suggest(child, "request", project_id = approved$project_id,
     input_hash = approved$input_hash, expected_revision = approved$revision,
     suggestion_hash = approved$suggestion_hash, reviewer = "offline QA",
     reason = "Exercise uncertain accounting with no remote dispatch.", simulate = FALSE,
@@ -543,8 +543,8 @@ test_that("context crash recovery keeps prior pointers and an uncertain provider
       stop("An artificial offline callback error; no remote connection exists.")
     })
   expect_identical(callbacks, 1L)
-  expect_identical(held$response$status, "delivery_uncertain")
-  expect_equal(held$preview$held_usd, 0)
+  expect_identical(uncertain$response$status, "delivery_uncertain")
+  expect_equal(uncertain$preview$unknown_cost_count, 1)
   ledger <- child_context_integration_files(child)
   ledger <- ledger[startsWith(names(ledger), "provider/")]
   expect_true("provider/ledger.json" %in% names(ledger))

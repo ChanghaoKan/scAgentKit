@@ -4,8 +4,7 @@ test_that("offline simulation retains distinct scope and never authorizes a remo
   confirmation <- list(mode = "project", confirmed = TRUE, reviewer = "offline-test",
     reason = "Explicit simulation of public aggregate project scope.",
     categories = c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression"))
-  sc_analyze(env$pbmc_small, root, context = list(species = "human"), provider = "mock", budget = .1,
-    review = list(allow_external = TRUE, transfer_consent = confirmation),
+  sc_analyze(env$pbmc_small, root, context = list(species = "human"), provider = "mock", review = list(allow_external = TRUE, transfer_consent = confirmation),
     plan = list(analysis = list(nfeatures = 100, npcs = 6), pcs = 4, diagnostic_resolutions = NULL, umap = FALSE))
   ordinary <- sc_run_suggest(root)
   simulated <- sc_run_suggest(root, simulate = TRUE)
@@ -36,7 +35,7 @@ test_that("a saved local-only annotation boundary can stage one scoped automatic
   env$pbmc_small$seurat_clusters <- as.character(SeuratObject::Idents(env$pbmc_small))
   suppressWarnings(sc_run(env$pbmc_small, root, context=list(species="human",tissue="blood"),
     start_stage="processed", processed_reason="Public software-control annotation boundary.",
-    provider="mock",budget=.1,review=list(allow_external=TRUE,transfer_consent=confirmation)))
+    provider="mock",review=list(allow_external=TRUE,transfer_consent=confirmation)))
   state <- .sc_run_load(root)
   expect_identical(state$stage,"annotation_propose");expect_identical(state$status,"awaiting_configuration")
   view <- sc_run_suggest(root,simulate=TRUE)

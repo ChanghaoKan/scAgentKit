@@ -26,7 +26,7 @@ new <- sc_run(
   analysis_checkpoint, new_project,
   start_stage = "processed", processed_reason = provenance_text,
   context = old$context, provider = provider_with_4096_output_tokens,
-  budget = authorized_budget, review = list(allow_external = TRUE),
+  review = list(allow_external = TRUE),
   annotation_column = "deepseek_review"
 )
 ```
@@ -40,8 +40,8 @@ response and costs as part of the audit; its QC approval is provenance, not an
 approval of the new transfer. Do not use `retry = TRUE` on the old project.
 
 
-`analysis_checkpoint`, `provenance_text`, `provider_with_4096_output_tokens` and
-`authorized_budget` are analyst-supplied values, not runnable defaults. Use only
-a verified checkpoint and a separately authorized provider budget. Inspect the
+`analysis_checkpoint`, `provenance_text` and `provider_with_4096_output_tokens`
+are analyst-supplied values, not runnable defaults. Use a verified checkpoint
+and the intended provider configuration. Inspect the
 new request before granting consent. Keep the original failed project and its
 usage record. See [model review](UNIFIED_MODEL_REVIEW.md) for uncertain dispatch.

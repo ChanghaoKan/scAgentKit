@@ -243,7 +243,7 @@ sc_start("a.rds", "analysis", model_suggestions = "configured")
 ```
 
 The default is `"off"`. Unconfigured manual projects continue locally without a
-model. Provider/model/budget remain immutable R-side configuration; no browser
+model. Provider/model are immutable R-side configuration; no browser
 credential input is added. Explicit `"simulate"` is for saved mock projects only
 and is visibly marked as a zero-model software control.
 

@@ -74,7 +74,7 @@ harmony_integration_begin <- function(root, object = harmony_integration_fixture
                                       proposal = harmony_integration_plan(),
                                       context = harmony_integration_context()) {
   suppressWarnings(sc_run(object, root, context = context, strategy = TRUE,
-    strategy_proposal = proposal, budget = 0, annotation_column = "reviewed_type"))
+    strategy_proposal = proposal, annotation_column = "reviewed_type"))
 }
 
 harmony_integration_record <- function(root, name) {

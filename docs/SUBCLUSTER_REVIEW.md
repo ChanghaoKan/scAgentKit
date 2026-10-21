@@ -230,8 +230,8 @@ this version does not remove it automatically. Confirm the recorded owner has
 stopped before explicit recovery. `sc_run_unlock` requires saved run state and
 cannot recover a creation lock left before the initial state was saved.
 
-By default, child creation uses zero provider budget and does not inherit a
-provider; manual proposals and unresolved annotation remain supported. Explicit
+By default, child creation does not inherit a provider and disables external
+transfer; manual proposals and unresolved annotation remain supported. Explicit
 model-configuration inheritance and separately approved aggregate requests are
 available through [unified model review](dev/UNIFIED_MODEL_REVIEW.md). That option
 does not copy keys, callbacks or parent consent into a child. The browser

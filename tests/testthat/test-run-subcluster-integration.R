@@ -96,7 +96,7 @@ subcluster_integration_parent <- function(work, object = subcluster_integration_
   initial <- suppressWarnings(sc_run(object, root, context = subcluster_integration_context(),
     start_stage = "processed", processed_reason = "Explicit synthetic normalized object and literal manually assigned parent memberships; no prior biological analysis is claimed.",
     cluster_column = "parent_cluster", annotation_column = "parent_reviewed_type",
-    provider = NULL, budget = 0, review = list(allow_external = FALSE),
+    provider = NULL, review = list(allow_external = FALSE),
     reference = reference, annotation_proposal = proposal))
   stopifnot(identical(initial$status, "awaiting_review"))
   subcluster_integration_decide(root)

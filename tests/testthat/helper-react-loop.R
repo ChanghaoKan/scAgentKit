@@ -2,7 +2,6 @@ react_loop_fixture <- function(policy = list(mode = "all")) {
   f <- react_tool_fixture()
   state <- .sc_run_load(f$root)
   state$config$provider <- .sc_run_provider_spec("mock")$metadata
-  state$config$budget <- 0
   state$config$review <- list(allow_external = FALSE)
   state$config$react <- .sc_run_turn_policy(policy)
   state$config_hash <- .sc_run_hash(state$config)

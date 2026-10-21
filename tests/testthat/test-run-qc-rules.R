@@ -240,7 +240,7 @@ test_that("headless rule review rejects stale decisions and restarts without rep
   # is separately verified against actually computed PC variances.
   plan$pcs <- list(method = "fixed", ndim = 5L)
   first <- suppressWarnings(sc_run(f$seu, root, context = f$context, strategy = TRUE,
-    strategy_proposal = plan, qc_mad = f$mad_options, annotation_column = "rule_reviewed_type", budget = 0))
+    strategy_proposal = plan, qc_mad = f$mad_options, annotation_column = "rule_reviewed_type"))
   expect_identical(first$status, "awaiting_review")
   old <- sc_run_inspect(root)
   expect_equal(old$strategy_review$details$qc_impact$retention$retained, 118L)

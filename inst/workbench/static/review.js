@@ -413,7 +413,7 @@ function renderSuggestion() {
   $("suggestion-disclosure-status").textContent = $("suggestion-status").textContent;
   $("suggestion-job-details").hidden = !job; $("suggestion-job-id").textContent = job?.job_id || "";
   $("suggestion-payload").replaceChildren(preview ? raw({model: preview.model, generation: preview.generation, provider: preview.provider, transfer_consent: preview.transfer_consent, external: preview.external, simulated: preview.simulated, system_prompt: preview.system_prompt, user_prompt: preview.user_prompt}) : element("p", "No exact request preview is available.", {class: "review-empty"}));
-  $("suggestion-accounting").replaceChildren(raw(preview ? {consent_mode: preview.consent_mode, charged_or_held_usd: preview.charged_or_held_usd, known_cost_usd: preview.known_cost_usd, held_usd: preview.held_usd, response: response ? {status: response.status, cached: response.cached, cost_state: response.cost_state, cost_usd: response.cost_usd, charged_or_held_usd: response.charged_or_held_usd, usage: response.usage, response_metadata: response.response_metadata} : null} : {status: "No request accounting is available."}));
+  $("suggestion-accounting").replaceChildren(raw(preview ? {consent_mode: preview.consent_mode, known_cost_usd: preview.known_cost_usd, unknown_cost_count: preview.unknown_cost_count, response: response ? {status: response.status, cached: response.cached, cost_state: response.cost_state, cost_usd: response.cost_usd, usage: response.usage, response_metadata: response.response_metadata} : null} : {status: "No request accounting is available."}));
   const fingerprints = $("suggestion-fingerprints"); fingerprints.replaceChildren();
   for (const [name, value] of Object.entries({project_id: item?.project_id, input_hash: item?.input_hash, revision: item?.revision, suggestion_hash: item?.suggestion_hash, request_hash: preview?.request_hash})) fingerprints.append(element("span", name), element("code", value == null ? "Unavailable" : value));
   $("suggestion-candidate-details").hidden = !item?.candidate; $("suggestion-candidate-json").replaceChildren(item?.candidate ? raw(item.candidate) : element("p", "No typed candidate."));
@@ -608,7 +608,7 @@ function canContinue(retry) {
   const run = state.view?.run, availability = state.continuation?.availability;
   if (!ready() || !continuationEnabled() || dirty() || strategyProposal() && typedStrategyError(strategyProposal()) || doubletReviewError() || madReviewError() || !availability || availability.expected_revision !== run.revision ||
       availability.project_id !== run.project_id || availability.input_hash !== run.input_hash ||
-      ["awaiting_review", "awaiting_configuration", "rejected", "complete", "budget_exceeded"].includes(run.status)) return false;
+      ["awaiting_review", "awaiting_configuration", "rejected", "complete"].includes(run.status)) return false;
   if (retry) return availability.can_retry && availability.requires_explicit_retry && supportedSavedLocalRetry(run, state.continuation.job);
   return run.status === "ready" && availability.can_continue && !availability.requires_explicit_retry;
 }

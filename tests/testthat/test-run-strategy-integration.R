@@ -53,8 +53,7 @@ strategy_integration_begin <- function(root, object = strategy_integration_fixtu
                                        plan = strategy_integration_plan(), provider = NULL,
                                        chat_fn = NULL, context = strategy_integration_context()) {
   suppressWarnings(sc_run(object, root, context = context, strategy = TRUE,
-    strategy_proposal = plan, provider = provider, chat_fn = chat_fn, budget = 0,
-    annotation_column = "reviewed_type"))
+    strategy_proposal = plan, provider = provider, chat_fn = chat_fn, annotation_column = "reviewed_type"))
 }
 
 strategy_integration_continue <- function(root, snapshot = sc_run_inspect(root), retry = FALSE) {
@@ -260,9 +259,9 @@ test_that("mock strategy sees aggregate facts and a cached result costs nothing 
   evidence <- scAgentKit:::.sc_run_get(root, state, "strategy_evidence")
   request$validator <- function(value) scAgentKit:::.sc_run_strategy_validate(value, evidence)$proposal
   ledger_hash <- scAgentKit:::.sc_project_sha_file(file.path(root, "provider", "ledger.json"))
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback, budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback)
   expect_identical(cached$status, "ok"); expect_true(cached$cached)
-  expect_identical(calls, 1L); expect_equal(cached$charged_or_held_usd, 0)
+  expect_identical(calls, 1L); expect_equal(cached$cost_usd, 0)
   expect_identical(scAgentKit:::.sc_project_sha_file(file.path(root, "provider", "ledger.json")), ledger_hash)
   strategy_integration_decide(root)
   paused <- strategy_integration_continue(root)

@@ -111,7 +111,7 @@ study <- list(species = "human", tissue = "Blood",
 config <- list(context = study, assay = "RNA", counts_layer = "counts",
   normalized_layer = "data", cluster_column = "seurat_clusters",
   annotation_column = "sc_annotation", analysis = list(), markers = list(),
-  budget = 0, review = list(allow_external = FALSE),
+  review = list(allow_external = FALSE),
   start_stage = "processed", reference_review = list(),
   processed_reason = "Synthetic benchmark fixture, not approved scientific analysis.")
 root <- file.path(output, "project")

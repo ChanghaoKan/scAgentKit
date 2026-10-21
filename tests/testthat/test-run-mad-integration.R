@@ -88,7 +88,7 @@ mad_integration_begin <- function(root, object = mad_integration_fixture(),
   suppressWarnings(sc_run(input = object, project_dir = root, context = context,
     strategy = TRUE, strategy_proposal = proposal, qc_mad = options,
     doublet_diagnostics = if (doublet) mad_integration_doublet_options() else NULL,
-    provider = provider, chat_fn = chat_fn, budget = 0, review = review,
+    provider = provider, chat_fn = chat_fn, review = review,
     annotation_column = "reviewed_type"))
 }
 
@@ -597,9 +597,9 @@ test_that("a mock provider chooses only the saved aggregate preset panel and cac
   evidence <- mad_integration_record(root, "strategy_evidence")
   request$validator <- function(value) scAgentKit:::.sc_run_strategy_validate(value, evidence)$proposal
   ledger <- file.path(root, "provider", "ledger.json"); ledger_hash <- scAgentKit:::.sc_project_sha_file(ledger)
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback, budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback)
   expect_identical(cached$status, "ok"); expect_true(cached$cached)
-  expect_equal(cached$charged_or_held_usd, 0); expect_identical(calls, 1L)
+  expect_equal(cached$cost_usd, 0); expect_identical(calls, 1L)
   expect_identical(scAgentKit:::.sc_project_sha_file(ledger), ledger_hash)
   mad_integration_decide(root); mad_integration_continue(root)
   expect_identical(calls, 1L); expect_equal(detector$detector, 2L)

@@ -81,7 +81,7 @@ the existing preview/authorize/request/adopt component in that main workflow.
 The runtime passes only the saved provider's named credential to an explicitly
 enabled service/request worker. Credentials are never serialized into a launcher
 record or browser field. A manual project's missing provider does not block
-local annotation. Model/provider/budget setup remains R-side and immutable;
+local annotation. Model/provider setup is R-side and immutable;
 see [model review](UNIFIED_MODEL_REVIEW.md). Explicit `"simulate"` requires a
 saved mock provider and produces marked zero-model software controls.
 

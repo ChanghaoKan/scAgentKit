@@ -192,7 +192,7 @@
         .sc_run_crash("react:prepared")
       }
       answer <- tryCatch(.sc_run_call(root, trace$pending_request, state$config$provider, turn_fn,
-        budget = state$config$budget, allow_external = isTRUE(state$config$review$allow_external),
+        allow_external = isTRUE(state$config$review$allow_external),
         project_lock_owner = project_lock_owner, react_runtime = runtime),
         sc_run_turn_error = function(e) {
           if (e$code %in% c("invalid_session", "invalid_receipt")) stop(e)

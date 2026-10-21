@@ -35,19 +35,19 @@ test_that("generic endpoint is explicit, credential free and bound to exact cons
   expect_error(.sc_run_provider_spec(changed), "external")
 })
 
-test_that("generic provider retains no-key, budget and exact-transfer barriers", {
+test_that("generic provider requires a key and exact-transfer consent", {
   withr::local_envvar(c(SCAGENTKIT_COMPATIBLE_TEST_KEY = ""))
   root <- tempfile(); dir.create(root); on.exit(unlink(root, recursive = TRUE))
   provider <- compatible_provider(); request <- compatible_request(provider)
-  expect_identical(.sc_run_call(root, request, provider, budget = 1)$status, "awaiting_external_approval")
-  expect_identical(.sc_run_call(root, request, provider, budget = .01, allow_external = TRUE)$status, "needs_provider")
-  expect_identical(.sc_run_call(root, request, provider, budget = 1, allow_external = TRUE)$status, "needs_provider")
+  expect_identical(.sc_run_call(root, request, provider)$status, "awaiting_external_approval")
+  expect_identical(.sc_run_call(root, request, provider, allow_external = TRUE)$status, "needs_provider")
+  expect_identical(.sc_run_call(root, request, provider, allow_external = TRUE)$status, "needs_provider")
   expect_length(.sc_run_provider_read(file.path(root, "provider", "ledger.json"))$entries, 0)
   changed <- provider; changed$base_url <- "https://other.invalid/v1"
   calls <- 0L
   expect_identical(.sc_run_call(root, request, changed, function(...) {
     calls <<- calls + 1L; '{"valid":true}'
-  }, budget = 1, allow_external = TRUE)$status, "awaiting_external_approval")
+  }, allow_external = TRUE)$status, "awaiting_external_approval")
   expect_identical(calls, 0L)
 })
 
@@ -69,12 +69,12 @@ test_that("existing agentomicsCore generic factory works with mocked HTTP only",
   for (valid in c(TRUE, FALSE)) {
     root <- tempfile(); dir.create(root); on.exit(unlink(root, recursive = TRUE), add = TRUE)
     content <- if (valid) '{"valid":true}' else '{invalid JSON'
-    answer <- .sc_run_call(root, request, provider, budget = 1, allow_external = TRUE)
+    answer <- .sc_run_call(root, request, provider, allow_external = TRUE)
     expect_identical(answer$status, if (valid) "ok" else "invalid_response")
     expect_identical(answer$response_metadata$finish_reason, "stop")
     expect_false(grepl("synthetic-compatible-fixture-secret", paste(readLines(
       file.path(root, "provider", "ledger.json")), collapse = ""), fixed = TRUE))
-    cached <- .sc_run_call(root, request, provider, budget = 0)
+    cached <- .sc_run_call(root, request, provider)
     expect_true(cached$cached)
   }
   expect_identical(calls, 2L)

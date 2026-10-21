@@ -6,7 +6,7 @@
 \title{Start, review and read a resumable single-cell analysis}
 \usage{
 sc_analyze(input, project_dir, context, plan = NULL, provider = NULL,
-  chat_fn = NULL, budget = NULL, review = list(allow_external = FALSE),
+  chat_fn = NULL, review = list(allow_external = FALSE),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), doublet = c("auto", "off", "flag", "remove"), ...)
 sc_open(project_dir)
@@ -25,7 +25,7 @@ sc_result(project, stage = c("final", "analysis"))
 \item{project_dir}{New durable project directory for analysis; existing project directory for opening. An analysis handle is also accepted by \code{sc_open}.}
 \item{context}{Explicit study facts including species, tissue and any verified metadata roles. Only a sole complete whitelisted column may be used as a documented sample grouping fallback. Multiple candidates require author choice; no biological or technical-batch provenance is inferred.}
 \item{plan}{Named edits to an initial or displayed strategy. Supported fields: rationale, risks, qc, analysis, pcs, batch, resolution, diagnostic_resolutions, umap, cycle, doublet, choice_reasons. Modern complete strategies retain a reason for each choice; reason edits do not approve the plan. QC is a named list of inclusive ranges, e.g. \code{list(nFeature=c(200,2500), percent_mt=c(NA,5))}; NA is an open bound. Supplying qc replaces the displayed ranges as a whole. Analysis edits merge into the displayed analysis settings. Numeric pcs selects a fixed PC count; a named method list can select the kernel's computed policies. Logical umap changes only whether it runs. Other nested method lists use the existing kernel's validated settings. Omitted fields preserve the displayed plan on revision.}
-\item{provider,chat_fn,budget,review}{Existing \code{sc_run} provider settings, in-memory callback, budget and immutable review policy. External transfer is disabled by default. The deprecated budget argument does not limit dispatch; costs are recorded after calls. Callbacks must be reattached in each session for explicit new requests. No retry is automatic.}
+\item{provider,chat_fn,review}{Provider settings, in-memory callback and immutable review policy used by \code{sc_run}. External transfer is disabled by default. Costs are recorded after calls without a monetary cap. Callbacks must be reattached in each session for explicit new requests. No retry is automatic.}
 \item{...}{Other named \code{sc_run} raw-entry settings, such as reference or annotation_column. Use \code{plan} for analysis settings. Processed entries and advanced typed proposals remain available through \code{sc_run}.}
 \item{project}{Project path or analysis handle for display/results. Mutations require an unedited handle; approve/reject/revise require the snapshot returned by \code{sc_review}. Paths cannot confirm.}
 \item{action}{show reads and displays a fresh snapshot. revise stages a new draft only. approve/reject bind exactly the displayed version. continue runs approved local computation only. request explicitly prepares or dispatches the configured provider at a nonfailed proposal boundary.}

@@ -4,7 +4,7 @@ suppressPackageStartupMessages(library(scAgentKit))
 data("pbmc_small", package = "SeuratObject")
 pbmc_small$seurat_clusters <- as.character(SeuratObject::Idents(pbmc_small))
 out <- suppressWarnings(sc_run(pbmc_small, args[[1]], start_stage = "processed",
-  processed_reason = "Public pbmc_small processed software fixture", provider = NULL, budget = 0))
+  processed_reason = "Public pbmc_small processed software fixture", provider = NULL))
 stopifnot(identical(out$status, "awaiting_configuration"))
 evidence <- sc_run_inspect(args[[1]])$evidence
 proposal <- list(schema = "scagentkit.annotation.v1", annotations = lapply(evidence$clusters,

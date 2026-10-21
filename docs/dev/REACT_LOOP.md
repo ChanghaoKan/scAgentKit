@@ -17,10 +17,9 @@ session, 180 seconds per cluster, and 60 seconds per tool. Limits and tool
 allowlists are recorded in config. The wall-clock cluster deadline persists
 across interruption and strict transfer approval waits: an expired cluster
 falls back rather than acquiring a fresh time allowance on restart. There is
-no new monetary cap, token estimator or reservation. The existing one-shot
-baseline still uses its existing accounting contract. Usage and available cost
-are recorded after delivery; unavailable cost is not zero. Uncertain deliveries
-are never automatically resent.
+no monetary cap, token estimator or reservation. Single requests and structured
+turns record usage and available cost after delivery; unavailable cost is not
+zero. Uncertain deliveries are never automatically resent.
 
 ## Integrity and recovery
 

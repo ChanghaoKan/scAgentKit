@@ -1,6 +1,8 @@
 # Reviewed-workflow development evaluation
 
-There is one counts-to-result engine. All current workflow experiments use:
+The frozen `evaluation-v1/` workflow driver records the package contract used
+for that evaluation. Reproduce it only with its matching original checkout and
+R library, writing to a new output directory:
 
 ```sh
 Rscript benchmark/evaluation-v1/run_workflow.R INPUT.rds NEW_OUTPUT PRIVATE_R_LIBRARY after-no-diagnostics REFERENCE.tsv pbmc3k
@@ -10,8 +12,8 @@ Arguments name the frozen counts/Seurat input, a **new** output directory, the
 installed library, a registered variant, a pinned local reference and dataset
 (`pbmc3k`, `ifnb` or `baron`). The script uses `sc_analyze()` and three explicit
 `sc_review()` approvals; annotation is an Unknown-only software control with
-provider=NULL and budget=0. Raw author/reference labels are not read as planning
-inputs. Study inference and model A/B execution are separate unpassed gates.
+provider=NULL, so no model request is sent. Raw author/reference labels are not
+read as planning inputs. Study inference and model A/B execution are separate unpassed gates.
 
 `evaluation-v1/prepare_inputs.R` and `freeze_references.R` describe the public
 input/reference preparation. Existing frozen inputs may be reused read-only;
@@ -22,8 +24,8 @@ The original results and reports remain historical evidence, not recomputed trut
 The older AgentSeurat benchmark drivers and old PBMC preparation drivers were
 removed from the development tree after shared-kernel parity checks. They are
 available in Git/published history; repository code is updated to the one project
-path rather than retained as a compatibility facade. No old analysis environment
-or user migration burden is assumed.
+path. Current development uses the installed-package and offline-comparison
+contracts linked below.
 
 - [Protocol and original frozen outcomes](evaluation-v1/README.md)
 - [Registered evaluation boundaries](../docs/dev/EVALUATION_PROTOCOL_V1.md)

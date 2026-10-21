@@ -14,12 +14,11 @@
 #' @param python Existing Python 3.9+ executable; detected by default.
 #' @param browse Open the local URL in the browser.
 #' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
-#' @param budget Deprecated numeric argument; new requests use post-call accounting without a monetary cap.
 #' @param react Auto (default), all, off, or a validated ReAct policy list.
 #' @param model_timeout Whole suggestion-worker seconds (1–86400); NULL derives a bound from saved policy.
 #' @param biological_diagnostics Diagnostic-only QC/batch evidence for raw input; TRUE by default.
 #' @param review Creation-time transfer policy; optional explicit project scope skips repeated
-#'   transfer approvals within its provider/categories/budget. Payloads remain inspectable.
+#'   transfer approvals within its provider and categories. Payloads remain inspectable.
 #' @param model_suggestions Operator mode: auto, off, configured, or simulate.
 #'   Uses the saved provider; creation-time transfer scope or exact payload approval is required.
 #' @param reuse_processed Explicitly reuse processed layers/clusters. Default FALSE.
@@ -33,7 +32,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   model_suggestions = c("auto", "off", "configured", "simulate"),
   sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
   feature_key = c("name", "id"), scientific_review = NULL,
-  provider = NULL, budget = NULL, review = list(allow_external = FALSE),
+  provider = NULL, review = list(allow_external = FALSE),
   doublet = c("auto", "off", "flag", "remove"),
   react = c("auto", "all", "off"), biological_diagnostics = TRUE,
   model_timeout = NULL) {
@@ -100,9 +99,8 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     processed_reason <- state$config$processed_reason
     cluster_column <- state$config$cluster_column
   }
-  setup <- .sc_start_provider_setup(provider, if (!missing(budget)) budget,
-    if (!missing(review)) review, if (existing) state$config,
-    cost_mode = "posthoc", react = react)
+  setup <- .sc_start_provider_setup(provider,
+    review = if (!missing(review)) review, saved = if (existing) state$config, react = react)
   if (model_suggestions == "auto") model_suggestions <- if (identical(setup$provider$name, "manual")) "off" else
     if (identical(setup$provider$name, "mock")) "simulate" else "configured"
   if (is.null(model_timeout)) {

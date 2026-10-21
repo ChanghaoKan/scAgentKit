@@ -15,8 +15,8 @@ Database overlap and agreement between suggestions do not establish biological
 identity.
 
 The optional helper [cm2-evidence-review.R](../../dev/examples/cm2-evidence-review.R)
-uses the same R interfaces. Its CLI uses synthetic data only, no provider and a
-zero budget. Installing this checkout and selecting its R library is required.
+uses the same R interfaces. Its CLI uses synthetic data only and makes no external
+provider calls. Installing this checkout and selecting its R library is required.
 ## Existing processed study: one starting call
 
 Set nonsecret paths to your already processed Seurat RDS, a durable **new** project
@@ -52,7 +52,7 @@ run <- cm2_evidence_start(input_path, project_dir, context = context,
   reference = reference, reference_review = options, annotation_history = NULL,
   start_stage = "processed", cluster_column = "seurat_clusters",
   processed_reason = "Explain the verified previous normalization, reductions and cluster provenance; reuse that existing analysis.",
-  annotation_column = "cm2_reviewed_identity", provider = NULL, budget = 0)
+  annotation_column = "cm2_reviewed_identity", provider = NULL)
 view <- cm2_evidence_inspect(project_dir)
 ```
 
@@ -133,7 +133,7 @@ model an independent biological validation. `ai_mode="guided"` includes local
 database candidates in the model input, so agreement depends on that database.
 A manual proposal remains manual in either mode. Continue never requests a
 model; a new provider request requires explicit R resume and the existing exact
-aggregate-transfer approval and budget gates. See [researcher guide](../RESEARCHER_PROTOCOL_ZH.md)
+aggregate-transfer approval. See [researcher guide](../RESEARCHER_PROTOCOL_ZH.md)
 for environment-based provider configuration. No paid call is needed here.
 
 ## Optional historical model evidence

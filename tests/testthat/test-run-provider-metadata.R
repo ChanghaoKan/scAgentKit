@@ -1,7 +1,7 @@
 provider_metadata_fixture <- function(external = FALSE) {
   root <- tempfile("provider-metadata-"); .sc_project_format_create(root)
   provider <- list(name = if (external) "testremote" else "mock", model = "fixture-model",
-    external = external, reservation_usd = if (external) 0.05 else 0,
+    external = external,
     generation = list(max_tokens = 64L))
   if (external) provider$pricing <- list(input_per_million = 1, output_per_million = 2)
   request <- list(system_prompt = "Return one typed QC decision.",
@@ -83,7 +83,7 @@ test_that("finish reason length rejects even complete JSON and preserves account
       list(content = raw, finish_reason = "length", http_status = 200, request_id = "request-01",
         usage = list(input_tokens = 10, output_tokens = 7, cached_tokens = 2))
     }
-    out <- .sc_run_call(f$root, f$request, f$provider, fn, budget = 1, allow_external = TRUE)
+    out <- .sc_run_call(f$root, f$request, f$provider, fn, allow_external = TRUE)
     expect_identical(out$status, "truncated_response"); expect_null(out$content)
     expect_identical(out$raw, raw)
     expect_identical(out$response_audit$truncation, "provider_reported")
@@ -91,7 +91,7 @@ test_that("finish reason length rejects even complete JSON and preserves account
       if (identical(raw, provider_metadata_json)) "ok" else "invalid_response")
     expect_identical(out$cost_state, "known"); expect_equal(out$cost_usd, 0.000024)
     expect_equal(out$usage$output_tokens, 7)
-    cached <- .sc_run_call(f$root, f$request, f$provider, budget = 0)
+    cached <- .sc_run_call(f$root, f$request, f$provider)
     expect_true(cached$cached); expect_identical(cached$status, "truncated_response")
     expect_null(cached$content); expect_identical(calls, 1L)
     expect_length(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 1L)
@@ -188,7 +188,7 @@ provider_metadata_attribute_fixture <- function(value) {
 }
 
 provider_metadata_config_fixture <- function() {
-  list(name = "mock", model = "fixture-model", external = FALSE, reservation_usd = 0,
+  list(name = "mock", model = "fixture-model", external = FALSE,
     api_key_env = "SCAGENTKIT_ATTRIBUTE_FIXTURE_KEY",
     pricing = list(input_per_million = 1, output_per_million = 2,
       cached_input_per_million = 0.5),
@@ -325,7 +325,7 @@ test_that("mock HTTP adapter length response is not accepted or automatically se
   out <- httr2::with_mocked_responses(function(req) {
     calls <<- calls + 1L
     provider_metadata_http_fixture(finish = "length")
-  }, .sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE))
+  }, .sc_run_call(f$root, f$request, f$provider, adapted, TRUE))
   expect_identical(out$status, "truncated_response"); expect_null(out$content)
   expect_equal(out$response_metadata$http_status, 200)
   expect_identical(out$response_metadata$finish_reason, "length")
@@ -342,15 +342,15 @@ test_that("HTTP error status survives as safe typed error while body and usage s
   out <- httr2::with_mocked_responses(function(req) {
     calls <<- calls + 1L
     provider_metadata_http_fixture(status = 429)
-  }, .sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE))
+  }, .sc_run_call(f$root, f$request, f$provider, adapted, TRUE))
   expect_identical(out$status, "delivery_uncertain")
   expect_equal(out$response_metadata$http_status, 429)
   expect_identical(out$response_metadata$request_id, "request-fixture-01")
-  expect_identical(out$cost_state, "unknown"); expect_equal(out$charged_or_held_usd, 0)
+  expect_identical(out$cost_state, "unknown"); expect_null(out$cost_usd)
   expect_null(out$raw); expect_null(out$content)
   json <- paste(readLines(file.path(f$root, "provider", "ledger.json")), collapse = "\n")
   expect_false(grepl("fictional-sensitive|error.message|authorization", json))
-  expect_identical(.sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE, retry = TRUE)$status, "retry_refused")
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, adapted, TRUE, retry = TRUE)$status, "retry_refused")
   expect_identical(calls, 1L)
 })
 
@@ -389,12 +389,12 @@ test_that("Core 0.2 received text errors preserve delivery and usage accounting"
     raw_usage = list(prompt_tokens = 10, completion_tokens = 7),
     metadata = list(http_status = 200, request_id = "received-text-fixture")),
     class = c("agentomics_turn_error", "error", "condition"))
-  out <- .sc_run_call(f$root, f$request, f$provider, function(...) stop(failure), budget = 1, allow_external = TRUE)
+  out <- .sc_run_call(f$root, f$request, f$provider, function(...) stop(failure), allow_external = TRUE)
   expect_identical(out$delivery, "received")
   expect_identical(out$status, "provider_response_error")
   expect_identical(out$response_audit$json_status, "received_invalid")
   expect_identical(out$cost_state, "known"); expect_equal(out$cost_usd, .000024)
   expect_equal(out$response_metadata$http_status, 200)
   expect_false(grepl("private HTTP", out$error, fixed = TRUE))
-  expect_true(.sc_run_call(f$root, f$request, f$provider, budget = 1, allow_external = TRUE)$cached)
+  expect_true(.sc_run_call(f$root, f$request, f$provider, allow_external = TRUE)$cached)
 })

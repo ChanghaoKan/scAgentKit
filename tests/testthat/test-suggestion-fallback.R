@@ -34,7 +34,7 @@ test_that('invalid empty QC rules automatically save a local draft without appro
 
 test_that('failed dispatch modes save drafts and retain explicit human QC edits',{
   local_mocked_bindings(.sc_run_call=function(...)list(status=status,error='Offline injected failure; no HTTP.',request_hash='offline'),.package='scAgentKit')
- for(status in c('needs_provider','invalid_response','budget_stop','delivery_uncertain')) {
+ for(status in c('needs_provider','invalid_response','delivery_uncertain')) {
   root<-fallback_project()
   invisible(capture.output(x<-sc_review(sc_open(root))))
   invisible(capture.output(sc_review(x,'revise',plan=list(qc=list(nCount=c(1,NA))),reviewer='human',reason='Retain edited QC.')))

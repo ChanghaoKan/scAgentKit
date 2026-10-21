@@ -1,18 +1,13 @@
 # Creation-time provider selection never constructs a client or sends a request.
 # Reopening uses the saved policy even when the operator's environment changes.
-.sc_start_provider_setup <- function(provider = NULL, budget = NULL, review = NULL, saved = NULL, cost_mode = "posthoc", react = NULL) {
+.sc_start_provider_setup <- function(provider = NULL, review = NULL, saved = NULL, react = NULL) {
   if (!is.null(saved)) {
     if ((!is.null(provider) && !identical(.sc_run_provider_spec(provider)$metadata, saved$provider)) ||
-        (!is.null(budget) && !identical(as.numeric(budget), as.numeric(saved$budget))) ||
         (!is.null(review) && !identical(review, saved$review)))
-      stop("Reopening uses the saved provider, budget and transfer policy; omit these settings or create a new project.", call. = FALSE)
-    out <- list(provider = saved$provider, budget = saved$budget, review = saved$review)
-    if (identical(saved$cost_mode, "posthoc")) out$cost_mode <- "posthoc"
-    return(out)
+      stop("Reopening uses the saved provider and transfer policy; omit these settings or create a new project.", call. = FALSE)
+    return(list(provider = saved$provider, review = saved$review))
   }
-  cost_mode <- "posthoc"
   review_was_default <- is.null(review)
-  if (!is.null(budget)) budget <- .sc_run_provider_number(budget, "budget")
   if (is.null(review)) review <- list(allow_external = FALSE)
   if (!is.list(review) || (length(review) && (is.null(names(review)) || anyDuplicated(names(review)))) ||
       any(!names(review) %in% c("allow_external", "transfer_consent")) ||
@@ -31,10 +26,8 @@
     message("No key is available in ", metadata$api_key_env,
       "; model requests will remain unavailable until it is set. Local drafts remain available in this project.")
   }
-  if (cost_mode == "posthoc") budget <- 0
-  selected <- .sc_run_new_budget(metadata, budget)
-  metadata <- selected$provider; budget <- selected$budget
-  if (review_was_default && isTRUE(metadata$external) && cost_mode == "posthoc" && interactive()) {
+  metadata <- .sc_run_provider_defaults(metadata)$provider
+  if (review_was_default && isTRUE(metadata$external) && interactive()) {
     answer <- readline(paste0("Allow ", metadata$name, " / ", metadata$model,
       " to receive study context and aggregate QC, design, marker, expression and ACT evidence for drafts and bounded read-only checks? No cell IDs, matrices or paths. Actual costs are recorded afterwards; no monetary cap. Scientific decisions still require your approval. [yes/no]: "))
     if (tolower(trimws(answer)) %in% c("yes", "y")) review <- list(allow_external = TRUE,
@@ -45,14 +38,14 @@
   if (!is.null(review$transfer_consent) && !is.null(react)) review$transfer_consent$react <- react
   if (identical(metadata$name, "manual")) {
     message("Manual mode: review and edit the local strategy and annotation drafts; no model request is sent.")
-    budget <- 0; review <- list(allow_external = FALSE)
+    review <- list(allow_external = FALSE)
   } else if (isTRUE(metadata$external)) {
     if (!isTRUE(review$allow_external))
       message("Provider configured. External transfer is disabled; set review=list(allow_external=TRUE) for a new project to enable exact-payload transfer review.")
   }
   if (!is.null(review$transfer_consent)) {
     if (!isTRUE(review$allow_external)) stop("Enable allow_external before confirming project transfer scope.", call. = FALSE)
-    consent <- .sc_run_transfer_options(review$transfer_consent, metadata, budget, cost_mode)
+    consent <- .sc_run_transfer_options(review$transfer_consent, metadata)
     scope <- consent$react_scope$policy
     message("Confirmed project transfer scope: ", metadata$name, " / ", metadata$model,
       "; usage and costs recorded after calls",
@@ -63,7 +56,5 @@
       ". No cell IDs, cell-level matrices or local paths. Saving a draft never approves it.",
       " Annotation evidence checks record usage and cost after calls; they have no monetary cap.")
   }
-  out <- list(provider = metadata, budget = budget, review = review)
-  if (cost_mode == "posthoc") out$cost_mode <- "posthoc"
-  out
+  list(provider = metadata, review = review)
 }

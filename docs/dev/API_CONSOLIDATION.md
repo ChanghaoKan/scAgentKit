@@ -14,7 +14,7 @@ from R. `sc_open()`, `sc_review()` and `sc_result()` inspect, decide and retriev
 its result. Advanced `sc_run_*` operations are clients of the same saved state,
 not another analysis implementation. Initial strategy, measured clustering and
 annotation approvals remain separate. Model requests still require the saved
-provider/budget and exact transfer consent. No model fees are authorized here.
+provider and exact transfer consent. No model fees are authorized here.
 
 Shared marker discovery/summary, reference-overlap, strict validation and ARI
 kernels were extracted before retiring the old orchestration. The native marker
@@ -91,7 +91,7 @@ These were direct mutable-object orchestration or object-specific
 checkpoint/script/report facades. The current project already owns checkpoints,
 reports and decision history. Provider factories and token utilities remain;
 the reviewed engine reads the dependency's live token state directly, preserving
-cached requests, conservative holds and explicit reconciliation.
+cached requests, post-call accounting and explicit reconciliation.
 
 No automatic MT/ribo/HB deletion, metadata-guessed batch selection,
 image-to-parameter application, HCC-specific adaptive subclustering or
@@ -137,6 +137,6 @@ or long compatibility facade is provided.
 ontology 和精确 ID 对照工具直接使用 Seurat 或表格。上述 36 个函数不是继续保留的兼容 facade。
 仓库示例、基准脚本及测试同步更新；测试项目可重建，不假设用户已有分析迁移负担。
 
-共享 kernel 先抽取并核对 baseline，再清理入口。counts、精确 ID、审批与模型预算约束不放宽；
+共享 kernel 先抽取并核对 baseline，再清理入口。counts、精确 ID 与审批受明确契约约束，模型费用在调用后记录；
 不移入自动删基因、猜 batch、自动图片选参数、HCC 专属调参或未经校准的 hybrid score 决策。
 发布历史、baseline 和无关研究数据保留。此构建 hash 改变，不能修改旧项目 hashes 强行恢复。

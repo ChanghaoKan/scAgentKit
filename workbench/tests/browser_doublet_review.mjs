@@ -53,9 +53,9 @@ for (const name of inputFiles) {const file = path.join(project, "checkpoints", n
 report.immutableCheckpointSHA256 = inputDigests;
 const ledgerFile = path.join(project, "provider", "ledger.json"), ledgerPresent = await exists(ledgerFile), ledgerBytes = ledgerPresent ? await fs.readFile(ledgerFile) : null;
 const entries = ledgerBytes ? array(JSON.parse(ledgerBytes).entries) : [];
-for (const entry of entries) {assert.equal(entry.provider?.external, false); assert.equal(entry.cost_usd, 0); assert.equal(entry.charged_or_held_usd, 0);}
+for (const entry of entries) {assert.equal(entry.provider?.external, false); assert.equal(entry.cost_usd, 0);}
 report.initialMockResponses = entries.length; report.initialLedgerSHA256 = ledgerBytes ? sha(ledgerBytes) : null;
-report.ledgerSummary = entries.map(entry => ({purpose: entry.purpose, status: entry.status, external: entry.provider.external, costUSD: entry.cost_usd, chargedOrHeldUSD: entry.charged_or_held_usd}));
+report.ledgerSummary = entries.map(entry => ({purpose: entry.purpose, status: entry.status, external: entry.provider.external, costUSD: entry.cost_usd}));
 let server, browser, context, page, profile, origin, token, activeJobId;
 const lifecycle = [];
 async function protectedInputs() {

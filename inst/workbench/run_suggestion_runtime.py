@@ -225,7 +225,7 @@ class RunSuggestionRuntime(QCRuntime):
         # lifetime, so acquiring it proves no owner is running. Do not let a
         # missing launch record or a reused PID keep the job active forever.
         if job is not None and job["status"] in ACTIVE and lock_held:
-            job = dict(job, status="interrupted", updated_at=_time(), dispatch_state="unknown_hold_possible", error={
+            job = dict(job, status="interrupted", updated_at=_time(), dispatch_state="delivery_unknown", error={
                 "code": "worker_interrupted", "message": "The suggestion worker stopped. Usage may be unknown; inspect and reconcile the saved provider ledger in R. No request was resent."})
             _atomic(_job_dir(self.base, job["job_id"]) / "job.json", job)
         return job
@@ -431,7 +431,7 @@ def _worker(config_file, expected_hash, lock_fd):
     directory = _job_dir(base, job["job_id"])
     owner = {"worker_pid": os.getpid(), "r_pid": None, "started_at": _time()}
     _atomic(directory / "owner.json", owner)
-    job.update(status="running", dispatch_state="unknown_hold_possible", updated_at=_time())
+    job.update(status="running", dispatch_state="delivery_unknown", updated_at=_time())
     _atomic(directory / "job.json", job)
     process = None
     try:

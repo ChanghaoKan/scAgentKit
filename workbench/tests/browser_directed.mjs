@@ -157,7 +157,7 @@ try {
     assert.equal((await session()).decisions[0].status, 'accepted');
     assert.deepEqual((await api('/api/evidence')).clusters.find(item => item.id === '6').models, sourceModels);
     assert.match(await ui('directed-proposal').textContent(), /provisional|unresolved|hypothesis|heuristic/i);
-    assert.match(await ui('directed-stop-reason').textContent(), /stop|cached|evidence|round|budget/i);
+    assert.match(await ui('directed-stop-reason').textContent(), /stop|cached|evidence|round/i);
     report.evidenceFingerprint = value.evidenceFingerprint;
     report.execution = value.execution;
     report.modelReview = value.modelReview;

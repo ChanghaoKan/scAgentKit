@@ -28,7 +28,7 @@ def workbench_view(identity, revision=10, complete=True):
                     "notes": "Public fixture, no private source data",
                     "columns": {"sample": "sample", "condition": "Ca_Ctrl"}},
         "diagnostics": {"input_cells": 72, "raw_counts": True},
-        "config": {"assay": "RNA", "layer": "counts", "budget": 0},
+        "config": {"assay": "RNA", "layer": "counts"},
         "stages": {"qc": {"status": "complete", "retained_cells": 70},
                    "markers": {"status": "complete", "table": "tables/markers.tsv"}},
         "strategy_review": {"hash": "c" * 64,

@@ -13,8 +13,7 @@ Install this version of the package on the machine that holds the data. The
 self-contained [example](../../dev/examples/qc-review.R) creates a sparse,
 non-PBMC synthetic epithelial/stromal/endothelial mixture and a new project.
 Its fixed cutoffs test the review mechanism; they are not suggested cutoffs for
-another study. It uses no provider, permits no external transfer and has a zero
-budget.
+another study. It uses no provider and permits no external transfer.
 
 ```sh
 Rscript --vanilla dev/examples/qc-review.R /durable/path/to/new-project run
@@ -62,7 +61,7 @@ rule <- list(
   risks = c("Low-depth cells can be biologically real."),
   filters = list(list(op = "range", metric = "nCount", min = 1L))
 )
-sc_run(input, project_dir, context = context, provider = NULL, budget = 0,
+sc_run(input, project_dir, context = context, provider = NULL,
        review = list(allow_external = FALSE), qc_proposal = rule,
        annotation_column = "new_reviewed_annotation")
 

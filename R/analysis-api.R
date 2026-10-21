@@ -190,7 +190,7 @@
 #' Start an analysis with an editable strategy draft
 #' @export
 sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL,
-                       chat_fn = NULL, budget = NULL, review = list(allow_external = FALSE),
+                       chat_fn = NULL, review = list(allow_external = FALSE),
                        sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
                        feature_key = c("name", "id"), doublet = c("auto", "off", "flag", "remove"), ...) {
   .sc_project_format_entry(project_dir, allow_new = TRUE)
@@ -202,10 +202,8 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     saveRDS(input,transport,version=2L);input<-transport
   }
   extra <- list(...)
-  extra$cost_mode <- "posthoc"
-  selected_budget <- .sc_run_new_budget(provider, budget, chat_fn)
-  provider <- selected_budget$provider; budget <- selected_budget$budget
-  chat_fn <- selected_budget$chat_fn
+  selected_provider <- .sc_run_provider_defaults(provider, chat_fn)
+  provider <- selected_provider$provider; chat_fn <- selected_provider$chat_fn
   if (is.null(extra$reference_review)) extra$reference_review <- list()
   extra$reference_review$strict_scope <- TRUE
   # Only a new modern project gets the private default. Explicit reference=NULL
@@ -284,7 +282,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   }
   do.call(sc_run, c(list(input = input, project_dir = project_dir, context = source_context, strategy = TRUE,
     strategy_proposal = proposal, provider = provider, chat_fn = chat_fn,
-    budget = budget, review = review), extra))
+    review = review), extra))
   sc_open(project_dir)
 }
 

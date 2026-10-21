@@ -16,7 +16,7 @@ reuses the public convenience functions in
 [analysis-strategy.R](../../dev/examples/analysis-strategy.R). Use an installed copy
 of this checkout in your selected R library. The example creates a new sparse
 synthetic Seurat object with declared sample/capture columns, a typed manual
-strategy, and zero provider budget. It performs no installation, download, key
+strategy, and no external provider. It performs no installation, download, key
 read or model request. Its inclusive QC ranges deliberately retain the fixture;
 they are not cleaning recommendations or an AI decision. Synthetic programs,
 mock responses and `Unknown/low` labels establish no biological accuracy.
@@ -197,7 +197,7 @@ For a fresh model-enabled project, follow the existing
 and [exact suggestion preview workflow](UNIFIED_MODEL_REVIEW.md). Built-in
 DeepSeek/Grok factories use `DEEPSEEK_API_KEY`/`XAI_API_KEY` from the analysis
 machine's environment or user secret mechanism at dispatch. Supply a verified
-model ID, generation settings, current pricing and explicit budget; keep key
+model ID, generation settings and any available pricing; keep key
 values out of code, context, objects, logs and the browser. A headless `chat_fn`
 stays in caller memory. This example does not read or configure credentials.
 

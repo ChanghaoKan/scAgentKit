@@ -14,5 +14,5 @@
 \alias{token_usage_summary}
 \docType{import}
 \title{Provider factories and token utilities}
-\description{Provider and token helpers from agentomicsCore. Scientific project requests still require the saved immutable configuration, exact transfer consent and budget checks.}
+\description{Provider and token helpers from agentomicsCore. Scientific project requests still require the saved immutable configuration and exact transfer consent; usage and available costs are recorded after calls.}
 \seealso{\code{\link{sc_analyze}}, \code{\link{sc_run_suggest}}}

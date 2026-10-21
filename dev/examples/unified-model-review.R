@@ -11,11 +11,11 @@ if (!all(c("sc_run_suggest", "sc_run_review", "sc_run_continue") %in%
   stop("Install this checkout's unified model-review package in the selected R library first.", call. = FALSE)
 
 unified_review_start <- function(input, project_dir, context, strategy_proposal = NULL,
-                                 provider = NULL, chat_fn = NULL, budget = 0,
+                                 provider = NULL, chat_fn = NULL,
                                  review = list(allow_external = FALSE), ...) {
   sc_run(input, project_dir, context = context, strategy = TRUE,
     strategy_proposal = strategy_proposal, provider = provider, chat_fn = chat_fn,
-    budget = budget, review = review, ...)
+    review = review, ...)
 }
 
 unified_review_inspect <- function(project_dir, simulate = FALSE, save_snapshot = FALSE) {
@@ -105,7 +105,7 @@ unified_review_demo <- function(project_dir) {
   result <- unified_review_start(input, project_dir, helper$strategy_example_context(),
     strategy_proposal = .unified_review_demo_seed(input),
     provider = list(name = "mock", model = "SIMULATED-control", external = FALSE),
-    budget = 0, review = list(allow_external = FALSE),
+    review = list(allow_external = FALSE),
     annotation_column = "unified_reviewed_identity")
   stopifnot(identical(before, digest::digest(input, algo = "sha256")))
   invisible(result)

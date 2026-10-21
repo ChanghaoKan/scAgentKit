@@ -20,7 +20,7 @@ strategy_example_start <- function(input, project_dir, context, chat_fn = NULL,
                                    ...) {
   sc_run(input, project_dir, context = context, strategy = TRUE,
     strategy_proposal = strategy_proposal, provider = provider, chat_fn = chat_fn,
-    budget = 0, review = list(allow_external = FALSE), ...)
+    review = list(allow_external = FALSE), ...)
 }
 
 strategy_example_processed <- function(input, project_dir, context, processed_reason,
@@ -73,7 +73,7 @@ strategy_example_mock <- function(resolution = 0.4, npcs = 6L, ndim = 4L) {
       batch = list(method = "none", reason = "No automatic correction is authorized by this mock; inspect declared batch/group design and unresolved effects."),
       clustering = list(resolution = resolution, diagnostic_resolutions = c(0.2, 0.4, 0.6)),
       umap = list(run = TRUE, n_neighbors = 15L))
-    # JSON is the same interface used by a configured provider. Budget is zero.
+    # JSON is the same interface used by a configured provider. This mock makes no external call.
     jsonlite::toJSON(plan, auto_unbox = TRUE, null = "null", digits = NA)
   }
 }

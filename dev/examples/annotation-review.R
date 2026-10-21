@@ -119,7 +119,7 @@ annotation_review_main <- function(args = commandArgs(trailingOnly = TRUE)) {
       start_stage = "processed",
       processed_reason = "The synthetic toy was prepared before entry with sc_project_prepare; reuse normalized RNA, PCA, UMAP and its explicit planted-program toy_cluster membership.",
       cluster_column = "toy_cluster", annotation_column = "reviewed_identity",
-      provider = NULL, budget = 0, review = list(allow_external = FALSE))
+      provider = NULL, review = list(allow_external = FALSE))
     stopifnot(identical(source_hash, digest::digest(original, algo = "sha256")),
       result$status == "awaiting_configuration", result$stage == "annotation_propose",
       all(c("qc_evidence", "qc_propose", "qc_apply", "analysis") %in% result$completed))
