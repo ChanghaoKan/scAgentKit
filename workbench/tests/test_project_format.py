@@ -58,7 +58,7 @@ class ProjectFormatTests(unittest.TestCase):
 
     def unchanged_rejection(self, operation, error=StoreError):
         before = snapshot(self.root)
-        with self.assertRaisesRegex(error, "请用原软件环境打开，或新建项目"):
+        with self.assertRaisesRegex(error, "Open it with its original software environment or create a new project"):
             operation()
         self.assertEqual(before, snapshot(self.root))
 
@@ -299,7 +299,7 @@ class ProjectFormatTests(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()) as error, self.assertRaises(SystemExit) as stopped:
             server.main(["--run-project", str(self.project), "--local-continue", "--model-mock"])
         self.assertEqual(stopped.exception.code, 2)
-        self.assertIn("请用原软件环境打开，或新建项目", error.getvalue())
+        self.assertIn("Open it with its original software environment or create a new project", error.getvalue())
         self.assertEqual(before, snapshot(self.root))
 
     def test_portable_loader_registry_and_import_reject_before_cache_lock(self):
@@ -338,7 +338,7 @@ class ProjectFormatTests(unittest.TestCase):
             server.main(["--project", str(current), "--project", str(bundle), "--project-cache", str(self.root / "cache"),
                          "--journal-root", str(self.root / "journals")])
         self.assertEqual(stopped.exception.code, 2)
-        self.assertIn("请用原软件环境打开，或新建项目", error.getvalue())
+        self.assertIn("Open it with its original software environment or create a new project", error.getvalue())
         self.assertEqual(before, snapshot(self.root))
 
 

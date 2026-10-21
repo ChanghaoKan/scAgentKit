@@ -49,7 +49,7 @@ If Continue reaches annotation configuration, use the saved actual cluster evide
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "first-run.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "first-run.R"))
 project_dir <- "/absolute/path/to/project"
 view <- first_run_inspect(project_dir)
 sc_run_propose(project_dir, first_run_unknown(view,

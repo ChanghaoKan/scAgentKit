@@ -97,7 +97,7 @@ unified_review_continue <- function(project_dir, snapshot, retry = FALSE) {
 }
 
 unified_review_demo <- function(project_dir) {
-  helper_path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R")
+  helper_path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R")
   if (!nzchar(helper_path)) stop("Install the bundled synthetic strategy example.", call. = FALSE)
   helper <- new.env(parent = globalenv()); sys.source(helper_path, envir = helper)
   input <- helper$strategy_example_input()

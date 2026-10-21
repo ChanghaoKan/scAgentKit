@@ -10,7 +10,7 @@
 ^docs$
 (__pycache__|[.]pyc$)
 
-^dev$
+^tools/dev$
 ^tools/acceptance$
 ^tools/release$
 ^tools/environment$

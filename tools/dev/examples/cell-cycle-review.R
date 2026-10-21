@@ -16,7 +16,7 @@ suppressPackageStartupMessages(library(scAgentKit))
 if (!all(c("sc_cycle_gene_set", "sc_run_strategy_revise", "sc_run_review",
            "sc_run_continue") %in% getNamespaceExports("scAgentKit")))
   stop("Install this checkout's cell-cycle package in the selected R library first.", call. = FALSE)
-cycle_strategy_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R")
+cycle_strategy_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R")
 if (!nzchar(cycle_strategy_helpers))
   stop("The installed package must include examples/analysis-strategy.R.", call. = FALSE)
 source(cycle_strategy_helpers)

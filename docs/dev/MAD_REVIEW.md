@@ -1,6 +1,6 @@
 # Sample-aware MAD candidates and one joint review
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 `sc_run(..., strategy = TRUE, qc_mad = ...)` adds a deterministic, local QC
 candidate panel. It calculates declared group statistics, compares six supported
@@ -219,7 +219,7 @@ policy, inspect/approve, Continue, then review unresolved annotations:
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "mad-review.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "mad-review.R"))
 input <- mad_example_input()
 project <- "/absolute/path/to/a/new/mad-project"
 before <- digest::digest(input, algo = "sha256")
@@ -250,7 +250,7 @@ revision or Continue. Keep the input and project on the execution machine.
 No manual RDS transport or ZIP export/import is needed for these operations.
 
 ```sh
-mad_example_path=/absolute/path/to/scAgentKit/dev/examples/mad-review.R
+mad_example_path=/absolute/path/to/scAgentKit/tools/dev/examples/mad-review.R
 mad_example_project=/absolute/path/to/a/new/mad-project
 Rscript --vanilla "$mad_example_path" "$mad_example_project" demo
 Rscript --vanilla "$mad_example_path" "$mad_example_project" inspect

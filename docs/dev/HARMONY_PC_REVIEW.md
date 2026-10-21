@@ -1,6 +1,6 @@
 # Explicit Harmony and computed-PC policies
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 The raw-entry `sc_run(..., strategy = TRUE)` workflow supports an explicitly
 reviewed Harmony choice and two `computed_top50` PC policies. The default batch
@@ -253,7 +253,7 @@ is part of this example.
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "harmony-pc-review.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "harmony-pc-review.R"))
 input <- harmony_pc_example_input()
 before <- digest::digest(input, algo = "sha256")
 project <- "/absolute/path/to/a/new/harmony-pc-project"

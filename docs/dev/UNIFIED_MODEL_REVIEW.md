@@ -1,6 +1,6 @@
 # Request and review model suggestions in the same project
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Use `sc_run()` once to initialize a project with verified input, study context and
 an optional model configuration. The unified model-review component then saves
@@ -86,7 +86,7 @@ annotation candidate is `Unknown`.
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "unified-model-review.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "unified-model-review.R"))
 project_dir <- tempfile("scagentkit-unified-demo-")
 unified_review_demo(project_dir)  # synthetic raw input; immutable mock provider
 view <- unified_review_inspect(project_dir, simulate = TRUE)

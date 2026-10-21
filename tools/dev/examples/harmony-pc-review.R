@@ -15,7 +15,7 @@ suppressPackageStartupMessages(library(scAgentKit))
 if (!all(c("sc_run", "sc_run_strategy_revise", "sc_run_review", "sc_run_continue") %in%
          getNamespaceExports("scAgentKit")))
   stop("Install this checkout's Harmony/PC package in the selected R library first.", call. = FALSE)
-harmony_pc_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R")
+harmony_pc_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R")
 if (!nzchar(harmony_pc_helpers))
   stop("The installed package must include examples/analysis-strategy.R.", call. = FALSE)
 source(harmony_pc_helpers)

@@ -1,6 +1,6 @@
 # Cell-cycle diagnostics and one strategy review
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Cell-cycle handling extends the existing `sc_run(..., strategy = TRUE)` flow.
 Enabling diagnostics computes local scores before QC, then presents the ordinary
@@ -173,7 +173,7 @@ local computation; review actions do not run regression or contact a provider.
 
 ## Offline example: inspect, approve and Continue
 
-The bundled [cell-cycle-review.R](../../dev/examples/cell-cycle-review.R) reuses
+The bundled [cell-cycle-review.R](../../tools/dev/examples/cell-cycle-review.R) reuses
 the existing strategy helpers and requires this checkout to be installed in the
 selected R library. It makes no provider request and installs nothing. Its
 960-gene, 180-cell fixture combines explicit synthetic S/G2M programs with
@@ -185,7 +185,7 @@ cleaning recommendation.
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "cell-cycle-review.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "cell-cycle-review.R"))
 
 project_dir <- "/absolute/path/to/a/fresh-cycle-project"
 input <- cycle_example_input()
@@ -228,11 +228,11 @@ final <- readRDS(sc_run_inspect(project_dir)$output$seurat)
 The same CLI supports a saved project across R processes:
 
 ```sh
-Rscript --vanilla dev/examples/cell-cycle-review.R /absolute/new/project demo
-Rscript --vanilla dev/examples/cell-cycle-review.R /absolute/new/project inspect
-Rscript --vanilla dev/examples/cell-cycle-review.R /absolute/new/project approve
-Rscript --vanilla dev/examples/cell-cycle-review.R /absolute/new/project inspect
-Rscript --vanilla dev/examples/cell-cycle-review.R /absolute/new/project continue
+Rscript --vanilla tools/dev/examples/cell-cycle-review.R /absolute/new/project demo
+Rscript --vanilla tools/dev/examples/cell-cycle-review.R /absolute/new/project inspect
+Rscript --vanilla tools/dev/examples/cell-cycle-review.R /absolute/new/project approve
+Rscript --vanilla tools/dev/examples/cell-cycle-review.R /absolute/new/project inspect
+Rscript --vanilla tools/dev/examples/cell-cycle-review.R /absolute/new/project continue
 # Before annotation writeback, repeat inspect -> revise-full -> inspect ->
 # approve -> inspect -> continue. An advanced optional comparison uses the same
 # sequence with revise-difference, without adding a separate approval type.

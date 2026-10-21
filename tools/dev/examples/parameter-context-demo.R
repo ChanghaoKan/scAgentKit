@@ -9,7 +9,7 @@
 suppressPackageStartupMessages(library(scAgentKit))
 if (!"sc_run_set_child_context" %in% getNamespaceExports("scAgentKit"))
   stop("Use the installed parameter-context checkout in your selected R library.", call. = FALSE)
-parameter_context_helper_path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R")
+parameter_context_helper_path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R")
 if (!nzchar(parameter_context_helper_path))
   stop("The installed package must include examples/analysis-strategy.R.", call. = FALSE)
 .parameter_context_helpers <- new.env(parent = globalenv())

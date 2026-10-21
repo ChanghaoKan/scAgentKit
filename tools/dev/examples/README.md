@@ -2,12 +2,12 @@
 
 These scripts exercise individual parts of the project engine. They are
 repository resources and are excluded from R package archives. For a first
-analysis, use the [installed tutorials](../../inst/examples/README.md).
+analysis, use the [installed tutorials](../../../inst/examples/README.md).
 
 Install the current checkout in the R library used by `Rscript`, then run
 drivers from the repository root. Several scripts load shared helpers from
-`dev/examples`; when sourcing them elsewhere, set
-`options(scAgentKit.dev_examples = "/absolute/path/to/scAgentKit/dev/examples")`.
+`tools/dev/examples`; when sourcing them elsewhere, set
+`options(scAgentKit.dev_examples = "/absolute/path/to/scAgentKit/tools/dev/examples")`.
 
 ## Synthetic review drivers
 
@@ -37,13 +37,13 @@ command-line workflow. Read the usage comment in each file for its modes. For
 example, from the repository root:
 
 ```sh
-Rscript --vanilla dev/examples/analysis-strategy.R /path/to/new-project demo
-Rscript --vanilla dev/examples/analysis-strategy.R /path/to/new-project inspect
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /path/to/new-project demo
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /path/to/new-project inspect
 ```
 
 Inspect the result before issuing a decision or continuation command.
 Harmony and doublet drivers require the supported optional dependencies
-described in the [runtime requirements](../../docs/LINUX_RUNTIME_SUPPORT.md).
+described in the [runtime requirements](../../../docs/LINUX_RUNTIME_SUPPORT.md).
 The unified-model command-line driver uses simulation; its sourced functions
 can accept an explicitly configured external provider.
 
@@ -56,7 +56,7 @@ and mock responses. Sourcing the file defines these functions without starting
 an analysis.
 
 For the complete scripted three-review fixture, call the installed tutorial
-directly, as documented in the [installed example guide](../../inst/examples/README.md):
+directly, as documented in the [installed example guide](../../../inst/examples/README.md):
 
 ```r
 source(system.file("examples", "three-gate-analysis.R",

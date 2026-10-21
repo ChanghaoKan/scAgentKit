@@ -4,8 +4,8 @@ The [user guide](user/README.md) is the starting point for downloading,
 installing and using scAgentKit. Follow the
 [workflow guide](user/WORKFLOW.md) from input through reviewed annotations.
 The [repository README](../README.md) provides a short offline example. Guides
-on this branch describe the current source; published-preview users should
-follow the [matching manual](https://github.com/ChanghaoKan/scAgentKit/blob/v0.8.1/README.md).
+on this branch describe the current source; release users should
+follow the [matching manual](https://github.com/ChanghaoKan/scAgentKit/blob/v0.9.0/README.md).
 
 ## Analysis guides
 

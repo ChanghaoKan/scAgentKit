@@ -136,7 +136,7 @@ cm2_evidence_main <- function(args = commandArgs(trailingOnly = TRUE)) {
   snapshot_path <- file.path(project_dir, "cm2-example-reviewed-snapshot.rds")
   reviewer <- "synthetic-example-analyst"
   if (mode == "demo") {
-    helper_path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "annotation-review.R")
+    helper_path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "annotation-review.R")
     if (!nzchar(helper_path)) stop("Install the bundled processed synthetic input example.", call. = FALSE)
     helper <- new.env(parent = globalenv()); sys.source(helper_path, envir = helper)
     input <- helper$make_annotation_review_input()

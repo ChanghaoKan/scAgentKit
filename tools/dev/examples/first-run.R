@@ -177,8 +177,8 @@ first_run_provider <- function(name = c("deepseek", "grok"), model = Sys.getenv(
 .first_run_shared <- function() {
   helper <- new.env(parent = globalenv())
   for (name in c("qc-review.R", "server_first.R")) {
-    path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), name)
-    if (!file.exists(path)) stop("Run from the repository root or set options(scAgentKit.dev_examples=...) to its dev/examples directory.", call. = FALSE)
+    path <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), name)
+    if (!file.exists(path)) stop("Run from the repository root or set options(scAgentKit.dev_examples=...) to its tools/dev/examples directory.", call. = FALSE)
     source(path, local = helper)
   }
   helper

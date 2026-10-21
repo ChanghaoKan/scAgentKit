@@ -7,6 +7,8 @@ import io
 import hashlib
 import subprocess
 import sys
+import os
+from unittest import mock
 import urllib.error
 
 spec = importlib.util.spec_from_file_location('prepare_acceptance', Path(__file__).with_name('prepare-acceptance.py'))
@@ -51,7 +53,7 @@ class DownloadTests(unittest.TestCase):
                 module.read('https://example.org/a',opener=opening,sleep=lambda _:None)
             self.assertEqual(len(calls),expected)
 class ArtifactVersionTests(unittest.TestCase):
-    def artifact(self, root, version="0.8.1"):
+    def artifact(self, root, version="0.9.0"):
         name="scAgentKit_"+version+".tar.gz"
         with tarfile.open(root/name,"w:gz") as archive:
             files={"DESCRIPTION":"Package: scAgentKit\nVersion: "+version+"\nPackaged: source build\n",
@@ -68,10 +70,10 @@ class ArtifactVersionTests(unittest.TestCase):
     def test_development_artifact_uses_exact_version_and_verbatim_install_guide(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);sha=self.artifact(root)
-            result=self.run_preflight(root,"artifact",sha,"0.8.1")
+            result=self.run_preflight(root,"artifact",sha,"0.9.0")
             self.assertEqual(result.returncode,0,result.stderr)
             receipt=module.json.loads((root/"download-receipt.json").read_text())
-            self.assertEqual(receipt["version"],"0.8.1");self.assertIsNone(receipt["tag"])
+            self.assertEqual(receipt["version"],"0.9.0");self.assertIsNone(receipt["tag"])
             self.assertEqual(receipt["installation_guide"], "scAgentKit/inst/INSTALL.md")
             self.assertTrue(receipt["installation_commands_extracted_verbatim"])
             guide=(Path(__file__).resolve().parents[2]/"inst/INSTALL.md").read_text()
@@ -85,12 +87,39 @@ class ArtifactVersionTests(unittest.TestCase):
     def test_changed_archive_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);self.artifact(root)
-            result=self.run_preflight(root,"artifact","0"*64,"0.8.1")
+            result=self.run_preflight(root,"artifact","0"*64,"0.9.0")
             self.assertNotEqual(result.returncode,0);self.assertIn("Downloaded bytes differ",result.stderr)
-    def test_public_mode_remains_pinned_and_invalid_version_fails_before_network(self):
+    def test_public_versions_and_unsafe_paths_fail_before_network(self):
         with tempfile.TemporaryDirectory() as directory:
             for mode,version in [("public","0.8.1.9001"),("artifact","../unsafe")]:
                 result=self.run_preflight(Path(directory),mode,"0"*64,version)
                 self.assertEqual(result.returncode,2);self.assertIn("error:",result.stderr)
+
+    def test_public_release_verifies_version_checksum_and_annotated_tag(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            sha=self.artifact(root, version="0.9.0")
+            payloads={"scAgentKit_0.9.0.tar.gz":(root/"scAgentKit_0.9.0.tar.gz").read_bytes(),
+                      "SHA256SUMS":(root/"SHA256SUMS").read_bytes()}
+            urls=[]
+            def downloading(url):
+                urls.append(url)
+                return payloads[url.rsplit("/",1)[1]]
+            previous=Path.cwd()
+            try:
+                os.chdir(root)
+                with mock.patch.object(sys,"argv",["prepare-acceptance.py","public","source-commit",sha,"--version","0.9.0"]), \
+                     mock.patch.object(module,"read",side_effect=downloading), \
+                     mock.patch.object(module.subprocess,"check_output",return_value="tag-object refs/tags/v0.9.0\nsource-commit refs/tags/v0.9.0^{}\n"):
+                    module.main()
+                receipt=module.json.loads((root/"download-receipt.json").read_text())
+                self.assertTrue(receipt["anonymous_public_download"])
+                self.assertEqual(receipt["tag"],"v0.9.0")
+                self.assertEqual(receipt["source_commit"],"source-commit")
+                self.assertEqual(receipt["sha256"],sha)
+                self.assertEqual(len(urls),2)
+                self.assertTrue(all("/releases/download/v0.9.0/" in url for url in urls))
+            finally:
+                os.chdir(previous)
 
 if __name__=='__main__': unittest.main()

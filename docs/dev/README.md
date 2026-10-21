@@ -27,7 +27,7 @@ and the repository [development contract](../../AGENTS.md).
 ## Development and validation
 
 - [Current R analysis workflow](../R_ANALYSIS_PROTOCOL.md)
-- [Developer example inventory](../../dev/examples/README.md)
+- [Developer example inventory](../../tools/dev/examples/README.md)
 - [Installed-runtime comparison contract](OFFLINE_COMPARISON_CONTRACT.md)
 - [Environment records and the historical restoration recipe](ENVIRONMENT_RESTORE.md)
 - [Browser tests](../../workbench/tests/TEST_PLAN.md)

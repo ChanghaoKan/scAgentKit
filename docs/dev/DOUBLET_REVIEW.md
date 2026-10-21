@@ -1,6 +1,6 @@
 # Doublet evidence and an explicit cell-selection decision
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Enable `doublet_diagnostics` in `sc_run(..., strategy = TRUE)` to obtain real,
 capture-specific scDblFinder scores before the concentrated strategy review.
@@ -236,7 +236,7 @@ rather than overwriting metadata. Source objects are never edited in place.
 
 ## One complete headless example
 
-The repository-only `dev/examples/doublet-review.R` includes a reproducible 440-cell fixture:
+The repository-only `tools/dev/examples/doublet-review.R` includes a reproducible 440-cell fixture:
 two declared captures, each with 200 independent synthetic singlet controls and
 20 exact count sums across two artificial expression programs, over 600 genes.
 It declares separate sample/donor roles crossing captures. Planted labels are
@@ -249,7 +249,7 @@ After installing this checkout in your selected R library:
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "doublet-review.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "doublet-review.R"))
 input <- doublet_example_input()
 project <- "/absolute/path/to/a/new/doublet-project"
 before <- digest::digest(input, algo = "sha256")
@@ -285,7 +285,7 @@ The script also supports separate `Rscript --vanilla` processes. Set the script
 path to the repository-only developer example and the project path to a **new** directory:
 
 ```sh
-doublet_example_path=/absolute/path/to/scAgentKit/dev/examples/doublet-review.R
+doublet_example_path=/absolute/path/to/scAgentKit/tools/dev/examples/doublet-review.R
 doublet_project_dir=/absolute/path/to/a/new/doublet-project
 Rscript --vanilla "$doublet_example_path" "$doublet_project_dir" demo
 Rscript --vanilla "$doublet_example_path" "$doublet_project_dir" inspect

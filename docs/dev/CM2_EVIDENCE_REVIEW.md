@@ -1,6 +1,6 @@
 # Historical and developer CellMarker notes
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 ACT is the current default; see [local ACT input](../ACT_LOCAL_REFERENCE.md). CellMarker is an optional explicit local-file importer. This historical fixture record does not authorize a download, certificate bypass, mirror, or database redistribution.
 
@@ -14,7 +14,7 @@ not need to confirm each cluster separately or move an RDS/ZIP to the browser.
 Database overlap and agreement between suggestions do not establish biological
 identity.
 
-The optional helper [cm2-evidence-review.R](../../dev/examples/cm2-evidence-review.R)
+The optional helper [cm2-evidence-review.R](../../tools/dev/examples/cm2-evidence-review.R)
 uses the same R interfaces. Its CLI uses synthetic data only and makes no external
 provider calls. Installing this checkout and selecting its R library is required.
 ## Existing processed study: one starting call
@@ -27,7 +27,7 @@ provider. For raw counts, use the same reference arguments with
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "cm2-evidence-review.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "cm2-evidence-review.R"))
 
 input_path <- Sys.getenv("SC_PROCESSED_RDS")
 project_dir <- Sys.getenv("SC_PROJECT_DIR")
@@ -275,7 +275,7 @@ With the matching package installed and repository available, copy the developer
 project directory:
 
 ```sh
-example=$(Rscript --vanilla -e 'cat(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "cm2-evidence-review.R"))')
+example=$(Rscript --vanilla -e 'cat(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "cm2-evidence-review.R"))')
 project=$(mktemp -d "${TMPDIR:-/tmp}/scagentkit-cm2-demo.XXXXXX")
 Rscript --vanilla "$example" "$project" demo
 Rscript --vanilla "$example" "$project" inspect

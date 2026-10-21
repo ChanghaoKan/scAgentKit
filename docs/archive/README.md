@@ -1,17 +1,16 @@
-# Documentation archive
+# Historical documentation
 
-This directory retains earlier design documents and translations. Current
-English instructions are indexed in the [documentation guide](../README.md).
-The archive records earlier descriptions; commands and API names here may refer
-to a different revision.
+Current instructions are in the [user guide](../user/README.md). Earlier designs,
+translations and development reports can be read at their recorded Git revision.
 
-| Collection | Contents |
+| Material | Historical source |
 | --- | --- |
-| [Design history](design/API_CONSOLIDATION.md) | API consolidation and the [ReAct implementation sequence](design/REACT_IMPLEMENTATION_PLAN.md) |
-| [Earlier analysis walkthrough](design/COMPLETE_ANALYSIS_WALKTHROUGH.md) | Superseded review sequence and example calls; use the current [R workflow](../R_ANALYSIS_PROTOCOL.md) for analysis |
-| [Evaluation v1 protocol](protocols/EVALUATION_PROTOCOL_V1.md) | Protocol associated with the frozen [v1 evidence](../../benchmark/evaluation-v1/README.md) |
-| [Chinese translations](translations/README.md) | Earlier translations retained for reference |
+| Earlier designs and API inventories | [Design archive](https://github.com/ChanghaoKan/scAgentKit/tree/282ddec781e503279f9b296e117eecc6236e936c/docs/archive/design) |
+| Earlier Chinese translations | [Translation archive](https://github.com/ChanghaoKan/scAgentKit/tree/282ddec781e503279f9b296e117eecc6236e936c/docs/archive/translations) |
+| Earlier workflow diagrams | [Diagram sources](https://github.com/ChanghaoKan/scAgentKit/tree/282ddec781e503279f9b296e117eecc6236e936c/docs/diagrams) |
+| Development observations and acceptance reports | [Report index](../dev/reports/README.md) |
+| Evaluation v1 protocol | [Protocol](protocols/EVALUATION_PROTOCOL_V1.md) |
 
-Historical [implementation reports](../dev/reports/README.md) remain at their
-recorded paths. The frozen files under `benchmark/evaluation-v1/` are scientific
-evidence and must not be edited as part of documentation maintenance.
+Frozen [evaluation-v1 inputs, results and reports](../../benchmark/evaluation-v1/README.md)
+are retained in the repository as scientific evidence. Historical instructions
+refer to the software and environment recorded in their original revision.

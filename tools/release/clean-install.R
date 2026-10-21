@@ -9,7 +9,7 @@ local({
   stopifnot(length(repositories)>0L, all(grepl("^https://",repositories)))
   options(repos=stats::setNames(repositories,
     if(length(repositories)==1L) "CRAN" else paste0("CRAN",seq_along(repositories))))
-  expected_version <- Sys.getenv("SCAGENTKIT_EXPECTED_VERSION", "0.8.1")
+  expected_version <- Sys.getenv("SCAGENTKIT_EXPECTED_VERSION", "0.9.0")
   stopifnot(grepl("^[0-9]+([.-][0-9]+)+$", expected_version))
   lib <- path.expand("~/R/scagentkit-library")
   stopifnot(!dir.exists(lib) || !length(list.files(lib, all.files=TRUE, no..=TRUE)))

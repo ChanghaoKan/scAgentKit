@@ -34,13 +34,13 @@ def main():
     parser.add_argument("mode", choices=["artifact", "public"])
     parser.add_argument("commit")
     parser.add_argument("sha256", help="Trusted SHA256 from this workflow's build job")
-    parser.add_argument("--version", default="0.8.1", help="Exact source version from the trusted build job")
+    parser.add_argument("--version", required=True, help="Exact source version from the trusted build job")
     args = parser.parse_args()
     version = args.version
     if not re.fullmatch(r"[0-9]+(?:[.-][0-9]+)+", version):
         parser.error("Invalid exact package version")
-    if args.mode == "public" and version != "0.8.1":
-        parser.error("Public release acceptance remains pinned to 0.8.1")
+    if args.mode == "public" and not re.fullmatch(r"[0-9]+[.][0-9]+[.][0-9]+", version):
+        parser.error("Public releases require an exact major.minor.patch version")
     tag = "v" + version
     name = "scAgentKit_" + version + ".tar.gz"
 

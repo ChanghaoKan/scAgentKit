@@ -10,17 +10,17 @@ in `project_dir`; everyday review requires neither a ZIP transfer nor a browser.
 ## A small offline example
 
 Install this version of the package on the machine that holds the data. The
-self-contained [example](../../dev/examples/qc-review.R) creates a sparse,
+self-contained [example](../../tools/dev/examples/qc-review.R) creates a sparse,
 non-PBMC synthetic epithelial/stromal/endothelial mixture and a new project.
 Its fixed cutoffs test the review mechanism; they are not suggested cutoffs for
 another study. It uses no provider and permits no external transfer.
 
 ```sh
-Rscript --vanilla dev/examples/qc-review.R /durable/path/to/new-project run
-Rscript --vanilla dev/examples/qc-review.R /durable/path/to/new-project inspect
-Rscript --vanilla dev/examples/qc-review.R /durable/path/to/new-project approve
-Rscript --vanilla dev/examples/qc-review.R /durable/path/to/new-project resume
-Rscript --vanilla dev/examples/qc-review.R /durable/path/to/new-project inspect
+Rscript --vanilla tools/dev/examples/qc-review.R /durable/path/to/new-project run
+Rscript --vanilla tools/dev/examples/qc-review.R /durable/path/to/new-project inspect
+Rscript --vanilla tools/dev/examples/qc-review.R /durable/path/to/new-project approve
+Rscript --vanilla tools/dev/examples/qc-review.R /durable/path/to/new-project resume
+Rscript --vanilla tools/dev/examples/qc-review.R /durable/path/to/new-project inspect
 ```
 
 The example's `inspect` mode saves the displayed proposal/preview fingerprints

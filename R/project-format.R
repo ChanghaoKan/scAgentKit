@@ -2,7 +2,7 @@
 # it whenever persisted execution contracts change; old projects are rejected.
 .sc_project_format_version <- function() 3L
 .sc_project_format_fail <- function() {
-  stop("Project format is not supported. \u8bf7\u7528\u539f\u8f6f\u4ef6\u73af\u5883\u6253\u5f00\uff0c\u6216\u65b0\u5efa\u9879\u76ee\u3002", call. = FALSE)
+  stop("Project format is not supported. Open it with its original software environment or create a new project.", call. = FALSE)
 }
 .sc_project_format_valid <- function(version) {
   is.numeric(version) && length(version) == 1L && !is.na(version) &&

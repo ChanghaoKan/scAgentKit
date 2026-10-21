@@ -16,7 +16,7 @@ formats. Installation instructions are in the [user guide](docs/user/INSTALL.md)
 | `docs/dev/` | Implementation contracts and recorded development checks |
 | `docs/research/` | Research scope, evaluation protocol and milestones |
 | `docs/archive/` | Earlier designs, protocols and translations |
-| `dev/` | Focused development fixtures and manual smoke drivers |
+| `tools/dev/` | Focused development fixtures and manual smoke drivers |
 | `tests/`, `benchmark/`, `tools/` | Package tests, evaluation resources and maintenance tools |
 
 Keep the `workbench/` symbolic links. Edit runtime code in `inst/workbench/`.
@@ -107,11 +107,11 @@ record for a release. Include the installation guide, rendered getting-started
 vignette and installed examples. Link users to the manual for that release;
 instructions on main can describe unreleased interfaces and project formats.
 
-The public v0.8.1 preview predates the current source. Give a new public release
-a distinct version and tag; do not replace the existing archive with different
-code under the same version. Record installation and offline-workflow checks
-for the new archive before publishing it.
+Use a distinct version and tag for each release. Do not replace an existing
+archive with different code under the same version. The tag-triggered release
+workflow builds and verifies the archive, waits for the exact source commit's
+required checks, and publishes the verified bytes with their provenance.
 
-The current publication workflow and public-download acceptance are pinned to
-v0.8.1. Update their version gates and acceptance checks together when preparing
-the next release.
+Keep main as the publication branch. Use short-lived branches for active work
+and remove them after merging. Archive unmerged historical work with a recorded
+tag before deleting its branch. Archive tags do not trigger a release.

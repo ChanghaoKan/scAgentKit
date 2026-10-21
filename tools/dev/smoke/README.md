@@ -5,7 +5,7 @@ This manual driver is not run by CI and does nothing when sourced. It reuses
 10x archive plus its verified MEX members. No tutorial labels enter analysis.
 
 ```r
-source("dev/smoke/react-real.R")
+source("tools/dev/smoke/react-real.R")
 react_real_smoke("/path/to/filtered_gene_bc_matrices/hg19", "/new/project",
   provider="deepseek", model="YOUR_QUALIFIED_MODEL_ID",
   confirmed=TRUE, accept_drafts=TRUE,

@@ -1,18 +1,18 @@
 name: release-archive
 
 on:
+  push:
+    tags: ['v[0-9]*']
   pull_request:
   workflow_dispatch:
     inputs:
       tag:
-        description: Merged release tag to build and publish
+        description: Release tag already contained in main
         required: true
-        default: v0.8.1
+        default: v0.9.0
 
-# Cancel superseded runs only within the same PR and workflow. Main pushes,
-# manual releases and tags have unique groups and are never cancelled here.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.tag || github.ref_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' }}
 
 permissions:
@@ -25,13 +25,14 @@ jobs:
       commit: ${{ steps.provenance.outputs.commit }}
       sha256: ${{ steps.provenance.outputs.sha256 }}
       version: ${{ steps.provenance.outputs.version }}
+      tag: ${{ steps.provenance.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.tag || github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 0
-      - name: Test bounded release downloader retries
-        run: python3 -m unittest discover -s tools/release -p "test_*.py" -v
+      - name: Test release download and provenance controls
+        run: python3 -B -m unittest discover -s tools/release -p 'test_*.py' -v
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
@@ -43,10 +44,10 @@ jobs:
           extra-packages: |
             any::knitr
             any::rmarkdown
-      - name: Build untouched archive from the exact source
+      - name: Build the exact tagged source
         id: provenance
         env:
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
           RELEASE_EVENT: ${{ github.event_name }}
         shell: bash
         run: |
@@ -55,12 +56,11 @@ jobs:
           export SCAGENTKIT_PACKAGE_VERSION="$package_version"
           archive="scAgentKit_${package_version}.tar.gz"
           source_commit=$(git rev-parse HEAD)
-          if [ "$RELEASE_EVENT" = workflow_dispatch ]; then
-            test "$package_version" = 0.8.1
-            test "$RELEASE_TAG" = v0.8.1
+          if [ "$RELEASE_EVENT" != pull_request ]; then
+            [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+            test "$RELEASE_TAG" = "v$package_version"
             test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$source_commit"
             git merge-base --is-ancestor "$source_commit" origin/main
-            test "$(git show -s --format=%P "$source_commit" | wc -w)" -eq 2
           fi
           test -z "$(git status --porcelain --untracked-files=no)"
           R CMD build .
@@ -68,23 +68,28 @@ jobs:
           sha256sum "$archive" > SHA256SUMS
           echo "version=$package_version" >> "$GITHUB_OUTPUT"
           echo "commit=$source_commit" >> "$GITHUB_OUTPUT"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "sha256=$(cut -d ' ' -f1 SHA256SUMS)" >> "$GITHUB_OUTPUT"
           python3 - <<'PY'
           import hashlib,json,os,pathlib,subprocess,tarfile
-          source=pathlib.Path('scAgentKit_'+os.environ['SCAGENTKIT_PACKAGE_VERSION']+'.tar.gz')
-          with tarfile.open(source) as t:
-              description=t.extractfile('scAgentKit/DESCRIPTION').read()
-              assert b'Packaged:' in description
-              for m in t.getmembers():
-                  if m.isfile():
-                      data=t.extractfile(m).read()
-                      assert b'/Users/' not in data and b'/home/' not in data,m.name
+          version=os.environ['SCAGENTKIT_PACKAGE_VERSION']
+          source=pathlib.Path('scAgentKit_'+version+'.tar.gz')
+          with tarfile.open(source) as archive:
+              assert b'Packaged:' in archive.extractfile('scAgentKit/DESCRIPTION').read()
+              for member in archive.getmembers():
+                  if member.isfile():
+                      data=archive.extractfile(member).read()
+                      assert b'/Users/' not in data and b'/home/' not in data,member.name
+              pathlib.Path('INSTALL.md').write_bytes(archive.extractfile('scAgentKit/inst/INSTALL.md').read())
           receipt=dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
               source_tree=subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip(),
-              tag=os.environ.get('RELEASE_TAG') or None,version=os.environ['SCAGENTKIT_PACKAGE_VERSION'],build='R CMD build',archive_modified=False,
+              tag=os.environ.get('RELEASE_TAG') or None,version=version,build='R CMD build',archive_modified=False,
               sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
               workflow_url='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID'])
           pathlib.Path('build-receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          notes=pathlib.Path('NEWS.md').read_text().split('\n# ',1)[0]
+          assert notes.startswith('# scAgentKit '+version+'\n')
+          pathlib.Path('release-notes.md').write_text(notes+'\n')
           PY
       - uses: actions/upload-artifact@v4
         with:
@@ -93,56 +98,12 @@ jobs:
             scAgentKit_${{ steps.provenance.outputs.version }}.tar.gz
             SHA256SUMS
             build-receipt.json
+            INSTALL.md
+            release-notes.md
           if-no-files-found: error
 
-  publish:
-    if: github.event_name == 'workflow_dispatch'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: release-source
-          path: release-source
-      - name: Publish the exact CI-built tag archive
-        uses: actions/github-script@v7
-        env:
-          RELEASE_TAG: ${{ inputs.tag }}
-          RELEASE_COMMIT: ${{ needs.build.outputs.commit }}
-          RELEASE_SHA256: ${{ needs.build.outputs.sha256 }}
-        with:
-          script: |
-            const fs = require('fs');
-            const crypto = require('crypto');
-            const tag = process.env.RELEASE_TAG;
-            if (tag !== 'v0.8.1') throw new Error('Unexpected release tag');
-            const receipt = JSON.parse(fs.readFileSync('release-source/build-receipt.json'));
-            const archiveHash = crypto.createHash('sha256').update(fs.readFileSync('release-source/scAgentKit_0.8.1.tar.gz')).digest('hex');
-            if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag || receipt.archive_modified ||
-                receipt.sha256 !== process.env.RELEASE_SHA256 || archiveHash !== receipt.sha256)
-              throw new Error('Source provenance mismatch');
-            const body = 'Experimental source archive. See NEWS.md at the source commit for changes; workflow checks do not establish biological accuracy.' +
-              '\n\nSource commit: `' + receipt.source_commit + '`. SHA256: `' + receipt.sha256 +
-              '`.\nBuild and public-install acceptance: ' + receipt.workflow_url;
-            const result = await github.rest.repos.createRelease({...context.repo, tag_name: tag,
-              target_commitish: receipt.source_commit, name: 'scAgentKit 0.8.1 (experimental)',
-              body, draft: true, prerelease: true});
-            for (const name of ['scAgentKit_0.8.1.tar.gz','SHA256SUMS','build-receipt.json']) {
-              await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: result.data.id,
-                name, data: fs.readFileSync('release-source/'+name)});
-            }
-            await github.rest.repos.updateRelease({...context.repo, release_id: result.data.id, draft: false});
-
   clean-install:
-    needs: [build, publish]
-    if: >-
-      always() && needs.build.result == 'success' &&
-      (github.event_name == 'pull_request' || needs.publish.result == 'success')
+    needs: build
     runs-on: ubuntu-latest
     container:
       image: rocker/r-ver:4.5.2@sha256:fd4ccdd3a4a6f7ef805e2daeee2a0fe3bf126bc231f36351223baecf5a595a4c
@@ -154,7 +115,7 @@ jobs:
       OPENBLAS_NUM_THREADS: 1
       OMP_NUM_THREADS: 1
     steps:
-      - name: System build dependencies (no R package library restored)
+      - name: System build dependencies
         shell: bash
         run: |
           set -euo pipefail
@@ -168,26 +129,22 @@ jobs:
         with:
           ref: ${{ needs.build.outputs.commit }}
       - uses: actions/download-artifact@v4
-        if: github.event_name == 'pull_request'
         with:
           name: release-source
           path: acceptance
-      - name: Anonymous public download or PR artifact preflight
+      - name: Verify candidate bytes and extract their installation guide
         env:
           SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
           SOURCE_SHA256: ${{ needs.build.outputs.sha256 }}
-          RELEASE_EVENT: ${{ github.event_name }}
           SCAGENTKIT_EXPECTED_VERSION: ${{ needs.build.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p acceptance
           cp tools/release/prepare-acceptance.py tools/release/clean-install.R acceptance/
           cd acceptance
-          mode=artifact
-          if [ "$RELEASE_EVENT" = workflow_dispatch ]; then mode=public; fi
-          python3 prepare-acceptance.py "$mode" "$SOURCE_COMMIT" "$SOURCE_SHA256" --version "$SCAGENTKIT_EXPECTED_VERSION" 2>&1 | tee download.log
-      - name: Exact README install from empty R libraries and installed offline example
+          python3 prepare-acceptance.py artifact "$SOURCE_COMMIT" "$SOURCE_SHA256" \
+            --version "$SCAGENTKIT_EXPECTED_VERSION" 2>&1 | tee download.log
+      - name: Install from empty libraries and run the bundled offline workflow
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
           SCAGENTKIT_EXPECTED_VERSION: ${{ needs.build.outputs.version }}
@@ -195,7 +152,6 @@ jobs:
         run: |
           set -euo pipefail
           cd acceptance
-          # Preserve only repository URLs, not the image's Rprofile/library setup.
           Rscript -e 'writeLines(unname(getOption("repos")), "container-repositories.txt")'
           export R_PROFILE=/dev/null R_PROFILE_USER=/dev/null
           export R_ENVIRON=/dev/null R_ENVIRON_USER=/dev/null R_INSTALL_VANILLA=true
@@ -210,3 +166,131 @@ jobs:
             acceptance/download-receipt.json
             acceptance/clean-install-receipt.json
           if-no-files-found: warn
+
+  source-checks:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - name: Require successful R and workbench checks for the exact source commit
+        uses: actions/github-script@v7
+        env:
+          SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
+        with:
+          script: |
+            const required = ['R-CMD-check', 'workbench'];
+            const ref = process.env.SOURCE_COMMIT;
+            const deadline = Date.now() + 120 * 60 * 1000;
+            while (Date.now() < deadline) {
+              const runs = await github.paginate(github.rest.checks.listForRef,
+                {...context.repo, ref, filter: 'latest', per_page: 100});
+              const pending = [];
+              for (const name of required) {
+                const run = runs.filter(r => r.name === name && r.app.slug === 'github-actions')
+                  .sort((a, b) => b.id - a.id)[0];
+                if (!run || run.status !== 'completed') { pending.push(name); continue; }
+                if (run.conclusion !== 'success')
+                  throw new Error(`${name} did not pass for ${ref}: ${run.conclusion}`);
+              }
+              if (!pending.length) { core.info(`Required source checks passed for ${ref}`); return; }
+              core.info(`Waiting for ${ref}: ${pending.join(', ')}`);
+              await new Promise(resolve => setTimeout(resolve, 30000));
+            }
+            throw new Error('Required source checks did not complete within two hours');
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: [build, clean-install, source-checks]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-source
+          path: release-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: clean-release-install-logs
+          path: acceptance
+      - name: Publish the verified archive and installation record
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+          RELEASE_COMMIT: ${{ needs.build.outputs.commit }}
+          RELEASE_SHA256: ${{ needs.build.outputs.sha256 }}
+        with:
+          script: |
+            const fs = require('fs');
+            const crypto = require('crypto');
+            const tag = process.env.RELEASE_TAG;
+            const version = process.env.RELEASE_VERSION;
+            if (!/^v[0-9]+\.[0-9]+\.[0-9]+$/.test(tag) || tag !== `v${version}`)
+              throw new Error('Release tag and package version differ');
+            const archive = `scAgentKit_${version}.tar.gz`;
+            const receipt = JSON.parse(fs.readFileSync('release-source/build-receipt.json'));
+            const install = JSON.parse(fs.readFileSync('acceptance/clean-install-receipt.json'));
+            const hash = crypto.createHash('sha256').update(fs.readFileSync(`release-source/${archive}`)).digest('hex');
+            if (receipt.source_commit !== process.env.RELEASE_COMMIT || receipt.tag !== tag ||
+                receipt.version !== version || receipt.archive_modified ||
+                receipt.sha256 !== process.env.RELEASE_SHA256 || hash !== receipt.sha256 ||
+                install.status !== 'passed' || install.package_version !== version ||
+                install.provider_calls !== 0 || install.download.sha256 !== hash ||
+                install.download.source_commit !== receipt.source_commit)
+              throw new Error('Archive or clean-install provenance mismatch');
+            try {
+              await github.rest.repos.getReleaseByTag({...context.repo, tag});
+              throw new Error('This release already exists; published assets must not be replaced');
+            } catch (error) { if (error.status !== 404) throw error; }
+            const body = fs.readFileSync('release-source/release-notes.md', 'utf8') +
+              `\n\nSource commit: \`${receipt.source_commit}\`. SHA256: \`${hash}\`.\n` +
+              `Build and clean-install record: ${receipt.workflow_url}\n\n` +
+              'Download the R package and SHA256SUMS below; INSTALL.md contains the matching commands.';
+            const {data: release} = await github.rest.repos.createRelease({...context.repo,
+              tag_name: tag, target_commitish: receipt.source_commit, name: `scAgentKit ${version}`,
+              body, draft: true, prerelease: true});
+            try {
+              for (const name of [archive, 'SHA256SUMS', 'build-receipt.json', 'INSTALL.md']) {
+                await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: release.id,
+                  name, data: fs.readFileSync(`release-source/${name}`)});
+              }
+              await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: release.id,
+                name: 'clean-install-receipt.json', data: fs.readFileSync('acceptance/clean-install-receipt.json')});
+              await github.rest.repos.updateRelease({...context.repo, release_id: release.id, draft: false});
+            } catch (error) {
+              const current = await github.rest.repos.getRelease({...context.repo, release_id: release.id});
+              if (current.data.draft) await github.rest.repos.deleteRelease({...context.repo, release_id: release.id});
+              throw error;
+            }
+
+  public-download:
+    if: github.event_name != 'pull_request'
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
+      - name: Verify the published download without credentials
+        env:
+          SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
+          SOURCE_SHA256: ${{ needs.build.outputs.sha256 }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir public-download
+          cd public-download
+          python3 ../tools/release/prepare-acceptance.py public "$SOURCE_COMMIT" "$SOURCE_SHA256" \
+            --version "$RELEASE_VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-release-download
+          path: public-download/download-receipt.json
+          if-no-files-found: error

@@ -48,4 +48,4 @@ permission to send data.
 Its source lists the modes and the order in which to inspect and approve them.
 
 Repository-only diagnostic and historical drivers are listed in
-[`dev/examples`](../../dev/examples/README.md).
+[`tools/dev/examples`](../../tools/dev/examples/README.md).

@@ -79,7 +79,7 @@ researcher_pbmc_resume <- function(project_dir, chat_fn = make_researcher_pbmc_m
 
 # Copy and run the following steps deliberately. Stop to inspect each snapshot.
 # library(scAgentKit)
-# source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "researcher-pbmc.R"))
+# source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "researcher-pbmc.R"))
 # project_dir <- "pbmc-tutorial"  # choose a new local/server-side directory
 # mock <- make_researcher_pbmc_mock()
 # run <- researcher_pbmc_start(project_dir, chat_fn = mock)

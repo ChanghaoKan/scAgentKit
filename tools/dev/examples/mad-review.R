@@ -16,7 +16,7 @@ if (!all(c("sc_run", "sc_run_strategy_revise", "sc_run_review",
            "sc_run_continue") %in% getNamespaceExports("scAgentKit")) ||
     !"qc_mad" %in% names(formals(sc_run)))
   stop("Install this checkout's MAD package in the selected R library first.", call. = FALSE)
-mad_strategy_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R")
+mad_strategy_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R")
 if (!nzchar(mad_strategy_helpers))
   stop("The installed package must include examples/analysis-strategy.R.", call. = FALSE)
 source(mad_strategy_helpers)

@@ -1,43 +1,45 @@
 # Development contract
 
-scAgentKit is a pre-1.0 internal research product. Keep current names and
-structures aligned with their actual behavior. Decisions follow call paths,
-not keyword matches.
+scAgentKit is a pre-1.0 research package. Keep names, documentation and public
+interfaces aligned with their actual behavior. Inspect call paths before
+removing code or changing an interface.
 
-1. Do not provide backward compatibility. Remove old parameters, schemas,
-   project formats, deprecated aliases and compatibility shims. Do not add
-   `legacy`, `compat` or `deprecated` branches or options such as `legacy = TRUE`.
-2. Model costs have no monetary cap and are recorded only after calls
-   (posthoc). Do not add budgets, reservations or monetary limits. Retain step,
-   time and byte limits.
-3. Reject old projects at the project-format gate. Do not write migrations.
-   Check the format before writing any project files or acquiring write locks.
-4. Documentation describes current behavior. Do not add statements such as
-   "remains unchanged" or "preserved for compatibility". Record changes in
-   `NEWS.md`.
-5. The only exception is `benchmark/evaluation-v1/`: its frozen inputs, results
-   and reports are scientific evidence. Do not modify or delete anything there.
-6. If a plan or report under `docs/dev/` conflicts with this contract or the
-   current user task, follow this contract and the current user task.
-7. When uncertain, do not delete and do not add compatibility. Keep the current
-   implementation, describe its location, behavior and suggested resolution in
-   the pull request's "待确认" section, and continue independent work.
+## Scientific and project contracts
 
-## Decision criteria
+1. Do not add compatibility shims, deprecated aliases, project migrations or
+   support for superseded schemas. Validate the project format before any write
+   or write lock. Open older projects with their original environment.
+2. Record model usage and costs after calls. Do not add monetary caps,
+   reservations or budget modes. Retain the step, time and byte limits.
+3. Do not change scientific thresholds or analysis methods during maintenance.
+   Record unresolved interface or scientific questions and continue independent
+   work when their callers or effects cannot be established.
+4. Files under `benchmark/evaluation-v1/` are frozen scientific evidence. Do not
+   edit or delete them. Preserve the workbench symbolic links; canonical runtime
+   files are under `inst/workbench/`.
+5. Paid provider experiments require explicit user authorization.
 
-- Delete code that serves only old parameters, schemas or project formats and
-  has no current entry-point callers, based on the call graph.
-- Rename or correct comments when a name contains `legacy` but implements a
-  current function.
-- List an item under "待确认" if removing it would change a public interface or
-  scientific behavior, or its callers cannot be established.
+## Documentation and repository maintenance
 
-## Validation and delivery
+Write maintained documentation, user-visible messages and new commit subjects
+in English. Preserve Unicode test inputs and original scientific data verbatim.
+Keep historical reports at their recorded Git revisions, with immutable links
+from the archive index. Describe current behavior and record changes in NEWS.
 
-Do not change scientific analysis thresholds, run paid experiments or redeem
-usage resets during contract cleanup. Keep the `workbench/` symbolic links.
-Perform phases 1 through 5 in order on one branch, with separate commits whose
-subjects start with `阶段 N：` (phase 5 may use two commits). Validate each phase
-with R CMD check and the workbench suites on that phase's exact source, record
-its commit and `legacy|deprecat` match count under `R` and `inst/workbench`, and
-open one draft pull request. Do not merge it.
+Follow the current user task when older plans or reports conflict with it.
+Do not rewrite shared Git history to change historical commit messages.
+Use short-lived branches for active work. Delete merged remote branches after
+verification; preserve unmerged work with a recorded archive tag before removing
+its branch. Keep main as the publication branch.
+
+## Validation and release delivery
+
+Run checks appropriate to the change and record failures, skips and incomplete
+runs accurately. Build and install from a temporary source copy because configure
+generates the runtime manifest. Regenerate the tracked manifest deliberately
+when runtime files or the selected R functions change.
+
+Use a distinct package version and tag for each release. Publish the exact
+built archive with its checksum and source record after CI, clean installation
+and the offline workflow succeed. Do not replace an existing release archive.
+Follow the user's authorized delivery scope for commits, pushes and merges.

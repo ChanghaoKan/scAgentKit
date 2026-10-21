@@ -9,7 +9,7 @@
 # No external provider or credential is used by this example.
 
 suppressPackageStartupMessages(library(scAgentKit))
-helper <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "server_first.R")
+helper <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "server_first.R")
 if (!nzchar(helper)) stop("Install the current package with its server-first examples.", call. = FALSE)
 source(helper, local = TRUE)
 

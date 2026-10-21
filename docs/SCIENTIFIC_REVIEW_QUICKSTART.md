@@ -99,7 +99,7 @@ sc_open("new-annotation-project")
 ```
 
 This reuses processing/clusters, prepares markers and stops for annotation.
-Reclustering needs a raw-count project. Continue with the [example](../dev/examples/server_processed.R)
+Reclustering needs a raw-count project. Continue with the [example](../tools/dev/examples/server_processed.R)
 and section 9.
 
 ## 6. Optional model assistance

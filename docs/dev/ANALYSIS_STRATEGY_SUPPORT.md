@@ -1,6 +1,6 @@
 # Analysis strategy
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Enable `strategy = TRUE` to review one typed QC and analysis plan before local
 execution. The plan covers raw-count QC, normalization, features, PCs, optional
@@ -144,14 +144,14 @@ Regression requires a new raw strategy project.
 
 ## Copyable offline example
 
-The bundled [analysis-strategy.R](../../dev/examples/analysis-strategy.R) supplies a
+The bundled [analysis-strategy.R](../../tools/dev/examples/analysis-strategy.R) supplies a
 starting wrapper, exact-snapshot review/Continue helpers, revision helpers and an
 explicit manual Unknown annotation. Source it after installing this checkout
 into your selected library; it performs no installation itself.
 
 ```r
 library(scAgentKit)
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R"))
 
 project_dir <- "/absolute/path/to/a/fresh-strategy-project"
 input <- strategy_example_input()       # synthetic Seurat; use your local input instead
@@ -205,12 +205,12 @@ strategy_example_processed(processed_seurat, "/absolute/path/to/a/new-reuse-proj
 An Rscript-only interface is also bundled:
 
 ```sh
-Rscript --vanilla dev/examples/analysis-strategy.R /absolute/new/project demo
-Rscript --vanilla dev/examples/analysis-strategy.R /absolute/new/project inspect
-Rscript --vanilla dev/examples/analysis-strategy.R /absolute/new/project approve
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /absolute/new/project demo
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /absolute/new/project inspect
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /absolute/new/project approve
 # Inspect again before Continue or each later decision, since revision changed.
-Rscript --vanilla dev/examples/analysis-strategy.R /absolute/new/project inspect
-Rscript --vanilla dev/examples/analysis-strategy.R /absolute/new/project continue
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /absolute/new/project inspect
+Rscript --vanilla tools/dev/examples/analysis-strategy.R /absolute/new/project continue
 # At annotation evidence: inspect, propose-unknown, inspect, approve, inspect,
 # continue, then output. Reject is available at either concentrated review.
 ```

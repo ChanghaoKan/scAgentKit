@@ -134,19 +134,19 @@ column: all three output columns must be absent. Previous labels and the source
 object are preserved. A matrix cannot claim the processed entry point; provide
 the actual Seurat object with an explicit normalized layer and cluster column.
 
-The included [annotation-review.R](../../dev/examples/annotation-review.R) supplies
+The included [annotation-review.R](../../tools/dev/examples/annotation-review.R) supplies
 a small self-contained synthetic processed object and a fresh-process CLI.
 It demonstrates an initial manual `Unknown`, correction to a toy program label,
 approval, output and optional undo with no provider, secret or API charge:
 
 ```sh
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy run
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy inspect
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy revise
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy inspect
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy approve
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy resume
-Rscript --vanilla dev/examples/annotation-review.R /durable/path/to/toy output
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy run
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy inspect
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy revise
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy inspect
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy approve
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy resume
+Rscript --vanilla tools/dev/examples/annotation-review.R /durable/path/to/toy output
 ```
 
 Its fixed revision and reason are for the synthetic mechanism example. Use the

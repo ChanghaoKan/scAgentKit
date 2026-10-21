@@ -4,15 +4,13 @@ scAgentKit takes single-cell counts and sample information through reviewed
 quality control, clustering and annotation. Install the R package, open a local
 browser session and retain the resulting Seurat object and project records.
 
-## Choose your version
+## Version
 
-The public [v0.8.1 preview](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.8.1)
-is an earlier release. Follow its
-[version-matched manual](https://github.com/ChanghaoKan/scAgentKit/blob/v0.8.1/README.md).
-The pages below describe the **current source on main**, which includes
-unreleased changes. Its version number alone does not distinguish it from the
-published archive; record the source commit as well. Open existing projects in
-the environment used to create them.
+This manual accompanies scAgentKit **0.9.0**. Download its source package and
+checksum from [Releases](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0).
+Use the manual supplied with the installed version. Development source on main
+can include later changes; retain its source commit as well as its version.
+Open existing projects in the environment used to create them.
 
 ## First analysis
 

@@ -16,7 +16,7 @@ if (!all(c("sc_run", "sc_run_strategy_revise", "sc_run_review",
            "sc_run_continue") %in% getNamespaceExports("scAgentKit")) ||
     !"doublet_diagnostics" %in% names(formals(sc_run)))
   stop("Install this checkout's doublet package in the selected R library first.", call. = FALSE)
-doublet_strategy_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "analysis-strategy.R")
+doublet_strategy_helpers <- file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "analysis-strategy.R")
 if (!nzchar(doublet_strategy_helpers))
   stop("The installed package must include examples/analysis-strategy.R.", call. = FALSE)
 source(doublet_strategy_helpers)

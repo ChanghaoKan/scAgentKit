@@ -1587,7 +1587,7 @@ function renderRecommendationFacts(target, context) {
   }
   const reviewerLabel = element("label","Fact declaration reviewer"), reviewer = element("input",null,{"data-testid":"recommendation-facts-reviewer",maxlength:"200"}); reviewer.required=true; reviewerLabel.append(reviewer);
   const reasonLabel = element("label","Source and reason for these facts"), reason = element("textarea",null,{"data-testid":"recommendation-facts-reason",maxlength:"4000",rows:"2"}); reason.required=true; reasonLabel.append(reason);
-  const save = element("button","保存事实并生成本地建议",{type:"submit",class:"button quiet","data-testid":"recommendation-facts-save"}), discard = element("button","Discard local fact edits",{type:"button",class:"button quiet","data-testid":"recommendation-facts-discard"});
+  const save = element("button","Save facts and generate local recommendations",{type:"submit",class:"button quiet","data-testid":"recommendation-facts-save"}), discard = element("button","Discard local fact edits",{type:"button",class:"button quiet","data-testid":"recommendation-facts-discard"});
   form.append(reviewerLabel,reasonLabel,save,discard); section.append(form); target.append(section);
   state.recommendationFacts = {form,items,reviewer,reason,save,discard,reviewHash:context.reviewHash};
   form.addEventListener("submit",event=>{event.preventDefault();saveRecommendationFacts(context.reviewHash);});

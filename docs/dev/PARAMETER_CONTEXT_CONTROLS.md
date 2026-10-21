@@ -1,6 +1,6 @@
 # Reviewable parameters and child annotation context
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/tools/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Use one saved project for the strategy, analysis and annotation decisions. R can
 finish the workflow without a browser. The workbench exposes the same saved
@@ -11,9 +11,9 @@ state; parameter edits belong in the current strategy review.
 
 ## A fresh, offline software control
 
-The bundled [parameter-context-demo.R](../../dev/examples/parameter-context-demo.R)
+The bundled [parameter-context-demo.R](../../tools/dev/examples/parameter-context-demo.R)
 reuses the public convenience functions in
-[analysis-strategy.R](../../dev/examples/analysis-strategy.R). Use an installed copy
+[analysis-strategy.R](../../tools/dev/examples/analysis-strategy.R). Use an installed copy
 of this checkout in your selected R library. The example creates a new sparse
 synthetic Seurat object with declared sample/capture columns, a typed manual
 strategy, and no external provider. It performs no installation, download, key
@@ -25,16 +25,16 @@ From the repository root, choose a new project directory and run each command
 after reading the preceding evidence:
 
 ```sh
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project start any
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project inspect
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project approve
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project resume
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project inspect
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project propose-unknown
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project inspect
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project approve
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project resume
-Rscript --vanilla dev/examples/parameter-context-demo.R /absolute/new/synthetic-project output
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project start any
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project inspect
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project approve
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project resume
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project inspect
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project propose-unknown
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project inspect
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project approve
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project resume
+Rscript --vanilla tools/dev/examples/parameter-context-demo.R /absolute/new/synthetic-project output
 ```
 
 Every command is a fresh R process. `approve` saves only the displayed decision;
@@ -48,7 +48,7 @@ driver does not retry provider or computation failures automatically.
 In R, the same short cycle returns the final object directly:
 
 ```r
-source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "parameter-context-demo.R"))
+source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "tools", "dev", "examples")), "parameter-context-demo.R"))
 project <- "/absolute/new/synthetic-project-r"
 parameter_context_demo_start(project, remove_if = "any", pcs_fraction = .80,
   resolution = .4, diagnostic_resolutions = c(.2, .4, .6, .8, 1))

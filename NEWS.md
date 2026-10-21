@@ -1,146 +1,39 @@
-# scAgentKit development (unreleased)
+# scAgentKit 0.9.0
 
-## Documentation and examples
+## Analysis and review
 
-- Put downloads, installation, the analysis workflow and help at the user
-  entry points. Add a task-oriented user guide and update the installed
-  getting-started vignette with browser review, results and reopening.
-- Distinguish the published v0.8.1 preview and its version-matched manual from
-  current source instructions. Include httr2 in archive installation commands
-  for the structured provider client used by the offline examples.
-- Use English for maintained guides and research protocols. Separate user,
-  developer and research documentation; archive earlier translations and designs.
-- Clarify source installation, reproducibility records and the distinction
-  between completed software checks and pending biological evaluation.
-- Add contribution guidance and correct the R software citation, with ACT
-  retained as a separate reference-data citation.
-- Document example entry points and use the installed three-review tutorial
-  directly for complete workflow fixtures.
+- Review the analysis plan, measured clustering and annotation as three
+  separate decisions. Retain the resulting Seurat object, markers, figures
+  and decision records in one saved project.
+- Add optional ReAct evidence inspection, recorded traces and offline replay
+  for annotation assistance. Require agentomicsCore 0.3.0.
+- Add measured QC and batch diagnostics, explicit cancellation/continuation,
+  configurable request-size limits and project storage controls.
 
-## Repository maintenance
+## Breaking changes
 
-- Remove five redundant development example wrappers, including the generic
-  wrapper named as a breast-cancer pipeline. Keep the distinct review drivers
-  and installed tutorials as the example entry points.
-- Remove the obsolete development Dockerfile, whose package and shared-core
-  versions do not match the current dependency requirements.
-- Remove the retired API inventory from the development tree. Current exports
-  are defined in NAMESPACE, with retired-name assertions in the namespace tests;
-  the archived design links to the inventory's recorded Git revision.
+- Require project format 3 before opening, locking or writing project state.
+  Use the original software environment for previous projects; no migration
+  is provided. Keep that environment with each study.
+- Record model usage and costs after calls, without monetary caps or reserved
+  budgets. Requests still require the configured transfer permission and
+  retain time, step and byte limits.
+- Remove superseded public interfaces and evidence fallbacks. Current exports
+  and function help define the supported API.
 
-## Project formats and contracts
+## Installation and repository
 
-- Breaking contract cleanup: projects carry an explicit format version checked
-  before opening, locking or writing; projects with a different or missing
-  version must be opened in their original software environment or replaced
-  with a new project. Development guidance follows the current contract.
-  Model APIs, provider metadata, project configuration, transfer consent and
-  child-project receipts no longer accept budget, reservation or cost-mode
-  fields. Accounting records known actual costs and counts unknown costs after
-  calls, without monetary limits; uncertain delivery still requires explicit
-  reconciliation and retry.
-  Saved reviews require their recommendation and reference evidence, and
-  provider ledger entries require current response metadata and completed
-  metadata hashes. Built-in single requests use structured provider responses.
-  Current unassessed risks and analysis paths use names that describe their
-  behavior; incomplete historical preview shapes are rejected or unavailable.
-  Workbench project discovery reports explicit registry availability; review
-  journals require the current schema and exact project source identity.
-  QC uses typed rules for measured ranges and saved MAD predicates; rules v2
-  binds cluster overrides to their diagnostic and membership evidence. Empty
-  rules add no filtering and retain prior committed QC, doublet and mandatory
-  prefilter exclusions. Review snapshots bind that retained-cell context.
-  Project format 3 rejects earlier formats. Workbench admission checks the
-  authoritative saved state and parent formats before local job writes.
+- Supply a versioned R source archive, checksum and build provenance through
+  the release workflow. Verify fresh-library installation and the bundled
+  offline example before publication, then verify anonymous public download.
+- Provide an English user guide and installed getting-started vignette.
+  Consolidate developer drivers under tools/dev and retain earlier reports,
+  designs and translations through immutable Git links.
+- Use English for project-format errors and recommendation controls. Qualify
+  namespace lookups in background workers and isolate superseded PR CI runs.
 
-## Run controls
-
-- New projects use post-call accounting through sc_start, sc_analyze and sc_run. Missing keys preserve the selected provider for later use in the same project.
-- Added project-scoped cooperative cancellation and optional logical disk allowance with immutable control receipts. Saved outputs are preserved; no process-wide termination or deletion is performed.
-- ReAct detects repeated evidence without progress and preserves remaining cluster time across completed-turn checkpoints. Existing delivery-uncertainty guards and three human approvals remain.
-- Scientific implementation hash changes; this candidate requires new test projects. No scientific thresholds or analysis algorithms changed.
-
-## Requests and runtime
-
-- New ReAct policies default to unlimited application request bytes, with optional
-  hash-bound finite quotas shared by one-shot and turn requests. Scan space is
-  measured from the remaining prompt rather than a fixed percentage.
-- Derive the default whole-request deadline from saved limits; add marker/ACT
-  continuation pages and read-only workbench storage measurement. Prompt v4 and
-  tool schema v2 change the implementation hash; model token capacity remains
-  explicitly unknown, and no fee reservation is added.
-
-- Startup accepts the existing bounded ReAct policy list and a whole suggestion-worker timeout; the launcher binds that timeout rather than silently reusing another setting. These controls do not change independent request/storage limits.
-
-- Release preflight records explicit unknown ACT publisher version/date and
-  snapshot licensing, with source-check provenance; marker bytes are unchanged.
-- Serialize identical QC/strategy diagnostic aggregates once with explicit aliases,
-  retaining all unique evidence and the 100 KB bound. This unblocks PBMC3k
-  default startup; prompt version advances to aggregate-review.v3 and the
-  implementation hash changes.
-- Add a manual public PBMC3k ReAct smoke driver using frozen v1 input hashes,
-  explicit benchmark reviews and post-call usage/replay receipts.
-
-- Default new `sc_start` projects to ReAct auto and diagnostic-only QC/batch evidence. Preserve saved settings on reopening and allow explicit opt-outs. New startup uses post-call accounting without monetary reservation; explicit legacy budgets and existing projects keep their original mode. Mock suggestions now exercise the real read-only ReAct loop. Add a public three-gate accept-draft example and CI acceptance test, plus bilingual user guides. Scientific approvals remain separate; the implementation hash changes.
-
-- Add `sc_react_eval()` with versioned CL scoring, external label imports,
-  dual human truth, configuration/usage exports and explicit unmapped denominators.
-  Add `sc_react_replay()` to reconstruct saved native histories, rerun read-only
-  evidence and check original draft citations without an API key. Existing
-  checkpoints, ledger receipts and validators are reused. The implementation
-  hash changes; older scientific environments are not silently migrated.
-- Add state-bound ReAct audit projections, per-cluster JSON exports and workbench
-  evidence steps with active citation links. Expression-only results are marked
-  untested; missing cost remains unknown. These displays cannot approve a draft.
-  The implementation hash changes.
-- Add opt-in biological diagnostics before the first strategy review: separate
-  coarse clustering, cluster-specific QC comparisons and deterministic marker
-  eligibility for threshold relaxation. Typed QC v2 replaces only the specified
-  cluster/metric bounds after human approval. Final PCA is recomputed.
-- Add sample-aware batch necessity evidence and separate technical mixing,
-  fixed-label purity and replicate-aware condition measurements on the approved
-  PCA/Harmony embeddings. Add first-gate structured risk records, bound to the
-  diagnostic checkpoint. Diagnostic thresholds still need development-set
-  calibration before formal experiments. Implementation hashes change.
-- Add opt-in bounded annotation ReAct sessions through `sc_run(react = list(...))`: sequential read-only retrieval, per-cluster recovery, deterministic tool citations and versioned risk records. A verified baseline remains the fallback; no model can approve. Reuse the provider ledger, state checkpoints and events, with post-response usage accounting only.
-- Retain a verified scientific snapshot in one session worker and cache tool results in memory; check file identity between calls and full hashes before publishing. Versioned prompts and tool schemas enter the implementation hash. Existing project approvals are not migrated.
-- Require released agentomicsCore v0.3.0. The integrated `sc_start` entry point now defaults to ReAct auto.
-- Add an internal native xAI Responses session adapter for the explicit
-  `grok-4.7` candidate. Preserve complete native output, including opaque
-  reasoning, with committed-history verification and visible-content privacy
-  checks. Reuse the existing turn ledger, checkpoints and consent.
-  Record provider-reported USD ticks after calls; missing cost stays unknown.
-  The native adapter is provided by released agentomicsCore v0.3.0.
-  It integrates with the opt-in ReAct loop; formal product qualification remains pending. The
-  implementation hash changes.
-
-- Upgrade agentomicsCore to v0.2.0 and add the internal single-turn annotation
-  transport foundation: state-bound read-only scope, complete-conversation
-  privacy checks, exact-payload receipts and delivery-aware audit recovery.
-  Structured turns record usage and available costs after each response, without
-  a prepaid estimator or monetary cap; existing one-shot accounting is retained.
-  Reuse existing checkpoints, locks, ledger and events. No ReAct loop or scientific
-  approval is introduced here. The implementation hash changes; existing approvals
-  are not migrated.
-
-- Add explicit same-path restoration of complete terminal continuation-job
-  backups, retaining old records and a separate restoration receipt. Active jobs
-  and project relocation remain rejected; scientific state and approvals retain
-  their existing verification.
-- Correct the bilingual default-budget instructions and the unconfirmed model
-  example. Document annotation marker ordering consistently with the existing
-  fold-change-first implementation; scientific defaults are unchanged.
-- Distinguish recorded workflow checks from unmeasured biological and human-time
-  benefits. Add a proposed, unexecuted three-arm annotation evaluation protocol;
-  historical benchmark results are unchanged.
-- Add the internal, read-only evidence-tool foundation for annotation:
-  cluster markers, descriptive gene expression, project-scoped ACT lookup and
-  cluster context. Model-driven retrieval and public ReAct options are separate
-  planned changes; the three scientific approvals remain unchanged.
-- Bind tool inputs and caches to saved scientific checkpoints, with strict
-  argument and aggregate-result contracts and isolated bounded execution.
-  Add callr/processx to the execution fingerprint. Existing project fingerprints
-  and approvals are not migrated or rewritten.
+The software remains experimental. Workflow checks and mock examples do not
+establish biological accuracy. Study-specific scientific review is required.
 
 # scAgentKit 0.8.1 (experimental prerelease)
 
