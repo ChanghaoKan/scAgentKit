@@ -67,7 +67,7 @@
   on.exit(if (!ready) process$kill_tree(), add = TRUE)
   process$call(function(context) {
     tryCatch({
-      worker <- getFromNamespace(".sc_run_react_snapshot", "scAgentKit")(context)
+      worker <- utils::getFromNamespace(".sc_run_react_snapshot", "scAgentKit")(context)
       assign(".scagentkit_react_worker", worker, envir = .GlobalEnv)
       list(stamp = worker$stamp)
     }, sc_run_react_error = function(e) list(worker_error = TRUE, code = e$code),

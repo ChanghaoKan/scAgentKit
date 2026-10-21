@@ -206,7 +206,7 @@
     # No callback supplied by a caller or model is executed. Only the installed,
     # version-bound registry runs in the terminable process.
     process <- callr::r_bg(function(context, tool, arguments, cache_dir) {
-      tryCatch(getFromNamespace(".sc_run_react_dispatch_local", "scAgentKit")(
+      tryCatch(utils::getFromNamespace(".sc_run_react_dispatch_local", "scAgentKit")(
         context, tool, arguments, cache_dir), error = function(e) list(worker_error = TRUE,
           code = if (inherits(e, "sc_run_react_error")) e$code else "execution_failed",
           message = if (inherits(e, "sc_run_react_error")) conditionMessage(e) else "The read-only tool could not complete; no scientific state was changed."))
