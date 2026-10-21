@@ -66,6 +66,33 @@ test_that("manual label edits retain sources but deleted citations cannot be re-
   expect_silent(.sc_run_annotation_validate(removed, evidence))
 })
 
+test_that("missing baseline risk evidence is explicitly unassessed", {
+  risks <- .sc_run_react_baseline_risk(list(baseline_risks = NULL), "0")
+  expect_identical(risks, .sc_run_react_unassessed_risks("0"))
+  expect_identical(risks$cluster_id, "0")
+  values <- stats::setNames(vapply(risks$fields, `[[`, character(1), "value"),
+    vapply(risks$fields, `[[`, character(1), "name"))
+  expect_identical(values[["batch_status"]], "insufficient_evidence")
+  expect_true(all(values[setdiff(names(values), "batch_status")] == "not_assessed"))
+  expect_true(all(vapply(risks$fields, function(field)
+    identical(field$assessment_status, "not_assessed") &&
+      identical(field$source, "unassessed") && identical(field$evidence_ids, list()), logical(1))))
+  expect_error(.sc_run_react_risks(risks, "0", character()), class = "sc_run_react_error")
+
+  model_risks <- react_final("0")$risk_flags
+  expect_identical(.sc_run_react_baseline_risk(
+    list(baseline_risks = list(risk_flags = list(model_risks))), "0"), model_risks)
+})
+
+test_that("model risk records reject local provenance", {
+  risks <- react_final("0")$risk_flags
+  expect_silent(.sc_run_react_risks(risks, "0", character()))
+  for (source in c("unassessed", "rule", "human")) {
+    risks$fields[[1L]]$source <- source
+    expect_error(.sc_run_react_risks(risks, "0", character()), class = "sc_run_react_error")
+  }
+})
+
 test_that("risk enums require all fields and matching current evidence", {
   risks <- react_final("0")$risk_flags
   expect_silent(.sc_run_react_risks(risks, "0", "tool:1"))

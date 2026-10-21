@@ -19,7 +19,7 @@ react_loop_fixture <- function(policy = list(mode = "all")) {
 }
 
 react_final <- function(cluster, gene = "G31", source = "tool:1") {
-  risks <- .sc_run_react_risks(NULL, cluster, character(), legacy = TRUE)
+  risks <- .sc_run_react_unassessed_risks(cluster)
   risks$fields <- lapply(risks$fields, function(x) { x$source <- "model"; x })
   list(schema = "scagentkit.react-draft.v1",
     proposal = list(schema = "scagentkit.annotation.v1", annotations = list(

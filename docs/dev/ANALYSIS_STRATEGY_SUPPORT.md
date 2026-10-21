@@ -19,8 +19,9 @@ entry reuses its declared foundation instead of rerunning these steps.
 | Doublets | Explicit capture/rate prerequisites, default keep; jointly approved removal under the [adapter contract](DOUBLET_REVIEW.md) |
 | Subclusters | Separately reviewed raw-count [child projects](../SUBCLUSTER_REVIEW.md) |
 
-Exported legacy functions are documented in R help. Their presence does not make
-an automatic or fallback behavior part of the reviewed coordinator workflow.
+Use the public `sc_run_*` operations documented in R help for typed proposals,
+review, execution and scoped child projects. Only the methods described in this
+coordinator contract can execute an approved strategy.
 
 ## Development: evidence-guided candidates and author corrections
 
@@ -259,13 +260,17 @@ whole-strategy approval; it never authorizes cycle-based cell deletion.
 
 ## Meaning of PC and resolution evidence
 
-For computed standard deviations `s`, the legacy PC rule selects the smallest
+For computed standard deviations `s`, `computed_variance` selects the smallest
 leading count `k` such that `sum(s[1:k]^2) / sum(s^2)` reaches the approved
-threshold. The denominator covers the PCs computed and retained in this PCA;
-it is **not total transcriptome variance**. Changing the number of computed PCs
-can change the result. Zero/nonfinite variance and unavailable components cannot
-support this rule. Neither an 80% threshold nor a fixed PC count proves that
-rare or research-relevant populations are resolved.
+threshold. Its denominator includes all actually computed PCs, including those
+beyond 50. The `computed_top50` policy instead uses only the first
+`min(50, length(s))` components in its denominator and accepts thresholds `.80`
+or `.85`. The initial `sc_analyze()` draft uses `computed_top50` at `.80`; the
+analyst reviews that choice before execution. Neither denominator is **total
+transcriptome variance**. Changing the computed reference can change the result.
+Zero/nonfinite variance and unavailable components cannot support these rules.
+Neither an 80% threshold nor a fixed PC count proves that rare or
+research-relevant populations are resolved.
 
 Seurat's tutorial describes PC choice as uncertain and recommends inspecting
 relevant heterogeneity and sensitivity to dimensionality. Its example numbers
@@ -306,7 +311,8 @@ approval is rejected after the corresponding evidence or proposal changes.
 In strategy mode the existing QC validator and exact impact preview are embedded
 in this one review; a second QC approval is not requested for those same ranges.
 Annotation review remains a later, separate responsibility for label writeback.
-Legacy non-strategy projects keep their existing QC and annotation boundaries.
+Direct `sc_run(strategy=FALSE)` projects review QC and annotation in separate
+stages.
 
 `sc_run_strategy_revise()` takes the complete canonical saved proposal plus exact
 `project_id`, `input_hash`, `expected_revision`, `reviewer` and `reason`. It accepts
@@ -372,7 +378,7 @@ cell's total expression and applies a log transformation; this is a supported
 method, not a claim that its assumptions suit every experiment.
 [Seurat NormalizeData reference](https://satijalab.org/seurat/reference/normalizedata).
 
-## Legacy APIs and scientific limits
+## Supported methods and scientific limits
 
 Cell-cycle scores describe expression programs. Regressing scores changes
 scaled expression and requires downstream PCA/graph/clustering recomputation;
@@ -387,8 +393,8 @@ Doublet detection needs capture/loading-unit provenance, real counts, applicable
 platform/rate assumptions and an explicit removal decision. scDblFinder's
 `samples` role denotes captures; multiplexed biological donors can share one
 capture. Its documentation distinguishes scores and classifications and
-describes limitations for homotypic doublets. The legacy wrapper's
-`remove = TRUE` default is not inherited by the strategy allowlist.
+describes limitations for homotypic doublets. The coordinator defaults to
+`keep`; removal requires an explicit reviewed `remove_predicted` choice.
 [scDblFinder official vignette](https://bioconductor.org/packages/release/bioc/vignettes/scDblFinder/inst/doc/scDblFinder.html).
 
 The optional coordinator adapter uses the fixed full-input pre-QC reference,
@@ -399,9 +405,9 @@ Operational or strict scDblFinder adapter audit failures remain recoverable fail
 stages. Manual rates require provenance; standard-10x automatic estimation
 additionally requires the exact applicable technology and explicit
 `full_called_cohort = TRUE`. These guards and versioned real-method execution
-acceptance are documented in [DOUBLET_REVIEW.md](DOUBLET_REVIEW.md). This adapter
-does not infer list units, donors or samples as captures and does not call the
-legacy wrapper.
+acceptance are documented in [DOUBLET_REVIEW.md](DOUBLET_REVIEW.md). Capture
+units must be declared explicitly; the adapter does not infer them from list
+units, donors or samples.
 
 The later sample-aware MAD extension is described in [MAD_REVIEW.md](MAD_REVIEW.md).
 MAD-derived suggestions
@@ -413,12 +419,12 @@ dependencies and biological-design validation. Guarded execution is described in
 Software checks do not establish real batch-removal efficacy.
 [Harmony RunHarmony reference](https://portals.broadinstitute.org/harmony/reference/RunHarmony.html).
 
-The coordinator-specific exact-cell-ID subcluster applicability checks, approvals and
-bounded request accounting are described in [SUBCLUSTER_REVIEW.md](../SUBCLUSTER_REVIEW.md).
-The legacy path
-accepts positional subset alignment, continues after per-target failures and
-can replace an invalid auto-resolution reply with 0.5; it is not invoked by this
-reviewed path. Paper-grade validation of biological labels, batch effects,
-cycle decisions, doublet handling and research conclusions remains separate
-work. Synthetic multi-batch fixtures can test guards and execution mechanics;
-they cannot demonstrate real batch correction efficacy.
+The public `sc_run_subcluster_scope()`, `sc_run_subcluster()` and
+`sc_run_subcluster_apply()` operations bind child selection and parent writeback
+to exact cell IDs. Applicability checks, scientific approvals and request
+authority are described in [SUBCLUSTER_REVIEW.md](../SUBCLUSTER_REVIEW.md). Invalid
+resolution choices and inconsistent cell scopes are rejected. Paper-grade
+validation of biological labels, batch effects, cycle decisions, doublet
+handling and research conclusions requires separate work. Synthetic multi-batch
+fixtures test guards and execution mechanics; they cannot demonstrate real
+batch correction efficacy.

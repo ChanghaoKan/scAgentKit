@@ -461,7 +461,7 @@ class RunReviewHTTPTests(unittest.TestCase):
                 self.assertEqual(self.request("POST", "/api/run-review/decision", dict(decision(), **{field: "untrusted"}), headers=self.headers())[0], 422)
         self.assertEqual(self.runtime.calls, [])
 
-    def test_run_mode_excludes_legacy_analysis_export_and_source_routes(self):
+    def test_run_mode_excludes_analysis_export_and_source_routes(self):
         for route in ("/api/evidence", "/api/session", "/api/export", "/api/resume", "/api/qc/inspect"):
             with self.subTest(route=route): self.assertEqual(self.request("GET", route)[0], 409)
         for route in ("/api/decision", "/api/project/import", "/api/resume", "/api/qc/decision"):
@@ -477,7 +477,7 @@ class RunReviewHTTPTests(unittest.TestCase):
         self.assertNotIn("private", body.decode())
         self.assertEqual(self.runtime.run["revision"], 12)
 
-    def test_legacy_qc_mode_remains_separate_with_its_own_token(self):
+    def test_direct_qc_mode_is_separate_with_its_own_token(self):
         qc = PassiveQC(self.project)
         server = WorkbenchServer(("127.0.0.1", 0), None, None, qc=qc)
         thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
@@ -496,18 +496,18 @@ class RunReviewHTTPTests(unittest.TestCase):
         finally:
             server.shutdown(); server.server_close(); thread.join()
 
-    def test_unified_mode_rejects_legacy_qc_writes_even_with_valid_legacy_token(self):
+    def test_unified_mode_rejects_direct_qc_writes_even_with_valid_qc_token(self):
         qc = PassiveQC(self.project)
         self.server.qc = qc
         before = (self.project / "state.rds").read_bytes()
-        legacy = dict(action="approve", proposal_hash="a" * 64, preview_hash="b" * 64,
-                      expected_revision=12, reviewer="legacy analyst", reason="legacy approval")
+        direct_qc = dict(action="approve", proposal_hash="a" * 64, preview_hash="b" * 64,
+                      expected_revision=12, reviewer="direct QC analyst", reason="direct QC approval")
         headers = {"Origin": "http://127.0.0.1:" + str(self.port), "X-ScAgentKit-QC-Token": qc.csrf_token}
-        with patch.object(qc, "decide") as legacy_decide, patch.object(self.runtime, "decide") as unified_decide:
-            status, _, body = self.request("POST", "/api/qc/decision", legacy, headers=headers)
+        with patch.object(qc, "decide") as direct_qc_decide, patch.object(self.runtime, "decide") as unified_decide:
+            status, _, body = self.request("POST", "/api/qc/decision", direct_qc, headers=headers)
             self.assertEqual(status, 409)
             self.assertIn("fully bound unified", json.loads(body)["error"])
-            legacy_decide.assert_not_called(); unified_decide.assert_not_called()
+            direct_qc_decide.assert_not_called(); unified_decide.assert_not_called()
         self.assertEqual((self.project / "state.rds").read_bytes(), before)
         self.assertEqual(self.runtime.run["revision"], 12)
         self.assertEqual(self.request("GET", "/api/qc/inspect")[0], 200)

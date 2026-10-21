@@ -23,7 +23,7 @@
 .sc_run_react_baseline_risk <- function(run, cluster) {
   found <- Filter(function(x) identical(x$cluster_id, cluster), run$baseline_risks$risk_flags)
   if (length(found) == 1L) found[[1L]] else
-    .sc_run_react_risks(NULL, cluster, character(), legacy = TRUE)
+    .sc_run_react_unassessed_risks(cluster)
 }
 
 .sc_run_react_fallback_all <- function(root, run, reason) {

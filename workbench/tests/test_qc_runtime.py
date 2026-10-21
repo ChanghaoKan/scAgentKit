@@ -191,7 +191,7 @@ class QCHTTPTests(unittest.TestCase):
             payload = decision(); payload[field] = value
             self.assertEqual(self.request("POST", "/api/qc/decision", payload, headers=headers)[0], 409)
 
-    def test_no_legacy_annotation_resume_or_file_routes(self):
+    def test_no_annotation_resume_or_file_routes(self):
         for route in ("/api/evidence", "/api/session", "/api/export", "/api/resume"):
             self.assertEqual(self.request("GET", route)[0], 409)
         for route in ("/api/decision", "/api/project/import", "/api/resume"):

@@ -21,9 +21,9 @@ test_that("PC candidates use exactly the first 50 of 51 or 100 computed PCs", {
     expect_match(record$denominator, "not total expressed-gene variance")
     expect_silent(scAgentKit:::.sc_run_pc_verify(record))
     # The existing all-computed-PC denominator would instead cross later.
-    legacy_fraction <- cumsum(rep(1 / total, total))
-    expect_gt(which(legacy_fraction >= .8)[1L], record$candidates$p80$ndim)
-    expect_gt(which(legacy_fraction >= .85)[1L], record$candidates$p85$ndim)
+    all_computed_fraction <- cumsum(rep(1 / total, total))
+    expect_gt(which(all_computed_fraction >= .8)[1L], record$candidates$p80$ndim)
+    expect_gt(which(all_computed_fraction >= .85)[1L], record$candidates$p85$ndim)
   }
   first <- scAgentKit:::.sc_run_pc_candidates(rep(1, 100L))
   # Extra computed components are still saved and validated, but their size

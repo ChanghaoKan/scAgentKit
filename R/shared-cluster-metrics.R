@@ -1,4 +1,4 @@
-# Shared pure kernels. Extracted verbatim from legacy modules; callers own orchestration.
+# Shared pure cluster-metric kernels; callers own orchestration.
 
 .adjusted_rand_index <- function(a, b) {
   a <- as.character(a); b <- as.character(b)

@@ -257,7 +257,7 @@
   # Fail before dispatch if a simulated template is not supported on this scope.
   if (kind == "annotation" && !is.null(state$config$react)) {
     risks <- lapply(proposal$annotations, function(row) {
-      record <- .sc_run_react_risks(NULL, row$clusterId, character(), legacy = TRUE)
+      record <- .sc_run_react_unassessed_risks(row$clusterId)
       record$fields <- lapply(record$fields, function(x) { x$source <- "model"; x })
       record
     })

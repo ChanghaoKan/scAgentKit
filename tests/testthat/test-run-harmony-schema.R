@@ -174,8 +174,8 @@ test_that("the top50 PC policy is finite and leaves raw PCA dependencies reusabl
   }
   bad <- p; bad$pcs <- list(method = "computed_top50", threshold = .80, ndim = 3L)
   expect_error(scAgentKit:::.sc_run_strategy_validate(bad, f$evidence), "supported named fields")
-  legacy <- p; legacy$pcs <- list(method = "computed_variance", threshold = .84)
-  expect_identical(scAgentKit:::.sc_run_strategy_validate(legacy, f$evidence)$proposal$pcs, legacy$pcs)
+  all_computed <- p; all_computed$pcs <- list(method = "computed_variance", threshold = .84)
+  expect_identical(scAgentKit:::.sc_run_strategy_validate(all_computed, f$evidence)$proposal$pcs, all_computed$pcs)
 })
 
 test_that("Harmony fingerprints bind scientific parameters metadata and design but exclude reasons", {

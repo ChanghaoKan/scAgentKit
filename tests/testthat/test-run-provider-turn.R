@@ -220,13 +220,54 @@ test_that("crash recovery never sends an uncertain turn and restores only commit
     stored <- .sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries[[1]]
     expect_identical(stored$status, "dispatched")
     expect_identical(stored$cost_state, "unknown"); expect_null(stored$cost_usd)
+    expect_identical(stored$response_metadata$availability, "unavailable")
+    expect_null(stored$response_metadata_hash)
     restarted <- turn_call(f, fn = function(...) stop("restart must not dispatch"))
     expect_identical(restarted$status, if (phase == "after_turn_commit") "ok" else "delivery_uncertain")
     if (phase == "after_turn_commit") {
       expect_true(restarted$cached); expect_identical(restarted$cost_state, "known")
       expect_equal(restarted$cost_usd, .000042)
+      expect_identical(restarted$response_metadata_hash, .sc_run_provider_hash(restarted$response_metadata))
+      expect_null(restarted$response_audit)
     }
   }
+})
+
+test_that("interrupted turns reconcile and recover metadata without changing the predecessor", {
+  f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  calls <- 0L
+  withr::with_options(list(scAgentKit.provider_crash = "after_dispatch"),
+    expect_error(turn_call(f, fn = function(...) { calls <<- calls + 1L; turn_reply() }),
+      "Injected provider interruption"))
+  path <- file.path(f$root, "provider", "ledger.json")
+  original <- .sc_run_provider_read(path)
+  before <- original$entries[[1]]
+  predecessor_hash <- .sc_run_provider_hash(before)
+  expect_null(before$response_metadata_hash)
+  reconciled <- sc_run_provider_reconcile(f$root, before$request_hash, 0, "offline QA",
+    "Confirmed no transmission after interruption.", delivery = "not_sent")
+  expect_identical(reconciled$status, "reconciled_no_response")
+  expect_identical(reconciled$reconciliation$previous_entry_hash, predecessor_hash)
+  expect_identical(reconciled$response_metadata, before$response_metadata)
+  expect_identical(reconciled$response_metadata_hash, .sc_run_provider_hash(before$response_metadata))
+  expect_null(reconciled$response_audit)
+  expect_null(reconciled$completed_at)
+  state <- .sc_run_load(f$root)
+  receipt <- .sc_run_get(f$root, state, paste0("provider_turn_", before$request_hash))
+  expect_identical(receipt$response_metadata_hash, reconciled$response_metadata_hash)
+  expect_identical(receipt$reconciliation$previous_entry_hash, predecessor_hash)
+  expect_identical(.sc_run_provider_read(path)$entries[[1]]$response_metadata_hash,
+    reconciled$response_metadata_hash)
+  # Recreate a crash after committing reconciliation but before writing its ledger.
+  .sc_run_provider_write(original, path)
+  recovered <- turn_call(f, fn = function(...) { calls <<- calls + 1L; stop("must not dispatch") })
+  expect_true(recovered$cached)
+  expect_identical(recovered$status, "reconciled_no_response")
+  expect_identical(recovered$response_metadata_hash, reconciled$response_metadata_hash)
+  expect_identical(recovered$reconciliation$previous_entry_hash, predecessor_hash)
+  expect_identical(.sc_run_provider_read(path)$entries[[1]]$response_metadata_hash,
+    reconciled$response_metadata_hash)
+  expect_identical(calls, 0L)
 })
 
 test_that("manual reconciliation records the invoice without imposing a new cost cap", {
@@ -283,7 +324,7 @@ test_that("one transport call cannot exceed its session cluster time allowance",
   expect_identical(out$status, "ok")
 })
 
-test_that("post-hoc costs do not consume or financially block the legacy one-shot cap", {
+test_that("post-hoc turn costs do not block independent single requests", {
   for (known in c(TRUE, FALSE)) {
     f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE), add = TRUE)
     out <- turn_call(f, fn = function(...) {

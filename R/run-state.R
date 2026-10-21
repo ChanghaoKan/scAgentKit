@@ -267,8 +267,7 @@ sc_run_inspect <- function(project_dir) {
   result$scientific_assessment <- .sc_run_scientific_assessment(root, state)
   result$review_node <- .sc_run_review_node(root, state)
   result$annotation_preparation <- .sc_run_annotation_preparation(root, state)
-  # Completed/legacy projects retain their existing inspection contract. The
-  # suggestion view is relevant only to a current saved proposal stage.
+  # Suggestions are available only at the current saved proposal stage.
   if (state$stage %in% c("strategy_propose", "qc_propose", "annotation_propose"))
     result$suggestion <- .sc_run_suggestion_view(root, state)
   result

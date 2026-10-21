@@ -124,9 +124,8 @@
 }
 .sc_run_recommendations_verify <- function(record) {
   rec <- record$details$recommendations
-  # Older immutable reviews remain readable; their absent assessment is
-  # explicit below. A present projection must still pass all exact bindings.
-  if (is.null(rec)) return(invisible(NULL))
+  if (is.null(rec))
+    stop("Saved recommendation evidence is missing; review is invalid.", call. = FALSE)
   if (!identical(rec$schema, "scagentkit.recommendations.v1") ||
       !identical(rec$policy_version, "1") ||
       !identical(rec$binding$input_hash, record$input_hash) ||
@@ -141,11 +140,6 @@
   if (!isTRUE(state$config$strategy) || is.null(state$files$strategy_review)) return(NULL)
   record <- .sc_run_get(root, state, "strategy_review")
   rec <- .sc_run_recommendations_verify(record)
-  if (is.null(rec)) return(list(schema = "scagentkit.scientific-assessment.v1", certified_qc = FALSE,
-    workflow_status = state$status, unassessed_steps = list("legacy_recommendation_evidence"),
-    unresolved_steps = list("legacy_recommendation_evidence"), unresolved_details = list(),
-    qc_choice = "legacy_unassessed", source_review_hash = record$hash,
-    message = "This older immutable review has no saved recommendation assessment. Existing results remain readable; full QC and cell identities are not certified."))
   unassessed <- vapply(Filter(function(step) !identical(step$assessment, "assessed"), rec$steps), `[[`, character(1), "id")
   # Recommendations were issued before execution. Current durable artifacts
   # can establish completion of a numeric rule, never biological certification.

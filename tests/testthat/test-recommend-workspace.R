@@ -90,15 +90,20 @@ test_that("recommendation bindings reject altered saved projections", {
 })
 
 
-test_that("legacy assessment remains readable and explicitly unavailable", {
+test_that("missing recommendation evidence is rejected even after review hashes are recomputed", {
   path <- recommend_workspace_begin(); state <- .sc_run_load(path)
+  on.exit(unlink(path, recursive = TRUE))
   record <- .sc_run_get(path, state, "strategy_review")
   record$details$recommendations <- NULL
   record$hash <- .sc_run_strategy_review_hash(record)
-  expect_invisible(.sc_run_recommendations_verify(record))
+  expect_identical(record$hash, .sc_run_strategy_review_hash(record))
+  expect_error(.sc_run_recommendations_verify(record), "recommendation evidence is missing")
   state <- .sc_run_put(path, state, "strategy_review", record)
-  assessment <- .sc_run_scientific_assessment(path, state)
-  expect_false(assessment$certified_qc)
-  expect_identical(assessment$qc_choice, "legacy_unassessed")
-  expect_match(assessment$message, "older immutable review")
+  expect_error(.sc_run_scientific_assessment(path, state), "recommendation evidence is missing")
+  expect_error(.sc_run_strategy_review_verify(path, state), "recommendation evidence is missing")
+})
+
+test_that("scientific assessment is absent before a strategy review exists", {
+  expect_null(.sc_run_scientific_assessment(NULL, list(config = list(strategy = FALSE))))
+  expect_null(.sc_run_scientific_assessment(NULL, list(config = list(strategy = TRUE), files = list())))
 })

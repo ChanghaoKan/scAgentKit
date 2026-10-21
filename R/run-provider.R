@@ -227,6 +227,11 @@
     if (!is.null(entry$raw_usage_hash) &&
         !identical(entry$raw_usage_hash, .sc_run_provider_hash(entry[["raw_usage"]])))
       stop("Provider cached raw usage hash mismatch; dispatch refused.")
+    if (!is.list(entry$response_metadata) ||
+        !identical(entry$response_metadata$schema, "scagentkit.provider-response-metadata.v1"))
+      stop("Provider response metadata is missing or invalid; dispatch refused.")
+    if (!identical(entry$status, "dispatched") && is.null(entry$response_metadata_hash))
+      stop("Provider response metadata hash is missing; dispatch refused.")
     if (!is.null(entry$response_metadata_hash) &&
         !identical(entry$response_metadata_hash, .sc_run_provider_hash(entry$response_metadata)))
       stop("Provider cached response metadata hash mismatch; dispatch refused.")
@@ -272,7 +277,7 @@
 }
 
 # Metadata is data, never the HTTP response, request headers or provider error
-# body. Missing fields stay unknown for legacy content-only chat functions.
+# body. Missing fields stay unknown for content-only chat functions.
 .sc_run_provider_response_metadata <- function(value, env_names = NULL) {
   nested <- if (is.list(value)) value$response_metadata else attr(value, "response_metadata", exact = TRUE)
   if (!is.list(nested) || is.object(nested)) nested <- list()
@@ -337,59 +342,6 @@
   parsed
 }
 
-.sc_run_provider_capture_metadata <- function(frame, env_names = NULL) {
-  local <- function(name) if (exists(name, envir = frame, inherits = FALSE))
-    get(name, envir = frame, inherits = FALSE) else NULL
-  parsed <- local("parsed")
-  choice <- if (is.list(parsed) && is.list(parsed$choices) && length(parsed$choices))
-    parsed$choices[[1L]] else NULL
-  response <- local("resp")
-  # Read exactly one allowed response header; no headers object or body is
-  # copied into the result, error condition, ledger or coordinator checkpoint.
-  request_id <- if (!is.null(response)) tryCatch(httr2::resp_header(response, "x-request-id"),
-    error = function(e) NULL) else NULL
-  .sc_run_provider_response_metadata(list(http_status = local("status"),
-    finish_reason = if (is.list(choice)) choice$finish_reason else NULL,
-    response_id = if (is.list(parsed)) parsed$id else NULL,
-    request_id = request_id), env_names)
-}
-
-# agentomicsCore 0.1.1 exposes no structured-response option. Copy only the
-# returned function and adapt its body in memory, retaining its existing lexical
-# environment without inspecting it. No namespace or dependency is modified.
-.sc_run_provider_adapter <- function(fn, env_names = NULL,
-                                     version = as.character(utils::packageVersion("agentomicsCore"))) {
-  factory <- getExportedValue("agentomicsCore", "make_chat_fn_openai_compatible")
-  inner <- tail(as.list(body(factory)), 1L)[[1L]]
-  recognized <- identical(version, "0.1.1") && is.function(fn) &&
-    is.call(inner) && identical(inner[[1L]], as.name("function")) &&
-    identical(formals(fn), inner[[2L]]) && identical(body(fn), inner[[3L]]) &&
-    identical(tail(as.list(body(fn)), 1L)[[1L]], as.name("txt"))
-  if (!recognized) stop(structure(list(message =
-    "Provider metadata adapter does not recognize this factory version or function body; no request was dispatched.",
-    call = NULL), class = c("sc_run_provider_adapter_unavailable", "error", "condition")))
-  adapted <- fn
-  original <- body(fn)
-  capture <- .sc_run_provider_capture_metadata
-  capture_usage <- function(frame) {
-    parsed <- if (exists("parsed",frame,inherits=FALSE)) get("parsed",frame,inherits=FALSE) else NULL
-    .sc_run_provider_raw_usage(if(is.list(parsed)) parsed$usage else NULL)
-  }
-  body(adapted) <- bquote({
-    .sc_response_frame <- environment()
-    .sc_response_result <- tryCatch(.(original), error = function(.sc_response_error) {
-      .sc_safe_metadata <- .(capture)(.sc_response_frame, .(env_names))
-      stop(structure(list(message = "Provider call returned an error; HTTP error body discarded.",
-        call = NULL, response_metadata = .sc_safe_metadata),
-        class = c("sc_run_provider_transport_error", "error", "condition")))
-    })
-    attr(.sc_response_result, "raw_usage") <- .(capture_usage)(.sc_response_frame)
-    attr(.sc_response_result, "response_metadata") <- .(capture)(.sc_response_frame, .(env_names))
-    .sc_response_result
-  })
-  adapted
-}
-
 .sc_run_provider_fn <- function(spec) {
   if (is.function(spec$fn)) return(spec$fn)
   m <- spec$metadata
@@ -397,20 +349,16 @@
   if (!requireNamespace("agentomicsCore", quietly = TRUE)) stop("agentomicsCore is required for built-in providers.")
   g <- m$generation
   args <- list(model = m$model, api_key_env = m$api_key_env, max_tokens = g$max_tokens,
-    temperature = g$temperature, timeout_secs = g$timeout_secs)
+    temperature = g$temperature, timeout_secs = g$timeout_secs, structured_response = TRUE)
   extra <- g[setdiff(names(g), c("max_tokens", "temperature", "timeout_secs"))]
   if (length(extra)) args$extra_body <- extra
   if (m$name == "grok") args$vision <- FALSE
-  structured <- "structured_response" %in% names(formals(
-    getExportedValue("agentomicsCore", "make_chat_fn_openai_compatible")))
-  if (structured) args$structured_response <- TRUE
   factory <- if (identical(m$name, "openai_compatible")) {
     args$base_url <- m$base_url
     args$supports_vision <- FALSE
     "make_chat_fn_openai_compatible"
   } else paste0("chat_", m$name)
-  fn <- do.call(getExportedValue("agentomicsCore", factory), args)
-  if (structured) fn else .sc_run_provider_adapter(fn, m$api_key_env)
+  do.call(getExportedValue("agentomicsCore", factory), args)
 }
 
 .sc_run_provider_tokens <- function() {
@@ -613,8 +561,6 @@
     if (is.function(spec$fn)) spec$fn else if (identical(spec$metadata$name, "mock")) NULL else
       .sc_run_turn_factory(spec$metadata)
   } else .sc_run_provider_fn(spec), error = function(e) e)
-  if (inherits(fn, "sc_run_provider_adapter_unavailable")) return(result("provider_adapter_unavailable",
-    "Provider metadata adapter does not recognize this factory; no request was dispatched."))
   if (inherits(fn, "error")) fn <- NULL
   if (is.null(fn)) return(result("needs_provider", "Supply a runtime chat_fn or configure the provider key in its environment variable."))
   entry <- list(request_hash = request_hash, provider = spec$metadata,
@@ -801,6 +747,8 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
   previous <- list(status = entry$status, delivery = entry$delivery, cost_state = entry$cost_state,
     cost_usd = entry$cost_usd, accounting_issue = isTRUE(entry$accounting_issue))
   previous_entry_hash <- if (!is.null(entry$session_id)) .sc_run_provider_hash(entry) else NULL
+  if (identical(entry$status, "dispatched"))
+    entry$response_metadata_hash <- .sc_run_provider_hash(entry$response_metadata)
   if (entry$status %in% c("dispatched", "delivery_uncertain")) entry$status <- "reconciled_no_response"
   if (!is.null(delivery)) entry$delivery <- delivery
   entry$cost_state <- "known"; entry$cost_usd <- cost_usd

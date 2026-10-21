@@ -240,11 +240,12 @@ credentials, automatically choose biological identities, merge children or
 submit cluster jobs. Local review contains exact IDs needed for review, while
 provider transfer remains a separate authorized aggregate-only operation.
 
-## Legacy API boundary
+## Public child-project API
 
-The new path does **not** call `annot_subcluster`. That older function has
-positional parent writes after subset calculations, and its automatic
-resolution helper can fall back to 0.5 on malformed output. Those behaviors
-are not accepted by this exact-ID, typed reviewed path. The legacy function
-remains a separate API; the reviewed path does not cover every legacy
-sub-annotation mode.
+Use `sc_run_subcluster_scope()` to inspect a parent selection and
+`sc_run_subcluster()` to create its independently reviewed child project. After
+review and completion, `sc_run_subcluster_apply()` aligns approved child labels
+to the parent by exact cell ID and writes a new derived parent object. Invalid
+resolution choices or inconsistent cell scopes are rejected. Selection, child
+analysis and applying labels each retain their explicit review and provenance
+requirements.

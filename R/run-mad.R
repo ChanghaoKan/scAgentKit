@@ -1,5 +1,5 @@
 # Deterministic local MAD evidence and a finite, reviewed preset panel.
-# This coordinator path is separate from the legacy qc_mad/range interfaces.
+# The coordinator binds the panel to the measured input and explicit options.
 # Only `summary` is eligible for an explicitly approved aggregate AI preview.
 .sc_run_mad_fields <- function(value, required, allowed = required, label) {
   if (!is.list(value) || is.null(names(value)) || anyNA(names(value)) ||

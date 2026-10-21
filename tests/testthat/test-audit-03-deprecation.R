@@ -1,6 +1,6 @@
 
 
-test_that("current coordinator internals do not emit legacy-entry deprecations", {
+test_that("current coordinator internals do not emit entry-point deprecations", {
   withr::local_options(lifecycle_verbosity="warning")
   obj <- SeuratObject::pbmc_small
   obj$seurat_clusters <- as.character(SeuratObject::Idents(obj))

@@ -42,7 +42,7 @@
 #'   extension and extended expression diagnostics; disabled by default. New raw
 #'   strategy projects retain applicable declared-human classic panel evidence.
 #' @param react Optional bounded annotation evidence session configuration.
-#'   NULL preserves the legacy one-shot path; a list records mode and limits.
+#'   NULL selects single-request annotation; a list records mode and limits.
 #' @param subcluster_origin,subcluster_creation,.subcluster_lock_owner Internal immutable scope and
 #'   creation receipts supplied by sc_run_subcluster, not analysis settings.
 #' @return Durable run status. Use sc_run_inspect, sc_run_approve and sc_run_resume.
@@ -241,7 +241,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", ".adjusted_rand_index", "sc_cycle_gene_set"))
   # Coordinator wrappers call scientific helpers outside the sc_run prefix.
   # Follow their package-local references transitively, without executing any
-  # helper/provider or fingerprinting unrelated legacy workflows. External
+  # helper/provider or fingerprinting unrelated package functions. External
   # kernels retain their version/runtime contracts below and in saved evidence.
   pending <- selected
   while (length(pending)) {

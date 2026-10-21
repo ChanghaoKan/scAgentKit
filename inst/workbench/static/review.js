@@ -1190,9 +1190,7 @@ function renderSampleQCComparison(comparison) {
 function renderQCImpact(details) {
   const preview = details.qc_impact, card = cycleNode("section", null, "qc-readable-impact", {class: "qc-readable-impact"}); card.append(element("h3", "Saved QC impact"));
   if (preview?.schema !== "scagentkit.qc.preview.v1") {
-    if (typeof preview?.expected_retained_cells === "number" && typeof preview?.input_cell_count === "number")
-      card.append(element("p", "Saved legacy projected retention: " + evidenceNumber(preview.expected_retained_cells) + " of " + evidenceNumber(preview.input_cell_count) + " input cells. The full exact QC preview and rule-level impacts are not recorded.", {class: "parameter-impact-summary"}));
-    else empty(card, "No verified saved QC preview is recorded. Counts are unavailable; editing never computes an estimate.");
+    empty(card, "No verified saved QC preview is recorded. Counts are unavailable; editing never computes an estimate.");
     return card;
   }
   const retention = preview.retention || {}, stage = details.qc_stage_counts || details.qc_mad?.impact?.stage_counts || {}, logic = preview.rule_logic || {};
@@ -1267,8 +1265,8 @@ function chooseBatchDraft() {
     if (method === "harmony") {
       for (const key of ["group_by_vars", "theta", "lambda"]) {try {choice[key] = JSON.parse(controls[key].value);} catch (_) {choice[key] = null;}}
       for (const key of ["sigma", "max_iter", "nclust"]) choice[key] = controls[key].value.trim() ? Number(controls[key].value) : null;
-      // Preserve legacy omission: merely opening/editing another field must not
-      // insert an optional policy and invalidate the saved proposal binding.
+      // Opening or editing another field must not insert an optional policy
+      // and invalidate the saved proposal binding.
       if (controls.nested_biology.value !== "block" || Object.hasOwn(draft.batch, "nested_biology"))
         choice.nested_biology = controls.nested_biology.value;
     }
@@ -1327,7 +1325,7 @@ function renderPCs(details, proposal) {
   const top50 = strategyControl("select", "pc-top50-threshold", null, {"aria-label": "Computed first 50 PC variance policy fraction"}); top50.append(element("option", "0.80", {value: "0.8"}), element("option", "0.85", {value: "0.85"})); top50.value = [0.8, 0.85].includes(pcs.threshold) ? String(pcs.threshold) : "";
   ndim.hidden = pcs.method !== "fixed"; threshold.hidden = pcs.method !== "computed_variance"; top50.hidden = pcs.method !== "computed_top50";
   state.pcControls = {method, ndim, threshold, top50}; for (const input of [method, top50]) input.addEventListener("change", choosePCDraft); for (const input of [ndim, threshold]) input.addEventListener("input", choosePCDraft);
-  card.append(element("label", "Draft PC policy", {for: "pc-method"}), method, ndim, threshold, top50, cycleNode("p", "computed_variance accepts any explicit fraction 0 < f < 1; 0.80 is a reference, not an automatic choice. Its denominator is the sum of all actually computed PC variances. Fixed ndim is an explicit dimension count. The legacy computed_top50 0.80 / 0.85 are explicit empirical policies, not universal optima. They use only the first min(50, computed PCs), not total expressed-gene variance; shortfalls are disclosed and unsupported one-PC results are not clipped to two.", "pc-policy-note", {class: "microcopy"}));
+  card.append(element("label", "Draft PC policy", {for: "pc-method"}), method, ndim, threshold, top50, cycleNode("p", "computed_variance accepts any explicit fraction 0 < f < 1; 0.80 is a reference, not an automatic choice. Its denominator is the sum of all actually computed PC variances. Fixed ndim is an explicit dimension count. The computed_top50 0.80 / 0.85 choices are explicit empirical policies, not universal optima. They use only the first min(50, computed PCs), not total expressed-gene variance; shortfalls are disclosed and unsupported one-PC results are not clipped to two.", "pc-policy-note", {class: "microcopy"}));
   card.append(cycleNode("p", actual ? "Saved computed PCA diagnostics are available. Inspect actual candidates and their basis fingerprint below. A historical initial review may predate computation; saved diagnostics do not update the approved policy or execute a draft." : "Deferred: PCA has not been computed or no matching cached basis is recorded. Actual computed PC count and selected dimensions are unknown; the initial review approves a typed policy only.", "pc-status", {"data-status": actual ? "computed" : "deferred", class: "microcopy"}));
   const target = cycleNode("div", null, "pc-candidates");
   if (actual) target.append(table(["Policy", "Threshold", "Actual dimensions", "Supported", "Reason"], ["p80", "p85"].map(key => {const row = candidates[key] || {}; return [key, evidenceNumber(row.threshold), evidenceNumber(row.ndim), typeof row.supported === "boolean" ? String(row.supported) : "Unknown", row.reason || "None recorded"]})), element("p", "Computed PCs: " + evidenceNumber(diagnostic.total_computed_pcs) + "; reference PCs: " + evidenceNumber(diagnostic.reference_pcs) + "; shortfall: " + evidenceNumber(diagnostic.shortfall_count) + "."));
@@ -1335,7 +1333,7 @@ function renderPCs(details, proposal) {
   const all = cycleNode("details", null, "pc-all-computed"), projected = runtime?.all_pc_variance;
   const allBound = projected?.status === "saved" && projected.source === "strategy_basis_saved_pca_evidence" && hash(projected.basis_artifact_sha256) && projected.basis_artifact_sha256 === runtime.basis_artifact_sha256;
   const measured = allBound ? projected : reviewBound ? record.actual : null;
-  all.append(element("summary", "All computed PC variances · distinct from the legacy first-50 reference"));
+  all.append(element("summary", "All computed PC variances · distinct from the first-50 reference"));
   if ((allBound || reviewBound) && Number.isInteger(measured?.available_pcs) && Array.isArray(measured.fraction_per_pc) && measured.fraction_per_pc.length === measured.available_pcs && Array.isArray(measured.cumulative_fraction) && measured.cumulative_fraction.length === measured.available_pcs)
     all.append(element("p", "Actually computed PCs: " + evidenceNumber(measured.available_pcs) + ". Denominator: " + (measured.denominator || "Unavailable") + "."), table(["PC", "Fraction / all computed PCs", "Cumulative fraction"], measured.fraction_per_pc.map((fraction, index) => [index + 1, evidenceNumber(fraction), evidenceNumber(measured.cumulative_fraction[index])])));
   else empty(all, "All-computed-PC variances are not recorded in this bound review; no curve or selected dimension is inferred."); card.append(all);
@@ -1789,10 +1787,10 @@ function renderStrategy() {
   $("strategy-rationale").replaceChildren(element("p", proposal.rationale || "No proposal rationale was supplied.", {class: "strategy-rationale"}), strategyTextSection("Risks declared by the proposal", proposal.risks));
   $("strategy-plan-summary").textContent = suggestionSummary(proposal, "strategy").slice(1).join(" · ") || "Reuse of the supplied processed analysis is explicit in this strategy.";
   $("strategy-key-parameters").replaceChildren(...[["qc", "QC failure rules"], ["pcs", "PC policy"], ["batch", "Batch choice"], ["clustering", "Clustering"]].map(([key, title]) => {const item = element("div", null, {class: "strategy-key-parameter"}); item.append(element("span", title), element("strong", savedOperationSummary(key, proposal))); return item;}));
-  const impact = details.qc_impact?.impact || details.qc_impact || {}, counts = details.qc_stage_counts || impact.stage_counts || {};
-  const retained = details.applicability?.doublet?.retained_cells ?? counts.final_selected_cells ?? counts.post_qc_cells ?? impact.expected_retained_cells ?? impact.retained_cells ?? impact.retained;
-  const original = counts.original_cells ?? impact.input_cell_count ?? details.quality?.cell_count;
-  $("strategy-impact-summary").textContent = Number.isFinite(Number(retained)) && retained != null ? "Saved projected retention: " + fmt(retained) + (original != null ? " of " + fmt(original) + " input cells" : " cells") + ". Inspect the exact scopes and applicable operations below before approval." : "Exact cell retention and applicability are saved in the detailed impact evidence below. Approval covers this complete typed strategy; no calculation runs while reviewing.";
+  const preview = details.qc_impact?.schema === "scagentkit.qc.preview.v1" ? details.qc_impact : null, counts = details.qc_stage_counts || {};
+  const retained = details.applicability?.doublet?.retained_cells ?? counts.final_selected_cells ?? counts.post_qc_cells ?? preview?.retention?.retained;
+  const original = counts.original_cells ?? preview?.retention?.before ?? details.quality?.cell_count;
+  $("strategy-impact-summary").textContent = Number.isFinite(Number(retained)) && retained != null ? "Saved projected retention: " + fmt(retained) + (original != null ? " of " + fmt(original) + " input cells" : " cells") + ". Inspect the exact scopes and applicable operations below before approval." : "Cell retention is unavailable in the saved review. Approval covers this complete typed strategy; no calculation runs while reviewing.";
   renderStrategyOperations(details, proposal);
   renderRecommendations();
   const cycleSupported = details.cycle_diagnostics != null || Object.hasOwn(proposal, "cycle") || Array.isArray(details.capabilities?.cycle);

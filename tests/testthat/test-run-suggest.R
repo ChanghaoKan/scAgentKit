@@ -15,6 +15,12 @@ suggestion_fixture <- function(external = FALSE,
     private = list(input_cells = cells, cluster_column = "source_cluster",
       candidates = .empty_reference_matches(), candidates_all = .empty_reference_matches(),
       reference_provenance = list(status = "not_supplied", mode = "independent_local_reference")))
+  evidence$private$reference_evidence <- list(schema = "scagentkit.reference-evidence.v1",
+    provenance = evidence$private$reference_provenance,
+    per_cluster = lapply(evidence$summary$clusters, function(cluster)
+      list(clusterId = cluster$clusterId, cellCount = cluster$cellCount, status = "not_supplied",
+        candidates = list(), all_candidates = list(),
+        marker_symbols = .sc_run_reference_symbols(vapply(cluster$markers, `[[`, character(1), "gene"), NULL))))
   proposal <- list(schema = "scagentkit.annotation.v1", annotations = lapply(
     evidence$summary$clusters, function(row) list(clusterId = row$clusterId,
       label = "Unknown", confidence = "low", rationale = "Original manual uncertainty.", markers = list())))
@@ -210,11 +216,12 @@ test_that("suggestion preview totals known costs and counts unknown costs", {
   f <- suggestion_fixture(TRUE)
   on.exit(unlink(f$root, recursive = TRUE))
   dir.create(file.path(f$root, "provider"), showWarnings = FALSE)
+  metadata <- .sc_run_provider_response_metadata(NULL)
+  entry <- function(hash, cost_state, cost_usd) list(request_hash = strrep(hash, 64), status = "ok",
+    cost_state = cost_state, cost_usd = cost_usd, response_metadata = metadata,
+    response_metadata_hash = .sc_run_provider_hash(metadata))
   ledger <- list(schema = "scagentkit.provider-ledger.v1", entries = list(
-    list(request_hash = strrep("a", 64),
-      cost_state = "known", cost_usd = 2),
-    list(request_hash = strrep("b", 64), cost_state = "known", cost_usd = .01),
-    list(request_hash = strrep("c", 64), cost_state = "unknown", cost_usd = NULL)))
+    entry("a", "known", 2), entry("b", "known", .01), entry("c", "unknown", NULL)))
   .sc_run_provider_write(ledger, file.path(f$root, "provider", "ledger.json"))
   view <- sc_run_suggest(f$root, "preview", simulate = FALSE)
   expect_false(any(c("budget", "remaining_usd", "cost_mode", "reservation_usd",

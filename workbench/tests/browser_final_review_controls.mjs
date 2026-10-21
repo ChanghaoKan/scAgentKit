@@ -89,7 +89,7 @@ try {
   await page.locator('#strategy-reviewer').fill('Synthetic browser acceptance'); await page.locator('#strategy-reason').fill('Explicit nested design choice for transport and UI acceptance only.');
   await page.locator('#strategy-save').click(); await page.waitForFunction(() => document.getElementById('run-message').textContent.includes('Strategy revision'));
   assert.equal(posts.length, 1); assert.equal(posts[0].proposal.batch.nested_biology, 'reviewed_embedding_only'); assert.equal(await page.locator('#harmony-nested-biology').inputValue(), 'reviewed_embedding_only');
-  report.tests.push({name: 'harmony-default-block-legacy-omission-retained', passed: true}, {name: 'explicit-embedding-policy-edits-draft-without-auto-execution', passed: true}, {name: 'save-submits-exact-explicit-policy-to-controlled-api', passed: true});
+  report.tests.push({name: 'harmony-default-block-optional-policy-omission', passed: true}, {name: 'explicit-embedding-policy-edits-draft-without-auto-execution', passed: true}, {name: 'save-submits-exact-explicit-policy-to-controlled-api', passed: true});
   await reveal(page.locator('#harmony-nested-biology'));
   const harmonyShot = output.replace(/\.json$/, '-harmony.png'); await page.screenshot({path: harmonyShot, fullPage: true}); report.screenshots.push(harmonyShot);
   await page.locator('#harmony-method').selectOption('none'); draft = JSON.parse(await page.locator('#strategy-json').inputValue()); assert.equal(Object.hasOwn(draft.batch, 'nested_biology'), false); assert.equal(await page.locator('#harmony-parameters').isHidden(), true); assert.equal(posts.length, 1);

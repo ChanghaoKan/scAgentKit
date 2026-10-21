@@ -95,7 +95,7 @@ approved keep/remove-predicted intersection. This demo does not fit doublets.
 The example explicitly chooses `pcs=list(method="computed_variance",
 threshold=.80)`. Any finite fraction strictly between 0 and 1 can be supplied.
 Its denominator is the variance of **all actually computed PCs**, including
-computed PCs beyond 50; this is not total expressed-gene variance. The legacy
+computed PCs beyond 50; this is not total expressed-gene variance. The
 `computed_top50` method accepts only `.80` or `.85` and uses the first
 `min(50, computed PCs)`. A fixed `ndim` must be an integer from 2 through the
 supported computed-PC range. `.80` is a reference/example choice, not a proven optimum.

@@ -1,4 +1,4 @@
-test_that("project markers and references do not construct legacy workflow objects", {
+test_that("project markers and references do not construct generic workflow objects", {
   obj<-SeuratObject::pbmc_small
   obj$seurat_clusters<-as.character(SeuratObject::Idents(obj))
   before<-.sc_run_hash(obj)

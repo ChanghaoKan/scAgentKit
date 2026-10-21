@@ -9,6 +9,11 @@
   fields. Accounting records known actual costs and counts unknown costs after
   calls, without monetary limits; uncertain delivery still requires explicit
   reconciliation and retry.
+  Saved reviews require their recommendation and reference evidence, and
+  provider ledger entries require current response metadata and completed
+  metadata hashes. Built-in single requests use structured provider responses.
+  Current unassessed risks and analysis paths use names that describe their
+  behavior; incomplete historical preview shapes are rejected or unavailable.
 
 ## Development: trial run controls
 

@@ -237,12 +237,39 @@ test_that("crashes retain durable dispatch evidence without resending", {
     expect_identical(ledger$entries[[1]]$cost_state, "unknown")
     expect_null(ledger$entries[[1]]$cost_usd)
     expect_identical(ledger$entries[[1]]$status, "dispatched")
+    expect_identical(ledger$entries[[1]]$response_metadata$availability, "unavailable")
+    expect_null(ledger$entries[[1]]$response_metadata_hash)
     before <- calls
     expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, TRUE)$status, "delivery_uncertain")
     expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, TRUE, retry = TRUE)$status, "retry_refused")
     expect_identical(calls, before)
     expect_identical(calls, if (hook == "after_dispatch") 0L else 1L)
   }
+})
+
+test_that("reconciling an interrupted single request hashes its recorded metadata", {
+  f <- run_provider_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  calls <- 0L
+  fn <- function(...) { calls <<- calls + 1L; run_provider_good }
+  withr::with_options(list(scAgentKit.provider_crash = "after_dispatch"),
+    expect_error(.sc_run_call(f$root, f$request, f$provider, fn, TRUE), "Injected provider interruption"))
+  path <- file.path(f$root, "provider", "ledger.json")
+  original <- .sc_run_provider_read(path)$entries[[1]]
+  expect_null(original$response_metadata_hash)
+  reconciled <- sc_run_provider_reconcile(f$root, original$request_hash, 0, "offline QA",
+    "Confirmed no transmission after interruption.", delivery = "not_sent")
+  expect_identical(reconciled$status, "reconciled_no_response")
+  expect_identical(reconciled$response_metadata, original$response_metadata)
+  expect_identical(reconciled$response_metadata_hash, .sc_run_provider_hash(original$response_metadata))
+  expect_null(reconciled$response_audit)
+  expect_null(reconciled$completed_at)
+  expect_identical(.sc_run_provider_read(path)$entries[[1]]$response_metadata_hash,
+    reconciled$response_metadata_hash)
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, TRUE)$status,
+    "reconciled_no_response")
+  expect_identical(calls, 0L)
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, TRUE, retry = TRUE)$status, "ok")
+  expect_identical(calls, 1L)
 })
 
 test_that("recorded charges impose no cap on cached or subsequent requests", {
@@ -407,6 +434,8 @@ test_that("uncertain external delivery can be reconciled explicitly and is never
     "Provider console confirms no transmission and no charge.", delivery = "not_sent")
   expect_identical(entry$status, "reconciled_no_response")
   expect_identical(entry$cost_state, "known")
+  expect_identical(entry$response_metadata, failed$response_metadata)
+  expect_identical(entry$response_metadata_hash, failed$response_metadata_hash)
   expect_error(sc_run_provider_reconcile(f$root, failed$request_hash, 0, "qa", "again"), "no unresolved accounting or delivery")
   expect_identical(.sc_run_call(f$root, f$request, f$provider, fn, TRUE)$status, "reconciled_no_response")
   expect_identical(calls, 1L)

@@ -265,7 +265,7 @@ test_that("cycle calculation dependencies preserve preprocessing and fixed score
   expect_identical(after$cycle, before$cycle)
 })
 
-test_that("disabled cycle retains the legacy schema and dependency topology", {
+test_that("disabled cycle uses the base schema and dependency topology", {
   f <- cycle_schema_fixture(); config <- f$config; config$cycle_diagnostics <- NULL
   e <- scAgentKit:::.sc_run_strategy_evidence(f$seu, config, f$qc)
   expect_false("cycle_diagnostics" %in% names(e$summary))

@@ -50,7 +50,7 @@
       list(id = paste0("mock_", cluster), type = "function", `function` = list(
         name = "cluster_markers", arguments = .sc_project_json(list(cluster_id = cluster, n = 5L)))))),
     usage = list(input_tokens = 0, output_tokens = 0), raw_usage = list()))
-  risks <- .sc_run_react_risks(NULL, cluster, character(), legacy = TRUE)
+  risks <- .sc_run_react_unassessed_risks(cluster)
   risks$fields <- lapply(risks$fields, function(x) { x$source <- "model"; x })
   final <- list(schema = "scagentkit.react-draft.v1",
     proposal = list(schema = "scagentkit.annotation.v1", annotations = list(
@@ -70,12 +70,15 @@
   cycle_concern = c("not_assessed", "not_detected", "suspected"),
   ambient_suspected = c("not_assessed", "not_detected", "suspected"))
 
-.sc_run_react_risks <- function(value, cluster, evidence_ids, legacy = FALSE) {
-  choices <- .sc_run_react_risk_values()
-  if (legacy) return(list(schema = "risk_flags.v1", stage = "annotation",
-    cluster_id = cluster, fields = lapply(names(choices), function(name) list(
+.sc_run_react_unassessed_risks <- function(cluster) {
+  list(schema = "risk_flags.v1", stage = "annotation",
+    cluster_id = cluster, fields = lapply(names(.sc_run_react_risk_values()), function(name) list(
       name = name, value = if (name == "batch_status") "insufficient_evidence" else "not_assessed",
-      assessment_status = "not_assessed", source = "legacy_unassessed", evidence_ids = list()))))
+      assessment_status = "not_assessed", source = "unassessed", evidence_ids = list())))
+}
+
+.sc_run_react_risks <- function(value, cluster, evidence_ids) {
+  choices <- .sc_run_react_risk_values()
   .sc_run_react_fields(value, c("schema", "stage", "cluster_id", "fields"))
   if (!identical(value$schema, "risk_flags.v1") || !identical(value$stage, "annotation") ||
       !identical(value$cluster_id, cluster))
