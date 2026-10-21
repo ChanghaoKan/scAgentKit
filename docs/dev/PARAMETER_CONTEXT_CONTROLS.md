@@ -1,6 +1,6 @@
 # Reviewable parameters and child annotation context
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Use one saved project for the strategy, analysis and annotation decisions. R can
 finish the workflow without a browser. The workbench exposes the same saved
@@ -205,7 +205,7 @@ request a model or continue computation. Completed child context is read-only.
 ## Optional model assistance
 
 For a fresh model-enabled project, follow the existing
-[provider configuration](../RESEARCHER_PROTOCOL_ZH.md)
+[provider configuration](../SCIENTIFIC_REVIEW_QUICKSTART.md)
 and [exact suggestion preview workflow](UNIFIED_MODEL_REVIEW.md). Built-in
 DeepSeek/Grok factories use `DEEPSEEK_API_KEY`/`XAI_API_KEY` from the analysis
 machine's environment or user secret mechanism at dispatch. Supply a verified

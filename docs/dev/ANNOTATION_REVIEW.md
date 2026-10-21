@@ -11,7 +11,7 @@ The unified `sc_run_review()` operation records a review of an inspected
 snapshot. It does not run analysis, request a model response, or execute supplied
 R text. Use `sc_run_resume()` separately on the analysis machine or in your
 scheduled job. Existing headless QC functions remain available; see
-[QC-review.md](QC-review.md) and [researcher guide](../RESEARCHER_PROTOCOL_ZH.md) for input,
+[QC-review.md](QC-review.md) and [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md) for input,
 context and provider contracts.
 
 ## Inspect and decide from R

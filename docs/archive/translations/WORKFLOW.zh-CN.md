@@ -26,7 +26,7 @@ service <- sc_start(input, project_dir, context=context)
 ```
 
 样本 ID 必须唯一，各样本 Gene Expression 的 feature ID 集合须相同。
-页面中的细胞 ID 为 `sample_id::barcode`。详细格式见[输入与 metadata 匹配](../TENX_INPUT.md)。
+页面中的细胞 ID 为 `sample_id::barcode`。详细格式见[输入与 metadata 匹配](../../TENX_INPUT.md)。
 
 RDS 内可以是 raw counts 或 Seurat 对象；传入的是**文件路径**，
 `sc_start()` 不接收内存中的 Seurat 对象：
@@ -37,7 +37,7 @@ service <- sc_start(input, project_dir, context=context)
 ```
 
 只用真实存在的 metadata 列声明已经核实的 sample、donor、capture、condition 角色；未知项留空。
-counts/layer 检查及明确复用已处理对象的步骤见[操作指南](../RESEARCHER_PROTOCOL_ZH.md)。
+counts/layer 检查及明确复用已处理对象的步骤见[操作指南](RESEARCHER_PROTOCOL_ZH.md)。
 
 ### 2. 复核方案，再复核实测分群
 
@@ -52,12 +52,12 @@ counts/layer 检查及明确复用已处理对象的步骤见[操作指南](../R
 查看已计算 PC 曲线、簇关系树、marker 对照和样本组成，选择**实际扫描过的分辨率**。
 保存修改、阅读更新后的审阅，再审批；随后进入注释工作表。
 若选入的方法尚未 ready，修订选择或补足它列出的前提。
-图的含义与 PC 规则见[方法附录](../SCIENTIFIC_METHODS_APPENDIX.md)。
+图的含义与 PC 规则见[方法附录](../../SCIENTIFIC_METHODS_APPENDIX.md)。
 
 ### 3. 复核注释
 
 查看 marker 及 DotPlot/FeaturePlot 证据。此版本为新项目离线加载固定 ACT 快照；
-[快照来源与用法](../ACT_LOCAL_REFERENCE.md)，明确物种/组织并保留原 PMID。
+[快照来源与用法](../../ACT_LOCAL_REFERENCE.md)，明确物种/组织并保留原 PMID。
 缺失或零匹配会显示 unavailable，仍可按 marker/Unknown 人工复核。首轮模型注释仅看 marker；
 随后进行 ACT 对比，并可使用受限的只读 ReAct 查证。CLID 使用固定版本的精确名称/同义词字典；歧义或未映射者保持缺失。
 
@@ -68,7 +68,7 @@ counts/layer 检查及明确复用已处理对象的步骤见[操作指南](../R
 批量 Unknown 需输入理由，并保留已编辑行。
 
 选择 **Save complete proposal**，通看各群，再 **Approve annotation and continue**。
-页面应进入完成状态与结果页。请求及编辑控件见[注释辅助](../dev/ANNOTATION_ASSISTANCE.md)。
+页面应进入完成状态与结果页。请求及编辑控件见[注释辅助](../../dev/ANNOTATION_ASSISTANCE.md)。
 
 ### 4. 取得结果
 
@@ -89,7 +89,7 @@ sc_open(project_dir)$view$output
 
 重开要求项目格式与当前软件匹配，`sc_open()` 和只读 `sc_run_open()` 同样检查。
 格式不匹配会在写入前拒绝，提示“请用原软件环境打开，或新建项目”；
-详见[格式闸门](../../workbench/README.md#project-format-and-reopening)。
+详见[格式闸门](../../../workbench/README.md#project-format-and-reopening)。
 使用原包环境、原输入和原选项重复相应入口；省略 context，以读取已保存的研究事实：
 
 ```r
@@ -101,5 +101,5 @@ sc_start("filtered_feature_bc_matrix", project_dir,
 ```
 
 页面显示保存的阶段。不依赖原输入位置查看结果时，在 R 中用 `sc_open(project_dir)`，
-只读网页用 `sc_run_open(project_dir)`。见[重开与错误处理](../RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)。
+只读网页用 `sc_run_open(project_dir)`。见[重开与错误处理](RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)。
 

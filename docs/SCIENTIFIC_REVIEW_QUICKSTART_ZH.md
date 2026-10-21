@@ -1,3 +1,6 @@
-# 科学复核操作指南
+# Historical Chinese guide reference
 
-当前中文步骤统一见[研究者操作协议](RESEARCHER_PROTOCOL_ZH.md)，英文见[operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)。安装及三次审批入口见[README](../README.zh-CN.md)。
+Frozen evaluation reports cite this path. The earlier Chinese instructions are
+retained in the [archived researcher protocol](archive/translations/RESEARCHER_PROTOCOL_ZH.md).
+For current analysis, use the English [operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md)
+and [installation instructions](user/INSTALL.md).

@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use scAgentKit in your research, please cite this software."
-title: "Human-in-the-Loop, Auditable scRNA-Seq Toolkit"
+title: "scAgentKit: Human-in-the-Loop, Auditable scRNA-Seq Toolkit"
 authors:
   - family-names: "Kan"
     given-names: "Changhao"

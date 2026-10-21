@@ -1,6 +1,6 @@
 # Qualification and freeze records (E0 documentation)
 
-These are field contracts and examples for E1/E5, not executable configuration or an experiment freeze. The approved protocol is [here](../../../docs/dev/EVALUATION_PROTOCOL_V2.md). Unknown required fields remain explicit `unknown` or `null` with a reason; an example never qualifies a dataset/model by itself.
+These are field contracts and examples for E1/E5, not executable configuration or an experiment freeze. The approved protocol is [here](../../../docs/research/EVALUATION_PROTOCOL_V2.md). Unknown required fields remain explicit `unknown` or `null` with a reason; an example never qualifies a dataset/model by itself.
 
 ## Model and comparator recommendation
 

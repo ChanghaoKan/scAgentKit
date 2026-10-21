@@ -1,6 +1,7 @@
 ^LICENSE\.md$
 ^AGENTS\.md$
 ^CITATION\.cff$
+^CONTRIBUTING\.md$
 ^Dockerfile$
 ^benchmark$
 ^\.github$
@@ -9,8 +10,6 @@
 ^workbench$
 ^docs$
 (__pycache__|[.]pyc$)
-
-^README\.zh-CN\.md$
 
 ^dev$
 ^tools/acceptance$

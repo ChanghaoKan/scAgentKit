@@ -1,63 +1,86 @@
 # scAgentKit
 
-**English** · [简体中文](README.zh-CN.md)
+scAgentKit is an R package for single-cell RNA-seq analysis with researcher review
+and optional language-model assistance. It uses Seurat for data processing and
+provides an R interface and a local browser workbench for reviewing quality
+control, clustering and cell-type annotations.
 
-A governed LLM assistant for foundational single-cell RNA-seq analysis.
-From counts to an annotated Seurat object, scAgentKit makes QC, batch handling,
-clustering and annotation decisions explicit: the model drafts with verifiable
-evidence, the researcher reviews and approves, and the project records the result.
+The package is under active development. Formal evaluation of its biological
+performance is pending.
 
-**In development.** Use the current `main` source below. Workflow checks do not
-establish biological accuracy; formal evaluation is still pending.
+## Installation
 
-## Quick start
-
-Requires **macOS/Linux**, R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3.9. Windows is unsupported.
+Requires Linux or macOS, R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3.9. Windows is unsupported.
+Install the current development source and its shared core:
 
 ```r
-install.packages("remotes")
+install.packages(c("remotes", "httr2"))
 remotes::install_github("ChanghaoKan/agentomicsCore@v0.3.0", upgrade = "never")
 remotes::install_github("ChanghaoKan/scAgentKit", upgrade = "never")
-library(scAgentKit)
-# Set your provider's API key in the R environment first.
-sc_start("input.rds", "new-project",
-  context = list(species = "human", tissue = "blood", research_goal = "Your question"),
-  provider = "deepseek")
 ```
 
-Confirm aggregate transfer once, then review three drafts: **analysis plan →
-measured clustering → annotation**. Saving or adopting a draft never approves it.
-Inputs can be RDS, 10x MEX or a sample table. Use `provider = "mock"` for an offline
-software trial. [Installation and trial](docs/user/INSTALL.md) · [Input formats](docs/TENX_INPUT.md).
+See the [installation guide](docs/user/INSTALL.md) for system dependencies and
+source-version pinning.
 
-## What you can inspect
+## Try the workflow
 
-- Diagnostic QC and batch evidence, with explicit researcher-approved choices.
-- Local ACT reference comparisons and read-only ReAct checks for uncertain annotations
-  (`react = "auto"`; disable with `"off"`).
-- Saved decisions, tool evidence, actual token/cost records and API-free annotation replay.
-- An annotated Seurat object, marker tables, figures and project audit records.
+This example opens the workbench with the bundled PBMC dataset and a mock
+provider. It needs no API key and makes no external model requests.
 
-Costs are recorded after calls; there is no monetary cap. Step/time limits apply.
-Uncertain delivery is never automatically resent. Missing keys or failed model
-requests leave rule/manual review available.
+```r
+library(scAgentKit)
+data("pbmc_small", package = "SeuratObject")
+trial <- tempfile("scagentkit-trial-")
+dir.create(trial)
+input <- file.path(trial, "pbmc-small.rds")
+saveRDS(pbmc_small, input)
 
-## Guides
+sc_start(input, file.path(trial, "project"),
+  context = list(species = "human", tissue = "blood",
+                 research_goal = "Explore the review workflow"),
+  provider = "mock", doublet = "off")
+```
 
-| Task | Guide |
-| --- | --- |
-| Review, retrieve results and reopen | [Workflow](docs/user/WORKFLOW.md) |
-| Understand annotation checks | [ReAct](docs/REACT.md) · [ACT](docs/ACT_LOCAL_REFERENCE.md) |
-| Cancel, resume or set disk allowance | [Run controls](docs/user/TRIAL_CONTROLS.md) |
-| Evaluate or replay annotations | [Evaluation and replay](docs/REACT_EVALUATION.md) |
-| Run a complete example | [Examples](inst/examples/README.md) |
-| Find methods and requirements | [Documentation](docs/README.md) |
-| Contribute or inspect validation | [Developer index](docs/dev/README.md) |
+For research data, inputs can be an RDS file, a 10x MEX directory or a sample
+table. The workflow pauses for three decisions:
 
-Saved projects must match the current project format. A mismatch is rejected
-before project writes: use the original software environment or create a new
-project. Preserve that environment and see the [format gate](workbench/README.md#project-format-and-reopening). Advanced downstream analyses
-(trajectory, communication, regulatory networks and condition comparisons) are
-outside this workflow. [Methods and limitations](docs/SCIENTIFIC_METHODS_APPENDIX.md).
+1. Review the quality-control and analysis plan before computation.
+2. Inspect the measured clustering diagnostics and select a scanned resolution.
+3. Review and approve the complete annotation proposal.
 
-[NEWS](NEWS.md) · [License](LICENSE.md) · [Citation](CITATION.cff)
+Saving a draft does not approve it. The completed project contains an annotated
+Seurat object, marker tables, figures, parameters and review records. Follow the
+[workflow guide](docs/user/WORKFLOW.md) or a [complete example](inst/examples/README.md).
+
+## Reproducibility
+
+For a study, pin the scAgentKit source commit and retain `sessionInfo()`, input
+provenance, analysis settings and the complete project directory. A development
+version number alone does not identify the source used. Reopen a project with
+its original software environment; incompatible project formats are rejected.
+
+External model assistance requires a configured provider and consent to send
+the selected aggregate data. Projects record available token usage and costs
+after requests; there is no spending cap. See [model usage](docs/MODEL_BUDGET.md)
+and [project preservation](docs/user/RESOURCE_CONTROLS.md).
+
+## Limitations
+
+Mock examples and software tests verify workflow behavior, not cell-type
+accuracy. Quality-control decisions, batch adjustment and annotation labels
+require study-specific assessment. Trajectory inference, cell communication,
+regulatory networks and condition comparisons are outside this package's
+workflow. Method definitions and interpretation are documented in the
+[methods reference](docs/SCIENTIFIC_METHODS_APPENDIX.md).
+
+## Documentation and citation
+
+The [documentation index](docs/README.md) covers inputs, methods, model
+assistance and operation. [Developer documentation](docs/dev/README.md) describes
+implementation and validation; [NEWS](NEWS.md) records changes.
+
+Use `citation("scAgentKit")` or [CITATION.cff](CITATION.cff) to cite the software,
+and report the source commit used in the analysis. Cite the underlying methods
+and reference resources used in your study, including
+[ACT](docs/ACT_LOCAL_REFERENCE.md) when applicable.
+The software is distributed under the [MIT license](LICENSE.md).

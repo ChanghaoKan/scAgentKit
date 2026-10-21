@@ -1,6 +1,6 @@
 # Explicit Harmony and computed-PC policies
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 The raw-entry `sc_run(..., strategy = TRUE)` workflow supports an explicitly
 reviewed Harmony choice and two `computed_top50` PC policies. The default batch

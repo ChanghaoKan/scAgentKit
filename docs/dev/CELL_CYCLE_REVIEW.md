@@ -1,6 +1,6 @@
 # Cell-cycle diagnostics and one strategy review
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Cell-cycle handling extends the existing `sc_run(..., strategy = TRUE)` flow.
 Enabling diagnostics computes local scores before QC, then presents the ordinary

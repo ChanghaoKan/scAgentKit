@@ -1,29 +1,66 @@
-# E5 运行后用量与费用报告
+# E5 post-run usage and cost reporting
 
-2026-10-20。这是结果字段与汇总口径，不是发送前报价单。主矩阵为 DeepSeek + Grok；不要求先估算总费用，不新增 token 计数、余量、费用封顶或预留系统。当前没有真实运行金额。协议见[provider 型号与用量契约](../../../docs/dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md)。
+Recorded on 2026-10-20. This document defines result fields and aggregation rules,
+not a quotation before execution. The primary comparison includes DeepSeek and
+Grok. It does not require an advance total-cost estimate or introduce token
+estimation, remaining allowances, monetary caps or reservations. No actual run
+costs are available in this record. See the
+[provider model and usage contract](../../../docs/dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md).
 
-## 记录单位
+## Unit of record
 
-每次实际请求绑定 `run_id + dataset_id + input_hash + method + config_hash + replicate_id + stage + request_id`。复用已有 ledger/event，结果表仅投影，不建另一账本。至少保存：
+Each actual request is identified by
+`run_id + dataset_id + input_hash + method + config_hash + replicate_id + stage + request_id`.
+Reuse the existing ledger and events; result tables are projections of those
+records, not a separate ledger. Record at least the following:
 
-| 字段组 | 内容 |
+| Field group | Contents |
 | --- | --- |
-| 请求身份 | provider、请求/返回 model、endpoint、时间、阶段/簇、payload/response hash、投递/完成/失败状态 |
-| 用量 | 原始 usage；可映射的输入、缓存、输出、推理及 total；各字段是否包含其他项的 provider 口径；缺失为 null |
-| 金额 | 服务报告金额与原始单位；没有报告金额时可按实际 usage 事后折算，附价格来源/日期、币种及适用档位；无法确定为 unknown |
-| 时间与结果 | 耗时、超时、拒绝、回退原因、工具调用数/turn 数；未发送与发送后失败分开 |
-| 证据 | 记录来源、对应 ledger/event；后补账单 receipt 与原请求关联，保留原始记录 |
+| Request identity | Provider; requested and returned model; endpoint; time; stage or cluster; payload and response hashes; delivery, completion and failure status. |
+| Usage | Raw usage; input, cached, output, reasoning and total counts where mappable; the provider's definitions of which fields include others. Missing values are null. |
+| Cost | Service-reported amount and original unit. If absent, a post-run calculation may use actual usage, with price source, date, currency and applicable tier. Indeterminate amounts are unknown. |
+| Timing and outcome | Elapsed time, timeouts, refusals, fallback reason, tool-call and turn counts. Distinguish unsent requests from failures after transmission. |
+| Evidence | Source record and corresponding ledger or event. Link later billing receipts to the original request and retain the original record. |
 
-服务报告金额和按用量折算金额是同一请求的替代估价来源，不能相加。推理 token 与 output 的包含关系依 provider 核实，不能重复计费。xAI 优先使用 `usage.cost_in_usd_ticks / 10^10`，保留原始 ticks；缺失不推断免费。某些生成前违规拒绝可收费 $0.05，不能把所有 refusal 一律记 $0.05 或零。来源见[xAI 资格记录](xai-qualification.md)。
+A service-reported amount and a usage-based calculation are alternative cost
+sources for the same request; do not add them. Verify whether the provider
+includes reasoning tokens in output before calculating charges. For xAI, prefer
+`usage.cost_in_usd_ticks / 10^10` and retain the raw ticks. Missing cost does not
+mean a free request. Some policy refusals before generation may incur $0.05;
+this does not justify assigning either $0.05 or zero to every refusal. See the
+[xAI qualification record](xai-qualification.md).
 
-## 汇总与模型比较
+## Aggregation and model comparisons
 
-按数据集、split、方法、冻结配置和实际模型分别汇总。主实验每配置 N=5；开发与其他 provider 可用性验证 N=3 单列。重复次数不等于成功次数，报告计划、尝试、完成、失败数量。未运行项目的数值保持 null/not_run，不填零。
+Aggregate separately by dataset, split, method, frozen configuration and actual
+model. The main experiment has N=5 runs per configuration; development checks
+and availability checks for other providers use N=3 and are reported separately.
+Replicate counts are not success counts: report planned, attempted, completed
+and failed runs. Values for unrun experiments remain null or not_run, not zero.
 
-- scAgentKit 全流程分第一关、第二关、第三关 baseline 和额外 ReAct；单次注释表也分别列 baseline/额外 ReAct。工具本地耗时与 API 费用分开。
-- CASSIA 的 annotation、validator、formatter 及显式启用的额外 agent 都计入；实际 retries/预检同样计入，不能用一次调用价格代表整个方法。
-- 每次运行报告已知金额总和、来源覆盖率、费用未知的请求数、tokens 和耗时；跨重复报告均值/范围及有效分母。缺费用时称“已知部分费用”，不能作完整总价或据此断言哪个模型更便宜。
-- on/off 和其他消融用冻结的配对配置比较；共用控制组只计一次，列明 run IDs。对照共享的预处理记录成本归属，避免漏算或重复计入。
-- 公开开发、公开基准、维护者留出和其他 provider 产品验证分别汇总。留出不用于开发估价；由维护者正式运行后提交真实记录。
+- Separate the full scAgentKit workflow into the first review, second review,
+  annotation baseline at the third review, and additional ReAct work. The
+  annotation-only table also separates baseline and additional ReAct work.
+  Report local tool time separately from API charges.
+- Include CASSIA annotation, validator, formatter and any additional agents
+  explicitly enabled. Include actual retries and preflight requests; one call's
+  price does not represent the method's total cost.
+- For each run, report the sum of known amounts, coverage by cost source,
+  requests with unknown cost, tokens and elapsed time. Across replicates,
+  report means, ranges and the contributing denominator. If costs are missing,
+  call the sum the *known portion of cost*; do not present it as a complete
+  total or use it to conclude that one model is cheaper.
+- Compare ReAct on/off and other ablations using frozen paired configurations.
+  Count shared controls once and list their run IDs. Attribute the cost of
+  preprocessing shared across comparators to avoid omissions or double counting.
+- Report public development data, public benchmarks, the maintainer-held
+  dataset and product checks for other providers separately. Do not use the
+  held-out dataset for development cost estimates; the maintainer supplies
+  actual records after the authorized formal run.
 
-费用只是运行后的比较指标，不作为模型选择或阶段启动的报价门槛。步数、时间、隐私、科学审批和投递不明不重发仍有效。真实实验仍需满足协议的数据/代码/preset 冻结与执行授权；本文件不授权真实 API 调用。单次请求和结构化 turn 均不设金额上限。
+Cost is a post-run comparison measure, not a quotation required to select a
+model or start a stage. Step and time limits, privacy checks, scientific
+approvals and the prohibition on resending requests with uncertain delivery
+still apply. Actual experiments require the protocol's data, code and preset
+freezes and execution authorization. This document does not authorize API
+calls. Neither individual requests nor structured turns have a monetary cap.

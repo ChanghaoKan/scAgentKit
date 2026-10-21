@@ -1,44 +1,41 @@
-# Developer references
+# Developer documentation
 
-These repository-only documents describe internal contracts, diagnostic drivers and validation evidence. Start a study with the [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md). They are excluded from the R archive.
+For installation and analysis, start with the [user documentation](../README.md).
+For source changes and validation commands, read [Contributing](../../CONTRIBUTING.md)
+and the repository [development contract](../../AGENTS.md).
 
-- [ANALYSIS STRATEGY SUPPORT](ANALYSIS_STRATEGY_SUPPORT.md)
-- [ANNOTATION ASSISTANCE](ANNOTATION_ASSISTANCE.md)
-- [ANNOTATION REVIEW](ANNOTATION_REVIEW.md)
-- [API CONSOLIDATION](API_CONSOLIDATION.md)
-- [CELL CYCLE REVIEW](CELL_CYCLE_REVIEW.md)
-- [CM2 EVIDENCE REVIEW](CM2_EVIDENCE_REVIEW.md)
-- [COMPLETE ANALYSIS WALKTHROUGH](COMPLETE_ANALYSIS_WALKTHROUGH.md)
-- [DOUBLET REVIEW](DOUBLET_REVIEW.md)
-- [ENVIRONMENT RESTORE](ENVIRONMENT_RESTORE.md)
-- [EVALUATION PROTOCOL V1](EVALUATION_PROTOCOL_V1.md)
-- [Evaluation protocol v2](EVALUATION_PROTOCOL_V2.md) — approved engineering design; formal experiments not frozen or executed
-- [Positioning v2](SCAGENTKIT_POSITIONING_V2.md)
-- [Paper milestone and 1.0 plan](PAPER_MILESTONE_PLAN.md)
-- [Provider model and usage contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
-- [E5 post-run cost reporting](../../benchmark/evaluation-v2/manifests/E5_COST_REPORTING.md)
-- [Grok official capability and protocol qualification](../../benchmark/evaluation-v2/manifests/xai-qualification.md)
-- [Evaluation v2 framework contract](../../benchmark/evaluation-v2/README.md) — E0 documents only
-- [HARMONY PC REVIEW](HARMONY_PC_REVIEW.md)
-- [MAD REVIEW](MAD_REVIEW.md)
-- [OFFLINE COMPARISON CONTRACT](OFFLINE_COMPARISON_CONTRACT.md)
-- [PARAMETER CONTEXT CONTROLS](PARAMETER_CONTEXT_CONTROLS.md)
-- [QC-review](QC-review.md)
-- [ReAct implementation plan](REACT_IMPLEMENTATION_PLAN.md)
-- [Accepted 1.0 gap audit](reports/2026-10-20-1.0-gap-audit.md)
-- [E0 stage report](reports/2026-10-20-e0.md)
-- [scAgentKit 2A and workflow revision stage report](reports/2026-10-20-scagentkit-2a.md)
-- [UNIFIED MODEL REVIEW](UNIFIED_MODEL_REVIEW.md)
-- [annotation-response-recovery](annotation-response-recovery.md)
+## Analysis and review
 
-## Implementation reports
+| Topic | Reference |
+| --- | --- |
+| Foundation analysis and clustering | [Analysis strategy](ANALYSIS_STRATEGY_SUPPORT.md) |
+| QC rules and measured evidence | [QC review](QC-review.md), [MAD review](MAD_REVIEW.md) |
+| Biological diagnostics | [Diagnostic contracts](BIOLOGICAL_DIAGNOSTICS.md) |
+| Batch correction and PC selection | [Harmony review](HARMONY_PC_REVIEW.md) |
+| Doublet and cell-cycle methods | [Doublet review](DOUBLET_REVIEW.md), [cell-cycle review](CELL_CYCLE_REVIEW.md) |
+| Annotation and reference evidence | [Annotation review](ANNOTATION_REVIEW.md), [annotation assistance](ANNOTATION_ASSISTANCE.md), [CellMarker evidence](CM2_EVIDENCE_REVIEW.md) |
+| Context and parameter revisions | [Parameter controls](PARAMETER_CONTEXT_CONTROLS.md) |
 
-- [B1/B2 diagnostics](reports/BIOLOGICAL_DIAGNOSTICS_STAGE_REPORT.md)
-- [ReAct loop](reports/2026-10-20-scagentkit-2b.md) · [xAI adapter](reports/2026-10-20-scagentkit-m1-xai.md)
-- [Trace interface](reports/REACT_TRACE_UI_STAGE_REPORT.md) · [Evaluation/replay](reports/REACT_4E_STAGE_REPORT.md)
-- [Startup](reports/REACT_START_STAGE_REPORT.md) · [Capacity](reports/RESOURCE_CAPACITY_STAGE_REPORT.md)
-- [Cancellation and resume](reports/TRIAL_CONTROLS_STAGE_REPORT.md)
+## Model requests and evidence retrieval
 
-Reports describe their recorded commits, not an assurance that every proposed experiment has run.
-Use `main` as the integration branch and one short-lived branch per PR. Delete merged remote
-branches after checking their recorded heads; keep unfinished work out of the user guides.
+- [Model-assisted review](UNIFIED_MODEL_REVIEW.md)
+- [Provider, model and usage contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
+- [Structured provider turns](STRUCTURED_PROVIDER_TURNS.md)
+- [ReAct loop](REACT_LOOP.md) and [tool benchmark](REACT_TOOLS_BENCHMARK.md)
+- [Annotation response recovery](annotation-response-recovery.md)
+
+## Development and validation
+
+- [Current R analysis workflow](../R_ANALYSIS_PROTOCOL.md)
+- [Developer example inventory](../../dev/examples/README.md)
+- [Installed-runtime comparison contract](OFFLINE_COMPARISON_CONTRACT.md)
+- [Environment records and the historical restoration recipe](ENVIRONMENT_RESTORE.md)
+- [Browser tests](../../workbench/tests/TEST_PLAN.md)
+- [Research protocols and milestones](../research/README.md)
+
+## Historical material
+
+[Implementation reports](reports/README.md) retain the observations and commits
+from their original checks. [Archived design documents and translations](../archive/README.md)
+provide historical context. Use current source and tests to establish present
+behavior; a past report is evidence only for its recorded revision.

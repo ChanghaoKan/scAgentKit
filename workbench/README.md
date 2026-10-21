@@ -3,7 +3,7 @@
 The workbench opens an existing `sc_run()` project on the machine holding its
 data. `/workbench` shows saved QC, strategy, analysis, annotation, outputs and
 history. **Review current step** opens `/review` for decisions and optional local
-computation. Start a project with the [R tutorial](../README.md#analysis-protocol)
+computation. Start a project with the [R tutorial](../docs/user/WORKFLOW.md)
 first; the browser is optional.
 
 ## Start from an RDS file
@@ -101,7 +101,7 @@ sc_run_open(project_dir)
 This read-only viewer starts or reuses a matching loopback service. It performs
 no analysis or model request. Python >= 3.9 is required. Installed resources
 are sufficient; a matching checkout remains an optional developer override.
-The [researcher guide](../docs/RESEARCHER_PROTOCOL_ZH.md#8-同一项目的可选网页与服务器运行)
+The [researcher guide](../docs/SCIENTIFIC_REVIEW_QUICKSTART.md#8-open-the-page-on-a-remote-machine)
 has remote-use and scheduler templates.
 
 ## Review and continue
@@ -160,8 +160,8 @@ R preflight to verify the authoritative state and any parent project chain.
 A failed, timed-out or unavailable preflight refuses access before project writes.
 This preflight can start an R process; it does not run scientific analysis or call a model. Read-only result
 viewers also pass this gate. Missing, damaged or mismatched versions are rejected
-without changing the project: “请用原软件环境打开，或新建项目” (use the original
-software environment or create a new project). There is no migration path.
+without changing the project. Use the original software environment or create a
+new project. There is no migration path.
 Matching the format does not replace input, implementation or approval checks.
 
 Keep the complete directory, including the marker and state, in backups.
@@ -186,7 +186,7 @@ convenience CSV/PNG files do not invalidate those authoritative artifacts. Views
 never display an export that fails its receipt check. If a bundle is damaged,
 the project status and history remain accessible with a warning; inspect the
 verified result in R. A changed authoritative checkpoint or Seurat output remains
-an integrity error. See [outputs and recovery](../docs/RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
+an integrity error. See [outputs and recovery](../docs/SCIENTIFIC_REVIEW_QUICKSTART.md#11-results-reopening-and-errors).
 
 The saved overview has a 16 MiB display limit and refuses oversized views instead
 of silently truncating them. Use local R inspection when a view cannot be supplied.

@@ -1,6 +1,6 @@
 # Historical and developer CellMarker notes
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 ACT is the current default; see [local ACT input](../ACT_LOCAL_REFERENCE.md). CellMarker is an optional explicit local-file importer. This historical fixture record does not authorize a download, certificate bypass, mirror, or database redistribution.
 
@@ -23,7 +23,7 @@ Set nonsecret paths to your already processed Seurat RDS, a durable **new** proj
 directory and an approved local marker-reference CSV. The paths below are read
 only when you run the example. They do not download a database or contact a
 provider. For raw counts, use the same reference arguments with
-`start_stage="qc"` and the [first-run QC flow](../RESEARCHER_PROTOCOL_ZH.md).
+`start_stage="qc"` and the [first-run QC flow](../SCIENTIFIC_REVIEW_QUICKSTART.md).
 
 ```r
 library(scAgentKit)
@@ -133,7 +133,7 @@ model an independent biological validation. `ai_mode="guided"` includes local
 database candidates in the model input, so agreement depends on that database.
 A manual proposal remains manual in either mode. Continue never requests a
 model; a new provider request requires explicit R resume and the existing exact
-aggregate-transfer approval. See [researcher guide](../RESEARCHER_PROTOCOL_ZH.md)
+aggregate-transfer approval. See [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md)
 for environment-based provider configuration. No paid call is needed here.
 
 ## Optional historical model evidence
