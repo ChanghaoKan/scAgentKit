@@ -52,19 +52,22 @@ invisible(get(".sc_run_input", ns)(request$input, context = request$context,
   processed_reason = if (identical(request$entry, "processed")) request$processed_reason else NULL,
   cluster_column = request$cluster_column))
 setup <- request$model_setup
-if (is.null(setup)) setup <- list(provider = NULL, budget = 0, review = list(allow_external = FALSE))
+if (is.null(setup)) setup <- list(provider = NULL, review = list(allow_external = FALSE))
+if (!is.list(setup) || is.null(names(setup)) ||
+    !all(c("provider", "review") %in% names(setup)) ||
+    any(!names(setup) %in% c("provider", "review", "react", "biological_diagnostics")))
+  stop("Provider configuration requires provider and review, with only current supported fields.")
 # Configuration only: credentials are scrubbed from this subprocess. Creation
 # prepares an editable local draft; provider calls use the separate review worker.
 setup$provider <- get(".sc_run_provider_spec", ns)(setup$provider)$metadata
 if (identical(request$entry, "processed")) {
   scAgentKit::sc_run(request$input, request$project, context = request$context,
     start_stage = "processed", processed_reason = request$processed_reason,
-    cluster_column = request$cluster_column, reference = get(".sc_ui_act_default", ns)(request$context), provider = setup$provider, budget = setup$budget, review = setup$review, react = setup$react, cost_mode = if (is.null(setup$cost_mode)) "legacy_cap" else setup$cost_mode, input_policy = list(preserve_metadata = TRUE, doublet_mode = "off"))
+    cluster_column = request$cluster_column, reference = get(".sc_ui_act_default", ns)(request$context), provider = setup$provider, review = setup$review, react = setup$react, input_policy = list(preserve_metadata = TRUE, doublet_mode = "off"))
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
-  plan = list(), provider = setup$provider, budget = setup$budget, review = setup$review,
+  plan = list(), provider = setup$provider, review = setup$review,
   scientific_review=request$scientific_review, react = setup$react,
   biological_diagnostics = setup$biological_diagnostics,
-  cost_mode = if (is.null(setup$cost_mode)) "legacy_cap" else setup$cost_mode,
   doublet=if (is.null(request$doublet_mode)) "auto" else request$doublet_mode)
 view <- scAgentKit::sc_run_inspect(request$project)
 jsonlite::write_json(list(project_id = view$project_id, status = view$status, stage = view$stage,

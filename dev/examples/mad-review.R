@@ -164,11 +164,12 @@ mad_example_propose <- function(project_dir, snapshot, preset_id, reviewer, reas
         batch = list(method = "none", reason = "Synthetic labels do not establish a technical batch effect; no integration is proposed."),
         clustering = list(resolution = .4, diagnostic_resolutions = c(.2, .4, .6)),
         umap = list(run = TRUE, n_neighbors = 15L))
-  proposal$qc <- list(schema = "scagentkit.qc.mad.v1", rationale = reason,
+  proposal$qc <- list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = reason,
     risks = list("A relative group threshold may flag valid biology or miss a poor-quality majority.",
       "Unknown or degenerate required metrics make removal candidates unavailable.",
       "High-RNA, ribosomal and hemoglobin measurements are diagnostic only."),
-    preset_id = preset_id, panel_hash = panel$panel_hash)
+    rules = list(list(op = "mad_preset", preset_id = preset_id,
+      panel_hash = panel$panel_hash)))
   if (!is.null(snapshot$evidence$doublet_diagnostics) ||
       !is.null(snapshot$strategy_review$details$doublet_diagnostics))
     if (is.null(proposal$doublet)) proposal$doublet <- list(method = "keep",

@@ -69,7 +69,7 @@ sc_project_export <- function(object, path, project_id, assay = "RNA",
   parameters <- .sc_project_object(parameters, "parameters")
   if (!is.null(seu@misc$sc_project_prepare) && is.null(parameters$prepare)) parameters$prepare <- seu@misc$sc_project_prepare
   provenance <- .sc_project_object(provenance, "provenance")
-  project <- list(schema = "scagentkit.project.v1", projectId = project_id, displayName = display_name,
+  project <- list(schema = "scagentkit.project.v1", project_format_version = .sc_project_format_version(), projectId = project_id, displayName = display_name,
                   identity = identity[setdiff(names(identity), c("cells", "features", "membership", "counts", "data"))],
                   cells = cell_records,
                   clusters = lapply(cluster_ids, function(id) list(id = id, cellIds = .sc_project_array(groups[[id]]))),

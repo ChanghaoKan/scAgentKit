@@ -70,8 +70,8 @@ test_that("diagnostic checkpoint joins the first review without becoming final P
   on.exit(unlink(root, recursive = TRUE))
   proposal <- list(schema = "scagentkit.strategy.v1", rationale = "Software control.",
     risks = list("No biological validation."), inferences = list(),
-    qc = list(schema = "scagentkit.qc.v1", rationale = "Keep positive-count fixture cells.",
-      risks = list(), filters = list(list(op = "range", metric = "nCount", min = 1L))),
+    qc = list(schema = "scagentkit.qc.rules.v1", rationale = "Keep positive-count fixture cells.",
+      risks = list(), remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1L))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 50L, npcs = 10L, seed = 1L),
     pcs = list(method = "fixed", ndim = 5L),
@@ -92,6 +92,15 @@ test_that("diagnostic checkpoint joins the first review without becoming final P
   expect_identical(review$details$risk_flags$stage, "strategy")
   expect_gt(length(review$details$diagnostic_thresholds$table), 0L)
   evidence <- .sc_run_get(root, state, "strategy_evidence")
+  empty <- .sc_run_get(root, state, "strategy_validated")
+  empty$proposal$qc$rules <- list()
+  empty$proposal$qc$remove_if <- "all"
+  empty <- .sc_run_strategy_validate(empty$proposal, evidence,
+    retained_scope = empty$qc_validated$retained_scope)
+  thresholds <- .sc_run_biology_threshold_review(empty, evidence)
+  expect_identical(thresholds$table, list())
+  expect_identical(thresholds$remove_if, "all")
+  expect_identical(thresholds$minimum_prefilter_counts, review$details$diagnostic_thresholds$minimum_prefilter_counts)
   risk <- review$details$risk_flags
   expect_identical(.sc_run_biology_risks(risk, evidence), risk)
   invalid <- risk; invalid$fields[[1]]$value <- "certain_doublet"

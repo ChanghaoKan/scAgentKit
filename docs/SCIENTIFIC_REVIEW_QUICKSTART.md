@@ -11,7 +11,6 @@ follow the [README entry](../README.md#analysis-protocol) and installed
 manual workflow. Without project-scope consent, each exact payload needs
 separate approval. Draft adoption/Save never approves science. New default
 startup records actual usage after calls, without a monetary cap or reservation.
-Explicit legacy `budget` settings and saved projects retain their old behavior.
 See the [evidence-check guide](REACT.md) for defaults, fallback and replay.
 
 New eligible drafts use conservative AND3 QC only when all required group metrics
@@ -74,7 +73,7 @@ service <- sc_start("input.rds", "new-review-project", context=context)
 ```
 
 Check the import summary and unapproved plan: cells, features and sample facts.
-Continue to strategy review. DeepSeek Flash defaults to a USD1.00 cap; choose provider="manual" for local-only review, or see section 6 for model setup.
+Continue to strategy review. Choose provider="manual" for local-only review, or see section 6 for model setup. Model costs are recorded after calls without a monetary cap.
 
 ## 5. Review the plan and measured clustering
 
@@ -95,7 +94,7 @@ Prepare genuine counts, the normalized layer, clusters and a reuse reason:
 processed <- sc_run("processed.rds", "new-annotation-project", context=context,
   start_stage="processed", processed_reason="Reuse documented QC, normalization and clusters.",
   assay="RNA", counts_layer="counts", normalized_layer="data",
-  cluster_column="seurat_clusters", provider=NULL, budget=0)
+  cluster_column="seurat_clusters", provider=NULL)
 sc_open("new-annotation-project")
 ```
 
@@ -105,17 +104,16 @@ and section 9.
 
 ## 6. Optional model assistance
 
-Configure a **new** project directly with sc_start(provider=..., budget=..., review=...)
-before opening the page. The saved provider/model/settings/budget stay fixed. Supply the key in the execution environment;
+Configure a **new** project directly with sc_start(provider=..., review=...)
+before opening the page. The saved provider/model/settings stay fixed. Supply the key in the execution environment;
 `Rscript --vanilla` inherits it without reading `.Renviron`.
 Follow [configuration/consent](dev/UNIFIED_MODEL_REVIEW.md).
 
-Use creation-time project consent only after inspecting its aggregate categories and cap; eligible drafts can then be requested automatically once per evidence snapshot. Without that scope, preview content/destination, approve the exact transfer, then Request. Edit/adopt, Save and separately approve science. For unclear outcomes, inspect saved job/usage
+Use creation-time project consent only after inspecting its aggregate categories and provider; eligible drafts can then be requested automatically once per evidence snapshot. Without that scope, preview content/destination, approve the exact transfer, then Request. Edit/adopt, Save and separately approve science. For unclear outcomes, inspect saved job/usage
 before another request. Use the linked R procedure for external-transfer stops
 not offered by the page.
 
-If a configured suggestion fails (including missing key, invalid JSON or budget
-stop), its local rule draft and reason are saved without approval or retry.
+If a configured suggestion fails (including a missing key or invalid JSON), its local rule draft and reason are saved without approval or retry.
 Complete suitable grouped MAD evidence selects conservative AND3; incomplete
 evidence retains keep-all and explicitly unassessed QC. Saved human edits remain
 in force; inspect the effective draft. A valid model annotation is not automatically
@@ -185,6 +183,10 @@ facts. See [reuse limits](../README.md#limitations).
 | awaiting_review | Read the current proposal, Save edits, then approve. |
 | A busy job or uncertain response | Inspect the saved job/receipt and wait for the worker before submitting again. |
 | Input/layer mismatch or changed project environment | Check the input and recorded environment; use the original environment or a new project. |
+| Missing, damaged or mismatched project format | The gate reports “请用原软件环境打开，或新建项目”. Use that original environment or create a new project; do not edit the format marker, state or hashes. |
+
+The [format gate](../workbench/README.md#project-format-and-reopening) also applies
+to read-only result viewers and restored backups. It does not migrate projects.
 
 A complete backup copied back to its original path has new directory identities.
 For `Saved local continuation belongs to a different project directory`, development

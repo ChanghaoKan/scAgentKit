@@ -3,6 +3,7 @@ testthat::skip_if_not_installed("httr2")  # mocked below via local_mocked_bindin
 # predictions, not scDblFinder results or scientific doublet ground truth.
 # Root acceptance separately executes the installed algorithm on public data.
 
+
 doublet_integration_fixture <- function() {
   set.seed(999L)
   genes <- sc_cycle_gene_set("human")
@@ -68,10 +69,10 @@ doublet_integration_plan <- function(method = NULL, cycle = NULL) {
     rationale = "Review exact count-positive QC and planted doublet predictions together.",
     risks = list("Predicted doublets and Unknown annotations are software controls, not biological truth."),
     inferences = list("No synthetic donor, condition, or score implies a biological cell identity."),
-    qc = list(schema = "scagentkit.qc.v1",
+    qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
       rationale = "Remove only the planted exact 200-count QC control.",
       risks = list("This software cutoff is not a recommended QC threshold."),
-      filters = list(list(op = "range", metric = "nCount", min = 201L))),
+      rules = list(list(op = "range", metric = "nCount", min = 201L))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 80L, npcs = 10L, seed = 999L),
     pcs = list(method = "fixed", ndim = 5L),
@@ -96,8 +97,7 @@ doublet_integration_begin <- function(root, object = doublet_integration_fixture
   suppressWarnings(do.call(sc_run, c(list(input = object, project_dir = root,
     context = context, strategy = TRUE, strategy_proposal = proposal,
     doublet_diagnostics = options, cycle_diagnostics = cycle,
-    provider = provider, chat_fn = chat_fn, budget = 0,
-    annotation_column = "reviewed_type", start_stage = start_stage), extra)))
+    provider = provider, chat_fn = chat_fn, annotation_column = "reviewed_type", start_stage = start_stage), extra)))
 }
 
 doublet_integration_continue <- function(root, snapshot = sc_run_inspect(root), retry = FALSE) {
@@ -426,7 +426,7 @@ test_that("keep remove and keep revisions rebuild only selection and downstream 
     seed = 17L, nbin = 12L, ctrl = 5L, scale_factor = 10000,
     min_genes = 5L, min_fraction = .2)
   initial_plan <- doublet_integration_plan("keep", "none")
-  initial_plan$qc$filters[[1L]]$min <- 201 # Authored R double, like a saved public QC proposal.
+  initial_plan$qc$rules[[1L]]$min <- 201 # Authored R double, like a saved public QC proposal.
   doublet_integration_begin(root, object, proposal = initial_plan, cycle = cycle)
   doublet_integration_decide(root); doublet_integration_continue(root)
   first <- scAgentKit:::.sc_run_load(root)
@@ -434,7 +434,7 @@ test_that("keep remove and keep revisions rebuild only selection and downstream 
   cycle_record <- scAgentKit:::.sc_run_get(root, first, "cycle_diagnostics")
   expect_identical(cycle_record$summary$status, "available")
   immutable_keys <- c("input", "qc_evidence", "cycle_diagnostics", "doublet_diagnostics",
-    "strategy_evidence", "qc_validated", "qc_object")
+    "strategy_evidence", "qc_object")
   refs <- first$files[immutable_keys]
   original_qc_hash <- scAgentKit:::.sc_run_get(root, first, "strategy_validated")$dependency_hashes$qc
   qc_ids <- colnames(object)[1:201]
@@ -448,10 +448,10 @@ test_that("keep remove and keep revisions rebuild only selection and downstream 
     # the doublet choice changes. JSON represents the R double bound 201 as
     # an integer token; this representational change must not rerun pure QC.
     proposal <- old_annotation$strategy_review$details$canonical_proposal
-    expect_identical(proposal$qc$filters[[1L]]$min, 201)
+    expect_identical(proposal$qc$rules[[1L]]$min, 201)
     proposal <- jsonlite::fromJSON(as.character(jsonlite::toJSON(proposal,
       auto_unbox = TRUE, null = "null", digits = NA)), simplifyVector = FALSE)
-    expect_identical(proposal$qc$filters[[1L]]$min, 201L)
+    expect_identical(proposal$qc$rules[[1L]]$min, 201L)
     proposal$doublet <- list(method = method,
       reason = paste("Explicit JSON-roundtripped", method, "software policy; QC is unchanged."))
     revised <- doublet_integration_revise(root, proposal)
@@ -467,7 +467,7 @@ test_that("keep remove and keep revisions rebuild only selection and downstream 
     expect_identical(doublet_integration_files(root)[names(old_bytes)], old_bytes)
     expect_error(doublet_integration_decide(root, old_annotation), "[Ss]tale|different review kind")
     review <- sc_run_inspect(root)
-    expect_identical(review$strategy_review$details$canonical_proposal$qc$filters[[1L]]$min, 201)
+    expect_identical(review$strategy_review$details$canonical_proposal$qc$rules[[1L]]$min, 201)
     expect_identical(review$strategy_review$details$dependency_hashes$qc, original_qc_hash)
     impact <- review$strategy_review$details$applicability$doublet
     expected_ids <- if (method == "keep") qc_ids else qc_ids[!qc_ids %in% predicted]
@@ -909,9 +909,9 @@ test_that("a local mock proposal sees aggregates only and cannot delete or repea
   request$validator <- function(value) scAgentKit:::.sc_run_strategy_validate(value, evidence)$proposal
   ledger <- file.path(root, "provider", "ledger.json")
   ledger_hash <- scAgentKit:::.sc_project_sha_file(ledger)
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback, budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback)
   expect_identical(cached$status, "ok"); expect_true(cached$cached)
-  expect_equal(cached$charged_or_held_usd, 0)
+  expect_equal(cached$cost_usd, 0)
   expect_identical(calls, 1L); expect_identical(detector$detector, 2L)
   expect_identical(scAgentKit:::.sc_project_sha_file(ledger), ledger_hash)
   doublet_integration_decide(root)
@@ -951,5 +951,73 @@ test_that("formal human and mouse declarations use literal fixture features with
   expect_false(file.exists(file.path(root, "state.rds")))
   expect_identical(detector$detector, 4L)
   expect_identical(serialize(object, NULL, version = 2L), original)
+  expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
+})
+
+test_that("empty-rule edits preserve QC and doublet attribution without restoring executed exclusions", {
+  network <- doublet_integration_sentinels(); detector <- doublet_integration_detector()
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  object <- doublet_integration_fixture()
+  plan <- doublet_integration_plan("remove_predicted")
+  plan$qc$rules <- list(); plan$qc$rationale <- "Add no quality filtering in this synthetic control."
+  doublet_integration_begin(root, object, plan)
+  doublet_integration_decide(root); doublet_integration_continue(root)
+  first <- .sc_run_load(root)
+  validation <- .sc_run_get(root, first, "strategy_validated")
+  scope <- validation$qc_validated$retained_scope
+  expected <- validation$selected_cells
+  expect_identical(validation$qc_validated$keep_cells, colnames(object))
+  expect_lt(length(expected), ncol(object))
+  keys <- c("qc_object", "strategy_selected", "strategy_preprocess", "strategy_basis", "strategy_neighbors", "analysis")
+  artifacts <- first$files[keys]
+  for (operator in c("all", "any")) {
+    before <- .sc_run_load(root); old_review <- sc_run_inspect(root)
+    proposal <- old_review$strategy_review$details$canonical_proposal
+    proposal$qc$remove_if <- operator
+    proposal$rationale <- paste("Equivalent empty policy with operator", operator)
+    doublet_integration_revise(root, proposal)
+    revised <- .sc_run_load(root); current <- .sc_run_get(root, revised, "strategy_validated")
+    expect_identical(current$qc_validated$retained_scope, scope)
+    expect_identical(current$qc_validated$keep_cells, colnames(object))
+    expect_identical(current$selected_cells, expected)
+    expect_identical(current$dependency_hashes, validation$dependency_hashes)
+    expect_identical(revised$files[keys], artifacts)
+    expect_identical(revised$history[seq_along(before$history)], before$history)
+    expect_false(identical(sc_run_inspect(root)$strategy_review$hash, old_review$strategy_review$hash))
+    expect_null(revised$approved)
+    doublet_integration_decide(root)
+    if (operator == "all") {
+      reopened <- doublet_integration_child(root)
+      expect_identical(reopened$status$stage, "annotation_propose")
+      expect_identical(reopened$detector_calls, 0L)
+      expect_identical(reopened$factory_calls, 0L)
+      expect_identical(reopened$http_calls, 0L)
+    } else expect_identical(doublet_integration_continue(root)$stage, "annotation_propose")
+    expect_identical(.sc_run_load(root)$files[keys], artifacts)
+  }
+  # A new empty-primary doublet keep decision captures the already executed
+  # selected cohort. It cannot reinterpret keep as restoration of old cells.
+  proposal <- sc_run_inspect(root)$strategy_review$details$canonical_proposal
+  proposal$doublet <- list(method = "keep", reason = "Retain the existing selected cohort.")
+  doublet_integration_revise(root, proposal)
+  state <- .sc_run_load(root); current <- .sc_run_get(root, state, "strategy_validated")
+  expect_identical(current$qc_validated$keep_cells, expected)
+  expect_identical(current$selected_cells, expected)
+  expect_equal(current$qc_validated$summary$quality_removed, 0)
+  expect_equal(current$qc_validated$summary$prior_removed, ncol(object) - length(expected))
+  expect_false(identical(current$qc_validated$retained_scope$hash, scope$hash))
+  doublet_integration_decide(root); doublet_integration_continue(root)
+  state <- .sc_run_load(root)
+  expect_identical(colnames(.sc_run_get(root, state, "qc_object")), expected)
+  expect_identical(colnames(.sc_run_get(root, state, "strategy_selected")), expected)
+  expect_invisible(.sc_run_qc_retained_scope_verify(root, state, scope, .sc_run_get(root, state, "qc_evidence")))
+  # A new explicit nonempty policy retains its existing ability to relax QC.
+  proposal <- sc_run_inspect(root)$strategy_review$details$canonical_proposal
+  proposal$qc$rules <- list(list(op = "range", metric = "nCount", min = 0))
+  doublet_integration_revise(root, proposal)
+  state <- .sc_run_load(root); current <- .sc_run_get(root, state, "strategy_validated")
+  expect_identical(current$qc_validated$keep_cells, colnames(object))
+  expect_identical(current$selected_cells, colnames(object))
+  expect_identical(detector$detector, 2L)
   expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
 })

@@ -81,4 +81,5 @@ uncalibrated recommendations remain proposals. Without an exported panel, the
 tool is unavailable. No full RDS is deserialized through the GUI.
 
 See [PROJECT_SCHEMA.md](PROJECT_SCHEMA.md) for the file and journal contracts.
-Legacy PBMC handoffs have no generic source identity and cannot write back.
+Writeback requires a `scagentkit.review-journal.v1` journal whose project ID,
+source fingerprint and bundle digest match the verified portable project.

@@ -114,7 +114,7 @@ test_that("new typed rules reject unsupported fields operations and parameters",
     p <- good; p$remove_if <- value
     expect_error(scAgentKit:::.sc_run_qc_validate(p, f$qc), "remove_if")
   }
-  for (rules in list(list(), rep(good$rules, 33), list(rule1 = good$rules[[1]]),
+  for (rules in list(NULL, rep(good$rules, 33), list(rule1 = good$rules[[1]]),
       list(list(op = "code", metric = "nCount", min = 1)), list(list(op = "range", metric = "nCount", min = .5)),
       list(list(op = "range", metric = "percent_mt", max = 101)), list(list(op = "range", metric = "nCount", min = Inf))))
     expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(rules), f$qc))
@@ -240,7 +240,7 @@ test_that("headless rule review rejects stale decisions and restarts without rep
   # is separately verified against actually computed PC variances.
   plan$pcs <- list(method = "fixed", ndim = 5L)
   first <- suppressWarnings(sc_run(f$seu, root, context = f$context, strategy = TRUE,
-    strategy_proposal = plan, qc_mad = f$mad_options, annotation_column = "rule_reviewed_type", budget = 0))
+    strategy_proposal = plan, qc_mad = f$mad_options, annotation_column = "rule_reviewed_type"))
   expect_identical(first$status, "awaiting_review")
   old <- sc_run_inspect(root)
   expect_equal(old$strategy_review$details$qc_impact$retention$retained, 118L)
@@ -367,4 +367,54 @@ test_that("AND over rules whose literal groups share no cell is rejected", {
   b <- list(op = "range", metric = "nCount", min = 100L, group = list(sample = "sample b"))
   expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(a, b), "all"), f$qc), "share no cell")
   expect_error(scAgentKit:::.sc_run_qc_validate(qc_rules_proposal(list(a, b), "any"), f$qc), "every cell")
+})
+
+test_that("empty rules preserve committed exclusions and report disjoint prior-stage attribution", {
+  f <- qc_rules_mad()
+  root <- tempfile("qc-scope-preview-"); dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  state <- list(input_hash = .sc_run_hash(list(f$qc$counts_hash, f$qc$cell_hash)),
+    revision = 0L, history = list(), files = list())
+  state <- .sc_run_put(root, state, "input", f$seu)
+  state <- .sc_run_put(root, state, "qc_evidence", f$qc)
+  prior_qc <- f$prefilter$keep_cells[-3L]
+  state <- .sc_run_put(root, state, "qc_object", f$seu[, prior_qc])
+  state <- .sc_run_event(state, "executed", list(stage = "qc_apply", files = state$files))
+  prior_selection <- prior_qc[-4L]
+  state <- .sc_run_put(root, state, "strategy_selected", f$seu[, prior_selection])
+  state <- .sc_run_event(state, "executed", list(stage = "strategy_selection", files = state$files))
+  scope <- .sc_run_qc_retained_scope(root, state, f$qc)
+  expect_identical(scope$cell_ids, prior_selection)
+  expect_silent(.sc_run_qc_retained_scope_verify(root, state, scope, f$qc))
+  for (logic in c("any", "all")) {
+    proposal <- qc_rules_proposal(list(), logic)
+    checked <- .sc_run_qc_validate(proposal, f$qc, retained_scope = scope)
+    preview <- .sc_run_qc_preview_build(proposal, f$qc, retained_scope = scope)
+    expect_identical(checked$retained_scope, scope)
+    expect_identical(checked$keep_cells, prior_selection)
+    expect_identical(colnames(.sc_run_qc_apply(f$seu, checked, f$qc)), prior_selection)
+    expect_identical(preview$rule_logic$prefilter_excluded_cells, f$prefilter$excluded_cells)
+    expect_identical(preview$rule_logic$prior_excluded_cells,
+      f$prefilter$keep_cells[!f$prefilter$keep_cells %in% prior_selection])
+    expect_equal(preview$rule_logic$prefilter_removed, 2L)
+    expect_equal(preview$rule_logic$prior_removed, 2L)
+    expect_equal(preview$rule_logic$quality_removed, 0L)
+    expect_equal(preview$retention$before,
+      preview$retention$retained + preview$rule_logic$prefilter_removed +
+        preview$rule_logic$prior_removed + preview$rule_logic$quality_removed)
+    prior <- Filter(function(pattern) isTRUE(pattern$prior_excluded), preview$patterns)
+    expect_length(prior, 1L)
+    expect_identical(prior[[1L]]$reason_ids, "prior_excluded")
+    expect_identical(prior[[1L]]$filter_ids, character())
+    expect_false(prior[[1L]]$prefilter_excluded)
+  }
+  explicit <- qc_rules_proposal(list(list(op = "range", metric = "nCount", min = 0)))
+  comparison <- .sc_run_qc_preview_build(explicit, f$qc,
+    sensitivity = list(list(id = "no new filters", proposal = qc_rules_proposal(list()))),
+    retained_scope = scope)
+  expect_identical(comparison$keep_cells, f$prefilter$keep_cells)
+  expect_equal(comparison$rule_logic$prior_removed, 0L)
+  expect_identical(comparison$sensitivity[[1L]]$keep_cells, prior_selection)
+  expect_equal(comparison$sensitivity[[1L]]$removed_from_primary, 2L)
+  expect_equal(comparison$sensitivity[[1L]]$added, 0L)
 })

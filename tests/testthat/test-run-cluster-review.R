@@ -26,7 +26,7 @@ test_that("a measured sweep returns to the existing review and binds author sele
   expressions <- parse(file.path("test-run-strategy-integration.R"))
   for (expr in expressions) if (is.call(expr) && identical(expr[[1]], as.name("<-"))) eval(expr, fixture)
   root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
-  fixture$strategy_integration_begin(root, provider = list(name = "mock", model = "software-control", external = FALSE, reservation_usd = 0))
+  fixture$strategy_integration_begin(root, provider = list(name = "mock", model = "software-control", external = FALSE))
   fixture$strategy_integration_decide(root)
   initial <- sc_run_inspect(root)
   scanned <- suppressWarnings(sc_run_continue(root, initial$project_id, initial$input_hash, initial$revision))

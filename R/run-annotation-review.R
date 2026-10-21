@@ -139,23 +139,8 @@
     stop("Reference is marked absent but contains candidate records.", call. = FALSE)
   if (is.null(source)) source <- .sc_run_annotation_review_source(root, state, evidence, checked)
   reference_evidence <- evidence$private$reference_evidence
-  if (is.null(reference_evidence)) {
-    # Existing saved-evidence callers may have candidate tables without a new
-    # symbol audit. Disclose that limit instead of inventing a new computation.
-    reference_evidence <- list(provenance = c(provenance, list(symbol_audit = "not_recorded")),
-      per_cluster = lapply(ids, function(id) {
-        saved <- Filter(function(x) identical(x$clusterId, id), all_candidates)
-        if (!length(saved)) saved <- Filter(function(x) identical(x$clusterId, id), candidates)
-        best <- if (length(saved)) max(vapply(saved, `[[`, numeric(1), "score")) else 0
-        saved <- lapply(saved, function(x) {
-          x$tiedBest <- x$score > 0 && identical(x$score, best)
-          x$formula <- "Saved marker coverage; canonical symbol audit unavailable."
-          x
-        })
-        list(clusterId = id, status = if (length(saved)) "saved_legacy_candidates" else provenance$status,
-          candidates = saved, all_candidates = saved, marker_symbols = list(status = "not_recorded"))
-      }))
-  }
+  if (is.null(reference_evidence))
+    stop("Saved annotation reference evidence is missing; review is invalid.", call. = FALSE)
   output_columns <- list(label = target, confidence = paste0(target, "_confidence"),
                          rationale = paste0(target, "_rationale"))
   ontology <- .sc_run_annotation_ontology_get(root,state,checked)

@@ -16,11 +16,11 @@ cm2_evidence_start <- function(input, project_dir, context, reference = NULL,
                                reference_review = list(ai_mode = "independent", top_n = 5L),
                                annotation_history = NULL, start_stage = "processed",
                                processed_reason = NULL, provider = NULL, chat_fn = NULL,
-                               budget = 0, review = list(allow_external = FALSE), ...) {
+                               review = list(allow_external = FALSE), ...) {
   sc_run(input, project_dir, context = context, reference = reference,
     reference_review = reference_review, annotation_history = annotation_history,
     start_stage = start_stage, processed_reason = processed_reason,
-    provider = provider, chat_fn = chat_fn, budget = budget, review = review, ...)
+    provider = provider, chat_fn = chat_fn, review = review, ...)
 }
 
 # Caller-extracted historical rows are evidence, not a current typed proposal.

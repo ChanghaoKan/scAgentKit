@@ -76,3 +76,22 @@ test_that("replacement cannot cross the minimum prefilter or target an absent ba
     reason = "No baseline mitochondrial rule exists in this fixture.")
   expect_error(.sc_run_qc_validate(f$proposal, f$qc), "baseline coverage")
 })
+
+
+test_that("cluster replacements still require nonempty baseline coverage and evidence hashes", {
+  f <- replacement_fixture()
+  empty <- f$proposal; empty$rules <- list()
+  expect_false(.sc_run_qc_empty_rules(empty))
+  expect_error(.sc_run_qc_validate(empty, f$qc), "baseline coverage")
+  empty$replacements <- list()
+  expect_false(.sc_run_qc_empty_rules(empty))
+  expect_error(.sc_run_qc_validate(empty, f$qc), "1 to 100")
+  stale <- f$proposal; stale$diagnostic_hash <- strrep("0", 64L)
+  expect_error(.sc_run_qc_validate(stale, f$qc), "Diagnostic checkpoint")
+  changed <- f$proposal
+  changed$replacements[[1L]]$reason <- "Different explanation for the same exact threshold."
+  one <- .sc_run_qc_validate(f$proposal, f$qc)$proposal
+  two <- .sc_run_qc_validate(changed, f$qc)$proposal
+  expect_identical(.sc_run_qc_scientific_key(one), .sc_run_qc_scientific_key(two))
+  expect_false(identical(one, two))
+})

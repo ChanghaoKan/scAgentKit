@@ -9,8 +9,9 @@
 #' @param species One of "human" or "mouse"; applied to the table's species column.
 #' @param tissue Required nonempty literal tissue filter (case insensitive).
 #' @param cancer_only Restrict to non-Normal cancer context when TRUE.
-#' @param cache_dir Retained for call compatibility; caches are not silently trusted.
-#' @param force_refresh Retained for compatibility; automatic refresh is unavailable.
+#' @param cache_dir Not used by the explicit local-file import.
+#' @param force_refresh TRUE requests automatic refresh, which is unavailable and
+#'   rejected; use a local_file.
 #' @param url Only the documented fixed official HTTPS URL is recognized; no mirrors.
 #' @param local_file Explicit path to a lawfully obtained local XLSX file.
 #' @param sha256 Optional expected local file SHA256. This is a user input check,

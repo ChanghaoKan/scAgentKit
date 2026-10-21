@@ -135,9 +135,9 @@ test_that("project kind input proposal review and revision must all match before
 
 test_that("the generic QC route retains preview binding and never applies a revised preapproved rule", {
   path <- tempfile(); input <- review_actions_fixture(); before <- .sc_run_hash(input)
-  rule <- function(minimum) list(schema = "scagentkit.qc.v1", rationale = "Synthetic count-positive acceptance only.",
+  rule <- function(minimum) list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Synthetic count-positive acceptance only.",
     risks = list("These thresholds are not biologically validated."),
-    filters = list(list(op = "range", metric = "nCount", min = minimum)))
+    rules = list(list(op = "range", metric = "nCount", min = minimum)))
   sc_run(input, path, context = list(species = "human", tissue = "synthetic QA"),
     qc_proposal = rule(1), review = list(preapprove_qc = rule(2)), analysis = list(run_umap = FALSE))
   old <- sc_run_inspect(path)

@@ -1,6 +1,6 @@
 annotation_review_fixture <- function(manual = TRUE, response = NULL, reference = FALSE) {
   root <- tempfile("annotation-review-")
-  dir.create(root)
+  .sc_project_format_create(root)
   input <- data.frame(cell_id = c("001", "1", "NA", "cell space", "Ca", "Ctrl"),
                       cluster = rep(c("01", "NA"), 3), stringsAsFactors = FALSE)
   marker <- function(id, gene, fold, within, outside) list(clusterId = id, gene = gene,
@@ -20,6 +20,21 @@ annotation_review_fixture <- function(manual = TRUE, response = NULL, reference 
       candidates = candidates, candidates_all = candidates,
       reference_provenance = list(status = if (reference) "matched" else "not_supplied",
                                   mode = "independent_local_reference")))
+  candidate_records <- .sc_run_annotation_candidate_records(candidates)
+  evidence$private$reference_evidence <- list(schema = "scagentkit.reference-evidence.v1",
+    provenance = evidence$private$reference_provenance,
+    per_cluster = lapply(evidence$summary$clusters, function(cluster) {
+      selected <- Filter(function(row) identical(row$clusterId, cluster$clusterId), candidate_records)
+      selected <- lapply(selected, function(row) {
+        row$tiedBest <- TRUE
+        row$formula <- .sc_run_reference_scoring()$formula
+        row
+      })
+      list(clusterId = cluster$clusterId, cellCount = cluster$cellCount,
+        status = evidence$private$reference_provenance$status,
+        candidates = selected, all_candidates = selected,
+        marker_symbols = .sc_run_reference_symbols(vapply(cluster$markers, `[[`, character(1), "gene"), NULL))
+    }))
   proposal <- list(schema = "scagentkit.annotation.v1", annotations = list(
     list(clusterId = "NA", label = "T-like", confidence = "medium",
          rationale = "Supplied CD3D evidence supports a broad provisional label.", markers = list("CD3D")),
@@ -28,7 +43,7 @@ annotation_review_fixture <- function(manual = TRUE, response = NULL, reference 
   validated <- scAgentKit:::.sc_run_annotation_validate(proposal, evidence)
   config <- list(annotation_column = "fresh_annotation", provider = list(name = "deepseek",
     model = "configured-only", generation = list(temperature = 0), external = TRUE))
-  state <- list(config = config, config_hash = scAgentKit:::.sc_run_hash(config),
+  state <- list(project_format_version = .sc_project_format_version(), config = config, config_hash = scAgentKit:::.sc_run_hash(config),
     implementation_hash = scAgentKit:::.sc_run_implementation(),
     files = list(), history = list(), revision = 0L, approvals = list(),
     pending = NULL, approved = NULL, completed = character(), nodes = list(),
@@ -48,6 +63,16 @@ annotation_review_fixture <- function(manual = TRUE, response = NULL, reference 
   state <- scAgentKit:::.sc_run_pending(state, "annotation", validated,
                                       scAgentKit:::.sc_run_hash(evidence), "annotation_apply")
   list(root = root, state = state, evidence = evidence, proposal = proposal, validated = validated)
+}
+
+annotation_review_files <- function(root) {
+  paths <- sort(list.files(root, recursive = TRUE, all.files = TRUE, no.. = TRUE,
+    include.dirs = TRUE))
+  stats::setNames(lapply(paths, function(path) {
+    full <- file.path(root, path)
+    if (dir.exists(full)) return("directory")
+    readBin(full, "raw", n = file.info(full)$size)
+  }), paths)
 }
 
 test_that("annotation snapshot preserves literal scope and exact supplied cited statistics", {
@@ -99,6 +124,53 @@ test_that("local reference availability is explicit and remains independent", {
   bad$private$reference_provenance$status <- "not_supplied"
   expect_error(scAgentKit:::.sc_run_annotation_review_build(with_reference$root,
     with_reference$state, with_reference$validated, bad), "marked absent")
+})
+
+test_that("missing reference evidence cannot be rebuilt from candidate tables and never writes files", {
+  roots <- character()
+  on.exit(unlink(roots, recursive = TRUE))
+  for (reference in c(FALSE, TRUE)) {
+    fixture <- annotation_review_fixture(reference = reference)
+    roots <- c(roots, fixture$root)
+    changed <- fixture$evidence
+    changed$private$reference_evidence <- NULL
+    expect_identical(nrow(changed$private$candidates), if (reference) 2L else 0L)
+    before <- annotation_review_files(fixture$root)
+    expect_error(.sc_run_annotation_review_build(fixture$root, fixture$state,
+      fixture$validated, changed), "annotation reference evidence is missing")
+    expect_identical(annotation_review_files(fixture$root), before)
+
+    state <- .sc_run_put(fixture$root, fixture$state, "annotation_evidence", changed)
+    record <- .sc_run_get(fixture$root, state, "annotation_review")
+    record$evidence_hash <- .sc_run_hash(changed)
+    record$hash <- .sc_run_annotation_review_hash(record)
+    state <- .sc_run_put(fixture$root, state, "annotation_review", record)
+    expect_identical(record$hash, .sc_run_annotation_review_hash(record))
+    before <- annotation_review_files(fixture$root)
+    expect_error(.sc_run_annotation_review_verify(fixture$root, state),
+      "annotation reference evidence is missing")
+    expect_identical(annotation_review_files(fixture$root), before)
+  }
+})
+
+test_that("ACT disabled current reference evidence stays unassessed without recomputation", {
+  fixture <- annotation_review_fixture(reference = TRUE)
+  on.exit(unlink(fixture$root, recursive = TRUE))
+  state <- fixture$state
+  state$config$react <- list(act_enabled = FALSE)
+  state$config_hash <- .sc_run_hash(state$config)
+  evidence <- .sc_run_react_reference_view(fixture$evidence, state)
+  expect_null(evidence$private$reference_evidence$schema)
+  expect_identical(evidence$private$reference_evidence$provenance$status, "unassessed")
+  before <- annotation_review_files(fixture$root)
+  local_mocked_bindings(.sc_run_reference_evidence = function(...)
+    stop("Review must not recompute reference evidence."), .package = "scAgentKit")
+  record <- .sc_run_annotation_review_build(fixture$root, state, fixture$validated, evidence)
+  expect_true(all(vapply(record$details$annotations, function(row)
+    identical(row$local_reference$status, "unassessed"), logical(1))))
+  expect_true(all(vapply(record$details$annotations, function(row)
+    identical(row$joint_evidence$database$status, "unassessed"), logical(1))))
+  expect_identical(annotation_review_files(fixture$root), before)
 })
 
 test_that("proposal origins require real artifacts and historical responses remain distinct", {

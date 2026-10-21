@@ -21,7 +21,7 @@ visible zero-match notice and an empty scoped reference, never all-tissue fallba
 No ortholog inference, marker recasing, PMID rewriting or row deduplication is done
 in the pinned source. Marker expansion retains original field strings, row numbers,
 SourceFile and SourceURL. First annotation still receives independent marker-only
-evidence; reference comparison and at most one explicitly budgeted guided review
+evidence; reference comparison and at most one explicitly authorized guided review
 come afterward. Three scientific approvals remain separate.
 
 ## Fixed provenance

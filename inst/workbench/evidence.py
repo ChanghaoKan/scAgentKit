@@ -9,6 +9,9 @@ import math
 from collections import Counter
 from pathlib import Path
 
+PROJECT_FORMAT_VERSION = 3
+PROJECT_FORMAT_ERROR = "Project format is unsupported. 请用原软件环境打开，或新建项目"
+
 DATASET_ID = "pbmc3k-phase1"
 CORE_FILES = (
     "pbmc3k_verified/scagentkit_fixed_umap.csv",

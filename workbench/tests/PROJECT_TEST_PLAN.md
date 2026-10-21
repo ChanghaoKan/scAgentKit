@@ -122,7 +122,7 @@ are positive controls and must pass exact ID-based writeback.
 | 6. Invalid counts or renamed IDs | Negative, fractional or non-finite counts and duplicate matrix IDs reject before Seurat construction; no implicit feature renaming |
 | 7. Column conflict | Label or companion-name collision rejects the whole write before mutation; R review tests and oracle |
 | 8. Invalid workflow or history | Unknown dimensions/statuses, duplicate IDs/request conflicts, dangling supersedes/undo, altered envelopes or rehashed invalid scopes reject |
-| 9. Invalid JSON or schema | Duplicate decoded keys, object/array confusion and unknown journal/project versions reject; legacy PBMC journals cannot acquire generic writeback identity |
+| 9. Invalid JSON or schema | Duplicate decoded keys, object/array confusion and unknown journal/project versions reject; writeback requires the current journal schema and exact project/source/snapshot identity |
 | 10. Invalid directed artifact | Wrong source fingerprint, cluster/cell scope, checksum, non-finite values or unavailable-as-zero fabrication reject |
 | 11. Unsafe project archive | Traversal, absolute/drive paths, duplicate or case-colliding members, symlinks, unlisted files and bad checksums reject before promotion |
 | 12. Excessive or changed input | ZIP ratio/size or HTTP upload limits reject; changed cached bytes/source mark stale or read only; two-tab writes cannot cross projects |
@@ -139,10 +139,10 @@ Run the generic Python suite independently of private PBMC inputs:
 python3 -B -m unittest discover -s workbench/tests -p 'test_project*.py' -v
 ```
 
-For the full Python suite supply the frozen legacy evidence and previously
+For the full Python suite supply the frozen PBMC evidence and previously
 verified phase-three expression export. That expression directory contains
 `expression.json` and `manifest.json`; it is an external fixture, not a new
-model request. Without the real fixtures some legacy checks intentionally skip;
+model request. Without the real fixtures some frozen-evidence checks intentionally skip;
 that does not constitute complete real-data regression acceptance.
 
 ```sh
@@ -171,19 +171,17 @@ build. Dependencies must already be installed; this command performs no install.
 )
 ```
 
-The phase-four local package check passed with `Status: OK` and 1,095 testthat
-assertions, zero failures/warnings/skips. It used `--ignore-vignettes`; vignette
-execution and PDF manuals were not verified. Missing optional suggested
-packages were reported as information with `_R_CHECK_FORCE_SUGGESTS_=false`.
-A check with normal vignette execution requires the existing optional tools and
-vignette dependencies and should be recorded separately.
+Record the exact source revision, check status, assertion counts and skipped
+fixtures for each run. The command above skips vignette execution and PDF
+manuals. A check with normal vignette execution requires the optional tools and
+vignette dependencies; record its result separately.
 
-Retain the original real-data GUI tests using new artifact directories:
+Run the frozen PBMC GUI checks using new artifact directories:
 
 ```sh
 "$SCAGENTKIT_NODE" workbench/tests/browser_smoke.mjs \
   --results-root "$SCAGENTKIT_RESULTS_ROOT" \
-  --output "$SCAGENTKIT_QA_ROOT/browser-legacy" \
+  --output "$SCAGENTKIT_QA_ROOT/browser-frozen" \
   --playwright "$SCAGENTKIT_PLAYWRIGHT" --chrome "$SCAGENTKIT_CHROME"
 
 "$SCAGENTKIT_NODE" workbench/tests/browser_directed.mjs \

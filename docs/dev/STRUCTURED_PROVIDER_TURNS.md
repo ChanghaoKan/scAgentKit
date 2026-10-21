@@ -28,9 +28,8 @@ existing projects and approvals are not silently migrated.
 ## Consent, sequence and privacy
 
 Creation-time `transfer-consent.v2` explicitly describes bounded read-only tools,
-ACT scope, turn/time/byte limits and `cost_mode=posthoc`. It states that ReAct
-costs are recorded after the call and have no monetary cap. Old v1 consent is
-valid only for its original text path. Strict mode requires the exact outgoing
+ACT scope and turn/time/byte limits. Costs are recorded after each call without
+a monetary cap. Strict mode requires the exact outgoing
 hash in a saved `suggestion_transfer_approved` state event matching session,
 cluster, ordinal and inspected revision. A hash on the request alone cannot
 provide authorization. Saving evidence or a draft never approves science.
@@ -57,11 +56,10 @@ The later loop owns cumulative cluster timing, tool execution and worker limits.
 
 ## Post-call accounting and recovery
 
-New structured turns have a fixed `cost_mode=posthoc`. They do not estimate input
-tokens, invoke a tokenizer, reserve funds, require pricing before sending, enforce
-a monetary cap, or stop because a known cost exceeds an estimate. No new budget
-policy API is introduced. Existing one-shot requests retain their fixed
-reservation/cap behavior; post-hoc entries do not consume that cap.
+Structured turns and single requests use post-call accounting. They do not
+estimate input tokens, invoke a tokenizer, reserve funds, require pricing before
+sending, enforce a monetary cap, or stop because a known cost exceeds an estimate.
+The request API has no monetary budget or reservation policy.
 
 Each response records available normalized and original numeric usage. The
 existing `.sc_run_provider_cost()` records a supplied charge, or calculates a
@@ -72,8 +70,8 @@ a later received-response continuation. A confirmed `not_sent` request and an
 offline mock have zero cost. Uncertain **delivery** still prevents automatic
 resending, even after process restart. This transport enforces dispatch step,
 per-call timeout, byte and output limits independently of money. Tool execution
-and cumulative cluster deadlines belong to 2B. Privacy and scientific approval
-boundaries remain unchanged.
+and cumulative cluster deadlines belong to 2B. Transfer consent and scientific
+approval are independent boundaries.
 
 `provider_turn_dispatched` and `provider_turn_completed` reuse existing state
 history. The durable dispatch entry is written before calling the provider. A
@@ -85,5 +83,5 @@ saved response without calling the API; before commit, delivery remains unknown.
 Manual reconciliation reuses `sc_run_provider_reconcile()` to record a confirmed
 invoice and a new immutable receipt. It never resends a structured turn. The exact
 previous ledger-entry hash permits recovery if reconciliation is interrupted
-between its state commit and ledger write; unrelated changes are rejected. The
-finite-cap behavior of legacy text reconciliation remains unchanged.
+between its state commit and ledger write; unrelated changes are rejected.
+Single-request reconciliation also records charges after the call.

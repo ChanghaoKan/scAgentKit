@@ -19,7 +19,7 @@ try:
     from .evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from .store import SessionStore, StoreError
     from .directed_runtime import DirectedRuntime
-    from .project import ProjectRegistry, ProjectError
+    from .project import ProjectRegistry, ProjectLoader, ProjectError
     from .project_store import ProjectStoreError
     from .project_runtime import ProjectRuntime
     from .qc_runtime import QCRuntime
@@ -33,7 +33,7 @@ except ImportError:
     from evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from store import SessionStore, StoreError
     from directed_runtime import DirectedRuntime
-    from project import ProjectRegistry, ProjectError
+    from project import ProjectRegistry, ProjectLoader, ProjectError
     from project_store import ProjectStoreError
     from project_runtime import ProjectRuntime
     from qc_runtime import QCRuntime
@@ -80,7 +80,7 @@ class WorkbenchServer(ThreadingHTTPServer):
 
     def select_project(self, key):
         if not self.registry:
-            raise StoreError("This server is using the legacy PBMC evidence adapter", 409)
+            raise StoreError("This server has no portable-project registry", 409)
         with self.context_lock:
             context = self.project_context(key)
             evidence = context[0].load()
@@ -100,7 +100,7 @@ class WorkbenchServer(ThreadingHTTPServer):
 
     def project_list(self):
         return {"projects": self.registry.list() if self.registry else [],
-                "selected": self.selected_key, "legacy": self.registry is None}
+                "selected": self.selected_key, "registry_available": self.registry is not None}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -151,7 +151,7 @@ class Handler(BaseHTTPRequestHandler):
             route = urlsplit(self.path).path
             if key is not None and route not in ("/api/projects", "/api/project/select", "/api/project/import"):
                 if not self.server.registry:
-                    raise StoreError("A legacy PBMC server cannot bind a generic project", 409)
+                    raise StoreError("Project binding requires a configured portable-project registry", 409)
                 self.loader, self.store, self.directed = self.server.project_context(key)
                 self.project_key = key
             else:
@@ -622,7 +622,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--results-root", help="Legacy PBMC phase-one results root; explicit evidence allowlist only")
+    parser.add_argument("--results-root", help="Frozen PBMC phase-one evidence root; explicit evidence allowlist only")
     parser.add_argument("--project", action="append", help="Verified portable project directory; repeat to register multiple projects")
     parser.add_argument("--run-project", help="Existing server-side sc_run directory; unified QC/annotation review, no ZIP or browser provider")
     parser.add_argument("--subcluster-workspace", help="Separate existing directory for registered child projects; parent review stays available until completion, then becomes read-only")
@@ -630,7 +630,7 @@ def main(argv=None):
     parser.add_argument("--model-suggestions", action="store_true", help="Enable explicit async requests to the project's saved DeepSeek/Grok provider; keys only from runtime environment")
     parser.add_argument("--model-mock", action="store_true", help="Enable explicitly simulated suggestions for an immutable mock-provider project; zero API calls")
     parser.add_argument("--model-timeout", type=int, default=300, help="Operator bound for each dedicated suggestion worker, 1–86400 seconds; timeout requires R reconciliation")
-    parser.add_argument("--subcluster-inherit-model", action="store_true", help="Explicitly inherit the completed parent's safe provider/budget/transfer policy when creating a child; no keys are copied")
+    parser.add_argument("--subcluster-inherit-model", action="store_true", help="Explicitly inherit the completed parent's safe provider/transfer policy when creating a child; no keys are copied")
     parser.add_argument("--project-cache", default=str(STATIC.parent / ".local" / "projects"), help="Private local imported evidence cache")
     parser.add_argument("--journal-root", default=str(STATIC.parent / ".local" / "reviews"), help="Private per-project append-only review journals")
     parser.add_argument("--session", default=str(Path(__file__).resolve().parent / ".local" / "session.json"), help="Local append-only session file")
@@ -679,7 +679,9 @@ def main(argv=None):
             evidence = None
         elif args.project:
             if args.directed_source:
-                parser.error("Generic projects replay explicitly exported RNA assets; --directed-source belongs to the legacy adapter")
+                parser.error("--directed-source requires frozen-results mode; portable projects replay explicitly exported RNA assets")
+            for path in args.project:
+                ProjectLoader(path).load()
             registry = ProjectRegistry(args.project_cache, args.journal_root, initial_project=args.project[0])
             for path in args.project[1:]:
                 registry.add_directory(path)

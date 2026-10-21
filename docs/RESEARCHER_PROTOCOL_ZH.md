@@ -9,7 +9,6 @@
 [README 入口](../README.zh-CN.md#分析步骤)及随包 `full-llm-workflow.R`。
 只使用已有环境 key；缺 key 时进入人工路径。不使用项目级同意时，每个确切 payload 单独审批。
 采纳候选或 Save 不等于科学审批。新启动流程默认事后记录实际用量，不设金额上限或额度预留。
-显式填写的旧 `budget` 参数和已有项目保留原有语义。
 默认查证、回退与离线重放见 [ReAct 用户指南](REACT_ZH.md)。
 
 新草稿仅在各组所需指标完整且适用时使用保守 AND3；否则明确保留 keep-all。
@@ -68,7 +67,7 @@ service <- sc_start("input.rds", "new-review-project", context=context)
 ```
 
 页面显示导入摘要与未审批方案。核对细胞数、特征名称和样本事实，再进入策略复核。
-DeepSeek Flash 默认上限为 USD1.00；明确 provider="manual" 可选择本地人工路径，模型设置见第 6 节。
+明确 provider="manual" 可选择本地人工路径；模型费用仅在调用后记录，不设金额上限。模型设置见第 6 节。
 
 ## 5. 复核方案和实测分群
 
@@ -90,7 +89,7 @@ DeepSeek Flash 默认上限为 USD1.00；明确 provider="manual" 可选择本�
 processed <- sc_run("processed.rds", "new-annotation-project", context=context,
   start_stage="processed", processed_reason="Reuse documented QC, normalization and clusters.",
   assay="RNA", counts_layer="counts", normalized_layer="data",
-  cluster_column="seurat_clusters", provider=NULL, budget=0)
+  cluster_column="seurat_clusters", provider=NULL)
 sc_open("new-annotation-project")
 ```
 
@@ -100,20 +99,20 @@ sc_open("new-annotation-project")
 
 ## 6. 可选模型辅助
 
-打开网页前，在 `sc_start(provider=..., budget=..., review=...)` 中直接配置**新**项目；provider、model、生成设置及预算随后固定。
+打开网页前，在 `sc_start(provider=..., review=...)` 中直接配置**新**项目；provider、model、生成设置随后固定。
 密钥通过实际运行进程的环境提供。`Rscript --vanilla` 需要继承的环境，不读取 `.Renviron`。
 完整配置见[模型设置与发送同意](dev/UNIFIED_MODEL_REVIEW.md)。
 
-先检查聚合类别和上限，再决定是否给予创建时项目级同意；在其范围内，候选可按每个证据快照自动请求一次。没有项目级同意时，预览内容及目的地，同意确切传输，再明确请求。查看、采纳或编辑候选后 Save，
+先检查聚合类别和 provider，再决定是否给予创建时项目级同意；在其范围内，候选可按每个证据快照自动请求一次。没有项目级同意时，预览内容及目的地，同意确切传输，再明确请求。查看、采纳或编辑候选后 Save，
 再独立批准科学方案。若请求结果不明确，先查看已保存 job 和用量记录，再决定是否重新请求。
 页面未提供的 external-transfer 停点，按链接指南中的 R 操作处理。
 
-配置后的模型建议若因缺少 key、坏 JSON、预算不足等失败，会自动保存本地规则草稿及理由，不批准、不重试。
+配置后的模型建议若因缺少 key、坏 JSON 等失败，会自动保存本地规则草稿及理由，不批准、不重试。
 完整且合格的分组 MAD 证据使用 conservative AND3；证据不足时 keep_all，并明确 QC 尚未完成评估。
 已保存的人工修改优先保留，请查看实际生效草稿后再审批。有效模型注释不会被自动改成 Unknown；
 分析者可另行作出有记录的人工修改。
 
-DeepSeek Flash 新项目默认上限为 USD1.00；显式 `budget=0` 仍禁止付费请求。首次外传前必须确认数据范围与预算，其他模型需明确上限。详见[实测费用与限制](MODEL_BUDGET.md)。
+首次外传前确认数据范围与 provider；调用后分别记录已知费用和费用未知的请求数。费用未知不记为零，也不阻止投递状态明确的新请求。详见[用量与费用记录](MODEL_BUDGET.md)。
 
 ## 7. 输入准备好后再选可选方法
 
@@ -175,6 +174,10 @@ sc_run_open(project_dir)
 | awaiting_review | 阅读当前提案，保存编辑后再审批。 |
 | job 忙或响应不明确 | 先看保存的 job/回执，等 worker 完成后再提交。 |
 | 输入/layer 不符或项目环境改变 | 核对输入和记录的环境；使用原环境或另建项目。 |
+| 项目格式缺失、损坏或不匹配 | 闸门提示“请用原软件环境打开，或新建项目”；不要手改格式标记、状态或 hash。 |
+
+[格式闸门](../workbench/README.md#project-format-and-reopening) 同样适用于只读结果页
+和恢复后的备份，不执行项目迁移。
 
 完整备份复制回原路径后，目录身份会改变。若出现
 `Saved local continuation belongs to a different project directory`，

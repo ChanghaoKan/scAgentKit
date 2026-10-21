@@ -21,12 +21,19 @@ qualify for relaxation.
 `scagentkit.qc.rules.v2` adds `diagnostic_hash`, `membership_hash` and an array of
 `replacements` to QC rules v1. A replacement specifies `cluster_id`, `metric`,
 `reason` and inclusive `min`/`max`. It replaces that metric's existing baseline
-predicate in that cluster, rather than adding another AND filter. Other metrics,
-predicate combination logic and minimum prefilter remain unchanged. Duplicate
+predicate in that cluster. Other metrics, the explicit outer failure operator
+and the mandatory minimum prefilter still apply. Duplicate
 cluster/metric entries, stale partitions, absent baseline metric coverage,
 unavailable measurements and ineligible relaxation are rejected. Tightening
 does not require rescue eligibility. Effective predicate bounds and retention
 changes are displayed for review.
+
+Rules v1 accepts 0–32 rules. Empty v1 rules add no filtering and retain the
+captured committed cell scope, including previous QC and doublet exclusions.
+Rules v2 requires 1–100 replacements, each covered by a baseline metric rule,
+and at most 32 baseline rules. Empty baseline rules cannot satisfy replacement
+coverage; an empty replacement array is also rejected. The diagnostic and
+membership hashes bind the exact partition used by those replacements.
 
 Batch mixing is the mean same-batch neighbor proportion minus its random
 reference in the exact deterministic, batch-balanced candidate pool (at most

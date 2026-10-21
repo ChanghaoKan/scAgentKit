@@ -1,7 +1,7 @@
 provider_metadata_fixture <- function(external = FALSE) {
-  root <- tempfile("provider-metadata-"); dir.create(root)
+  root <- tempfile("provider-metadata-"); .sc_project_format_create(root)
   provider <- list(name = if (external) "testremote" else "mock", model = "fixture-model",
-    external = external, reservation_usd = if (external) 0.05 else 0,
+    external = external,
     generation = list(max_tokens = 64L))
   if (external) provider$pricing <- list(input_per_million = 1, output_per_million = 2)
   request <- list(system_prompt = "Return one typed QC decision.",
@@ -17,20 +17,15 @@ provider_metadata_fixture <- function(external = FALSE) {
 }
 provider_metadata_json <- '{"operation":"keep_all","reason":"Offline metadata fixture."}'
 
-# Evaluate only the returned function expression from the installed constructor.
-# The constructor, its environment-key reader and provider factories are never
-# invoked. All variables here are synthetic, and httr2 is mocked before calls.
-provider_metadata_legacy_closure <- function() {
-  skip_if_not_installed("agentomicsCore")
+# The supported factory returns structured content, usage and safe metadata.
+# Its HTTP execution is mocked in every caller of this helper.
+provider_metadata_structured_factory <- function() {
   skip_if_not_installed("httr2")
-  skip_if_not(packageVersion("agentomicsCore") == "0.1.1")
-  constructor <- getExportedValue("agentomicsCore", "make_chat_fn_openai_compatible")
-  expression <- tail(as.list(body(constructor)), 1L)[[1L]]
-  fixture <- list2env(list(base_url = "https://offline.invalid/v1", model = "fixture-model",
-    needs_key = FALSE, supports_vision = FALSE, warned_image = FALSE, max_tokens = 64L,
-    temperature = 0, timeout_secs = 5, extra_body = NULL, extra_headers = NULL),
-    parent = asNamespace("agentomicsCore"))
-  eval(expression, envir = fixture)
+  agentomicsCore::make_chat_fn_openai_compatible(
+    base_url = "https://offline.invalid/v1", model = "fixture-model",
+    api_key = "", api_key_env = "", supports_vision = FALSE,
+    max_tokens = 64L, temperature = 0, timeout_secs = 5,
+    structured_response = TRUE)
 }
 provider_metadata_http_fixture <- function(content = provider_metadata_json, finish = "stop", status = 200) {
   body <- if (status >= 400) list(id = "error-fixture-01",
@@ -83,7 +78,7 @@ test_that("finish reason length rejects even complete JSON and preserves account
       list(content = raw, finish_reason = "length", http_status = 200, request_id = "request-01",
         usage = list(input_tokens = 10, output_tokens = 7, cached_tokens = 2))
     }
-    out <- .sc_run_call(f$root, f$request, f$provider, fn, budget = 1, allow_external = TRUE)
+    out <- .sc_run_call(f$root, f$request, f$provider, fn, allow_external = TRUE)
     expect_identical(out$status, "truncated_response"); expect_null(out$content)
     expect_identical(out$raw, raw)
     expect_identical(out$response_audit$truncation, "provider_reported")
@@ -91,23 +86,21 @@ test_that("finish reason length rejects even complete JSON and preserves account
       if (identical(raw, provider_metadata_json)) "ok" else "invalid_response")
     expect_identical(out$cost_state, "known"); expect_equal(out$cost_usd, 0.000024)
     expect_equal(out$usage$output_tokens, 7)
-    cached <- .sc_run_call(f$root, f$request, f$provider, budget = 0)
+    cached <- .sc_run_call(f$root, f$request, f$provider)
     expect_true(cached$cached); expect_identical(cached$status, "truncated_response")
     expect_null(cached$content); expect_identical(calls, 1L)
     expect_length(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 1L)
   }
 })
 
-test_that("old ledger metadata is unknown and invalid JSON is never repaired", {
+test_that("content-only responses retain explicit unavailable metadata and a read-only cache", {
   f <- provider_metadata_fixture(); on.exit(unlink(f$root, recursive = TRUE))
   out <- .sc_run_call(f$root, f$request, f$provider, function(...) provider_metadata_json)
   expect_identical(out$response_metadata$availability, "unavailable")
   path <- file.path(f$root, "provider", "ledger.json")
-  ledger <- .sc_run_provider_read(path)
-  ledger$entries[[1]]$response_metadata <- NULL
-  ledger$entries[[1]]$response_metadata_hash <- NULL
-  ledger$entries[[1]]$response_audit <- NULL
-  .sc_run_provider_write(ledger, path)
+  entry <- .sc_run_provider_read(path)$entries[[1]]
+  expect_identical(entry$response_metadata$schema, "scagentkit.provider-response-metadata.v1")
+  expect_identical(entry$response_metadata_hash, .sc_run_provider_hash(entry$response_metadata))
   before <- readBin(path, "raw", file.info(path)$size)
   cached <- .sc_run_call(f$root, f$request, f$provider)
   expect_true(cached$cached); expect_identical(cached$status, "ok")
@@ -117,6 +110,58 @@ test_that("old ledger metadata is unknown and invalid JSON is never repaired", {
   expect_identical(truncated$status, "invalid_response"); expect_null(truncated$content)
   expect_identical(truncated$response_audit$truncation, "suspected_output_cap")
   expect_null(truncated$response_metadata$finish_reason)
+})
+
+test_that("completed ledger entries require their metadata object and hash", {
+  f <- provider_metadata_fixture(); on.exit(unlink(f$root, recursive = TRUE))
+  .sc_run_call(f$root, f$request, f$provider, function(...) provider_metadata_json)
+  path <- file.path(f$root, "provider", "ledger.json")
+  saved <- .sc_run_provider_read(path)
+  for (fields in list("response_metadata", "response_metadata_hash",
+      c("response_metadata", "response_metadata_hash"))) {
+    ledger <- saved
+    for (field in fields) ledger$entries[[1]][[field]] <- NULL
+    .sc_run_provider_write(ledger, path)
+    before <- readBin(path, "raw", file.info(path)$size)
+    expect_error(.sc_run_provider_read(path), "metadata", info = paste(fields, collapse = ", "))
+    expect_error(.sc_run_call(f$root, f$request, f$provider), "metadata")
+    expect_identical(readBin(path, "raw", file.info(path)$size), before)
+  }
+  for (metadata in list("not an object", list(schema = "unsupported"))) {
+    ledger <- saved
+    ledger$entries[[1]]$response_metadata <- metadata
+    ledger$entries[[1]]$response_metadata_hash <- .sc_run_provider_hash(metadata)
+    .sc_run_provider_write(ledger, path)
+    expect_error(.sc_run_provider_read(path), "metadata")
+  }
+})
+
+test_that("durable dispatch requires metadata but allows an absent hash until settlement", {
+  f <- provider_metadata_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  calls <- 0L
+  withr::with_options(list(scAgentKit.provider_crash = "after_dispatch"),
+    expect_error(.sc_run_call(f$root, f$request, f$provider, function(...) {
+      calls <<- calls + 1L; provider_metadata_json
+    }, allow_external = TRUE), "Injected provider interruption"))
+  expect_identical(calls, 0L)
+  path <- file.path(f$root, "provider", "ledger.json")
+  saved <- .sc_run_provider_read(path)
+  entry <- saved$entries[[1]]
+  expect_identical(entry$status, "dispatched")
+  expect_identical(entry$response_metadata$availability, "unavailable")
+  expect_null(entry$response_metadata_hash)
+  expect_identical(.sc_run_call(f$root, f$request, f$provider)$status, "delivery_uncertain")
+
+  ledger <- saved
+  ledger$entries[[1]]$response_metadata_hash <- .sc_run_provider_hash(entry$response_metadata)
+  .sc_run_provider_write(ledger, path)
+  expect_identical(.sc_run_provider_read(path)$entries[[1]]$status, "dispatched")
+  ledger$entries[[1]]$response_metadata_hash <- strrep("0", 64)
+  .sc_run_provider_write(ledger, path)
+  expect_error(.sc_run_provider_read(path), "metadata hash mismatch")
+  ledger <- saved; ledger$entries[[1]]$response_metadata <- NULL
+  .sc_run_provider_write(ledger, path)
+  expect_error(.sc_run_provider_read(path), "metadata")
 })
 
 test_that("cached response metadata changes are detected", {
@@ -188,7 +233,7 @@ provider_metadata_attribute_fixture <- function(value) {
 }
 
 provider_metadata_config_fixture <- function() {
-  list(name = "mock", model = "fixture-model", external = FALSE, reservation_usd = 0,
+  list(name = "mock", model = "fixture-model", external = FALSE,
     api_key_env = "SCAGENTKIT_ATTRIBUTE_FIXTURE_KEY",
     pricing = list(input_per_million = 1, output_per_million = 2,
       cached_input_per_million = 0.5),
@@ -231,9 +276,9 @@ test_that("provider configuration attributes cannot reach real run state or expo
     dimnames = list(c("MT-CO1", "GENE2", "GENE3", "GENE4"), paste0("fixture-cell-", 1:8)))
   counts <- Matrix::Matrix(counts, sparse = TRUE)
   input_before <- serialize(counts, NULL, version = 2L)
-  proposal <- list(schema = "scagentkit.qc.v1", rationale = "Synthetic fixture review.",
+  proposal <- list(schema = "scagentkit.qc.rules.v1", rationale = "Synthetic fixture review.",
     risks = list("No biological conclusion."),
-    filters = list(list(op = "range", metric = "nCount", min = 1, max = NULL, group = NULL)))
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1, max = NULL, group = NULL)))
   calls <- 0L
   out <- sc_run(counts, root, context = list(species = "human"), provider = fixture$value,
     chat_fn = function(...) { calls <<- calls + 1L; .sc_run_provider_json(proposal) })
@@ -289,69 +334,102 @@ test_that("validator result attributes are discarded before returning and saving
     validator = function(x) list(callback = function() NULL))$status, "invalid_response")
 })
 
-test_that("guarded 0.1.1 adapter preserves transport formals and captures only allowed HTTP metadata", {
-  original <- provider_metadata_legacy_closure()
-  original_body <- body(original)
-  adapted <- .sc_run_provider_adapter(original, version = "0.1.1")
-  expect_identical(formals(adapted), formals(original)); expect_identical(body(original), original_body)
-  token_env <- agentomicsCore::token_state; before <- token_env$records
-  on.exit(token_env$records <- before, add = TRUE)
-  requests <- list()
-  fixture <- provider_metadata_http_fixture()
-  result <- httr2::with_mocked_responses(function(req) {
-    requests[[length(requests) + 1L]] <<- req
-    fixture
-  }, list(original("system", "user"), adapted("system", "user")))
-  expect_identical(as.character(result[[1]]), as.character(result[[2]]))
-  expect_length(requests, 2L)
-  for (field in c("url", "method", "headers", "body", "options"))
-    expect_identical(requests[[1]][[field]], requests[[2]][[field]], info = field)
-  metadata <- attr(result[[2]], "response_metadata", exact = TRUE)
-  expect_equal(metadata$http_status, 200)
-  expect_identical(metadata$finish_reason, "stop")
-  expect_identical(metadata$request_id, "request-fixture-01")
-  expect_identical(metadata$response_id, "chatcmpl-fixture-01")
-  expect_false(grepl("fictional-sensitive-response-header", .sc_run_provider_json(metadata), fixed = TRUE))
-  expect_error(.sc_run_provider_adapter(original, version = "future-unrecognized"), "does not recognize")
-  expect_error(.sc_run_provider_adapter(function(...) "wrong shape", version = "0.1.1"), "does not recognize")
+test_that("all built-in single-request factories receive structured response settings", {
+  captured <- list()
+  callback <- function(...) provider_metadata_json
+  factory <- function(name) {
+    force(name)
+    function(...) { captured[[name]] <<- list(...); callback }
+  }
+  testthat::local_mocked_bindings(
+    chat_deepseek = factory("deepseek"), chat_grok = factory("grok"),
+    make_chat_fn_openai_compatible = factory("openai_compatible"), .package = "agentomicsCore")
+  for (name in c("deepseek", "grok", "openai_compatible")) {
+    provider <- list(name = name, model = "fixture-model", api_key_env = "SCAGENTKIT_FACTORY_TEST_KEY",
+      generation = list(max_tokens = 64L, temperature = 0.25, timeout_secs = 5, seed = 7L))
+    if (name == "openai_compatible") provider$base_url <- "https://offline.invalid/v1"
+    spec <- .sc_run_provider_spec(provider)
+    expect_identical(.sc_run_provider_fn(spec), callback)
+    args <- captured[[name]]
+    expect_identical(args$structured_response, TRUE, info = name)
+    expect_identical(args$model, "fixture-model")
+    expect_identical(args$api_key_env, "SCAGENTKIT_FACTORY_TEST_KEY")
+    expect_equal(args$max_tokens, 64); expect_equal(args$temperature, 0.25)
+    expect_equal(args$timeout_secs, 5); expect_equal(args$extra_body$seed, 7)
+    expect_identical(args$extra_body$response_format, list(type = "json_object"))
+    if (name == "deepseek") expect_identical(args$extra_body$thinking, list(type = "disabled"))
+    if (name == "grok") expect_identical(args$vision, FALSE)
+    if (name == "openai_compatible") {
+      expect_identical(args$base_url, provider$base_url)
+      expect_identical(args$supports_vision, FALSE)
+    }
+  }
+  expect_setequal(names(captured), c("deepseek", "grok", "openai_compatible"))
+  expect_identical(.sc_run_provider_fn(.sc_run_provider_spec(chat_fn = callback)), callback)
 })
 
-test_that("mock HTTP adapter length response is not accepted or automatically sent again", {
+test_that("current structured factory rejects mocked HTTP truncation without automatic resend", {
   f <- provider_metadata_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
-  adapted <- .sc_run_provider_adapter(provider_metadata_legacy_closure(), version = "0.1.1")
+  fn <- provider_metadata_structured_factory()
   token_env <- agentomicsCore::token_state; before <- token_env$records
   on.exit(token_env$records <- before, add = TRUE)
   calls <- 0L
   out <- httr2::with_mocked_responses(function(req) {
     calls <<- calls + 1L
     provider_metadata_http_fixture(finish = "length")
-  }, .sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE))
+  }, .sc_run_call(f$root, f$request, f$provider, fn, allow_external = TRUE))
   expect_identical(out$status, "truncated_response"); expect_null(out$content)
   expect_equal(out$response_metadata$http_status, 200)
   expect_identical(out$response_metadata$finish_reason, "length")
+  expect_identical(out$response_metadata$request_id, "request-fixture-01")
+  expect_identical(out$response_metadata$response_id, "chatcmpl-fixture-01")
   expect_identical(out$cost_state, "known"); expect_equal(out$cost_usd, 0.000024)
+  expect_equal(out$usage$output_tokens, 7)
   cached <- .sc_run_call(f$root, f$request, f$provider)
   expect_identical(cached$status, "truncated_response"); expect_true(cached$cached)
   expect_identical(calls, 1L)
+  expect_false(grepl("fictional-sensitive-response-header", .sc_run_provider_json(out), fixed = TRUE))
 })
 
-test_that("HTTP error status survives as safe typed error while body and usage stay conservative", {
+test_that("current structured factory reports received HTTP errors without copying body or headers", {
   f <- provider_metadata_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
-  adapted <- .sc_run_provider_adapter(provider_metadata_legacy_closure(), version = "0.1.1")
+  fn <- provider_metadata_structured_factory()
   calls <- 0L
   out <- httr2::with_mocked_responses(function(req) {
     calls <<- calls + 1L
     provider_metadata_http_fixture(status = 429)
-  }, .sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE))
-  expect_identical(out$status, "delivery_uncertain")
+  }, .sc_run_call(f$root, f$request, f$provider, fn, allow_external = TRUE))
+  expect_identical(out$status, "provider_response_error")
+  expect_identical(out$delivery, "received")
   expect_equal(out$response_metadata$http_status, 429)
   expect_identical(out$response_metadata$request_id, "request-fixture-01")
-  expect_identical(out$cost_state, "unknown"); expect_equal(out$charged_or_held_usd, 0)
+  expect_identical(out$cost_state, "unknown"); expect_null(out$cost_usd)
   expect_null(out$raw); expect_null(out$content)
   json <- paste(readLines(file.path(f$root, "provider", "ledger.json")), collapse = "\n")
   expect_false(grepl("fictional-sensitive|error.message|authorization", json))
-  expect_identical(.sc_run_call(f$root, f$request, f$provider, adapted, 1, TRUE, retry = TRUE)$status, "retry_refused")
+  cached <- .sc_run_call(f$root, f$request, f$provider)
+  expect_true(cached$cached); expect_identical(cached$status, "provider_response_error")
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn,
+    allow_external = TRUE, retry = TRUE)$status, "retry_refused")
   expect_identical(calls, 1L)
+})
+
+test_that("current structured transport failure retains unknown delivery without resend", {
+  f <- provider_metadata_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  fn <- provider_metadata_structured_factory()
+  calls <- 0L
+  testthat::local_mocked_bindings(req_perform = function(...) {
+    calls <<- calls + 1L; stop("fictional-sensitive-transport-detail")
+  }, .package = "httr2")
+  out <- .sc_run_call(f$root, f$request, f$provider, fn, allow_external = TRUE)
+  expect_identical(out$status, "delivery_uncertain")
+  expect_identical(out$delivery, "unknown")
+  expect_identical(out$cost_state, "unknown"); expect_null(out$cost_usd)
+  expect_true(.sc_run_call(f$root, f$request, f$provider, fn, allow_external = TRUE)$cached)
+  expect_identical(.sc_run_call(f$root, f$request, f$provider, fn,
+    allow_external = TRUE, retry = TRUE)$status, "retry_refused")
+  expect_identical(calls, 1L)
+  expect_false(grepl("fictional-sensitive", .sc_run_provider_json(out), fixed = TRUE))
 })
 
 test_that('raw usage retains provider numeric details but excludes arbitrary secrets', {
@@ -371,30 +449,36 @@ test_that('raw usage retains provider numeric details but excludes arbitrary sec
  expect_equal(.sc_run_provider_read(file.path(f$root,'provider','ledger.json'))$entries[[1]]$raw_usage,safe)
 })
 
-test_that('official adapter captures original usage from mocked HTTP with no headers or attributes',{
- fn<-provider_metadata_legacy_closure()
- local_mocked_bindings(req_perform=function(...)provider_metadata_http_fixture(),.package='httr2')
- value<-.sc_run_provider_adapter(fn)('Offline system.','Offline user.')
- expect_equal(attr(value,'raw_usage'),list(prompt_tokens=10,completion_tokens=7,prompt_cache_hit_tokens=2))
- private<-new.env();private$key<-'PRIVATE_USAGE_ATTRIBUTE_TEST'
- safe<-.sc_run_provider_raw_usage(list(prompt_tokens=structure(10,secret=private)))
- expect_null(attributes(safe$prompt_tokens))
- expect_false(grepl('PRIVATE_USAGE_ATTRIBUTE_TEST',rawToChar(serialize(safe,NULL,ascii=TRUE)),fixed=TRUE))
+test_that("current structured factory retains raw numeric usage without HTTP headers", {
+  fn <- provider_metadata_structured_factory()
+  token_env <- agentomicsCore::token_state; before <- token_env$records
+  on.exit(token_env$records <- before, add = TRUE)
+  value <- httr2::with_mocked_responses(function(req) provider_metadata_http_fixture(),
+    fn("Offline system.", "Offline user."))
+  expect_equal(value$raw_usage, list(prompt_tokens = 10, completion_tokens = 7, prompt_cache_hit_tokens = 2))
+  expect_false(grepl("fictional-sensitive|authorization", .sc_run_provider_json(value)))
 })
 
-test_that("Core 0.2 received text errors preserve delivery and usage accounting", {
+test_that("raw usage scalar attributes cannot persist private environments", {
+  private <- new.env(); private$key <- "PRIVATE_USAGE_ATTRIBUTE_TEST"
+  safe <- .sc_run_provider_raw_usage(list(prompt_tokens = structure(10, secret = private)))
+  expect_null(attributes(safe$prompt_tokens))
+  expect_false(grepl("PRIVATE_USAGE_ATTRIBUTE_TEST", rawToChar(serialize(safe, NULL, ascii = TRUE)), fixed = TRUE))
+})
+
+test_that("received text errors preserve delivery and usage accounting", {
   f <- provider_metadata_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   failure <- structure(list(message = "Do not preserve private HTTP body", call = NULL,
     delivery = "received", code = "invalid_response", usage = list(input_tokens = 10, output_tokens = 7),
     raw_usage = list(prompt_tokens = 10, completion_tokens = 7),
     metadata = list(http_status = 200, request_id = "received-text-fixture")),
     class = c("agentomics_turn_error", "error", "condition"))
-  out <- .sc_run_call(f$root, f$request, f$provider, function(...) stop(failure), budget = 1, allow_external = TRUE)
+  out <- .sc_run_call(f$root, f$request, f$provider, function(...) stop(failure), allow_external = TRUE)
   expect_identical(out$delivery, "received")
   expect_identical(out$status, "provider_response_error")
   expect_identical(out$response_audit$json_status, "received_invalid")
   expect_identical(out$cost_state, "known"); expect_equal(out$cost_usd, .000024)
   expect_equal(out$response_metadata$http_status, 200)
   expect_false(grepl("private HTTP", out$error, fixed = TRUE))
-  expect_true(.sc_run_call(f$root, f$request, f$provider, budget = 1, allow_external = TRUE)$cached)
+  expect_true(.sc_run_call(f$root, f$request, f$provider, allow_external = TRUE)$cached)
 })

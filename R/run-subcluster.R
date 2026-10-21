@@ -19,6 +19,7 @@
       startsWith(parent, paste0(child, "/")))
     stop("Parent and child directories must be separate; never write inside the parent.", call. = FALSE)
   if (file.exists(child) && !dir.exists(child)) stop("Child project path is not a directory.", call. = FALSE)
+  .sc_project_format_entry(child, allow_new = TRUE)
   list(parent = parent, child = child)
 }
 .sc_run_subcluster_output <- function(root, state) {
@@ -161,6 +162,7 @@
 #' @return Immutable parent fingerprints and cluster counts, never positional mappings.
 #' @export
 sc_run_subcluster_scope <- function(parent_project, clusters = NULL, cluster_column = NULL) {
+  .sc_project_format_entry(parent_project)
   parent <- .sc_run_subcluster_parent(parent_project, cluster_column)
   labels <- sort(unique(enc2utf8(parent$membership)), method = "radix")
   selected <- if (is.null(clusters)) NULL else .sc_run_subcluster_selection(parent, clusters)
@@ -177,7 +179,7 @@ sc_run_subcluster_scope <- function(parent_project, clusters = NULL, cluster_col
       "At least 21 selected cells are needed by the current fixed k=20 neighbor pipeline."))
 }
 .sc_run_subcluster_workspace <- function(parent, workspace) {
-  parent <- .sc_run_root(parent); workspace <- .sc_run_root(workspace)
+  parent <- .sc_run_root(parent); workspace <- .sc_run_root(workspace, check_format = FALSE)
   if (identical(parent, workspace) || startsWith(workspace, paste0(parent, "/")) ||
       startsWith(parent, paste0(workspace, "/")))
     stop("Child workspace must be separate from the immutable parent.", call. = FALSE)
@@ -190,6 +192,7 @@ sc_run_subcluster_scope <- function(parent_project, clusters = NULL, cluster_col
 #' @return Verified child records; local paths are for R/IPC and must not be accepted as browser arguments.
 #' @export
 sc_run_subcluster_list <- function(parent_project, workspace) {
+  .sc_project_format_entry(parent_project)
   parent <- .sc_run_subcluster_parent(parent_project)
   workspace <- .sc_run_subcluster_workspace(parent$root, workspace)
   directories <- list.dirs(workspace, recursive = FALSE, full.names = TRUE)
@@ -432,6 +435,7 @@ sc_run_subcluster_list <- function(parent_project, workspace) {
 #' @return Child state, frozen provenance, current applicability, history and exact apply snapshot.
 #' @export
 sc_run_subcluster_inspect <- function(child_project, column = "sc_subtype", outside = "NA", supersedes = NULL) {
+  .sc_project_format_entry(child_project)
   root <- .sc_run_root(child_project)
   state <- .sc_run_load(root, verify_subcluster = FALSE)
   if (is.null(state$config$subcluster_origin)) stop("This is not a scoped child project.", call. = FALSE)
@@ -500,6 +504,7 @@ sc_run_subcluster_inspect <- function(child_project, column = "sc_subtype", outs
 sc_run_subcluster_apply <- function(child_project, project_id, input_hash, expected_revision,
   parent_scope_hash, expected_parent_revision, annotation_hash, apply_hash, column,
   reviewer, reason, request_id, outside = "NA", supersedes = NULL) {
+  .sc_project_format_entry(child_project)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_run_subcluster_id(request_id)
   for (name in c("parent_scope_hash", "annotation_hash", "apply_hash"))
@@ -572,6 +577,7 @@ sc_run_subcluster_apply <- function(child_project, project_id, input_hash, expec
 #' @export
 sc_run_subcluster_unknown <- function(child_project, project_id, input_hash, expected_revision,
   reviewer, reason, request_id) {
+  .sc_project_format_entry(child_project)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_run_subcluster_id(request_id)
   root <- .sc_run_root(child_project); owner <- .sc_run_lock(root)
@@ -619,6 +625,7 @@ sc_run_subcluster_unknown <- function(child_project, project_id, input_hash, exp
 #' @export
 sc_run_subcluster_undo <- function(child_project, application_id, project_id, input_hash,
   expected_revision, integration_revision, reviewer, reason, request_id) {
+  .sc_project_format_entry(child_project)
   .sc_run_subcluster_id(application_id, "application_id"); .sc_run_subcluster_id(request_id)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   root <- .sc_run_root(child_project); initial <- .sc_run_load(root, verify_subcluster = FALSE)

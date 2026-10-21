@@ -49,9 +49,9 @@ cycle_schema_proposal <- function(processed = FALSE, method = NULL) {
   proposal <- list(schema = "scagentkit.strategy.v1",
     rationale = "Review cycle diagnostics and explicit supported analysis on synthetic counts.",
     risks = character(), inferences = character(),
-    qc = if (processed) NULL else list(schema = "scagentkit.qc.v1",
+    qc = if (processed) NULL else list(schema = "scagentkit.qc.rules.v1",
       rationale = "Retain measured positive-count cells.", risks = character(),
-      filters = list(list(op = "range", metric = "nCount", min = 1))),
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1))),
     analysis = if (processed) NULL else list(normalization_method = "LogNormalize",
       scale_factor = 10000, nfeatures = 32L, npcs = 8L, seed = 11L),
     pcs = if (processed) NULL else list(method = "fixed", ndim = 5L),
@@ -186,7 +186,7 @@ test_that("retained-cell variance is checked after actual QC without refitting d
   f <- cycle_schema_fixture(retained_constant = TRUE)
   expect_identical(f$record$summary$status, "available")
   p <- cycle_schema_proposal(method = "none")
-  p$qc$filters[[1L]]$max <- max(f$qc$metrics$nCount[1:25])
+  p$qc$rules[[1L]]$max <- max(f$qc$metrics$nCount[1:25])
   validated <- scAgentKit:::.sc_run_strategy_validate(p, f$evidence)
   expect_identical(validated$qc_validated$keep_cells, colnames(f$seu)[1:25])
   expect_equal(validated$applicability$cycle$retained_cells, 25)
@@ -218,8 +218,8 @@ test_that("cycle plans reject empty untyped code and deletion fields even when d
   }
   p <- cycle_schema_proposal(); p$analysis$vars_to_regress <- "sc_test_cycle_S.Score"
   expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "supported named fields")
-  p <- cycle_schema_proposal(); p$qc$filters[[1L]]$op <- "delete_cycling"
-  expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "only op='range'")
+  p <- cycle_schema_proposal(); p$qc$rules[[1L]]$op <- "delete_cycling"
+  expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "support only range or mad_preset")
   p <- cycle_schema_proposal(); p$risks <- list(); p$inferences <- list()
   expect_identical(scAgentKit:::.sc_run_strategy_validate(p, e)$proposal$risks, character())
   p <- cycle_schema_proposal(); p$cycle <- list(method = "none", method = "full", reason = "duplicate")
@@ -259,13 +259,13 @@ test_that("cycle calculation dependencies preserve preprocessing and fixed score
   changed <- p; changed$analysis$scale_factor <- 5000
   after <- scAgentKit:::.sc_run_strategy_validate(changed, f$evidence)$dependency_hashes
   expect_identical(cycle_schema_hash_changes(before, after), c("preprocess", downstream))
-  changed <- p; changed$qc$filters[[1L]]$min <- 2
+  changed <- p; changed$qc$rules[[1L]]$min <- 2
   after <- scAgentKit:::.sc_run_strategy_validate(changed, f$evidence)$dependency_hashes
   expect_identical(cycle_schema_hash_changes(before, after), c("qc", "preprocess", downstream))
   expect_identical(after$cycle, before$cycle)
 })
 
-test_that("disabled cycle retains the legacy schema and dependency topology", {
+test_that("disabled cycle uses the base schema and dependency topology", {
   f <- cycle_schema_fixture(); config <- f$config; config$cycle_diagnostics <- NULL
   e <- scAgentKit:::.sc_run_strategy_evidence(f$seu, config, f$qc)
   expect_false("cycle_diagnostics" %in% names(e$summary))

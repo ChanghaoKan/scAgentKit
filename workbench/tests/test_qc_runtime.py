@@ -9,6 +9,7 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from evidence import canonical
@@ -31,10 +32,12 @@ def decision(action="approve"):
 
 class QCRuntimeTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory()
         self.project = Path(self.temp.name) / "project"
         self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"fixture only; never interpreted by Python")
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         self.runtime = QCRuntime(self.project, library=self.temp.name)
 
     def tearDown(self):
@@ -96,6 +99,7 @@ class QCRuntimeTests(unittest.TestCase):
     def test_replaced_project_directory_rejected(self):
         self.project.rename(self.project.with_name("old-project")); self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"replacement")
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         with self.assertRaises(StoreError): self.runtime.describe()
 
     def test_coordinator_stale_error_returned_without_stdout_or_stderr(self):
@@ -142,8 +146,10 @@ class MockQC(QCRuntime):
 
 class QCHTTPTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory()
         self.project = Path(self.temp.name); (self.project / "state.rds").write_bytes(b"fixture")
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         self.runtime = MockQC(self.project)
         self.server = WorkbenchServer(("127.0.0.1", 0), None, None, qc=self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()
@@ -188,7 +194,7 @@ class QCHTTPTests(unittest.TestCase):
             payload = decision(); payload[field] = value
             self.assertEqual(self.request("POST", "/api/qc/decision", payload, headers=headers)[0], 409)
 
-    def test_no_legacy_annotation_resume_or_file_routes(self):
+    def test_no_annotation_resume_or_file_routes(self):
         for route in ("/api/evidence", "/api/session", "/api/export", "/api/resume"):
             self.assertEqual(self.request("GET", route)[0], 409)
         for route in ("/api/decision", "/api/project/import", "/api/resume"):

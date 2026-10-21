@@ -29,6 +29,60 @@ test_that("creation uses the shared AND3 fallback while explicit QC choices surv
   changed <- .sc_ui_plan(list(resolution = .4), base = explicit)
   expect_identical(changed$qc, explicit$qc)
   unfiltered <- .sc_ui_plan(dimensions = c(100, 80))
-  expect_equal(unfiltered$qc$filters[[1L]]$min, 0)
+  expect_identical(unfiltered$qc$schema, "scagentkit.qc.rules.v1")
+  expect_identical(unfiltered$qc$rules, list())
+  expect_identical(unfiltered$qc$remove_if, "any")
   expect_match(unfiltered$qc$rationale, "unassessed")
+})
+
+
+test_that("facade edits preserve hash-bound replacement policies and their authored logic", {
+  panel <- strategy_default_panel()
+  draft <- .sc_ui_plan(list(qc = list(nCount = c(1, 1000))), dimensions = c(100, 80), mad = panel)
+  draft$qc$schema <- "scagentkit.qc.rules.v2"
+  draft$qc$remove_if <- "all"
+  draft$qc$diagnostic_hash <- strrep("b", 64)
+  draft$qc$membership_hash <- strrep("c", 64)
+  draft$qc$replacements <- list(list(cluster_id = "0", metric = "nCount", min = 2,
+    reason = "Explicit hash-bound synthetic replacement."))
+  saved <- draft$qc[c("schema", "diagnostic_hash", "membership_hash", "replacements")]
+  prose <- .sc_ui_plan(list(rationale = "An explanatory edit.", pcs = 5), base = draft)
+  expect_identical(prose$qc, draft$qc)
+  preset <- .sc_ui_plan(list(qc_preset = "keep_all"), base = draft)
+  expect_identical(preset$qc[names(saved)], saved)
+  expect_identical(preset$qc$remove_if, "all")
+  expect_identical(preset$qc$rules[[1L]], draft$qc$rules[[1L]])
+  expect_identical(preset$qc$rules[[2L]]$panel_hash, panel$panel_hash)
+  expect_identical(preset$qc$rules[[2L]]$preset_id, "keep_all")
+  ranges <- .sc_ui_plan(list(qc = list(nCount = c(3, NA))), base = draft)
+  expect_identical(ranges$qc[names(saved)], saved)
+  expect_identical(ranges$qc$remove_if, "any")
+  expect_identical(ranges$qc$rules[[1L]], list(op = "range", metric = "nCount", min = 3))
+  expect_identical(ranges$qc$rules[[2L]], draft$qc$rules[[2L]])
+  expect_error(.sc_ui_plan(list(qc = list()), base = draft), "named list")
+})
+
+test_that("only explicit preset edits restore a selector from the saved MAD panel", {
+  panel <- strategy_default_panel()
+  empty <- .sc_ui_plan(dimensions = c(100, 80))
+  ranges <- .sc_ui_plan(list(qc = list(nCount = c(1, 1000))), base = empty)
+  replacement <- ranges
+  replacement$qc$schema <- "scagentkit.qc.rules.v2"
+  replacement$qc$diagnostic_hash <- strrep("b", 64)
+  replacement$qc$membership_hash <- strrep("c", 64)
+  replacement$qc$replacements <- list(list(cluster_id = "0", metric = "nCount", min = 2,
+    reason = "Explicit hash-bound synthetic replacement."))
+  for (draft in list(empty, ranges, replacement)) {
+    draft$qc$remove_if <- "all"
+    prose <- .sc_ui_plan(list(rationale = "An explanatory edit."), base = draft, mad = panel)
+    expect_identical(prose$qc, draft$qc)
+    range_edit <- .sc_ui_plan(list(qc = list(nCount = c(3, NA))), base = draft, mad = panel)
+    expect_identical(range_edit$qc$rules, list(list(op = "range", metric = "nCount", min = 3)))
+    selected <- .sc_ui_plan(list(qc_preset = "keep_all"), base = draft, mad = panel)
+    expect_identical(selected$qc$rules, c(draft$qc$rules,
+      list(list(op = "mad_preset", preset_id = "keep_all", panel_hash = panel$panel_hash))))
+    unchanged <- setdiff(names(draft$qc), "rules")
+    expect_identical(selected$qc[unchanged], draft$qc[unchanged])
+    expect_error(.sc_ui_plan(list(qc_preset = "keep_all"), base = draft), "saved MAD candidate panel")
+  }
 })

@@ -25,9 +25,9 @@ test_that("analysis checkpoint refuses changed reachable helpers before writing"
   input <- Seurat::CreateSeuratObject(Matrix::Matrix(counts, sparse = TRUE))
   root <- tempfile("helper-mutation-")
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
-  qc <- list(schema = "scagentkit.qc.v1", rationale = "Synthetic software control only.",
+  qc <- list(schema = "scagentkit.qc.rules.v1", rationale = "Synthetic software control only.",
     risks = list("No biological threshold claim."),
-    filters = list(list(op = "range", metric = "nCount", min = 1)))
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1)))
   initial <- sc_run(input, root, context = list(species = "human", tissue = "synthetic"),
     qc_proposal = qc, analysis = list(nfeatures = 60, npcs = 5, run_umap = FALSE))
   pending_state <- .sc_run_load(root)

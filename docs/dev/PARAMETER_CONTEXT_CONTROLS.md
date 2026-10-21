@@ -16,7 +16,7 @@ reuses the public convenience functions in
 [analysis-strategy.R](../../dev/examples/analysis-strategy.R). Use an installed copy
 of this checkout in your selected R library. The example creates a new sparse
 synthetic Seurat object with declared sample/capture columns, a typed manual
-strategy, and zero provider budget. It performs no installation, download, key
+strategy, and no external provider. It performs no installation, download, key
 read or model request. Its inclusive QC ranges deliberately retain the fixture;
 they are not cleaning recommendations or an AI decision. Synthetic programs,
 mock responses and `Unknown/low` labels establish no biological accuracy.
@@ -74,14 +74,20 @@ executed cell count.
 
 ## QC, PCs and clustering
 
-`scagentkit.qc.rules.v1` combines at most 32 typed failure predicates with
+`scagentkit.qc.rules.v1` combines 0–32 typed failure predicates with
 `remove_if="any"` (OR failures) or `"all"` (AND failures). A range uses measured
 `nCount`, `nFeature` or available `percent_mt`, optional inclusive min/max bounds,
 and optional literal **declared** sample/capture selectors. Outside a selector,
-that rule's failure is false. Consequently, AND between disjoint groups cannot
-remove a cell. The example uses a global range and one actual sample/capture
-range. Its ToyGene IDs do not supply a mitochondrial convention, so it does not
+that rule's failure is false. AND between disjoint groups cannot remove a cell,
+so such a contradictory scoped proposal is rejected. The example uses a global
+range and one actual sample/capture range. Its ToyGene IDs do not supply a mitochondrial convention, so it does not
 filter an unavailable mitochondrial metric.
+
+An empty `rules = list()` means no additional filtering in this stage. Both
+outer operators retain the captured committed cell scope without restoring
+earlier QC, minimal-prefilter or doublet exclusions. Quality assessment is
+unassessed. A new nonempty explicit policy can relax prior reviewed quality or
+doublet choices after a new approval, but cannot undo the immutable prefilter.
 
 When `qc_mad` was explicitly configured, one rule may instead choose an available
 saved `mad_preset` and its exact `panel_hash`. The finite MAD candidates and
@@ -92,10 +98,16 @@ cells. Doublet prediction/removal remains a separate explicit reviewed choice:
 minimal prefilter, fixed pre-score doublet diagnostics, then quality QC and the
 approved keep/remove-predicted intersection. This demo does not fit doublets.
 
+`scagentkit.qc.rules.v2` adds diagnostic-cluster threshold replacements bound to
+`diagnostic_hash` and `membership_hash`. Each replacement needs an existing
+baseline metric predicate and passes the recorded scope and relaxation checks;
+an empty baseline cannot authorize replacements. See
+[diagnostic QC evidence](BIOLOGICAL_DIAGNOSTICS.md).
+
 The example explicitly chooses `pcs=list(method="computed_variance",
 threshold=.80)`. Any finite fraction strictly between 0 and 1 can be supplied.
 Its denominator is the variance of **all actually computed PCs**, including
-computed PCs beyond 50; this is not total expressed-gene variance. The legacy
+computed PCs beyond 50; this is not total expressed-gene variance. The
 `computed_top50` method accepts only `.80` or `.85` and uses the first
 `min(50, computed PCs)`. A fixed `ndim` must be an integer from 2 through the
 supported computed-PC range. `.80` is a reference/example choice, not a proven optimum.
@@ -197,7 +209,7 @@ For a fresh model-enabled project, follow the existing
 and [exact suggestion preview workflow](UNIFIED_MODEL_REVIEW.md). Built-in
 DeepSeek/Grok factories use `DEEPSEEK_API_KEY`/`XAI_API_KEY` from the analysis
 machine's environment or user secret mechanism at dispatch. Supply a verified
-model ID, generation settings, current pricing and explicit budget; keep key
+model ID, generation settings and any available pricing; keep key
 values out of code, context, objects, logs and the browser. A headless `chat_fn`
 stays in caller memory. This example does not read or configure credentials.
 

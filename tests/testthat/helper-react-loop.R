@@ -2,7 +2,6 @@ react_loop_fixture <- function(policy = list(mode = "all")) {
   f <- react_tool_fixture()
   state <- .sc_run_load(f$root)
   state$config$provider <- .sc_run_provider_spec("mock")$metadata
-  state$config$budget <- 0
   state$config$review <- list(allow_external = FALSE)
   state$config$react <- .sc_run_turn_policy(policy)
   state$config_hash <- .sc_run_hash(state$config)
@@ -20,7 +19,7 @@ react_loop_fixture <- function(policy = list(mode = "all")) {
 }
 
 react_final <- function(cluster, gene = "G31", source = "tool:1") {
-  risks <- .sc_run_react_risks(NULL, cluster, character(), legacy = TRUE)
+  risks <- .sc_run_react_unassessed_risks(cluster)
   risks$fields <- lapply(risks$fields, function(x) { x$source <- "model"; x })
   list(schema = "scagentkit.react-draft.v1",
     proposal = list(schema = "scagentkit.annotation.v1", annotations = list(

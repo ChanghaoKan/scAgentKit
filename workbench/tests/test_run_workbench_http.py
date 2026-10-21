@@ -28,11 +28,11 @@ def workbench_view(identity, revision=10, complete=True):
                     "notes": "Public fixture, no private source data",
                     "columns": {"sample": "sample", "condition": "Ca_Ctrl"}},
         "diagnostics": {"input_cells": 72, "raw_counts": True},
-        "config": {"assay": "RNA", "layer": "counts", "budget": 0},
+        "config": {"assay": "RNA", "layer": "counts"},
         "stages": {"qc": {"status": "complete", "retained_cells": 70},
                    "markers": {"status": "complete", "table": "tables/markers.tsv"}},
         "strategy_review": {"hash": "c" * 64,
-                            "details": {"qc_impact": {"expected_retained_cells": 70},
+                            "details": {"qc_impact": {"schema": "scagentkit.qc.preview.v1", "retention": {"before": 72, "retained": 70, "removed": 2}},
                                         "source": {"kind": "manual"}}},
         "annotation_review": {"hash": "d" * 64,
                               "details": {"annotations": [{"clusterId": "01", "label": "Unknown",
@@ -392,7 +392,8 @@ class RunWorkbenchHTTPTests(unittest.TestCase):
         self.assertTrue(all(not runtime.calls for runtime in self.child_runtimes.values()))
         self.assert_no_mutation()
 
-    def test_legacy_evidence_and_generic_store_routes_keep_the_run_only_guard(self):
+    def test_evidence_project_and_generic_store_routes_keep_the_run_only_guard(self):
+        self.assertEqual(self.server.project_list(), {"projects": [], "selected": None, "registry_available": False})
         for route in ("/api/evidence", "/api/session", "/api/export", "/api/projects"):
             with self.subTest(route=route):
                 self.assertEqual(self.request(route, "parent")[0], 409)

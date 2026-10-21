@@ -93,9 +93,9 @@ The following shape describes fields to be implemented and validated in E1/E5. I
 ```
 
 The product list keeps source/offline/live verification separate. Custom IDs
-remain unverified configuration; unknown pricing does not prevent a structured
-request. New turns report costs after execution without a monetary cap; the
-legacy one-shot budget remains compatible. See the [provider contract](../../../docs/dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
+remain unverified configuration; unknown pricing does not prevent a request.
+Single requests and structured turns report costs after execution without a
+monetary cap. See the [provider contract](../../../docs/dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
 and [post-run reporting](E5_COST_REPORTING.md).
 
 For a holdout truth CSV, the accepted planned local format is `cell_id,label_author,label_independent`, with optional `cl_id_author,cl_id_independent`. Both label files, CL mapping and the primary consensus mask are frozen before the first tool run. The framework exports author agreement, independent-label agreement, consensus primary results, annotation disagreement results, and both main/strict accuracy. No local ID or truth label is copied to an external provider.

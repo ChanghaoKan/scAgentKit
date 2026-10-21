@@ -43,7 +43,7 @@ for (n in sizes) {
   measure(n, "export_directed_cluster", sc_project_export(seu, file.path(root, "directed"), "synthetic", directed_clusters = "0"))
   project <- file.path(root, "run")
   measure(n, "prepare_processed_complete", {
-    initial <- suppressWarnings(sc_run(seu, project, start_stage = "processed", processed_reason = "Synthetic scaling control", provider = NULL, budget = 0))
+    initial <- suppressWarnings(sc_run(seu, project, start_stage = "processed", processed_reason = "Synthetic scaling control", provider = NULL))
     stopifnot(identical(initial$status, "awaiting_configuration"))
     ev <- sc_run_inspect(project)$evidence
     proposal <- list(schema = "scagentkit.annotation.v1", annotations = lapply(ev$clusters,

@@ -10,8 +10,8 @@ annot_query_cellmarker(species, tissue = NULL, cancer_only = FALSE,
 \item{species}{One of human or mouse; applied to the table species column.}
 \item{tissue}{Required nonempty literal tissue filter, case insensitive.}
 \item{cancer_only}{Restrict to non-Normal cancer context when TRUE.}
-\item{cache_dir}{Retained for compatibility; caches are not silently trusted.}
-\item{force_refresh}{Retained for compatibility; automatic refresh is unavailable.}
+\item{cache_dir}{Not used by the explicit local-file import.}
+\item{force_refresh}{TRUE requests automatic refresh, which is unavailable and rejected; use a local_file.}
 \item{url}{Only the fixed official HTTPS URL is recognized; no mirrors.}
 \item{local_file}{Explicit path to a lawfully obtained local XLSX file.}
 \item{sha256}{Optional expected local SHA256; this is a user input check, not a verified publisher pin.}

@@ -101,7 +101,11 @@ Next, use the final Seurat object for your study's follow-up analyses.
 
 ### 5. Reopen a saved project
 
-Use its original package environment, input and options. Repeat the relevant
+Reopening requires the current project format, including for `sc_open()` and
+the read-only `sc_run_open()` viewer. A format mismatch is rejected before
+project writes; use the original software environment or create a new project.
+See the [format gate](../../workbench/README.md#project-format-and-reopening).
+Use the original package environment, input and options. Repeat the relevant
 entry call, omitting context to reuse the saved study facts:
 
 ```r

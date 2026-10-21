@@ -1,4 +1,4 @@
-test_that("session policy canonicalizes disabled tools and binds post-hoc cost scope", {
+test_that("session policy canonicalizes disabled tools and binds transfer scope", {
   policy <- .sc_run_turn_policy(list(tools = "act_lookup", act_enabled = FALSE))
   expect_identical(policy$tools, list())
   expect_identical(.sc_run_turn_policy(policy), policy)
@@ -6,8 +6,10 @@ test_that("session policy canonicalizes disabled tools and binds post-hoc cost s
   f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   state <- .sc_run_load(f$root)
   expect_true(.sc_run_turn_authorized(f$request, state$config))
-  expect_identical(f$session$cost_mode, "posthoc")
-  state$config$review$transfer_consent$react_scope$cost_mode <- "capped"
+  expect_false("cost_mode" %in% names(f$session))
+  state$config$review$transfer_consent$react_scope$policy$max_steps <- 1L
+  state$config$review$transfer_consent$hash <- .sc_run_provider_hash(
+    state$config$review$transfer_consent[setdiff(names(state$config$review$transfer_consent), "hash")])
   expect_false(.sc_run_turn_authorized(f$request, state$config))
 })
 
@@ -22,7 +24,7 @@ test_that("prepared wire uses Core 0.2, tools and frozen generation without exec
   calls <- 0L
   out <- turn_call(f, fn = function(...) { calls <<- calls + 1L; turn_reply(tool = TRUE) })
   expect_identical(out$status, "ok"); expect_identical(out$delivery, "received")
-  expect_equal(calls, 1L); expect_equal(out$charged_or_held_usd, 0)
+  expect_equal(calls, 1L); expect_equal(out$cost_usd, 0)
   expect_identical(out$content$tool_calls[[1]]$`function`$name, "cluster_markers")
   expect_null(.sc_run_load(f$root)$pending)
   events <- .sc_run_load(f$root)$history
@@ -34,12 +36,12 @@ test_that("prepared wire uses Core 0.2, tools and frozen generation without exec
   expect_identical(turn_call(f, retry = TRUE)$status, "retry_refused")
 })
 
-test_that("session authority is committed state, never a self hash or caller budget", {
+test_that("session authority is committed state, never a self hash or caller consent flag", {
   f <- turn_fixture(); on.exit(unlink(f$root, recursive = TRUE))
   fabricated <- f$request; fabricated$session$prompt_version <- "tampered.v1"
   fabricated$session$hash <- .sc_run_provider_hash(fabricated$session[setdiff(names(fabricated$session), "hash")])
   expect_error(turn_call(f, fabricated), "committed scientific session")
-  expect_error(.sc_run_call(f$root, f$request, f$provider, function(...) turn_reply(), budget = 2, allow_external = TRUE), "external-transfer")
+  expect_error(.sc_run_call(f$root, f$request, f$provider, function(...) turn_reply(), allow_external = TRUE), "external-transfer")
   state <- .sc_run_load(f$root); saved <- .sc_run_get(f$root, state, "analysis")
   saved$seurat_clusters[1] <- "1"; state <- .sc_run_put(f$root, state, "analysis", saved)
   .sc_run_save(f$root, state)
@@ -108,7 +110,7 @@ test_that("cached response privacy is rechecked without another charge", {
   cached <- turn_call(f, fn = function(...) stop("must not resend"))
   expect_true(cached$cached); expect_identical(cached$status, "private_payload")
   expect_null(cached$content); expect_null(cached$turn_response)
-  expect_equal(cached$charged_or_held_usd, first$charged_or_held_usd)
+  expect_equal(cached$cost_usd, first$cost_usd)
   path <- file.path(f$root, "provider", "ledger.json")
   expect_false(grepl("newly-protected-cache-fixture", paste(readLines(path), collapse = ""), fixed = TRUE))
 })
@@ -119,8 +121,8 @@ test_that("turns collect usage and configured cost after the response without pr
   expect_identical(out$status, "ok"); expect_identical(out$cost_state, "known")
   expect_identical(out$cost_basis, "usage_configured_pricing"); expect_true(out$cost_estimated)
   expect_null(out$actual_cost_usd); expect_equal(out$usage$input_tokens, 120)
-  expect_equal(out$cost_usd, .000048); expect_identical(out$cost_mode, "posthoc")
-  expect_equal(out$reservation_usd, 0); expect_null(out$reservation_receipt)
+  expect_equal(out$cost_usd, .000048)
+  expect_false(any(c("reservation_usd", "charged_or_held_usd", "cost_mode") %in% names(out)))
 })
 
 test_that("delivery states do not resend and unavailable usage does not invent a zero cost", {
@@ -139,7 +141,7 @@ test_that("delivery states do not resend and unavailable usage does not invent a
   f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE), add = TRUE)
   out <- turn_call(f, fn = function(...) { x <- turn_reply(); x$usage <- NULL; x$raw_usage <- NULL; x })
   expect_identical(out$status, "ok"); expect_identical(out$cost_state, "unknown")
-  expect_null(out$cost_usd); expect_equal(out$reservation_usd, 0)
+  expect_null(out$cost_usd)
   next_request <- .sc_run_turn_request(f$session, list(list(role = "user", content = "Cluster 1.")),
     "1", 2L, out$turn_response_hash)
   expect_identical(turn_call(f, next_request)$status, "ok")
@@ -170,13 +172,13 @@ test_that("a received invalid response can advance to another cluster with a saf
 })
 
 test_that("post-hoc turns have no monetary cap while per-cluster limits remain enforced", {
-  f <- turn_fixture(TRUE, FALSE, budget = 0); on.exit(unlink(f$root, recursive = TRUE))
+  f <- turn_fixture(TRUE, FALSE); on.exit(unlink(f$root, recursive = TRUE))
   request <- f$request
   request$approved_payload_hash <- .sc_run_turn_approve(f$root, request, "reviewer",
     "Reviewed uncapped post-hoc cost and exact payload.", .sc_run_load(f$root)$revision)
   out <- turn_call(f, request, fn = function(...) { x <- turn_reply(); x$cost_usd <- 2; x })
   expect_identical(out$status, "ok"); expect_equal(out$cost_usd, 2)
-  expect_equal(out$reservation_usd, 0)
+  expect_false(any(c("reservation_usd", "charged_or_held_usd", "cost_mode") %in% names(out)))
   limited <- turn_fixture(policy = list(max_steps_per_cluster = 1L))
   on.exit(unlink(limited$root, recursive = TRUE), add = TRUE)
   first <- turn_call(limited)
@@ -199,11 +201,11 @@ test_that("Core's real HTTP adapter serializes the exact prepared wire without r
   }, .package = "httr2")
   f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   prepared <- .sc_run_turn_prepare(f$request, f$provider)
-  out <- .sc_run_call(f$root, f$request, f$provider, budget = 1, allow_external = TRUE)
+  out <- .sc_run_call(f$root, f$request, f$provider, allow_external = TRUE)
   expect_identical(out$status, "ok"); expect_identical(calls, 1L)
   expect_identical(wire, prepared$json)
   expect_identical(out$turn_payload$wire_json, wire)
-  expect_identical(out$cost_mode, "posthoc")
+  expect_false("cost_mode" %in% names(out))
   expect_false(grepl("synthetic-turn-key|synthetic-response-header", paste(readLines(
     file.path(f$root, "provider", "ledger.json")), collapse = "")))
 })
@@ -217,14 +219,55 @@ test_that("crash recovery never sends an uncertain turn and restores only commit
     expect_identical(calls, if (phase == "after_dispatch") 0L else 1L)
     stored <- .sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries[[1]]
     expect_identical(stored$status, "dispatched")
-    expect_equal(stored$charged_or_held_usd, 0)
+    expect_identical(stored$cost_state, "unknown"); expect_null(stored$cost_usd)
+    expect_identical(stored$response_metadata$availability, "unavailable")
+    expect_null(stored$response_metadata_hash)
     restarted <- turn_call(f, fn = function(...) stop("restart must not dispatch"))
     expect_identical(restarted$status, if (phase == "after_turn_commit") "ok" else "delivery_uncertain")
     if (phase == "after_turn_commit") {
       expect_true(restarted$cached); expect_identical(restarted$cost_state, "known")
       expect_equal(restarted$cost_usd, .000042)
+      expect_identical(restarted$response_metadata_hash, .sc_run_provider_hash(restarted$response_metadata))
+      expect_null(restarted$response_audit)
     }
   }
+})
+
+test_that("interrupted turns reconcile and recover metadata without changing the predecessor", {
+  f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
+  calls <- 0L
+  withr::with_options(list(scAgentKit.provider_crash = "after_dispatch"),
+    expect_error(turn_call(f, fn = function(...) { calls <<- calls + 1L; turn_reply() }),
+      "Injected provider interruption"))
+  path <- file.path(f$root, "provider", "ledger.json")
+  original <- .sc_run_provider_read(path)
+  before <- original$entries[[1]]
+  predecessor_hash <- .sc_run_provider_hash(before)
+  expect_null(before$response_metadata_hash)
+  reconciled <- sc_run_provider_reconcile(f$root, before$request_hash, 0, "offline QA",
+    "Confirmed no transmission after interruption.", delivery = "not_sent")
+  expect_identical(reconciled$status, "reconciled_no_response")
+  expect_identical(reconciled$reconciliation$previous_entry_hash, predecessor_hash)
+  expect_identical(reconciled$response_metadata, before$response_metadata)
+  expect_identical(reconciled$response_metadata_hash, .sc_run_provider_hash(before$response_metadata))
+  expect_null(reconciled$response_audit)
+  expect_null(reconciled$completed_at)
+  state <- .sc_run_load(f$root)
+  receipt <- .sc_run_get(f$root, state, paste0("provider_turn_", before$request_hash))
+  expect_identical(receipt$response_metadata_hash, reconciled$response_metadata_hash)
+  expect_identical(receipt$reconciliation$previous_entry_hash, predecessor_hash)
+  expect_identical(.sc_run_provider_read(path)$entries[[1]]$response_metadata_hash,
+    reconciled$response_metadata_hash)
+  # Recreate a crash after committing reconciliation but before writing its ledger.
+  .sc_run_provider_write(original, path)
+  recovered <- turn_call(f, fn = function(...) { calls <<- calls + 1L; stop("must not dispatch") })
+  expect_true(recovered$cached)
+  expect_identical(recovered$status, "reconciled_no_response")
+  expect_identical(recovered$response_metadata_hash, reconciled$response_metadata_hash)
+  expect_identical(recovered$reconciliation$previous_entry_hash, predecessor_hash)
+  expect_identical(.sc_run_provider_read(path)$entries[[1]]$response_metadata_hash,
+    reconciled$response_metadata_hash)
+  expect_identical(calls, 0L)
 })
 
 test_that("manual reconciliation records the invoice without imposing a new cost cap", {
@@ -242,14 +285,15 @@ test_that("manual reconciliation records the invoice without imposing a new cost
 
 test_that("interrupted reconciliation restores only the exact previously committed ledger entry", {
   f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
-  held <- turn_call(f, fn = function(...) { x <- turn_reply(); x$usage <- NULL; x$raw_usage <- NULL; x })
+  unresolved <- turn_call(f, fn = function(...) { x <- turn_reply(); x$usage <- NULL; x$raw_usage <- NULL; x })
   path <- file.path(f$root, "provider", "ledger.json")
   prior <- .sc_run_provider_read(path)
-  sc_run_provider_reconcile(f$root, held$request_hash, .0001, "reviewer", "Verified the invoice.")
+  sc_run_provider_reconcile(f$root, unresolved$request_hash, .0001, "reviewer", "Verified the invoice.")
   .sc_run_provider_write(prior, path)
   recovered <- turn_call(f, fn = function(...) stop("must not dispatch"))
   expect_true(recovered$cached); expect_equal(recovered$actual_cost_usd, .0001)
   expect_identical(recovered$cost_basis, "analyst_confirmed_invoice")
+  prior$entries[[1]]$cost_state <- "known"
   prior$entries[[1]]$cost_usd <- 123
   .sc_run_provider_write(prior, path)
   expect_error(turn_call(f), "committed response")
@@ -280,7 +324,7 @@ test_that("one transport call cannot exceed its session cluster time allowance",
   expect_identical(out$status, "ok")
 })
 
-test_that("post-hoc costs do not consume or financially block the legacy one-shot cap", {
+test_that("post-hoc turn costs do not block independent single requests", {
   for (known in c(TRUE, FALSE)) {
     f <- turn_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE), add = TRUE)
     out <- turn_call(f, fn = function(...) {
@@ -294,7 +338,7 @@ test_that("post-hoc costs do not consume or financially block the legacy one-sho
     calls <- 0L
     answer <- .sc_run_call(f$root, request, f$provider, function(...) {
       calls <<- calls + 1L; list(content = '{"ok":true}', cost_usd = .001)
-    }, budget = 1, allow_external = TRUE)
+    }, allow_external = TRUE)
     expect_identical(answer$status, "ok"); expect_equal(calls, 1L)
   }
 })

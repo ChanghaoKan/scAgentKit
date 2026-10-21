@@ -8,7 +8,7 @@ xai_session_fixture <- function() {
   state$config$review$transfer_consent <- .sc_run_transfer_options(list(
     mode = "project", confirmed = TRUE, reviewer = "fixture", reason = "Read-only native session.",
     categories = c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression")),
-    provider, state$config$budget)
+    provider)
   state$config_hash <- .sc_run_hash(state$config)
   .sc_run_save(f$root, state)
   f$provider <- provider
@@ -141,12 +141,11 @@ test_that("native ReAct loop retains complete output items and stages verified d
   provider <- .sc_run_provider_spec(list(name = "grok", model = "grok-4.7",
     generation = list(max_tokens = 2048, reasoning_effort = "high")))$metadata
   state$config$provider <- provider
-  state$config$budget <- 1
   state$config$review <- list(allow_external = TRUE, transfer_consent =
     .sc_run_transfer_options(list(mode = "project", confirmed = TRUE, reviewer = "fixture",
       reason = "Synthetic native loop.", react = state$config$react,
       categories = c("study_context", "aggregate_qc", "aggregate_markers", "aggregate_design", "aggregate_expression")),
-      provider, state$config$budget))
+      provider))
   state$config_hash <- .sc_run_hash(state$config); .sc_run_save(f$root, state)
   histories <- list()
   fn <- function(input, ...) {

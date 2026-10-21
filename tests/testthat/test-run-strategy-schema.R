@@ -33,8 +33,8 @@ strategy_schema_fixture <- function(cells = 40L, context = NULL, processed = FAL
 strategy_schema_proposal <- function(processed = FALSE) {
   list(schema = "scagentkit.strategy.v1", rationale = "Review explicit supported methods on actual synthetic evidence.",
     risks = character(), inferences = character(),
-    qc = if (processed) NULL else list(schema = "scagentkit.qc.v1", rationale = "Keep measured positive-count cells in this fixture.",
-      risks = character(), filters = list(list(op = "range", metric = "nCount", min = 1))),
+    qc = if (processed) NULL else list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Keep measured positive-count cells in this fixture.",
+      risks = character(), rules = list(list(op = "range", metric = "nCount", min = 1))),
     analysis = if (processed) NULL else list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 32L, npcs = 8L, seed = 11L),
     pcs = if (processed) NULL else list(method = "fixed", ndim = 5L),
@@ -188,7 +188,7 @@ test_that("projected QC retention re-audits the observed design rather than reus
   qc <- scAgentKit:::.sc_run_qc_evidence(f$seu, f$context)
   evidence <- scAgentKit:::.sc_run_strategy_evidence(f$seu, f$config, qc)
   expect_true(evidence$summary$batch_group_audit$full_rank)
-  p <- strategy_schema_proposal(); p$qc$filters[[1L]]$max <- 500
+  p <- strategy_schema_proposal(); p$qc$rules[[1L]]$max <- 500
   validated <- scAgentKit:::.sc_run_strategy_validate(p, evidence)
   expect_equal(validated$applicability$retained_cells, 30)
   expect_identical(validated$qc_validated$keep_cells, colnames(f$seu)[1:30])
@@ -211,8 +211,8 @@ test_that("unsupported code cycle doublet and integration actions fail closed wh
   expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "supported named fields")
   p <- strategy_schema_proposal(); p$analysis$vars_to_regress <- c("S.Score", "G2M.Score")
   expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "supported named fields")
-  p <- strategy_schema_proposal(); p$qc$filters[[1L]]$op <- "delete_cycling"
-  expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "only op='range'")
+  p <- strategy_schema_proposal(); p$qc$rules[[1L]]$op <- "delete_cycling"
+  expect_error(scAgentKit:::.sc_run_strategy_validate(p, e), "support only range or mad_preset")
   p <- strategy_schema_proposal(); p$batch$method <- "manual"
   validated <- scAgentKit:::.sc_run_strategy_validate(p, e)
   expect_false(validated$executable)
@@ -272,7 +272,7 @@ test_that("insufficient retained cells expressed features layers mitochondrial e
   e <- scAgentKit:::.sc_run_strategy_evidence(f$seu, f$config, qc)
   expect_error(scAgentKit:::.sc_run_strategy_validate(strategy_schema_proposal(), e), "Fewer than three genes")
   no_species <- strategy_schema_fixture(context = list(tissue = "synthetic"))
-  p <- strategy_schema_proposal(); p$qc$filters <- list(list(op = "range", metric = "percent_mt", max = 20))
+  p <- strategy_schema_proposal(); p$qc$rules <- list(list(op = "range", metric = "percent_mt", max = 20))
   expect_error(scAgentKit:::.sc_run_strategy_validate(p, no_species$evidence), "unavailable")
   f <- strategy_schema_fixture(); alternate <- f$config; alternate$counts_layer <- "missing"
   expect_error(scAgentKit:::.sc_run_strategy_evidence(f$seu, alternate, f$qc), "Exact layer|layer")
@@ -329,7 +329,7 @@ test_that("calculation dependencies invalidate exactly affected downstream polic
   changed <- p; changed$analysis$scale_factor <- 5000
   after <- scAgentKit:::.sc_run_strategy_validate(changed, e)$dependency_hashes
   expect_identical(strategy_schema_hash_changes(before, after), c("basis", "pcs", "batch", "neighbors", "clustering", "umap"))
-  changed <- p; changed$qc$filters[[1L]]$min <- 2
+  changed <- p; changed$qc$rules[[1L]]$min <- 2
   after <- scAgentKit:::.sc_run_strategy_validate(changed, e)$dependency_hashes
   expect_identical(strategy_schema_hash_changes(before, after), names(before))
   changed <- p; changed$umap$n_neighbors <- 11L
@@ -386,4 +386,20 @@ test_that("processed strategy reuses exact source facts and requires explicit NU
   config <- f$config; config$cluster_column <- "missing"
   expect_error(scAgentKit:::.sc_run_strategy_evidence(f$seu, config, f$qc), "complete literal cluster column")
   expect_error(scAgentKit:::.sc_run_input(f$seu, f$context, start_stage = "processed", cluster_column = "existing_clusters"), "processed_reason")
+})
+
+
+test_that("empty any and all share scientific dependencies while their exact proposals differ", {
+  f <- strategy_schema_fixture()
+  proposal <- strategy_schema_proposal(); proposal$qc$rules <- list()
+  one <- scAgentKit:::.sc_run_strategy_validate(proposal, f$evidence)
+  proposal$qc$remove_if <- "all"
+  two <- scAgentKit:::.sc_run_strategy_validate(proposal, f$evidence)
+  expect_identical(one$qc_validated$keep_cells, two$qc_validated$keep_cells)
+  expect_identical(one$dependency_hashes, two$dependency_hashes)
+  expect_false(identical(one$proposal, two$proposal))
+  expect_true(scAgentKit:::.sc_run_qc_empty_rules(proposal$qc))
+  invalid <- list(NULL, within(proposal$qc, {remove_if <- "invalid"}),
+    within(proposal$qc, {rules <- NULL}), within(proposal$qc, {schema <- "unsupported"}))
+  for (item in invalid) expect_false(scAgentKit:::.sc_run_qc_empty_rules(item))
 })

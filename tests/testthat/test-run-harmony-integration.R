@@ -60,9 +60,9 @@ harmony_integration_plan <- function(method = "harmony", vars = "batch",
     rationale = "Review the declared technical factors, actual QC impact and explicit analysis together.",
     risks = list("Design estimability and a finite embedding do not prove successful biological integration."),
     inferences = list("Planted expression programs are not known cell identities or evidence of batch effects."),
-    qc = list(schema = "scagentkit.qc.v1", rationale = "Remove only the literal zero-count synthetic control.",
+    qc = list(schema = "scagentkit.qc.rules.v1", rationale = "Remove only the literal zero-count synthetic control.",
       risks = list("This software rule is not a recommended biological threshold."),
-      filters = list(list(op = "range", metric = "nCount", min = 1))),
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 80L, npcs = 15L, seed = 999L),
     pcs = pcs, batch = harmony_integration_batch(method, vars),
@@ -74,7 +74,7 @@ harmony_integration_begin <- function(root, object = harmony_integration_fixture
                                       proposal = harmony_integration_plan(),
                                       context = harmony_integration_context()) {
   suppressWarnings(sc_run(object, root, context = context, strategy = TRUE,
-    strategy_proposal = proposal, budget = 0, annotation_column = "reviewed_type"))
+    strategy_proposal = proposal, annotation_column = "reviewed_type"))
 }
 
 harmony_integration_record <- function(root, name) {

@@ -14,7 +14,7 @@ test_that("process probes distinguish absence from permission and probe failures
 })
 
 test_that("unknown local process status retains the exact run and provider locks", {
-  root <- tempfile(); dir.create(root)
+  root <- tempfile(); .sc_project_format_create(root)
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
   owner <- .sc_run_lock(root)
   provider <- file.path(root, "provider", ".dispatch-lock")
@@ -41,7 +41,7 @@ test_that("only explicit OS absence can confirm a failed signal probe", {
 })
 
 test_that("confirmed absence permits explicit recovery and records the reason", {
-  root <- tempfile(); dir.create(root)
+  root <- tempfile(); .sc_project_format_create(root)
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
   owner <- .sc_run_lock(root)
   saved <- new.env()
@@ -58,7 +58,7 @@ test_that("confirmed absence permits explicit recovery and records the reason", 
 })
 
 test_that("lock creation failures identify writable project requirement without stealing", {
-  root <- tempfile(); dir.create(root)
+  root <- tempfile(); .sc_project_format_create(root)
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
   # Clone only the function environment for controlled filesystem failures;
   # never change actual permissions or replace namespace/base functions.
@@ -70,13 +70,13 @@ test_that("lock creation failures identify writable project requirement without 
   create_denied <- mocked_lock(list(dir.create = function(...) FALSE))
   expect_error(create_denied(root), "Cannot create lock staging directory.*parent project.*must be writable.*recorded project path.*reapprove")
   expect_false(dir.exists(file.path(root, ".run-lock")))
-  expect_length(list.files(root, all.files = TRUE, no.. = TRUE), 0L)
+  expect_identical(list.files(root, all.files = TRUE, no.. = TRUE), "project-format.json")
   write_denied <- mocked_lock(list(saveRDS = function(...) stop("simulated disk failure")))
   expect_error(write_denied(root), "Cannot write lock owner record.*must be writable")
-  expect_length(list.files(root, all.files = TRUE, no.. = TRUE), 0L)
+  expect_identical(list.files(root, all.files = TRUE, no.. = TRUE), "project-format.json")
   rename_denied <- mocked_lock(list(file.rename = function(...) FALSE))
   expect_error(rename_denied(root), "Cannot publish project lock.*must be writable")
-  expect_length(list.files(root, all.files = TRUE, no.. = TRUE), 0L)
+  expect_identical(list.files(root, all.files = TRUE, no.. = TRUE), "project-format.json")
   owner <- .sc_run_lock(root)
   expect_error(create_denied(root), "Project is locked")
   expect_identical(readRDS(file.path(root, ".run-lock", "owner.rds")), owner)

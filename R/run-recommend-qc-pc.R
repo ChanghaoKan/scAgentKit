@@ -33,9 +33,7 @@
   step$completed <- list("Measured group QC distributions and saved MAD flags.")
   replace_preset <- function(id) {
     choice <- qc
-    if (identical(choice$schema, "scagentkit.qc.mad.v1")) {
-      choice$preset_id <- id
-    } else if (identical(choice$schema, "scagentkit.qc.rules.v1")) {
+    if (choice$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")) {
       index <- which(vapply(choice$rules, function(rule) identical(rule$op, "mad_preset"), logical(1)))
       if (length(index) != 1L) return(NULL)
       choice$rules[[index]]$preset_id <- id
@@ -48,7 +46,8 @@
       reason = "No existing MAD selector can be replaced without changing the declared range/combination policy."))
     return(step)
   }
-  evaluate <- function(choice) tryCatch(.sc_run_qc_validate(choice, evidence$qc), error = function(e) list(error = conditionMessage(e)))
+  evaluate <- function(choice) tryCatch(.sc_run_qc_validate(choice, evidence$qc,
+    retained_scope = validated$qc_validated$retained_scope), error = function(e) list(error = conditionMessage(e)))
   baseline <- evaluate(baseline_choice)
   current <- evaluate(qc)
   if (!is.null(baseline$error) || !is.null(current$error)) {
@@ -72,12 +71,15 @@
     list(list(field = "context.columns.sample", label = "Declared quality/sample groups",
       reason = "The input is explicitly unstratified; per-sample QC suitability cannot be inferred.")))
   range_only <- baseline
-  if (identical(qc$schema, "scagentkit.qc.rules.v1")) {
+  range_only_empty <- FALSE
+  if (qc$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")) {
     range_proposal <- qc
     range_proposal$rules <- Filter(function(rule) !identical(rule$op, "mad_preset"), qc$rules)
-    if (length(range_proposal$rules)) range_only <- evaluate(range_proposal)
+    range_only_empty <- length(range_proposal$rules) == 0L
+    range_only <- evaluate(range_proposal)
   }
   if (!is.null(range_only$error)) {
+    step$assessment <- "unavailable"
     step$conflicts <- list(paste("The original range-only policy cannot be evaluated:", range_only$error))
     return(step)
   }
@@ -89,7 +91,7 @@
   step$reasons <- as.list(paste0(names(counts), ": ", ifelse(is.na(counts), "unavailable", counts), " measured pre-score flags."))
   # Use measured joint/union impacts and nonzero marginal flags to select
   # comparisons. This is not a static list of six presets or a quality score.
-  current_preset <- if(identical(qc$schema,"scagentkit.qc.mad.v1")) qc$preset_id else {
+  current_preset <- {
     selector <- Filter(function(rule) identical(rule$op,"mad_preset"),qc$rules)
     if(length(selector)==1L) selector[[1L]]$preset_id else NULL
   }
@@ -116,14 +118,18 @@
       impact <- list(retained = result$retention$retained, removed = result$retention$removed,
         additional_removed_vs_keep_all = length(added), restored_vs_keep_all = length(restored),
         range_only_retained = length(range_only$keep_cells),
+        range_only_policy = if (range_only_empty) "no_additional_filtering" else "explicit_ranges",
         new_removed_within_range_keep = length(setdiff(range_only$keep_cells, result$keep_cells)),
         reintroduced_range_failed = length(setdiff(result$keep_cells, range_only$keep_cells)),
         removed_vs_current = length(setdiff(current$keep_cells, result$keep_cells)),
         restored_vs_current = length(setdiff(result$keep_cells, current$keep_cells)),
         groups = result$retention$groups, outer_logic = choice$remove_if,
-        comparison = "Exact full proposal versus keep_all under the same original ranges and outer logic; not an invented range-first intersection.")
+        comparison = if (range_only_empty)
+          "Removing the only MAD selector means no additional filtering and retains committed prior exclusions. The explicit nonempty keep_all comparison may restore earlier exclusions." else
+          "Exact full proposal versus keep_all under the same original ranges and outer logic; not an invented range-first intersection.")
       if (impact$reintroduced_range_failed > 0L) conflicts <- c(conflicts,
-        "The existing outer combination reintroduces range-failed cells; this cannot be endorsed as post-range filtering. Reconsider the combination explicitly, without an automatic AND/OR change.")
+        if (range_only_empty) "This explicit nonempty policy restores previously excluded cells relative to the empty no-additional-filtering policy. Review that relaxation explicitly; it is not a deferral of further filtering." else
+          "The existing outer combination reintroduces range-failed cells; this cannot be endorsed as post-range filtering. Reconsider the combination explicitly, without an automatic AND/OR change.")
       if (length(restored)) conflicts <- c(conflicts, "This candidate restores cells relative to the same-policy keep-all comparison; inspect the exact combination before choosing.")
       if (result$retention$retained < 21L) conflicts <- c(conflicts, "Fewer than 21 retained cells cannot support the current fixed 20-neighbor raw analysis graph.")
       empty <- vapply(seq_along(groups), function(i) groups[[i]]$retained > 0L && result$retention$groups[[i]]$retained == 0L, logical(1))

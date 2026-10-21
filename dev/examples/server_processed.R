@@ -40,7 +40,7 @@ server_processed_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     start_stage = "processed", processed_reason = reason,
     assay = "RNA", counts_layer = "counts", normalized_layer = "data",
     cluster_column = "seurat_clusters", provider = server_demo_provider(),
-    chat_fn = server_demo_chat, budget = 0)
+    chat_fn = server_demo_chat)
   stopifnot(identical(source_hash, digest::digest(original, algo = "sha256")),
     all(c("qc_evidence", "qc_propose", "qc_apply", "analysis") %in% result$completed))
   print(result)

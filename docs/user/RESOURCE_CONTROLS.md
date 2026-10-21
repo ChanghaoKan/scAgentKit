@@ -12,7 +12,7 @@ This is an application resource guard, not a provider token/context limit and
 not a spending cap. A larger allowance does not guarantee that a model can
 accept the request. Provider-specific context admission is not yet implemented.
 Study free text and individual tool responses retain separate privacy/resource
-limits. Fees use post-call accounting across entry points; the deprecated `budget` argument does not limit dispatch.
+limits. Fees use post-call accounting across entry points without a monetary cap.
 
 `model_timeout=NULL` derives an outer worker deadline from the saved ReAct
 limits and provider timeout, plus startup/finalization allowance. It avoids the
@@ -34,10 +34,13 @@ scan may report a partial lower bound. Sizes are logical file sizes, not physica
 allocated space or a guarantee of available disk space.
 
 To archive, finish or stop active workers first. Copy the whole project to the
-archive destination, preserve its layout, and verify copied file hashes before
+archive destination, including `project-format.json` and `state.rds`, preserve
+its layout, and verify copied file hashes before
 considering the copy complete. Keep original inputs and a record of the R,
 package and dependency environment separately. Retain the source project until
 the archive is verified and you explicitly decide to remove it. A review ZIP is
-not a substitute for a complete scientific project archive. Automated archival,
+not a substitute for a complete scientific project archive. Copying or restoring
+a backup does not upgrade its format; open it with its matching software environment.
+Automated archival,
 journal segmentation and review-bundle/display limit configuration are not
 implemented by this checkpoint.

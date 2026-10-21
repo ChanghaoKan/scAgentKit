@@ -17,6 +17,7 @@ from test_directed import evidence_fixture, expression_fixture
 
 def inputs(cluster_id="T alpha"):
     evidence = evidence_fixture()
+    evidence["project_format_version"] = 3
     evidence["sources"] = []
     evidence["clusters"][0]["id"] = cluster_id
     evidence["clusters"][0]["models"] = []

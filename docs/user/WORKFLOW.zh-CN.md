@@ -87,6 +87,9 @@ sc_open(project_dir)$view$output
 
 ### 5. 重开已保存项目
 
+重开要求项目格式与当前软件匹配，`sc_open()` 和只读 `sc_run_open()` 同样检查。
+格式不匹配会在写入前拒绝，提示“请用原软件环境打开，或新建项目”；
+详见[格式闸门](../../workbench/README.md#project-format-and-reopening)。
 使用原包环境、原输入和原选项重复相应入口；省略 context，以读取已保存的研究事实：
 
 ```r

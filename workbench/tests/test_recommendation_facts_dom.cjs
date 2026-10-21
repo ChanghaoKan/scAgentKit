@@ -1,4 +1,5 @@
 "use strict";
+const {qcPreviewFixture} = require("./qc_fixture.cjs");
 // Actual production-source offline DOM tests; no browser, R, provider or network.
 const fs = require("node:fs"), path = require("node:path"), vm = require("node:vm");
 const assert = require("node:assert/strict"), {webcrypto, createHash} = require("node:crypto");
@@ -43,13 +44,13 @@ function ui() {
 const inputHash = "a".repeat(64), proposalHash = "b".repeat(64), reviewHash = "c".repeat(64), evidenceHash = "d".repeat(64);
 function proposal() {
   return {schema: "scagentkit.strategy.v1", rationale: "Use measured public quality and an explicit analyst plan.", risks: ["Clustering does not validate cell identity"], inferences: [{claim: "The contrast may be biological", uncertainty: "unverified design"}],
-    qc: {method: "thresholds", rules: [{metric: "nFeature_RNA", min: 200}]}, analysis: {normalization_method: "LogNormalize", scale_factor: 10000, nfeatures: 2000, npcs: 30, seed: 42},
+    qc: {schema: "scagentkit.qc.rules.v1", rationale: "Explicit synthetic range", risks: [], remove_if: "any", rules: [{op: "range", metric: "nFeature", min: 200}]}, analysis: {normalization_method: "LogNormalize", scale_factor: 10000, nfeatures: 2000, npcs: 30, seed: 42},
     pcs: {method: "fixed", ndim: 20}, batch: {method: "none", reason: "No verified batch contrast"}, clustering: {resolution: 0.5, diagnostic_resolutions: [0.3, 0.5]}, umap: {run: true, n_neighbors: 30}};
 }
 function answer() {
   return {schema: "scagentkit.run-review.workbench.v1", csrf_token: "offline-session-token", run: {schema: "scagentkit.run.v1", project_id: "offline-strategy", input_hash: inputHash, revision: 7, status: "awaiting_review", stage: "strategy_propose", context: {species: "human", tissue: "Blood"},
     review_node: {kind: "strategy", project_id: "offline-strategy", input_hash: inputHash, expected_revision: 7, proposal_hash: proposalHash, review_hash: reviewHash, evidence_hash: evidenceHash, can_decide: true, can_revise: true, can_undo: false},
-    strategy_review: {schema: "scagentkit.strategy.review.v1", hash: reviewHash, input_hash: inputHash, evidence_hash: evidenceHash, details: {canonical_proposal: proposal(), background: {facts: {species: "human", tissue: "Blood", group_column: "condition", group_values: ["Ca", "Ctrl"]}, missing: ["batch assignment", "donor identity"]}, quality: {cell_count: 96, actual_source: "saved measured QC summary"}, qc_impact: {expected_retained_cells: 90, input_cell_count: 96}, applicability: {executable: true, blockers: [], details: [{operation: "batch", method: "none", applicable: true}]}, capabilities: {pc_selection: ["fixed", "computed_variance"], batch: ["none", "manual"], cycle: "unsupported", doublet: "unsupported", subcluster: "unsupported"}, execution_plan: ["qc_apply", "strategy_basis", "strategy_neighbors", "strategy_cluster", "markers", "annotation_review"], dependency_hashes: {input: inputHash}, source: {kind: "mock_provider", new_request: false}, limitations: ["Synthetic transport fixture, not scientific validation"]}}}};
+    strategy_review: {schema: "scagentkit.strategy.review.v1", hash: reviewHash, input_hash: inputHash, evidence_hash: evidenceHash, details: {canonical_proposal: proposal(), background: {facts: {species: "human", tissue: "Blood", group_column: "condition", group_values: ["Ca", "Ctrl"]}, missing: ["batch assignment", "donor identity"]}, quality: {cell_count: 96, actual_source: "saved measured QC summary"}, qc_impact: qcPreviewFixture(proposal().qc, 96, 90), applicability: {executable: true, blockers: [], details: [{operation: "batch", method: "none", applicable: true}]}, capabilities: {qc_rules: {schema: "scagentkit.qc.rules.v1", operations: ["range", "mad_preset"]}, pc_selection: ["fixed", "computed_variance"], batch: ["none", "manual"], cycle: "unsupported", doublet: "unsupported", subcluster: "unsupported"}, execution_plan: ["qc_apply", "strategy_basis", "strategy_neighbors", "strategy_cluster", "markers", "annotation_review"], dependency_hashes: {input: inputHash}, source: {kind: "mock_provider", new_request: false}, limitations: ["Synthetic transport fixture, not scientific validation"]}}}};
 }
 function setup(value = answer()) {const h = ui(); h.state.view = h.call("verify", copy(value)); h.state.continuation = value.continuation || null; h.call("render"); return h;}
 function validReady(value) {value.run.status = "ready"; value.run.stage = "strategy_apply"; value.run.review_node = null; return value;}
@@ -57,18 +58,19 @@ function continuation(run, job = null, canRetry = false) {return {schema: "scage
 
 function recommendations() {
   return {schema:"scagentkit.recommendations.v1",policy_version:"1",completed:["Measured QC distributions"],next_decision:"Review strategy, save edits and approve local computation",limitations:["Heuristic suggestions, not biological optima"],steps:[
-    {id:"qc",title:"QC",status:"recommend_execute",assessment:"assessed",reasons:["Inspect distributions"],completed:["Sample-aware distributions measured"],conflicts:["Multimodal group"],uncertainty:["No optimal threshold established"],missing:[{field:"chemistry",label:"Chemistry",reason:"Not declared"}],next_decision:"Compare retention before approval",candidates:[{id:"keep",label:"Keep all pending review",available:true,changes:{qc:{schema:"scagentkit.qc.v1",rationale:"Keep uncertain cells",risks:[],filters:[{op:"range",metric:"nCount",min:1}]}},reasons:["No tissue-specific cutoff"],impact:{removed_cells:0},conflicts:[]}]},
+    {id:"qc",title:"QC",status:"recommend_execute",assessment:"assessed",reasons:["Inspect distributions"],completed:["Sample-aware distributions measured"],conflicts:["Multimodal group"],uncertainty:["No optimal threshold established"],missing:[{field:"chemistry",label:"Chemistry",reason:"Not declared"}],next_decision:"Compare retention before approval",candidates:[{id:"keep",label:"Keep all pending review",available:true,changes:{qc:{schema: "scagentkit.qc.rules.v1", remove_if: "any",rationale:"Keep uncertain cells",risks:[],rules:[{op:"range",metric:"nCount",min:1}]}},reasons:["No tissue-specific cutoff"],impact:{removed_cells:0},conflicts:[]}]},
     {id:"resolution",title:"Resolution",status:"insufficient_information",assessment:"pending_computation",reasons:["No scan yet"],completed:[],conflicts:[],uncertainty:[],missing:[],next_decision:"Compute the approved fixed-graph scan",candidates:[{id:"r06",label:"Measured 0.6",available:false,changes:{clustering:{resolution:.6}},reasons:["Not computed"],impact:{},conflicts:[]}]}
   ]};
 }
 
 (async()=>{
-const value=answer();value.run.strategy_review.details.canonical_proposal.qc={schema:"scagentkit.qc.v1",rationale:"Input review",risks:[],filters:[{op:"range",metric:"nCount",min:1}]};
+const value=answer();value.run.strategy_review.details.canonical_proposal.qc={schema: "scagentkit.qc.rules.v1", remove_if: "any",rationale:"Input review",risks:[],rules:[{op:"range",metric:"nCount",min:1}]};
 const rec=recommendations();rec.fact_editable=true;rec.fact_fields=[
  {key:"columns.capture",label:"Physical capture column",type:"select",options:[{value:"loading_unit",label:"loading_unit"}],value:null,required:false,reason:"Choose actual input metadata; sample is not capture"},
  {key:"doublet.empty_droplets_removed",label:"Upstream cell calling complete",type:"boolean",value:null,required:true,reason:"Raw MEX is not cell calling"},
  {key:"doublet.rate.value",label:"Sourced expected rate",type:"number",value:null,required:false,reason:"Rate is not a deletion quota"}];
 rec.fact_values={};value.run.strategy_review.details.recommendations=rec;
+value.run.strategy_review.details.qc_impact = qcPreviewFixture(value.run.strategy_review.details.canonical_proposal.qc, 96, 90);
 const h=setup(value),form=h.state.recommendationFacts;
 assert(form,"Fact form rendered from saved fields only");assert.equal(h.call("recommendationFactsDirty"),false);
 assert.equal(form.items.length,3,"Backend boolean fields must not be dropped");

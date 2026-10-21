@@ -10,7 +10,7 @@ The optional workbench connects to an existing `sc_run()` project directory. R r
 
 ## Start a review session
 
-Install the current scAgentKit package in the R library used by the run. Use a project created with that same coordinator implementation; this addition does not migrate older project approvals across an implementation change. Start the workbench on the machine that holds the project:
+Install the current scAgentKit package in the R library used by the run. The saved project must pass the [format gate](README.md#project-format-and-reopening) and match the coordinator implementation. Before creating worker/job files or locks, the workbench checks the format marker and runs a fresh read-only R check of the authoritative state. Missing, damaged or mismatched formats are refused; use the original software environment or create a new project. Start the workbench on the machine that holds the project:
 
 ```sh
 python3 workbench/server.py \
@@ -21,7 +21,7 @@ python3 workbench/server.py \
   --port 8772
 ```
 
-Open `http://127.0.0.1:8772/` (or `/review`) for the unified review page. `--local-continue` explicitly enables the local worker; omit it to retain the review-only service and resume from R. Its fixed QC pane reuses the existing QC preview interface with fully bound unified requests. On a unified `--run-project` server, `/qc` and `/api/qc/inspect` retain the legacy saved view, while `/api/qc/decision` is rejected: submit decisions through `/review`. The separate legacy QC-only server handler remains compatible. The unified page uses `/api/run-review/` and `sc_run_review()`.
+Open `http://127.0.0.1:8772/` (or `/review`) for the unified review page. `--local-continue` explicitly enables the local worker; omit it to use the review-only service and resume from R. Its QC pane submits fully bound unified requests. On a unified `--run-project` server, `/qc` and `/api/qc/inspect` expose the saved QC review, while `/api/qc/decision` is rejected: submit decisions through `/review`. The standalone QC handler accepts direct QC decisions in its own server context. The unified page uses `/api/run-review/` and `sc_run_review()`.
 
 For a remote machine, run this command on your own computer and open the same URL:
 
@@ -92,7 +92,7 @@ After approving the whole saved plan, choose Continue to write the new Seurat ou
 
 Continue is asynchronous. Its persisted job identity and status are separate from the authoritative R run state. Repeated submission of the same bound action reuses that job rather than starting a second computation. A stale revision, changed input or different project is rejected. A finished job can still have a run awaiting review or configuration; only the run's `complete` status indicates finalized output.
 
-Local task receipts, configuration and owner/status records are stored under the project's `.workbench-jobs/`. They supplement the R checkpoints and do not replace `state.rds` or grant a scientific approval. Polling reads saved status; it never starts another R calculation.
+Local task receipts, configuration and owner/status records are stored under the project's `.workbench-jobs/`. They supplement the R checkpoints and do not replace `state.rds` or grant a scientific approval. Polling reads saved status after a fresh read-only R format check; it never starts scientific analysis or a model request.
 
 Closing or refreshing the browser, losing the tunnel, or restarting the HTTP service does not by itself cancel the detached local worker or remove saved checkpoints. Reconnect the service to the same project and inspect its saved job/run status before acting again. An unknown response is not permission to start another worker. Do not remove a lock to bypass an active computation.
 
@@ -115,6 +115,6 @@ Both QC and annotation submissions carry the project ID, input hash, proposal ha
 
 The trusted local browser receives review context, exact cell/cluster IDs, sample/capture scope, per-cell QC evidence and marker summaries needed for review. Raw counts, expression matrices, provider keys and provider headers are not served. This local review access is separate from provider transmission: any external model call uses the run's separately authorized aggregate evidence and configured R provider. “Raw data stay on the server” does not mean that no aggregate information is sent to a provider.
 
-Continue requests carry only the bound local action; the configured project and R executable/library are selected by the operator at server startup. Browser fields are data, not executable R. Continue is neither model consent nor scientific approval and cannot alter the run's provider, budget or analysis settings.
+Continue requests carry only the bound local action; the configured project and R executable/library are selected by the operator at server startup. Browser fields are data, not executable R. Continue is neither model consent nor scientific approval and cannot alter the run's provider or analysis settings.
 
 The local Continue path supports the current QC preview, whole-plan annotation review and constrained local computation. It does not infer donor/batch identity, prove labels biologically correct, submit scheduler work or dispatch a model through Continue. An optional, separately enabled model-suggestion worker retains its own payload consent and request action. Headless R inspect/approve/reject/revise/resume remains available when no browser is present.

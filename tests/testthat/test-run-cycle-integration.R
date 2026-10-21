@@ -69,9 +69,9 @@ cycle_integration_plan <- function(method = NULL) {
     rationale = "Use a count-positive software QC control and explicit local analysis choices.",
     risks = list("Planted expression and metadata do not validate biology or QC thresholds."),
     inferences = list("Synthetic expression programs are test controls, not user biological facts."),
-    qc = list(schema = "scagentkit.qc.v1", rationale = "Remove only the zero-count software control.",
+    qc = list(schema = "scagentkit.qc.rules.v1", rationale = "Remove only the zero-count software control.",
       risks = list("A test cutoff, not a recommended biological threshold."),
-      filters = list(list(op = "range", metric = "nCount", min = 1L))),
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1L))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 80L, npcs = 10L, seed = 17L),
     pcs = list(method = "fixed", ndim = 5L),
@@ -90,8 +90,7 @@ cycle_integration_begin <- function(root, object = cycle_integration_fixture(),
                                     provider = NULL, chat_fn = NULL) {
   suppressWarnings(sc_run(object, root, context = context, strategy = TRUE,
     strategy_proposal = proposal, cycle_diagnostics = options,
-    provider = provider, chat_fn = chat_fn, budget = 0,
-    annotation_column = "reviewed_type"))
+    provider = provider, chat_fn = chat_fn, annotation_column = "reviewed_type"))
 }
 
 cycle_integration_continue <- function(root, snapshot = sc_run_inspect(root)) {
@@ -564,8 +563,7 @@ test_that("noncycle PC and actual QC revisions each approve Continue and complet
   object <- cycle_integration_fixture(cycle_genes = FALSE)
   original <- serialize(object, NULL, version = 2L)
   initial <- suppressWarnings(sc_run(object, base, context = cycle_integration_context(),
-    strategy = TRUE, strategy_proposal = cycle_integration_plan(), budget = 0,
-    annotation_column = "reviewed_type"))
+    strategy = TRUE, strategy_proposal = cycle_integration_plan(), annotation_column = "reviewed_type"))
   expect_identical(initial$status, "awaiting_review")
   expect_null(scAgentKit:::.sc_run_load(base)$files$cycle_diagnostics)
   expect_null(sc_run_inspect(base)$strategy_review$details$canonical_proposal$cycle)
@@ -579,7 +577,7 @@ test_that("noncycle PC and actual QC revisions each approve Continue and complet
     root <- cycle_integration_copy(base); roots <- c(roots, root)
     proposal <- cycle_integration_plan()
     if (kind == "pcs") proposal$pcs$ndim <- 4L else {
-      proposal$qc$filters[[1L]]$min <- 2L
+      proposal$qc$rules[[1L]]$min <- 2L
       proposal$qc$rationale <- "Also remove the planted one-count control in this actual QC revision."
     }
     revised <- cycle_integration_revise(root, proposal)
@@ -673,9 +671,9 @@ test_that("one aggregate mock response is cached and an omitted cycle choice nev
   request$validator <- function(value) scAgentKit:::.sc_run_strategy_validate(value, evidence)$proposal
   ledger <- file.path(root, "provider", "ledger.json")
   ledger_hash <- scAgentKit:::.sc_project_sha_file(ledger)
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback, budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback)
   expect_identical(cached$status, "ok"); expect_true(cached$cached)
-  expect_equal(cached$charged_or_held_usd, 0)
+  expect_equal(cached$cost_usd, 0)
   expect_identical(calls, 1L)
   expect_identical(scAgentKit:::.sc_project_sha_file(ledger), ledger_hash)
   cycle_integration_decide(root)
@@ -801,7 +799,7 @@ test_that("no-provider cycle projects remain inspectable configuration boundarie
   network <- cycle_integration_sentinels()
   root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
   begun <- sc_run(cycle_integration_fixture(), root, context = cycle_integration_context(),
-    strategy = TRUE, cycle_diagnostics = cycle_integration_options(), budget = 0)
+    strategy = TRUE, cycle_diagnostics = cycle_integration_options())
   expect_identical(begun$status, "awaiting_configuration")
   view <- sc_run_inspect(root)
   expect_identical(view$stage, "strategy_propose")

@@ -59,6 +59,16 @@ class ProjectHTTPTests(unittest.TestCase):
         return {"clusterId": "T alpha", "dimension": "type", "label": "unknown", "reason": "Measured evidence is incomplete",
                 "status": "accepted", "revision": revision, "requestId": request_id}
 
+    def test_project_list_reports_available_registry_and_exact_selection(self):
+        status, value = self.parsed("GET", "/api/projects")
+        self.assertEqual(status, 200)
+        self.assertIs(value["registry_available"], True)
+        self.assertNotIn("legacy", value)
+        self.assertEqual(value["selected"], self.key_a)
+        self.assertEqual({project["key"] for project in value["projects"]}, {self.key_a, self.key_b})
+        self.server.select_project(self.key_b)
+        self.assertEqual(self.parsed("GET", "/api/projects")[1]["selected"], self.key_b)
+
     def test_two_tabs_read_directed_history_and_exports_from_own_project(self):
         self.server.select_project(self.key_b)
         for key, project_id in ((self.key_a, "project-A"), (self.key_b, "project-B")):

@@ -28,14 +28,17 @@ def main():
     worker_file = Path(config["worker"])
     bridge_file = Path(config["bridge"])
     root = Path(__file__).resolve().parent
+    if set(config["code_hashes"]) != {"runtime", "worker", "bridge", "format_bridge"}:
+        return 2
     # Verify source before importing it; bypass timestamp-based .pyc reuse.
-    for name, path in (("runtime", runtime_file), ("worker", worker_file), ("bridge", bridge_file)):
+    for name, path in (("runtime", runtime_file), ("worker", worker_file), ("bridge", bridge_file), ("format_bridge", root / "project_format_bridge.R")):
         if path.parent != root or path.is_symlink() or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != config["code_hashes"][name]:
             return 2
     module = types.ModuleType("scagentkit_continue_worker_runtime")
     module.__file__ = str(runtime_file)
     exec(compile(runtime_file.read_bytes(), str(runtime_file), "exec"), module.__dict__)
     project = Path(config["project"])
+    module.check_project_format(project, config["library"], config["rscript"])
     base = project / ".workbench-jobs"
     if project.is_symlink() or base.is_symlink() or list((project.stat().st_dev, project.stat().st_ino)) != config["project_identity"] or list((base.stat().st_dev, base.stat().st_ino)) != config["base_identity"]:
         return 2
@@ -81,6 +84,7 @@ def main():
         exit_code = r_process.wait()
         owner["r_exit_code"] = exit_code
         owner["r_finished_at"] = module._time()
+        module.check_project_format(project, config["library"], config["rscript"])
         module._atomic(directory / "owner.json", owner)
         answer = module._read(response)
         if set(answer) != {"ok", "result", "error"} or not isinstance(answer["ok"], bool) or not answer["ok"] or exit_code != 0:
@@ -105,9 +109,12 @@ def main():
         # Never finalize while an R child is still alive, nor remove its R lock.
         if r_process is not None and r_process.poll() is None:
             r_process.wait()
-        job["updated_at"] = module._time()
-        module._atomic(directory / "job.json", job)
-        os.close(lock_fd)
+        try:
+            module.check_project_format(project, config["library"], config["rscript"])
+            job["updated_at"] = module._time()
+            module._atomic(directory / "job.json", job)
+        finally:
+            os.close(lock_fd)
     return 0 if job["status"] == "succeeded" else 1
 
 

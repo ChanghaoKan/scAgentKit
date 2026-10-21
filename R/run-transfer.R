@@ -14,14 +14,14 @@
     kind = kind, categories = .sc_run_transfer_categories(kind))
 }
 
-.sc_run_transfer_options <- function(value, provider, budget, cost_mode = "posthoc") {
+.sc_run_transfer_options <- function(value, provider) {
   if (is.null(value)) return(NULL)
   value <- .sc_run_provider_plain(value)
   if (!is.list(value) || is.null(names(value)) || anyDuplicated(names(value)) ||
       !identical(value$mode, "project") ||
       length(setdiff(names(value), c("mode", "confirmed", "reviewer", "reason", "categories", "react"))))
     stop("Project transfer consent requires mode='project', confirmed=TRUE, reviewer, reason and explicit categories; omit it for strict per-payload review.", call. = FALSE)
-  if (!identical(value$confirmed, TRUE)) stop("Confirm the displayed data categories and project USD cap before enabling project transfer consent.", call. = FALSE)
+  if (!identical(value$confirmed, TRUE)) stop("Confirm the displayed provider and data categories before enabling project transfer consent.", call. = FALSE)
   .sc_project_string(value$reviewer, "transfer reviewer")
   .sc_project_string(value$reason, "transfer reason")
   categories <- unlist(value$categories, use.names = FALSE)
@@ -35,11 +35,10 @@
     reviewer = value$reviewer, reason = value$reason, categories = sort(categories),
     provider_hash = .sc_run_provider_hash(provider),
     prompt_version = .sc_run_prompt_version(),
-    react_scope = list(schema = "scagentkit.react-scope.v1", cost_mode = "posthoc",
+    react_scope = list(schema = "scagentkit.react-scope.v1",
       policy = .sc_run_turn_policy(value$react),
       category_meaning = "Aggregate markers include bounded local ACT reference entries; aggregate QC includes cluster-context summaries. No identifiers, matrices, paths or writable tools.",
       authority = "Read-only bounded annotation turns only; saving a draft never approves it."))
-  out$cost_mode <- "posthoc"
   if (.sc_run_provider_contains_secret(out, provider$api_key_env))
     stop("Credential-like transfer consent is forbidden.", call. = FALSE)
   out$hash <- .sc_run_provider_hash(out)
@@ -48,7 +47,7 @@
 
 .sc_run_transfer_authorized <- function(request, config) {
   consent <- config$review$transfer_consent
-  if (is.null(consent) || !consent$schema %in% c("scagentkit.transfer-consent.v1", "scagentkit.transfer-consent.v2") ||
+  if (is.null(consent) || !identical(consent$schema, "scagentkit.transfer-consent.v2") ||
       !identical(consent$mode, "project") || !isTRUE(consent$confirmed) ||
       !isTRUE(config$review$allow_external)) return(FALSE)
   without_hash <- consent; without_hash$hash <- NULL

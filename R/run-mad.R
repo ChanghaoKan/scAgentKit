@@ -1,5 +1,5 @@
 # Deterministic local MAD evidence and a finite, reviewed preset panel.
-# This coordinator path is separate from the legacy qc_mad/range interfaces.
+# The coordinator binds the panel to the measured input and explicit options.
 # Only `summary` is eligible for an explicitly approved aggregate AI preview.
 .sc_run_mad_fields <- function(value, required, allowed = required, label) {
   if (!is.list(value) || is.null(names(value)) || anyNA(names(value)) ||
@@ -401,48 +401,14 @@
   invisible(TRUE)
 }
 
-.sc_run_mad_validate <- function(proposal, evidence) {
-  qc <- if (is.list(evidence$qc)) evidence$qc else evidence
-  record <- qc$mad_record
-  if (is.null(record)) record <- evidence$mad_record
-  if (is.null(record) && is.list(evidence$private)) record <- evidence$private$mad_record
+.sc_run_mad_bind_evidence <- function(evidence) {
+  record <- evidence$mad_record
   .sc_run_mad_verify(record)
-  if (!is.list(qc) || is.null(qc$metrics) ||
-      !identical(qc$evidence_hash, .sc_run_qc_hash(qc)) ||
-      !identical(record$qc_evidence_hash, .sc_run_mad_baseline_qc(qc)$evidence_hash) ||
-      !identical(record$cell_ids, qc$metrics$cell_id) ||
-      !identical(record$feature_ids, qc$feature_ids) || !identical(record$counts_hash, qc$counts_hash))
+  if (!is.list(evidence) || is.null(evidence$metrics) ||
+      !identical(evidence$evidence_hash, .sc_run_qc_hash(evidence)) ||
+      !identical(record$qc_evidence_hash, .sc_run_mad_baseline_qc(evidence)$evidence_hash) ||
+      !identical(record$cell_ids, evidence$metrics$cell_id) ||
+      !identical(record$feature_ids, evidence$feature_ids) || !identical(record$counts_hash, evidence$counts_hash))
     .sc_project_fail("MAD panel belongs to different or changed original QC evidence; approval is stale.")
-  .sc_run_mad_fields(proposal, c("schema", "rationale", "risks", "preset_id", "panel_hash"), label = "MAD QC proposal")
-  if (!identical(proposal$schema, "scagentkit.qc.mad.v1")) .sc_project_fail("Unsupported MAD QC proposal schema.")
-  rationale <- .sc_run_mad_text(proposal$rationale, "MAD proposal rationale")
-  risks <- proposal$risks
-  if (is.list(risks)) {
-    if (!is.null(names(risks)) || !all(vapply(risks, function(value) is.character(value) && length(value) == 1L && !is.na(value) && nzchar(trimws(value)), logical(1))))
-      .sc_project_fail("MAD proposal risks must be an unnamed text array, possibly empty.")
-    risks <- unlist(risks, use.names = FALSE)
-    if (!length(risks)) risks <- character()
-  }
-  if (!is.character(risks) || anyNA(risks) || any(!nzchar(trimws(risks))))
-    .sc_project_fail("MAD proposal risks must be a text array, possibly empty.")
-  .sc_run_mad_text(proposal$preset_id, "MAD preset_id")
-  if (!identical(proposal$panel_hash, record$panel_hash))
-    .sc_project_fail("MAD panel hash differs from this exact local candidate panel; stale approval is rejected.")
-  index <- which(vapply(record$summary$presets, `[[`, character(1), "preset_id") == proposal$preset_id)
-  if (length(index) != 1L) .sc_project_fail("Unsupported MAD preset; model-generated thresholds, genes, code or extra operations are not executable.")
-  panel <- record$summary$presets[[index]]
-  if (!isTRUE(panel$available)) .sc_project_fail(paste0("MAD preset is unavailable: ", paste(panel$unavailable_reasons, collapse = " ")))
-  keep <- record$selections[[proposal$preset_id]]
-  if (!length(keep)) .sc_project_fail("MAD preset would remove every original cell; revise the explicit prefilter or choose a supported quality preset before approval.")
-  canonical <- list(schema = "scagentkit.qc.mad.v1", rationale = rationale, risks = unname(risks),
-    preset_id = unname(proposal$preset_id), panel_hash = record$panel_hash)
-  retention_groups <- lapply(panel$groups, function(group) group[c("group_id", "selector", "before", "retained", "removed", "fraction_retained")])
-  retention <- list(before = panel$before, retained = panel$retained, removed = panel$removed,
-    fraction_retained = panel$fraction_retained, groups = retention_groups)
-  list(proposal = canonical, retention = retention, keep_cells = keep, evidence_hash = qc$evidence_hash,
-    panel_hash = record$panel_hash,
-    summary = list(preset_id = panel$preset_id, label = panel$label, rule = panel$rule,
-      original_cells = panel$before, pre_score_cells = panel$pre_score, post_qc_cells = panel$retained,
-      prefilter_removed = panel$before - panel$pre_score, quality_removed = panel$quality_removed,
-      groups = panel$groups, high_rna_action = "flag only", ribo_hb_action = "diagnostic only"))
+  record
 }

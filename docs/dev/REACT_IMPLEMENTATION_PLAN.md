@@ -71,10 +71,14 @@ will bind citations and tool results to that proposal and its scientific review.
 Stage 2B must deliver all five required third-gate outer risk fields, including
 `doublet_risk` and `ambient_suspected`, and their production format validation.
 E3 uses these records for the primary discovery metric; the UI/evaluator must
-not create them later. The same outer draft record includes those risk fields;
-the existing `annotation.v1` payload and strategy free-text risk field remain
-unchanged. Production validators check format, enumerations and binding. Missing
-legacy assessments are explicitly unassessed, not negative. See the protocol for
+not create them later. The outer draft record binds those risk fields to the
+`annotation.v1` payload. Strategy free-text risks are separate from the structured
+assessments. Production validators check format, enumerations and binding. When a
+current baseline lacks structured risk records, its projection uses the
+`unassessed` source, `not_assessed` assessments and empty evidence IDs; the batch
+value is `insufficient_evidence`, and other values are `not_assessed`. This
+projection does not rewrite the baseline or establish a negative finding. Model
+responses require all five records with `source="model"`. See the protocol for
 the scope, source and assessment-status contract.
 
 Pool citations retain the existing rules. An additional tool citation must come
@@ -106,8 +110,8 @@ transfer confirmation. Strict mode requires approval of each exact outgoing
 payload. Every turn has a separate payload hash and ledger entry. New structured
 turns have no monetary cap: record provider usage and costs after each response,
 without added token counters, safety factors, pre-send estimates or reservation
-prerequisites. Preserve the legacy one-shot budget behavior for compatibility;
-do not create a generic billing-mode framework. Unknown price or usage remains
+prerequisites. Single-request and structured-turn calls both use post-call
+accounting without monetary caps or reservations. Unknown price or usage remains
 unknown rather than zero and does not itself prevent a new structured request.
 Uncertain delivery is never automatically resent. Reuse the existing ledger,
 consent and events. The [provider contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)

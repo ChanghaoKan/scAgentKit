@@ -1,9 +1,9 @@
 # Bounded annotation sessions (2B)
 
-This stage adds an opt-in engine path: `sc_run(..., react = list(mode = "all"))`.
-`mode` is `auto`, `all` or `off`; NULL retains the legacy path. The public
-`sc_start(react="auto")` default and trace interface are stage 4/3 work. The
-single-turn transport contract remains in STRUCTURED_PROVIDER_TURNS.md.
+Use `sc_run(..., react = list(mode = "all"))` to enable a bounded annotation
+session. `mode` is `auto`, `all` or `off`; `react=NULL` selects the single-request
+annotation path. The public `sc_start()` entry defaults to `react="auto"`.
+The single-turn transport contract is in STRUCTURED_PROVIDER_TURNS.md.
 
 The coordinator first validates the complete one-shot baseline with the
 `scagentkit.annotation-draft.v1` risk envelope. Its proposal remains
@@ -17,10 +17,9 @@ session, 180 seconds per cluster, and 60 seconds per tool. Limits and tool
 allowlists are recorded in config. The wall-clock cluster deadline persists
 across interruption and strict transfer approval waits: an expired cluster
 falls back rather than acquiring a fresh time allowance on restart. There is
-no new monetary cap, token estimator or reservation. The existing one-shot
-baseline still uses its existing accounting contract. Usage and available cost
-are recorded after delivery; unavailable cost is not zero. Uncertain deliveries
-are never automatically resent.
+no monetary cap, token estimator or reservation. Single requests and structured
+turns record usage and available cost after delivery; unavailable cost is not
+zero. Uncertain deliveries are never automatically resent.
 
 ## Integrity and recovery
 
@@ -60,8 +59,12 @@ never approves it.
 All new model drafts require the five enumerated `risk_flags.v1` records:
 doublet_risk, batch_status, qc_celltype_concern, cycle_concern, ambient_suspected.
 Assessed fields require current evidence IDs. This checks format and provenance,
-not the biological truth of a model interpretation. Legacy records remain
-explicitly unassessed; annotation.v1 itself is unchanged.
+not the biological truth of a model interpretation. A current baseline without
+structured risk records is projected as explicitly unassessed: all assessments
+are `not_assessed`, the batch value is `insufficient_evidence`, other values are
+`not_assessed`, the source is `unassessed`, and evidence IDs are empty. This
+projection does not rewrite the baseline. Model responses must supply all five
+records with `source="model"`. The annotation proposal uses `annotation.v1`.
 
 ## Verification scope
 

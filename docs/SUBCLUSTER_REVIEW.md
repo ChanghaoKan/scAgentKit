@@ -230,8 +230,8 @@ this version does not remove it automatically. Confirm the recorded owner has
 stopped before explicit recovery. `sc_run_unlock` requires saved run state and
 cannot recover a creation lock left before the initial state was saved.
 
-By default, child creation uses zero provider budget and does not inherit a
-provider; manual proposals and unresolved annotation remain supported. Explicit
+By default, child creation does not inherit a provider and disables external
+transfer; manual proposals and unresolved annotation remain supported. Explicit
 model-configuration inheritance and separately approved aggregate requests are
 available through [unified model review](dev/UNIFIED_MODEL_REVIEW.md). That option
 does not copy keys, callbacks or parent consent into a child. The browser
@@ -240,11 +240,12 @@ credentials, automatically choose biological identities, merge children or
 submit cluster jobs. Local review contains exact IDs needed for review, while
 provider transfer remains a separate authorized aggregate-only operation.
 
-## Legacy API boundary
+## Public child-project API
 
-The new path does **not** call `annot_subcluster`. That older function has
-positional parent writes after subset calculations, and its automatic
-resolution helper can fall back to 0.5 on malformed output. Those behaviors
-are not accepted by this exact-ID, typed reviewed path. The legacy function
-remains a separate API; the reviewed path does not cover every legacy
-sub-annotation mode.
+Use `sc_run_subcluster_scope()` to inspect a parent selection and
+`sc_run_subcluster()` to create its independently reviewed child project. After
+review and completion, `sc_run_subcluster_apply()` aligns approved child labels
+to the parent by exact cell ID and writes a new derived parent object. Invalid
+resolution choices or inconsistent cell scopes are rejected. Selection, child
+analysis and applying labels each retain their explicit review and provenance
+requirements.

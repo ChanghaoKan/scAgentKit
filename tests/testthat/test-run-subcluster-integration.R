@@ -43,9 +43,9 @@ subcluster_integration_context <- function() list(species = "human", tissue = "s
 subcluster_integration_plan <- function() list(schema = "scagentkit.strategy.v1",
   rationale = "A finite manually reviewed raw-count child software control.",
   risks = list("No biological identity or clustering optimum is established."),
-  inferences = list(), qc = list(schema = "scagentkit.qc.v1",
+  inferences = list(), qc = list(schema = "scagentkit.qc.rules.v1",
     rationale = "Keep every frozen selected parent cell.", risks = list("No second quality filter requested."),
-    filters = list(list(op = "range", metric = "nCount", min = 0L))),
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 0L))),
   analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
     nfeatures = 50L, npcs = 6L, seed = 6041L),
   pcs = list(method = "fixed", ndim = 4L),
@@ -96,7 +96,7 @@ subcluster_integration_parent <- function(work, object = subcluster_integration_
   initial <- suppressWarnings(sc_run(object, root, context = subcluster_integration_context(),
     start_stage = "processed", processed_reason = "Explicit synthetic normalized object and literal manually assigned parent memberships; no prior biological analysis is claimed.",
     cluster_column = "parent_cluster", annotation_column = "parent_reviewed_type",
-    provider = NULL, budget = 0, review = list(allow_external = FALSE),
+    provider = NULL, review = list(allow_external = FALSE),
     reference = reference, annotation_proposal = proposal))
   stopifnot(identical(initial$status, "awaiting_review"))
   subcluster_integration_decide(root)
@@ -374,9 +374,9 @@ test_that("second QC filtering requires explicit child choice and writeback bind
   parent <- subcluster_integration_parent(work, source)
   protected <- subcluster_integration_files(parent$root)
   plan <- subcluster_integration_plan()
-  plan$qc <- list(schema = "scagentkit.qc.v1", rationale = "Explicitly exclude only the planted one-count control.",
+  plan$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = "Explicitly exclude only the planted one-count control.",
     risks = list("Synthetic software exclusion, not a biological quality threshold."),
-    filters = list(list(op = "range", metric = "nCount", min = 2L)))
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 2L)))
   expect_error(subcluster_integration_create(parent, file.path(work, "not-authorized"), plan = plan),
     "retain_selected|filter|QC|choice")
   expect_false(file.exists(file.path(work, "not-authorized", "state.rds")))
@@ -642,7 +642,13 @@ test_that("receipt and orphan derived artifacts recover once from explicit injec
   expect_true(file.exists(receipt)); expect_false(file.exists(file.path(child, "state.rds")))
   expect_false(dir.exists(file.path(parent$root, ".run-lock")))
   expect_false(dir.exists(file.path(child, ".run-lock")))
-  expect_identical(names(subcluster_integration_files(child)), ".subcluster-creation.rds")
+  expect_identical(names(subcluster_integration_files(child)),
+    c(".subcluster-creation.rds", "project-format.json"))
+  format_marker <- file.path(child, "project-format.json")
+  expect_equal(jsonlite::read_json(format_marker)$project_format_version,
+    scAgentKit:::.sc_project_format_version())
+  format_sha <- scAgentKit:::.sc_project_sha_file(format_marker)
+  format_mtime <- file.info(format_marker)$mtime
   receipt_sha <- scAgentKit:::.sc_project_sha_file(receipt)
   receipt_mtime <- file.info(receipt)$mtime
   expect_identical(subcluster_integration_files(parent$root), protected_parent)
@@ -650,6 +656,8 @@ test_that("receipt and orphan derived artifacts recover once from explicit injec
   expect_identical(initial$status, "awaiting_review")
   expect_identical(scAgentKit:::.sc_project_sha_file(receipt), receipt_sha)
   expect_identical(file.info(receipt)$mtime, receipt_mtime)
+  expect_identical(scAgentKit:::.sc_project_sha_file(format_marker), format_sha)
+  expect_identical(file.info(format_marker)$mtime, format_mtime)
   state <- scAgentKit:::.sc_run_load(child)
   expect_equal(sum(vapply(state$history, function(event) identical(event$action, "subcluster_created"), logical(1))), 1L)
   created_files <- subcluster_integration_files(child)

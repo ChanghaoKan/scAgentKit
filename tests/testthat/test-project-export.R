@@ -217,6 +217,7 @@ test_that("portable export preserves exact IDs and verifies its file bytes", {
   project <- project_export_json(path)
   manifest <- project_export_json(path, "manifest.json")
   expect_identical(project$schema, "scagentkit.project.v1")
+  expect_equal(project$project_format_version, 3L)
   expect_identical(manifest$schema, "scagentkit.project-bundle.v1")
   expect_identical(project$projectId, "study-A")
   expect_identical(project$displayName, "study-A")

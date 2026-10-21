@@ -52,9 +52,9 @@ mad_engine_reference <- function(fixture, prefilter = FALSE) {
 }
 
 mad_engine_proposal <- function(record, preset = "keep_all") {
-  list(schema = "scagentkit.qc.mad.v1", rationale = "Explicitly review one finite local preset on its immutable candidate panel.",
+  list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Explicitly review one finite local preset on its immutable candidate panel.",
     risks = list("Synthetic controls cannot establish biological threshold optimality."),
-    preset_id = preset, panel_hash = record$panel_hash)
+    rules = list(list(op = "mad_preset", preset_id = preset, panel_hash = record$panel_hash)))
 }
 
 test_that("MAD options require an explicit independent grouping role and finite supported settings", {
@@ -175,13 +175,13 @@ test_that("MAD record preserves original sparse input and typed metadata while q
   aggregate_json <- jsonlite::toJSON(record$summary, auto_unbox = TRUE, null = "null", na = "null")
   expect_false(grepl('"cell_id"|"cell_ids"|mad literal|cell space', aggregate_json))
   expect_silent(scAgentKit:::.sc_run_mad_verify(record))
-  checked <- scAgentKit:::.sc_run_mad_validate(mad_engine_proposal(record), built$qc)
+  checked <- scAgentKit:::.sc_run_qc_validate(mad_engine_proposal(record), built$qc)
   expect_identical(checked$keep_cells, record$cell_ids)
   expect_identical(checked$retention$retained, 120L)
   expect_identical(checked$evidence_hash, built$qc$evidence_hash)
   expect_identical(checked$summary$post_qc_cells, 120L)
   for (id in c("conservative_and3", "low_counts3", "low_features3", "high_mt3", "any_quality3")) {
-    check <- scAgentKit:::.sc_run_mad_validate(mad_engine_proposal(record, id), built$qc)
+    check <- scAgentKit:::.sc_run_qc_validate(mad_engine_proposal(record, id), built$qc)
     expect_identical(check$keep_cells, record$selections[[id]])
     expect_identical(check$retention$retained, length(check$keep_cells))
   }
@@ -213,7 +213,7 @@ test_that("prefilter-empty groups retain known zero, while unavailable group qua
     expect_true(panel$available); expect_identical(projected$retained, 0L)
     expect_identical(projected$fraction_retained, 0)
   }
-  keep <- scAgentKit:::.sc_run_mad_validate(mad_engine_proposal(record), built$qc)
+  keep <- scAgentKit:::.sc_run_qc_validate(mad_engine_proposal(record), built$qc)
   expect_identical(keep$keep_cells, colnames(f$object)[1:120])
   expect_identical(keep$summary$prefilter_removed, 4L)
   # Without the explicit prefilter, the four-cell actual group is insufficient.
@@ -238,7 +238,7 @@ test_that("unavailable mitochondrial genes and MAD zero block required presets w
   expect_null(record$selections$high_mt3)
   expect_null(record$selections$any_quality3)
   expect_true(is.character(record$selections$low_counts3))
-  expect_error(scAgentKit:::.sc_run_mad_validate(mad_engine_proposal(record, "conservative_and3"), built$qc), "unavailable")
+  expect_error(scAgentKit:::.sc_run_qc_validate(mad_engine_proposal(record, "conservative_and3"), built$qc), "unavailable")
   counts <- SeuratObject::LayerData(f$object, assay = "RNA", layer = "counts")
   rownames(counts)[2:3] <- c("LiteralRibo", "LiteralHb")
   object <- Seurat::CreateSeuratObject(counts, min.cells = 0, min.features = 0)
@@ -269,17 +269,17 @@ test_that("distribution warning is deterministic and does not claim majority qua
 
 test_that("panel approval rejects hallucinations, stale bindings and internally inconsistent rehashed flags", {
   f <- mad_engine_fixture(); built <- mad_engine_reference(f); record <- built$record
-  validate <- scAgentKit:::.sc_run_mad_validate
+  validate <- scAgentKit:::.sc_run_qc_validate
   for (field in c("code", "filters", "genes", "threshold", "integration")) {
     proposal <- mad_engine_proposal(record); proposal[[field]] <- "unsupported"
     expect_error(validate(proposal, built$qc), "supported named fields")
   }
   proposal <- mad_engine_proposal(record, "optimize_retention")
   expect_error(validate(proposal, built$qc), "Unsupported MAD preset")
-  proposal <- mad_engine_proposal(record); proposal$panel_hash <- paste(rep("0", 64L), collapse = "")
+  proposal <- mad_engine_proposal(record); proposal$rules[[1L]]$panel_hash <- paste(rep("0", 64L), collapse = "")
   expect_error(validate(proposal, built$qc), "stale approval")
   proposal <- mad_engine_proposal(record); proposal$risks <- list(code = "named array")
-  expect_error(validate(proposal, built$qc), "unnamed text array")
+  expect_error(validate(proposal, built$qc), "unnamed.*array")
   tampered <- record; tampered$flags$low_count[1L] <- !tampered$flags$low_count[1L]
   expect_error(scAgentKit:::.sc_run_mad_verify(tampered), "changed")
   tampered$flags_hash <- scAgentKit:::.sc_run_hash(tampered$flags)
@@ -295,4 +295,20 @@ test_that("panel approval rejects hallucinations, stale bindings and internally 
   duplicated <- record; duplicated$cell_ids[2L] <- duplicated$cell_ids[1L]
   duplicated$evidence_hash <- scAgentKit:::.sc_run_mad_hash(duplicated)
   expect_error(scAgentKit:::.sc_run_mad_verify(duplicated), "unique")
+})
+
+
+test_that("empty rules retain mandatory pre-score exclusions without applying a MAD predicate", {
+  f <- mad_engine_fixture(with_empty_group = TRUE)
+  built <- mad_engine_reference(f, prefilter = TRUE)
+  for (logic in c("any", "all")) {
+    proposal <- list(schema = "scagentkit.qc.rules.v1", rationale = "No additional quality filtering.",
+      risks = character(), remove_if = logic, rules = list())
+    checked <- scAgentKit:::.sc_run_qc_validate(proposal, built$qc)
+    expect_identical(checked$keep_cells, built$record$prefilter_cells)
+    expect_equal(checked$summary$prefilter_removed, 4L)
+    expect_equal(checked$summary$quality_removed, 0L)
+    expect_null(checked$summary$preset_id)
+    expect_identical(built$record$panel_hash, built$qc$mad_record$panel_hash)
+  }
 })

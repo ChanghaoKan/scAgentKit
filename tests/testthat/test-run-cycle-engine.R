@@ -279,10 +279,10 @@ test_that("three approved methods reuse normalization and HVGs and preserve ever
   SeuratObject::VariableFeatures(changed[["RNA"]]) <- rev(hvg)
   expect_error(scAgentKit:::.sc_run_strategy_basis(changed, f$config, f$plan, preprocessed = TRUE, cycle_record = cycle),
                "Preprocessed.*changed|incompatible")
-  legacy_config <- f$config; legacy_config$cycle_diagnostics <- NULL
-  legacy_plan <- f$plan; legacy_plan$cycle <- NULL
-  legacy <- scAgentKit:::.sc_run_strategy_basis(f$object, legacy_config, legacy_plan)
-  expect_null(legacy@misc$strategy_execution$preprocess)
-  expect_null(legacy@misc$strategy_execution$basis$cycle)
-  expect_identical(legacy[[]], f$object[[]])
+  no_cycle_config <- f$config; no_cycle_config$cycle_diagnostics <- NULL
+  no_cycle_plan <- f$plan; no_cycle_plan$cycle <- NULL
+  no_cycle <- scAgentKit:::.sc_run_strategy_basis(f$object, no_cycle_config, no_cycle_plan)
+  expect_null(no_cycle@misc$strategy_execution$preprocess)
+  expect_null(no_cycle@misc$strategy_execution$basis$cycle)
+  expect_identical(no_cycle[[]], f$object[[]])
 })

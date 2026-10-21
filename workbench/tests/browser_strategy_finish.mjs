@@ -58,7 +58,7 @@ async function protect() {
   for (const [name, digest] of Object.entries(prior.inputCheckpointSHA256)) assert.equal(sha(await fs.readFile(path.join(project, "checkpoints", name))), digest);
   const ledgerBytes = await fs.readFile(path.join(project, "provider", "ledger.json")); assert.equal(sha(ledgerBytes), prior.initialLedgerSHA256);
   const entries = array(JSON.parse(ledgerBytes).entries); assert.equal(entries.length, 1);
-  for (const entry of entries) {assert.equal(entry.provider.external, false); assert.equal(entry.cost_usd, 0); assert.equal(entry.charged_or_held_usd, 0);}
+  for (const entry of entries) {assert.equal(entry.provider.external, false); assert.equal(entry.cost_usd, 0);}
 }
 async function test(name, action) {
   const start = Date.now();

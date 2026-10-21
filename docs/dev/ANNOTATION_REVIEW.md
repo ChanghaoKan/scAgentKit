@@ -112,7 +112,7 @@ sc_run(processed, project_dir, context = context, start_stage = "processed",
   processed_reason = "State the verified prior QC, normalization and clustering pipeline.",
   assay = "RNA", counts_layer = "counts", normalized_layer = "data",
   cluster_column = "seurat_clusters", annotation_column = "reviewed_identity",
-  provider = NULL, budget = 0, review = list(allow_external = FALSE))
+  provider = NULL, review = list(allow_external = FALSE))
 
 current <- sc_run_inspect(project_dir)
 stopifnot(current$status == "awaiting_configuration",

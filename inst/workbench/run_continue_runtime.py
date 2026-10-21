@@ -1,4 +1,4 @@
-"""Persistent, allowlisted local continuation. Polling never starts R.
+"""Persistent, allowlisted local continuation. Polling checks format without starting analysis.
 
 The server opts in for one operator-selected project. R remains authoritative
 for project/revision/input validation, scientific approval and analysis locks.
@@ -22,9 +22,11 @@ import threading
 from datetime import datetime, timezone
 
 try:
+    from .qc_runtime import check_project_format
     from .evidence import canonical, strict_json
     from .store import SECRET_NAMES, StoreError, scrub_secrets
 except ImportError:
+    from qc_runtime import check_project_format
     from evidence import canonical, strict_json
     from store import SECRET_NAMES, StoreError, scrub_secrets
 
@@ -340,18 +342,17 @@ class RunContinueRuntime:
         if supplied.is_symlink() or not supplied.is_dir():
             raise StoreError("Continue requires an existing nonsymlink local project")
         self.project = supplied.resolve()
-        if (self.project / "state.rds").is_symlink() or not (self.project / "state.rds").is_file():
-            raise StoreError("Continue requires the authoritative local state.rds")
+        self.library = os.pathsep.join(str(Path(entry).expanduser().resolve()) for entry in library.split(os.pathsep) if entry) if library else None
+        self.rscript = str(rscript)
+        check_project_format(self.project, self.library, self.rscript)
         if isinstance(threads, bool) or not isinstance(threads, int) or not 1 <= threads <= 64:
             raise StoreError("Operator continuation threads must be an integer from 1 to 64")
         self.threads = threads
-        self.library = os.pathsep.join(str(Path(entry).expanduser().resolve()) for entry in library.split(os.pathsep) if entry) if library else None
-        self.rscript = str(rscript)
         self.project_identity = (self.project.stat().st_dev, self.project.stat().st_ino)
         self.bridge = ROOT / "run_continue_bridge.R"
         self.worker = ROOT / "run_continue_worker.py"
         self.runtime = ROOT / "run_continue_runtime.py"
-        self.code_hashes = {"bridge": _sha(self.bridge), "worker": _sha(self.worker), "runtime": _sha(self.runtime)}
+        self.code_hashes = {"bridge": _sha(self.bridge), "worker": _sha(self.worker), "runtime": _sha(self.runtime), "format_bridge": _sha(ROOT / "project_format_bridge.R")}
         self.base = _safe_directory(self.project / ".workbench-jobs", create=True)
         self.base_identity = (self.base.stat().st_dev, self.base.stat().st_ino)
         self.subdirectory_identities = {}
@@ -366,7 +367,8 @@ class RunContinueRuntime:
     def restore(self, reviewer, reason, *, original_workers_stopped=False):
         """Explicitly rebind terminal local jobs after a same-path backup restore.
 
-        No R process, model request, scientific state write or approval occurs.
+        A read-only R format check precedes writes. No model request, scientific
+        state write or approval occurs.
         Hashes are observed audit context, not an atomic R snapshot. A copied
         flock cannot prove that descendants on the original filesystem stopped.
         """
@@ -497,10 +499,11 @@ class RunContinueRuntime:
                 "observed_status_sha256": _sha(self.project / "status.json")}
 
     def _fresh(self):
+        check_project_format(self.project, self.library, self.rscript)
         for path, expected in ((self.project, self.project_identity), (self.base, self.base_identity)):
             if path.is_symlink() or not path.is_dir() or (path.stat().st_dev, path.stat().st_ino) != expected:
                 raise StoreError("Configured continuation project/directory changed; restart and inspect", 409)
-        for name, path in (("bridge", self.bridge), ("worker", self.worker), ("runtime", self.runtime)):
+        for name, path in (("bridge", self.bridge), ("worker", self.worker), ("runtime", self.runtime), ("format_bridge", ROOT / "project_format_bridge.R")):
             if path.is_symlink() or not path.is_file() or _sha(path) != self.code_hashes[name]:
                 raise StoreError("Local continuation code changed; restart and inspect", 409)
         for name, expected in self.subdirectory_identities.items():
@@ -669,7 +672,10 @@ class RunContinueRuntime:
                 def reap():
                     code = process.wait()
                     try:
+                        self._fresh()
                         _atomic(directory / "worker-exit.json", {"worker_pid": process.pid, "exit_code": code, "finished_at": _time()})
+                    except (StoreError, OSError):
+                        pass  # An unsupported/replaced project must receive no exit receipt.
                     finally:
                         with self._worker_lock:
                             self._workers.pop(job_id, None)

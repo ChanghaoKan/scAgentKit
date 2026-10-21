@@ -32,7 +32,7 @@ first_use_context <- function() list(species = "human", tissue = "synthetic live
 first_use_failed_start <- function(input, root, pattern, extra = list(), corrected = first_use_counts()) {
   before <- digest::digest(input, algo = "sha256")
   error <- tryCatch(do.call(sc_run, c(list(input = input, project_dir = root,
-    provider = NULL, budget = 0, review = list(allow_external = FALSE)), extra)), error = function(error) error)
+    provider = NULL, review = list(allow_external = FALSE)), extra)), error = function(error) error)
   expect_s3_class(error, "error")
   expect_match(conditionMessage(error), pattern)
   expect_identical(digest::digest(input, algo = "sha256"), before)
@@ -41,7 +41,7 @@ first_use_failed_start <- function(input, root, pattern, extra = list(), correct
   expect_false(dir.exists(file.path(root, ".run-lock")))
   # A validation error must not strand an unusable project directory.
   result <- sc_run(corrected, project_dir = root, context = list(species = "human"),
-    provider = NULL, budget = 0, review = list(allow_external = FALSE))
+    provider = NULL, review = list(allow_external = FALSE))
   expect_identical(result$status, "awaiting_configuration")
   expect_identical(result$stage, "qc_propose")
   expect_false(dir.exists(file.path(root, ".run-lock")))
@@ -104,7 +104,7 @@ test_that("no provider remains a diagnosable local plan and preserves factor NA 
   object <- first_use_seurat()
   before <- digest::digest(object, algo = "sha256")
   result <- sc_run(object, root, context = first_use_context(), provider = NULL,
-                   budget = 0, review = list(allow_external = FALSE))
+                   review = list(allow_external = FALSE))
   expect_identical(result$status, "awaiting_configuration")
   expect_identical(result$stage, "qc_propose")
   expect_identical(digest::digest(object, algo = "sha256"), before)
@@ -133,7 +133,7 @@ test_that("missing built-in keys pause after approved payload without HTTP charg
   counts <- first_use_counts()
   before <- digest::digest(counts, algo = "sha256")
   started <- sc_run(counts, root, context = list(species = "human"), provider = "deepseek",
-                    budget = .05, review = list(allow_external = TRUE))
+                    review = list(allow_external = TRUE))
   expect_identical(started$status, "awaiting_review")
   expect_identical(started$pending$kind, "external_transfer")
   expect_identical(http_calls, 0L)
@@ -159,9 +159,9 @@ test_that("missing built-in keys pause after approved payload without HTTP charg
   mock_calls <- 0L
   mock <- function(system_prompt, user_prompt) {
     mock_calls <<- mock_calls + 1L
-    proposal <- list(schema = "scagentkit.qc.v1", rationale = "Explicit offline recovery test.",
+    proposal <- list(schema = "scagentkit.qc.rules.v1", rationale = "Explicit offline recovery test.",
       risks = list("Synthetic typed rule, not biological validation."),
-      filters = list(list(op = "range", metric = "nCount", min = 1L)))
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1L)))
     list(content = as.character(jsonlite::toJSON(proposal, auto_unbox = TRUE)),
          usage = list(input_tokens = 0, output_tokens = 0, cached_tokens = 0), cost_usd = 0,
          model = "offline-recovery-test")
@@ -174,14 +174,14 @@ test_that("missing built-in keys pause after approved payload without HTTP charg
   expect_identical(digest::digest(counts, algo = "sha256"), before)
   ledger <- scAgentKit:::.sc_run_provider_read(file.path(root, "provider", "ledger.json"))
   expect_length(ledger$entries, 1L)
-  expect_equal(ledger$entries[[1]]$charged_or_held_usd, 0)
+  expect_equal(ledger$entries[[1]]$cost_usd, 0)
   # The saved aggregate response remains inspectable after credentials and the
   # runtime callback disappear; cache retrieval cannot create a new dispatch.
   state <- readRDS(file.path(root, "state.rds"))$state
   request <- scAgentKit:::.sc_run_get(root, state, "qc_request")
   evidence <- scAgentKit:::.sc_run_get(root, state, "qc_evidence")
   request$validator <- function(value) scAgentKit:::.sc_run_qc_validate(value, evidence)$proposal
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = "deepseek", budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = "deepseek")
   expect_identical(cached$status, "ok")
   expect_true(cached$cached)
   expect_identical(http_calls, 0L)
@@ -190,18 +190,18 @@ test_that("missing built-in keys pause after approved payload without HTTP charg
   expect_false(dir.exists(file.path(root, "provider", ".dispatch-lock")))
 
   # Exercise the other built-in environment configuration without constructing
-  # a factory or a paid request. Approval and budget still precede credential
-  # preflight; all three pauses release the dispatch lock and preserve no charge.
+  # a factory or a paid request. Exact transfer approval precedes credential
+  # preflight; missing configuration releases the dispatch lock without a charge.
   grok_root <- tempfile("first-use-missing-grok-key-"); dir.create(grok_root)
   on.exit(unlink(grok_root, recursive = TRUE), add = TRUE)
   grok_request <- list(system_prompt = "Synthetic no-network credential preflight.",
     user_prompt = "Aggregate fixture only.", purpose = "qc")
-  unapproved <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", budget = .05)
+  unapproved <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok")
   expect_identical(unapproved$status, "awaiting_external_approval")
   grok_request$approved_payload_hash <- scAgentKit:::.sc_run_request_hash(grok_request, "grok")
-  stopped <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", budget = 0, allow_external = TRUE)
+  stopped <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", allow_external = TRUE)
   expect_identical(stopped$status, "needs_provider")
-  absent <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", budget = .05, allow_external = TRUE)
+  absent <- scAgentKit:::.sc_run_call(grok_root, grok_request, provider = "grok", allow_external = TRUE)
   expect_identical(absent$status, "needs_provider")
   expect_match(absent$error, "XAI_API_KEY")
   expect_identical(http_calls, 0L)

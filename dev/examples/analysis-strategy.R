@@ -20,7 +20,7 @@ strategy_example_start <- function(input, project_dir, context, chat_fn = NULL,
                                    ...) {
   sc_run(input, project_dir, context = context, strategy = TRUE,
     strategy_proposal = strategy_proposal, provider = provider, chat_fn = chat_fn,
-    budget = 0, review = list(allow_external = FALSE), ...)
+    review = list(allow_external = FALSE), ...)
 }
 
 strategy_example_processed <- function(input, project_dir, context, processed_reason,
@@ -51,7 +51,7 @@ strategy_example_mock <- function(resolution = 0.4, npcs = 6L, ndim = 4L) {
       stop("The mock requires the coordinator's actual aggregate strategy evidence.")
     if (!identical(evidence$start_stage, "qc"))
       stop("Use strategy_example_processed() for an explicit processed reuse plan.")
-    filters <- lapply(evidence$quality$groups, function(group) {
+    rules <- lapply(evidence$quality$groups, function(group) {
       summary <- group$metrics$nFeature
       if (is.null(summary$p05) || is.null(summary$p99) ||
           !is.finite(summary$p05) || !is.finite(summary$p99))
@@ -65,15 +65,15 @@ strategy_example_mock <- function(resolution = 0.4, npcs = 6L, ndim = 4L) {
         "Mitochondrial filtering, cycle, doublet and automatic batch correction are not proposed.",
         "Fixed PCs and resolution are demonstration choices; their biological suitability remains unresolved."),
       inferences = list("Software-test policy only: no inferred cell type, donor identity or technical batch fact."),
-      qc = list(schema = "scagentkit.qc.v1", rationale = "Mock test rule derived from the supplied actual aggregate p05/p99 feature distributions.",
-        risks = list("Quantile tails may contain valid biological populations."), filters = filters),
+      qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Mock test rule derived from the supplied actual aggregate p05/p99 feature distributions.",
+        risks = list("Quantile tails may contain valid biological populations."), rules = rules),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
         nfeatures = min(60L, evidence$input$expressed_features), npcs = npcs, seed = 17L),
       pcs = list(method = "fixed", ndim = ndim),
       batch = list(method = "none", reason = "No automatic correction is authorized by this mock; inspect declared batch/group design and unresolved effects."),
       clustering = list(resolution = resolution, diagnostic_resolutions = c(0.2, 0.4, 0.6)),
       umap = list(run = TRUE, n_neighbors = 15L))
-    # JSON is the same interface used by a configured provider. Budget is zero.
+    # JSON is the same interface used by a configured provider. This mock makes no external call.
     jsonlite::toJSON(plan, auto_unbox = TRUE, null = "null", digits = NA)
   }
 }

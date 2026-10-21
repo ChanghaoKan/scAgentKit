@@ -311,7 +311,7 @@
         !identical(previous$variable_features, hvg) || length(hvg) != settings$analysis$nfeatures)
       .sc_project_fail("Preprocessed strategy checkpoint is absent, changed, or incompatible; regenerate NormalizeData/HVG explicitly.")
   } else {
-    # This legacy path deliberately retains its original output record shape.
+    # Normalize new input and select variable features before scaling and PCA.
     seu <- .sc_run_strategy_normalize_hvg(seu, config, settings, counts)
     hvg <- SeuratObject::VariableFeatures(seu[[config$assay]])
   }

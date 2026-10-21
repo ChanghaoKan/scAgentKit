@@ -22,7 +22,6 @@ test_that("adoption preserves explicit initial and later saved human strategy ch
   human_draft_action(root, "approve", reviewer = "operator", reason = "Offline software-control suggestion.")
   candidate <- before; candidate$analysis$nfeatures <- 120; candidate$analysis$npcs <- 8
   candidate$qc$rules[[1L]]$min <- 10
-  if (identical(candidate$qc$schema, "scagentkit.qc.v1")) candidate$qc$filters[[1L]]$min <- 10
   candidate$rationale <- "New model rationale for untouched fields."
   candidate$choice_reasons$hvg <- "Model requested 120 features; this must not replace the author's setting."
   answer <- human_draft_action(root, "request", chat_fn = function(...) .sc_run_provider_json(candidate))
@@ -83,4 +82,81 @@ test_that('explicit analyst Unknown override is distinct from a valid labelled m
  expect_identical(result$proposal$annotations[[2]]$label,'T cell')
  expect_identical(model$annotations[[1]]$label,'T cell')
  expect_true('human_draft_edits_recorded'%in%vapply(state$history,`[[`,character(1),'action'))
+})
+
+test_that("adoption keeps a human empty policy and its saved scope after a nonempty model candidate", {
+  root <- human_draft_project(); on.exit(unlink(root, recursive = TRUE))
+  draft <- sc_open(root)$plan
+  draft$qc$rules <- list()
+  draft$qc$rationale <- "Human explicitly defers additional filtering; retain prior exclusions."
+  sc_run_propose(root, draft, "author", "Keep this empty QC decision when reviewing model suggestions.")
+  state <- .sc_run_load(root)
+  before <- .sc_run_get(root, state, "strategy_validated")
+  expect_true("qc" %in% .sc_run_draft_controls(root, state)$strategy_fields)
+  preview <- sc_run_suggest(root)
+  outgoing <- paste(preview$preview$system_prompt, preview$preview$user_prompt)
+  for (cell in before$qc_validated$retained_scope$cell_ids)
+    expect_false(grepl(cell, outgoing, fixed = TRUE))
+  expect_false(grepl("retained_scope", outgoing, fixed = TRUE))
+  expect_false(grepl("checkpoints/", outgoing, fixed = TRUE))
+  human_draft_action(root, "approve", reviewer = "author", reason = "Offline mock suggestion only.")
+  candidate <- before$proposal
+  candidate$qc$rules <- list(list(op = "range", metric = "nCount", min = 1))
+  candidate$qc$rationale <- "A model suggested nonempty range."
+  candidate$rationale <- "New model explanation for the remaining unprotected fields."
+  answer <- human_draft_action(root, "request", chat_fn = function(...) .sc_run_provider_json(candidate))
+  expect_identical(answer$status, "candidate")
+  human_draft_action(root, "adopt", reviewer = "author", reason = "Preserve the explicit human QC decision.")
+  state <- .sc_run_load(root)
+  after <- .sc_run_get(root, state, "strategy_validated")
+  expect_identical(after$proposal$qc, before$proposal$qc)
+  expect_identical(after$qc_validated$retained_scope, before$qc_validated$retained_scope)
+  expect_identical(after$qc_validated$keep_cells, before$qc_validated$keep_cells)
+  expect_identical(after$proposal$rationale, candidate$rationale)
+  adopted <- .sc_run_get(root, state, "strategy_suggestion_adoption")
+  expect_length(adopted$response$content$qc$rules, 1L)
+  expect_length(adopted$adopted_proposal$qc$rules, 0L)
+  expect_length(state$approvals, 0L)
+  expect_null(state$files$qc_object)
+})
+
+
+test_that("adopting an empty strategy after committed QC binds its existing excluded cells once", {
+  data("pbmc_small", package = "SeuratObject")
+  root <- tempfile("adopt-empty-after-qc-"); on.exit(unlink(root, recursive = TRUE))
+  context <- list(species = "human", tissue = "offline suggestion control")
+  measured <- .sc_run_qc_evidence(pbmc_small, context)
+  threshold <- sort(unique(measured$metrics$nCount))[[3L]]
+  draft <- .sc_ui_plan(list(qc = list(nCount = c(threshold, NA)),
+    analysis = list(nfeatures = 100, npcs = 6), pcs = 4,
+    diagnostic_resolutions = NULL, umap = FALSE), dimensions = dim(pbmc_small))
+  view <- sc_run(pbmc_small, root, context = context, provider = "mock", strategy_proposal = draft)
+  sc_run_approve(root, view$pending$hash, "author", "Approve the explicit software-control QC range.")
+  state <- .sc_run_strategy_apply_gate(root, .sc_run_load(root))
+  validated <- .sc_run_get(root, state, "strategy_validated")
+  qc <- .sc_run_get(root, state, "qc_evidence")
+  retained <- .sc_run_qc_apply(.sc_run_get(root, state, "input"), validated$qc_validated, qc)
+  state <- .sc_run_put(root, state, "qc_object", retained)
+  state <- .sc_run_checkpoint(root, state, "qc_apply", "strategy_basis")
+  expect_lt(ncol(retained), ncol(pbmc_small))
+  sc_run_propose(root, validated$proposal, "author", "Open a new review of the existing explicit policy.")
+  candidate <- sc_open(root)$plan
+  candidate$qc$rules <- list()
+  candidate$qc$rationale <- "No additional filtering; retain committed exclusions."
+  human_draft_action(root, "approve", reviewer = "author", reason = "Offline mock suggestion only.")
+  answer <- human_draft_action(root, "request", chat_fn = function(...) .sc_run_provider_json(candidate))
+  expect_identical(answer$status, "candidate")
+  state <- .sc_run_load(root)
+  evidence <- .sc_run_get(root, state, "strategy_evidence")
+  expected <- .sc_run_qc_retained_scope_for_proposal(root, state, candidate, evidence, "strategy")
+  expect_identical(expected$cell_ids, colnames(retained))
+  human_draft_action(root, "adopt", reviewer = "author", reason = "Defer further deletion without restoring cells.")
+  state <- .sc_run_load(root)
+  after <- .sc_run_get(root, state, "strategy_validated")
+  expect_identical(after$qc_validated$retained_scope, expected)
+  expect_identical(after$qc_validated$keep_cells, colnames(retained))
+  expect_identical(after$proposal$qc$rules, list())
+  expect_invisible(.sc_run_qc_retained_scope_verify(root, state, expected, evidence$qc))
+  expect_identical(state$pending$kind, "strategy")
+  expect_null(state$files$analysis)
 })

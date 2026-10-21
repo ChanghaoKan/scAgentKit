@@ -51,6 +51,16 @@
   evidence <- .sc_run_get(root, state, evidence_name)
   if (kind == "annotation") evidence <- .sc_run_react_reference_view(evidence, state)
   scan <- if (kind == "strategy") .sc_run_cluster_scan_get(root, state) else NULL
+  retained_scope <- NULL
+  if (kind %in% c("qc", "strategy") && !identical(state$config$start_stage, "processed")) {
+    qc_evidence <- if (kind == "strategy") evidence$qc else evidence
+    validated_name <- paste0(kind, "_validated")
+    if (!is.null(state$files[[validated_name]])) {
+      saved_validated <- .sc_run_get(root, state, validated_name)
+      retained_scope <- if (kind == "strategy") saved_validated$qc_validated$retained_scope else saved_validated$retained_scope
+      .sc_run_qc_retained_scope_verify(root, state, retained_scope, qc_evidence)
+    } else retained_scope <- .sc_run_qc_retained_scope(root, state, qc_evidence)
+  }
   summary <- evidence$summary
   if (!is.null(scan)) {
     scan_limit <- if (is.null(state$config$react)) Inf else .sc_run_capacity_bytes(state$config$react$max_payload_bytes)
@@ -106,7 +116,7 @@
     human_draft_controls = state$files$human_draft_controls,
     scope_hash = state$config$subcluster_origin$scope_hash,
     parent_scope_hash = state$config$subcluster_origin$parent_scope_hash, guided_review_hash=guidance$hash)
-  list(kind = kind, provider = provider, evidence = evidence, cluster_scan = scan, request = request,
+  list(kind = kind, provider = provider, evidence = evidence, cluster_scan = scan, retained_scope = retained_scope, request = request,
     request_hash = request_hash, binding = binding, simulated = simulate,
     suggestion_hash = .sc_run_hash(list(schema = "scagentkit.suggestion-binding.v1",
       kind = kind, binding = binding, request_hash = request_hash, simulated = simulate)),
@@ -116,7 +126,7 @@
 .sc_run_suggestion_response <- function(answer) {
   if (is.null(answer)) return(NULL)
   answer[intersect(c("status", "cached", "cost_state", "cost_usd", "usage", "raw_usage",
-    "charged_or_held_usd", "reservation_usd", "accounting_issue", "error",
+    "accounting_issue", "error",
     "response_metadata", "response_audit", "request_hash", "attempt"), names(answer))]
 }
 
@@ -127,33 +137,26 @@
     input_hash = state$input_hash, revision = state$revision, kind = context$kind,
     available = is.null(context$blocked_reason), blocked_reason = context$blocked_reason,
     suggestion_hash = context$suggestion_hash, status = "preview", preview = NULL,
-    new_project_budget_default = NULL,
     candidate = NULL, response = NULL, can_approve = FALSE, can_request = FALSE,
     can_adopt = FALSE, can_discard = FALSE, can_auto_request = FALSE, can_review_conflicts = FALSE)
   if (!is.null(context$blocked_reason)) return(result)
   ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
   # One-shot and ReAct calls share actual post-call accounting.
   entries <- ledger$entries
-  amount <- function(field, known = NULL) sum(vapply(entries, function(entry) {
-    if (!is.null(known) && !identical(identical(entry$cost_state, "known"), known)) return(0)
-    value <- entry[[field]]; if (is.null(value)) 0 else value
-  }, numeric(1)))
+  known <- vapply(entries, function(entry) identical(entry$cost_state, "known"), logical(1))
+  known_cost <- sum(vapply(entries[known], function(entry) entry$cost_usd, numeric(1)))
+  unknown_cost <- sum(vapply(entries, function(entry) identical(entry$cost_state, "unknown"), logical(1)))
   provider <- context$provider
   result$preview <- list(request_hash = context$request_hash, provider = provider,
     model = provider$model, generation = provider$generation,
     resource_limits = list(request_bytes = if (is.null(context$request$max_payload_bytes)) "unlimited" else context$request$max_payload_bytes,
       react = state$config$react, model_context_tokens = "unknown",
       context_notice = "Application bytes are not model tokens. Model context admission is not verified by this package; provider rejection falls back without automatic retry."),
-    cost_mode = "posthoc",
-    budget = NULL, remaining_usd = NULL,
     consent_mode = if (is.null(state$config$review$transfer_consent)) "strict" else "project",
     consent_hash = state$config$review$transfer_consent$hash,
     transfer_consent = state$config$review$transfer_consent,
     scope_authorized = .sc_run_transfer_authorized(context$request, state$config),
-    reservation_usd = 0,
-    charged_or_held_usd = amount("charged_or_held_usd"),
-    known_cost_usd = amount("charged_or_held_usd", TRUE),
-    held_usd = amount("charged_or_held_usd", FALSE), external = provider$external,
+    known_cost_usd = known_cost, unknown_cost_count = unknown_cost, external = provider$external,
     allow_external = isTRUE(state$config$review$allow_external), simulated = simulate,
     notice = if (simulate) "SIMULATED offline software-control response; no model request or biological inference." else
       if (.sc_run_transfer_authorized(context$request, state$config)) paste(
@@ -191,10 +194,10 @@
     identical(saved$binding$cluster_scan, context$binding$cluster_scan) &&
     identical(saved$binding$guided_review_hash, context$binding$guided_review_hash)
   attempted <- same_evidence && saved$status %in% c("requesting", "candidate", "adopted", "discarded", "failed", "paused")
-  held <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
+  delivery_uncertain <- any(vapply(entries, function(entry) isTRUE(entry$provider$external) &&
     (identical(entry$delivery, "unknown") || entry$status %in% c("dispatched", "delivery_uncertain")), logical(1)))
   result$can_auto_request <- isTRUE(result$preview$scope_authorized) && result$can_request &&
-    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !held
+    state$status %in% c("awaiting_review", "awaiting_configuration") && !attempted && !delivery_uncertain
   result$auto_request_key <- .sc_run_hash(list(project_id = state$project_id,
     kind = context$kind, evidence = context$binding$evidence, cluster_scan = context$binding$cluster_scan, guided_review_hash=context$binding$guided_review_hash))
   if (same_evidence && !is.null(saved$fallback)) {
@@ -227,10 +230,10 @@
   result
 }
 
-.sc_run_suggestion_validator <- function(kind, evidence, state, cluster_scan = NULL, model_response = FALSE) {
-  if (kind == "qc") return(function(value) .sc_run_qc_validate(value, evidence)$proposal)
+.sc_run_suggestion_validator <- function(kind, evidence, state, cluster_scan = NULL, model_response = FALSE, retained_scope = NULL) {
+  if (kind == "qc") return(function(value) .sc_run_qc_validate(value, evidence, retained_scope = retained_scope)$proposal)
   if (kind == "strategy") return(function(value) {
-    validated <- .sc_run_strategy_validate(value, evidence)
+    validated <- .sc_run_strategy_validate(value, evidence, retained_scope = retained_scope)
     .sc_run_subcluster_strategy(state, validated, evidence)
     if (!is.null(cluster_scan)) .sc_run_cluster_selection(validated$proposal$clustering$resolution, cluster_scan)
     validated$proposal
@@ -254,9 +257,9 @@
     manual <- paste0("manual_", kind)
     if (is.null(state$files[[manual]])) {
       if (kind == "strategy") stop("Simulation requires an explicitly supplied typed starting strategy; it does not invent analysis choices.", call. = FALSE)
-      proposal <- list(schema = "scagentkit.qc.v1", rationale = "SIMULATED keep-all software control; no quality threshold is inferred.",
-        risks = list("Not a model-derived or biologically validated QC recommendation."),
-        filters = list(list(op = "range", metric = "nCount", min = 0)))
+      proposal <- list(schema = "scagentkit.qc.rules.v1", rationale = "SIMULATED no-additional-filtering software control; no quality threshold is inferred.",
+        risks = list("Prior exclusions stay excluded. Not a model-derived or biologically validated QC recommendation."),
+        remove_if = "any", rules = list())
     } else proposal <- .sc_run_get(root, state, manual)
     proposal$rationale <- "SIMULATED replay of a typed software-control proposal; no model inference."
     proposal$risks <- unique(c(proposal$risks, list("SIMULATED; requires independent scientific review.")))
@@ -264,13 +267,13 @@
   # Fail before dispatch if a simulated template is not supported on this scope.
   if (kind == "annotation" && !is.null(state$config$react)) {
     risks <- lapply(proposal$annotations, function(row) {
-      record <- .sc_run_react_risks(NULL, row$clusterId, character(), legacy = TRUE)
+      record <- .sc_run_react_unassessed_risks(row$clusterId)
       record$fields <- lapply(record$fields, function(x) { x$source <- "model"; x })
       record
     })
     proposal <- list(schema = "scagentkit.annotation-draft.v1", proposal = proposal, risk_flags = risks)
   }
-  .sc_run_suggestion_validator(kind, context$evidence, state, context$cluster_scan, model_response = TRUE)(proposal)
+  .sc_run_suggestion_validator(kind, context$evidence, state, context$cluster_scan, model_response = TRUE, retained_scope = context$retained_scope)(proposal)
   raw <- .sc_project_json(proposal)
   function(system_prompt, user_prompt) list(content = raw, cost_usd = 0,
     model = "SIMULATED-software-control", response_metadata = list(finish_reason = "stop"))
@@ -328,6 +331,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
                            project_id = NULL, input_hash = NULL, expected_revision = NULL,
                            suggestion_hash = NULL, reviewer = NULL, reason = NULL,
                            chat_fn = NULL, simulate = FALSE) {
+  .sc_project_format_entry(project_dir)
   action <- match.arg(action)
   if (!is.null(chat_fn) && (action != "request" || !is.function(chat_fn)))
     stop("Only request accepts an in-memory R chat_fn.", call. = FALSE)
@@ -386,7 +390,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     if(!is.null(context$guidance))state$annotation_guided_attempted<-TRUE
     request <- context$request
     request$approved_payload_hash <- context$request_hash
-    request$validator <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan, model_response = TRUE)
+    request$validator <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan, model_response = TRUE, retained_scope = context$retained_scope)
     state$suggestion <- list(schema = "scagentkit.suggestion.v1", suggestion_hash = suggestion_hash,
       request_hash = context$request_hash, binding = context$binding, kind = context$kind,
       status = "requesting", simulated = simulate, reference_mode=context$reference_mode, candidate = NULL, response = NULL)
@@ -397,7 +401,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       authority = "Stage a candidate only; no scientific computation."))
     .sc_run_save(root, state)
     answer <- tryCatch(.sc_run_call(root, request, state$config$provider, chat_fn,
-      budget = state$config$budget, allow_external = isTRUE(state$config$review$allow_external), retry = FALSE),
+      allow_external = isTRUE(state$config$review$allow_external), retry = FALSE),
       error = function(error) list(status = if (inherits(error, c("sc_run_cancelled", "sc_run_disk_limit"))) "paused" else "interrupted", content = NULL, cached = FALSE,
         error = "Suggestion request interrupted; inspect the durable ledger. No automatic retry.",
         request_hash = context$request_hash))
@@ -424,7 +428,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     state <- .sc_run_event(state, "suggestion_request_finished", list(
       suggestion_hash = suggestion_hash, request_hash = context$request_hash,
       response_status = answer$status, cached = isTRUE(answer$cached), simulated = simulate,
-      cost_state = answer$cost_state, charged_or_held_usd = answer$charged_or_held_usd))
+      cost_state = answer$cost_state, cost_usd = answer$cost_usd))
     if (!answer$status %in% c("ok", "paused"))
       state <- .sc_run_suggestion_fallback(root, state, context, answer)
     .sc_run_save(root, state)
@@ -441,7 +445,10 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
     merged <- .sc_run_merge_model_draft(root, state, context$kind, saved$candidate)
     if (context$kind == "annotation")
       context$evidence <- .sc_run_react_review_evidence(root, state, context$evidence)
-    proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan)(merged$proposal)
+    retained_scope <- if (context$kind %in% c("qc", "strategy"))
+      .sc_run_qc_retained_scope_for_proposal(root, state, merged$proposal, context$evidence, context$kind) else NULL
+    proposal <- .sc_run_suggestion_validator(context$kind, context$evidence, state, context$cluster_scan,
+      retained_scope = retained_scope)(merged$proposal)
     # Preserve the response as scientific evidence of its actual provenance.
     # Ordinary manual edits can subsequently override it via the normal API.
     state <- .sc_run_put(root, state, paste0(context$kind, "_suggestion_response"), saved$response)
@@ -456,7 +463,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       raw_candidate_hash = .sc_run_hash(saved$candidate), adopted_proposal_hash = .sc_run_hash(proposal)))
     .sc_run_propose_locked(root, state, proposal, reviewer, reason, drive = FALSE,
       review_binding = list(suggestion_hash = suggestion_hash, request_hash = context$request_hash,
-        simulated = simulate, source = "adopted_typed_suggestion"))
+        simulated = simulate, source = "adopted_typed_suggestion"), retained_scope = retained_scope)
     return(sc_run_inspect(root))
   }
   result <- .sc_run_suggestion_view(root, state, simulate)

@@ -32,6 +32,7 @@
 #'   missing typed proposal with awaiting_configuration. No provider is invoked.
 #' @export
 sc_run_continue <- function(project_dir, project_id, input_hash, expected_revision, retry = FALSE) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(project_id, "project_id")
   .sc_run_review_hash_string(input_hash, "input_hash")
   if (!is.numeric(expected_revision) || length(expected_revision) != 1L ||

@@ -10,10 +10,10 @@ fallback_action <- function(root,action,...) {
  sc_run_suggest(root,action,project_id=v$project_id,input_hash=v$input_hash,expected_revision=v$revision,
  suggestion_hash=v$suggestion_hash,reviewer='mock-test',reason='Inspect local failure fallback.',...)
 }
-test_that('invalid empty QC rules automatically save a local draft without approval',{
+test_that('unsupported QC operations save a local draft without approval',{
  root<-fallback_project();on.exit(unlink(root,recursive=TRUE))
  before<-sc_open(root)$plan
- bad<-before;bad$qc<-list(schema='scagentkit.qc.rules.v1',rationale='Keep all.',risks=list('Unassessed.'),remove_if='any',rules=list())
+ bad<-before;bad$qc<-list(schema='scagentkit.qc.rules.v1',rationale='Keep all.',risks=list('Unassessed.'),remove_if='any',rules=list(list(op='unsupported_filter')))
  fallback_action(root,'approve')
  dispatched<-sc_run_suggest(root)
  answer<-fallback_action(root,'request',chat_fn=function(...) .sc_run_provider_json(bad))
@@ -34,7 +34,7 @@ test_that('invalid empty QC rules automatically save a local draft without appro
 
 test_that('failed dispatch modes save drafts and retain explicit human QC edits',{
   local_mocked_bindings(.sc_run_call=function(...)list(status=status,error='Offline injected failure; no HTTP.',request_hash='offline'),.package='scAgentKit')
- for(status in c('needs_provider','invalid_response','budget_stop','delivery_uncertain')) {
+ for(status in c('needs_provider','invalid_response','delivery_uncertain')) {
   root<-fallback_project()
   invisible(capture.output(x<-sc_review(sc_open(root))))
   invisible(capture.output(sc_review(x,'revise',plan=list(qc=list(nCount=c(1,NA))),reviewer='human',reason='Retain edited QC.')))
@@ -68,7 +68,7 @@ test_that('a complete measured MAD panel stages AND3 after malformed JSON',{
  answer<-fallback_action(root,'request',chat_fn=function(...)'{broken')
  expect_identical(answer$fallback$preset_id,'conservative_and3')
  expect_true(answer$fallback$saved)
- expect_identical(sc_open(root)$plan$qc$preset_id,'conservative_and3')
+ expect_identical(sc_open(root)$plan$qc$rules[[1L]]$preset_id,'conservative_and3')
  expect_length(.sc_run_load(root)$approvals,0)
  expect_null(.sc_run_load(root)$files$analysis)
 })
@@ -86,3 +86,29 @@ test_that('configured provider without explicit plan still starts with a saved r
  expect_match(sc_open(root)$plan$qc$rationale,'unassessed')
 })
 
+
+
+test_that('empty QC suggestions are valid drafts without automatic approval or execution', {
+ root <- fallback_project(); on.exit(unlink(root, recursive=TRUE))
+ before <- .sc_run_load(root)
+ draft <- sc_open(root)$plan
+ draft$qc <- list(schema='scagentkit.qc.rules.v1', rationale='Defer additional filtering.',
+   risks=list('Quality remains unassessed; prior exclusions stay excluded.'), remove_if='all', rules=list())
+ fallback_action(root,'approve')
+ answer <- fallback_action(root,'request',chat_fn=function(...) .sc_run_provider_json(draft))
+ expect_identical(answer$status,'candidate')
+ expect_null(answer$fallback)
+ expected <- .sc_run_qc_retained_scope_for_proposal(root, .sc_run_load(root), draft,
+   .sc_run_get(root, .sc_run_load(root), 'strategy_evidence'), 'strategy')
+ fallback_action(root,'adopt')
+ state <- .sc_run_load(root)
+ validated <- .sc_run_get(root,state,'strategy_validated')
+ expect_identical(validated$proposal$qc$rules,list())
+ expect_identical(validated$proposal$qc$remove_if,'all')
+ expect_identical(validated$qc_validated$retained_scope,expected)
+ expect_length(state$approvals,0L)
+ expect_null(state$files$analysis)
+ expect_null(state$files$qc_object)
+ executed <- function(value) Filter(function(event) identical(event$action,'executed'),value$history)
+ expect_identical(executed(state),executed(before))
+})

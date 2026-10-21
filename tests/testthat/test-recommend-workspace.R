@@ -90,15 +90,44 @@ test_that("recommendation bindings reject altered saved projections", {
 })
 
 
-test_that("legacy assessment remains readable and explicitly unavailable", {
+test_that("missing recommendation evidence is rejected even after review hashes are recomputed", {
   path <- recommend_workspace_begin(); state <- .sc_run_load(path)
+  on.exit(unlink(path, recursive = TRUE))
   record <- .sc_run_get(path, state, "strategy_review")
   record$details$recommendations <- NULL
   record$hash <- .sc_run_strategy_review_hash(record)
-  expect_invisible(.sc_run_recommendations_verify(record))
+  expect_identical(record$hash, .sc_run_strategy_review_hash(record))
+  expect_error(.sc_run_recommendations_verify(record), "recommendation evidence is missing")
   state <- .sc_run_put(path, state, "strategy_review", record)
-  assessment <- .sc_run_scientific_assessment(path, state)
-  expect_false(assessment$certified_qc)
-  expect_identical(assessment$qc_choice, "legacy_unassessed")
-  expect_match(assessment$message, "older immutable review")
+  expect_error(.sc_run_scientific_assessment(path, state), "recommendation evidence is missing")
+  expect_error(.sc_run_strategy_review_verify(path, state), "recommendation evidence is missing")
+})
+
+test_that("scientific assessment is absent before a strategy review exists", {
+  expect_null(.sc_run_scientific_assessment(NULL, list(config = list(strategy = FALSE))))
+  expect_null(.sc_run_scientific_assessment(NULL, list(config = list(strategy = TRUE), files = list())))
+})
+
+
+test_that("scientific assessment distinguishes empty rules, explicit MAD deferral and processed reuse", {
+  qc <- list(schema = "scagentkit.qc.rules.v1", rationale = "No additional filtering.",
+    risks = list(), remove_if = "any", rules = list())
+  record <- list(input_hash = "input", config_hash = "config", evidence_hash = "evidence", hash = "review",
+    details = list(canonical_proposal = list(qc = qc), recommendations = list(
+      schema = "scagentkit.recommendations.v1", policy_version = "1",
+      binding = list(input_hash = "input", config_hash = "config", evidence_hash = "evidence"),
+      steps = list(list(id = "qc", assessment = "assessed", candidates = list(), missing = list(), conflicts = list())))))
+  local_mocked_bindings(.sc_run_get = function(...) record, .package = "scAgentKit")
+  state <- list(config = list(strategy = TRUE), files = list(strategy_review = list()), status = "awaiting_review")
+  value <- .sc_run_scientific_assessment(NULL, state)
+  expect_identical(value$qc_choice, "no_additional_filtering_quality_deferred")
+  expect_true("qc" %in% value$unassessed_steps)
+  record$details$canonical_proposal$qc$rules <- list(list(op = "mad_preset", preset_id = "keep_all", panel_hash = strrep("a", 64)))
+  expect_identical(.sc_run_scientific_assessment(NULL, state)$qc_choice, "keep_all_quality_deferred")
+  record$details$canonical_proposal$qc$rules <- list(list(op = "range", metric = "nCount", min = 1))
+  expect_identical(.sc_run_scientific_assessment(NULL, state)$qc_choice, "explicit_reviewed_quality_rule")
+  record$details$canonical_proposal$qc <- NULL
+  value <- .sc_run_scientific_assessment(NULL, state)
+  expect_identical(value$qc_choice, "processed_reuse_raw_quality_unassessed")
+  expect_true("qc" %in% value$unassessed_steps)
 })

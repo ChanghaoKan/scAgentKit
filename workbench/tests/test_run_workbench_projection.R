@@ -8,10 +8,11 @@ numeric.private <- 938471263
 distribution <- list(n = 2L, missing = 0L, min = 10, q25 = 15, median = 20, q75 = 25, max = 30)
 population <- list(cells = 2L, metrics = list(nCount = distribution, nFeature = distribution, percent_mt = distribution))
 details <- list(schema = "scagentkit.qc.preview.v1", evidence_hash = strrep("a", 64),
-  canonical_parameters = list(proposal = list(schema = "scagentkit.qc.v1", rationale = "Keep measured supported range",
-    filters = list(list(metric = "nCount", min = 10, max = 300, group = list(sample = "literal sample"))))),
+  canonical_parameters = list(proposal = list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Keep measured supported range", risks = list(),
+    rules = list(list(op = "range", metric = "nCount", min = 10, max = 300, group = list(sample = "literal sample"))))),
   retention = list(before = 2L, retained = 1L, removed = 1L, fraction_retained = .5),
   keep_cells = private, remove_cells = private, keep_cell_hash = strrep("b", 64), remove_cell_hash = strrep("c", 64),
+  rule_logic = list(prefilter_removed = 0L, prior_removed = 1L, prior_excluded_cells = private, quality_removed = 0L),
   metrics = data.frame(cell_id = private, nCount = numeric.private, nFeature = numeric.private, percent_mt = numeric.private,
     sample = private, capture = private),
   filter_impacts = list(list(id = "filter1", filter = list(metric = "nCount", min = 10), scoped = 2L,
@@ -26,7 +27,7 @@ details <- list(schema = "scagentkit.qc.preview.v1", evidence_hash = strrep("a",
     groups = list(list(group_id = "group1", selector = list(sample = "literal sample"), before = population))),
   unavailable = list(metrics = list(list(metric = "nCount", count = 0L, cell_ids = private)),
     zero_count_cells = private, mitochondrial = list(status = "measured")),
-  sensitivity = list(list(id = "wider", proposal = list(filters = list(list(metric = "nCount", min = 5))),
+  sensitivity = list(list(id = "wider", proposal = list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Wider measured range", risks = list(), rules = list(list(op = "range", metric = "nCount", min = 5))),
     retention = list(before = 2L, retained = 2L), keep_cell_hash = strrep("d", 64),
     remove_cells = private, intersection_cells = private, added_cells = private, removed_from_primary_cells = private,
     intersection = 1L, added = 1L, removed_from_primary = 0L, jaccard = .5,
@@ -52,6 +53,8 @@ text <- paste(capture.output(dput(projected)), collapse = "\n")
 stopifnot(!grepl(private, text, fixed = TRUE), !grepl(as.character(numeric.private), text, fixed = TRUE))
 qc <- projected$qc_preview$details
 stopifnot(is.null(qc$metrics), is.null(qc$mad_flags), is.null(qc$remove_cells),
+  is.null(qc$rule_logic$prior_excluded_cells), identical(qc$rule_logic$prior_removed, 1L),
+  identical(qc$rule_logic$quality_removed, 0L),
   is.null(qc$filter_impacts[[1L]]$scope_cells), is.null(qc$sensitivity[[1L]]$intersection_cells),
   is.null(projected$strategy_review$details$qc_impact$metrics),
   identical(qc$retention$retained, 1L), identical(qc$filter_impacts[[1L]]$independently_removed, 1L),

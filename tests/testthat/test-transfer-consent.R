@@ -1,16 +1,16 @@
 transfer_confirmation <- function(categories = c("study_context", "aggregate_qc",
     "aggregate_markers", "aggregate_design", "aggregate_expression")) {
   list(mode = "project", confirmed = TRUE, reviewer = "offline-test",
-    reason = "Explicitly reviewed public aggregate categories and the USD cap.", categories = categories)
+    reason = "Explicitly reviewed public aggregate categories and recipient.", categories = categories)
 }
 transfer_policy <- function() {
   provider <- .sc_run_provider_spec(list(name = "offline_remote", external = TRUE,
-    model = "offline-v1", reservation_usd = .01))$metadata
-  list(provider = provider, budget = .1, review = list(allow_external = TRUE,
-    transfer_consent = .sc_run_transfer_options(transfer_confirmation(), provider, .1)))
+    model = "offline-v1"))$metadata
+  list(provider = provider, review = list(allow_external = TRUE,
+    transfer_consent = .sc_run_transfer_options(transfer_confirmation(), provider)))
 }
 
-test_that("project transfer consent is explicit and cannot expand provider, cap, prompt or categories", {
+test_that("project transfer consent is explicit and cannot expand provider, prompt or categories", {
   config <- transfer_policy()
   for (kind in c("strategy", "qc", "annotation")) {
     request <- .sc_run_request(kind, list(), config)
@@ -23,7 +23,6 @@ test_that("project transfer consent is explicit and cannot expand provider, cap,
   request <- .sc_run_request("annotation", list(), config)
   for (field in c("provider", "allow_external", "categories")) {
     changed <- config
-    if (field == "budget") changed$budget <- .2
     if (field == "provider") changed$provider$model <- "new-model"
     if (field == "allow_external") changed$review$allow_external <- FALSE
     if (field == "categories") changed$review$transfer_consent$categories <- c("study_context", "aggregate_markers")
@@ -31,21 +30,21 @@ test_that("project transfer consent is explicit and cannot expand provider, cap,
   }
   limited <- config
   limited$review$transfer_consent <- .sc_run_transfer_options(
-    transfer_confirmation(c("study_context", "aggregate_qc", "aggregate_design")), config$provider, config$budget)
+    transfer_confirmation(c("study_context", "aggregate_qc", "aggregate_design")), config$provider)
   expect_false(.sc_run_transfer_authorized(request, limited))
   expect_true(.sc_run_transfer_authorized(.sc_run_request("qc", list(), limited), limited))
   value <- transfer_confirmation(); value$confirmed <- FALSE
-  expect_error(.sc_run_transfer_options(value, config$provider, .1), "Confirm")
+  expect_error(.sc_run_transfer_options(value, config$provider), "Confirm")
   value <- transfer_confirmation("cell_ids")
-  expect_error(.sc_run_transfer_options(value, config$provider, .1), "cannot be authorized")
-  expect_no_error(.sc_run_transfer_options(transfer_confirmation(), config$provider, 0))
+  expect_error(.sc_run_transfer_options(value, config$provider), "cannot be authorized")
+  expect_no_error(.sc_run_transfer_options(transfer_confirmation(), config$provider))
   strict <- config; strict$review$transfer_consent <- NULL
   request <- .sc_run_request("annotation", list(), strict)
   expect_null(request$transfer_scope)
   expect_false(.sc_run_transfer_authorized(request, strict))
 })
 
-transfer_draft_fixture <- function(confirmation = transfer_confirmation(), budget = .1, scan = FALSE) {
+transfer_draft_fixture <- function(confirmation = transfer_confirmation(), scan = FALSE) {
   env <- new.env(); utils::data("pbmc_small", package = "SeuratObject", envir = env)
   root <- tempfile("transfer-public-")
   sc_analyze(env$pbmc_small, root,
@@ -53,8 +52,8 @@ transfer_draft_fixture <- function(confirmation = transfer_confirmation(), budge
       research_goal = "Offline transfer boundary validation", columns = list(sample = "orig.ident")),
     plan = list(analysis = list(nfeatures = 100, npcs = 6), pcs = 4,
       diagnostic_resolutions = if (scan) c(.2, .4, .6, .8, 1) else NULL, umap = FALSE),
-    provider = list(name = "offline_remote", model = "offline-v1", external = TRUE, reservation_usd = .01),
-    budget = budget, review = list(allow_external = TRUE, transfer_consent = confirmation))
+    provider = list(name = "offline_remote", model = "offline-v1", external = TRUE),
+    review = list(allow_external = TRUE, transfer_consent = confirmation))
   root
 }
 transfer_action <- function(root, action, ...) {
@@ -72,7 +71,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
   expect_true(view$can_request); expect_false(view$can_approve)
   expect_true(view$can_auto_request)
   expect_identical(view$preview$consent_mode, "project")
-  expect_null(view$preview$remaining_usd)
+  expect_equal(view$preview$unknown_cost_count, 0)
   calls <- 0L
   answer <- transfer_action(root, "request", chat_fn = function(...) {
     calls <<- calls + 1L
@@ -80,7 +79,7 @@ test_that("scope consent requests a mock draft without granting a scientific app
   })
   expect_identical(answer$status, "candidate")
   expect_false(answer$can_auto_request)
-  expect_null(answer$preview$remaining_usd)
+  expect_equal(answer$preview$known_cost_usd, .01)
   after <- .sc_run_load(root)
   expect_identical(after$pending, original); expect_length(after$approvals, 0L)
   expect_null(after$files$analysis); expect_identical(calls, 1L)
@@ -93,9 +92,8 @@ test_that("scope consent requests a mock draft without granting a scientific app
 })
 
 test_that("strict mode and failed requests preserve unapproved draft fields", {
-  for (mode in c("strict", "invalid", "budget")) {
-    root <- transfer_draft_fixture(if (mode == "strict") NULL else transfer_confirmation(),
-      budget = if (mode == "budget") .005 else .1)
+  for (mode in c("strict", "invalid")) {
+    root <- transfer_draft_fixture(if (mode == "strict") NULL else transfer_confirmation())
     on.exit(unlink(root, recursive = TRUE), add = TRUE)
     before_state <- .sc_run_load(root)
     before <- before_state$pending

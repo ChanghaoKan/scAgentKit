@@ -1,8 +1,10 @@
 # Model usage and costs
 
 Current requests record actual token usage and available cost **after each call**.
-There is no monetary ceiling, input-token pre-count or reservation. The deprecated
-`budget` argument does not reinstate a cap. Unknown costs remain unknown, not zero.
+There is no monetary ceiling, input-token pre-count or reservation. Unknown costs
+remain unknown, not zero. The ledger records each request’s `cost_state` and
+`cost_usd`; previews report `known_cost_usd` and `unknown_cost_count` separately.
+A sum of known costs is not a complete total when some requests have unknown cost.
 
 ReAct step limits and timeouts bound a session. They are not a currency guarantee.
 Cancelling takes effect at a safe boundary; the current request may finish and incur

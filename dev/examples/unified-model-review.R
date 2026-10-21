@@ -11,11 +11,11 @@ if (!all(c("sc_run_suggest", "sc_run_review", "sc_run_continue") %in%
   stop("Install this checkout's unified model-review package in the selected R library first.", call. = FALSE)
 
 unified_review_start <- function(input, project_dir, context, strategy_proposal = NULL,
-                                 provider = NULL, chat_fn = NULL, budget = 0,
+                                 provider = NULL, chat_fn = NULL,
                                  review = list(allow_external = FALSE), ...) {
   sc_run(input, project_dir, context = context, strategy = TRUE,
     strategy_proposal = strategy_proposal, provider = provider, chat_fn = chat_fn,
-    budget = budget, review = review, ...)
+    review = review, ...)
 }
 
 unified_review_inspect <- function(project_dir, simulate = FALSE, save_snapshot = FALSE) {
@@ -83,10 +83,10 @@ unified_review_continue <- function(project_dir, snapshot, retry = FALSE) {
     rationale = "Synthetic software-control starting strategy; retain all cells and review these finite demonstration settings.",
     risks = list("No scientific quality threshold, optimal PC/resolution choice or cell identity is established."),
     inferences = list(),
-    qc = list(schema = "scagentkit.qc.v1",
+    qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
       rationale = "Explicit synthetic keep-all rule; no model-derived quality filter.",
       risks = list("Retaining all toy cells is a software control, not real-data QC guidance."),
-      filters = list(list(op = "range", metric = "nFeature", min = 0,
+      rules = list(list(op = "range", metric = "nFeature", min = 0,
         max = nrow(input), group = NULL))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 60L, npcs = 6L, seed = 17L),
@@ -105,7 +105,7 @@ unified_review_demo <- function(project_dir) {
   result <- unified_review_start(input, project_dir, helper$strategy_example_context(),
     strategy_proposal = .unified_review_demo_seed(input),
     provider = list(name = "mock", model = "SIMULATED-control", external = FALSE),
-    budget = 0, review = list(allow_external = FALSE),
+    review = list(allow_external = FALSE),
     annotation_column = "unified_reviewed_identity")
   stopifnot(identical(before, digest::digest(input, algo = "sha256")))
   invisible(result)

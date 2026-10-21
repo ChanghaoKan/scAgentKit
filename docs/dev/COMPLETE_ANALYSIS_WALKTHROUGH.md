@@ -163,9 +163,9 @@ plan <- list(
   rationale = "PBMC starting plan, chosen after inspecting input QC distributions.",
   risks = list("Low-RNA populations may be affected by feature-count filtering."),
   inferences = list(),
-  qc = list(schema = "scagentkit.qc.v1",
+  qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
     rationale = "Inspect detected genes and mitochondrial counts before selecting cells.",
-    risks = list(), filters = list(
+    risks = list(), rules = list(
       list(op = "range", metric = "nFeature", min = 200L, max = 2500L),
       list(op = "range", metric = "percent_mt", max = 5))),
   analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
@@ -303,8 +303,9 @@ revise either before running it.
 Configure `DEEPSEEK_API_KEY` or `XAI_API_KEY` in the R process through your usual
 secret mechanism. The helper checks its presence without printing the key.
 Set these non-secret environment values using your provider's current model ID
-and verified USD-per-million-token rates. Choose a positive request reservation
-and a project budget for both requests; these are your limits, not price quotes:
+and verified USD-per-million-token rates. The rates support post-call cost
+reporting, with no monetary cap. Omit `pricing` if the rates are unavailable;
+the ledger will mark costs unknown when no service-reported cost is available:
 
 | Variable | Meaning |
 | --- | --- |
@@ -312,8 +313,6 @@ and a project budget for both requests; these are your limits, not price quotes:
 | `SC_INPUT_USD_PER_MILLION` | Input token rate |
 | `SC_OUTPUT_USD_PER_MILLION` | Output token rate |
 | `SC_CACHED_INPUT_USD_PER_MILLION` | Cached-input token rate |
-| `SC_REQUEST_RESERVATION_USD` | Amount to reserve per request |
-| `SC_PROJECT_BUDGET_USD` | Your project spending ceiling |
 
 ```r
 read_usd <- function(name) {
@@ -325,11 +324,10 @@ provider <- first_run_provider("deepseek",  # or "grok" with XAI_API_KEY
   model = Sys.getenv("SC_MODEL_ID"),
   pricing = list(input_per_million = read_usd("SC_INPUT_USD_PER_MILLION"),
     output_per_million = read_usd("SC_OUTPUT_USD_PER_MILLION"),
-    cached_input_per_million = read_usd("SC_CACHED_INPUT_USD_PER_MILLION")),
-  reservation_usd = read_usd("SC_REQUEST_RESERVATION_USD"))
+    cached_input_per_million = read_usd("SC_CACHED_INPUT_USD_PER_MILLION")))
 project_dir <- file.path(getwd(), "pbmc-model-study")
 run <- sc_run(seu, project_dir, context = context, strategy = TRUE,
-  provider = provider, budget = read_usd("SC_PROJECT_BUDGET_USD"),
+  provider = provider,
   review = list(allow_external = TRUE), annotation_column = "cell_type_reviewed")
 ```
 
@@ -446,8 +444,11 @@ run <- sc_run_continue(project_dir, project_id = current$project_id,
 
 For an explicitly approved provider request, restore the key environment and use
 `sc_run_resume(project_dir)`. Completed projects resume without rerunning analysis.
-Keep the original checkout/R library for a saved project; inspect a failure before
-requesting a retry. Details are in the [recovery guide](../RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
+Keep the original checkout/R library for a saved project. The
+[format gate](../../workbench/README.md#project-format-and-reopening) rejects a
+missing or mismatched format before project writes; use the original environment
+or start a new project. Do not edit marker/state versions or hashes. Inspect a
+failure before requesting a retry. Details are in the [recovery guide](../RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
 
 With Python >= 3.9 and a source checkout, you can view saved QC, UMAP, markers
 and history in a browser, including the analysis checkpoint before annotation:
@@ -519,13 +520,14 @@ none should be approved automatically. Default policy still blocks external
 transfer. Enable it only for a new project whose disclosure you have reviewed.
 
 <details>
-<summary>Configure independent input, study facts, provider and budget</summary>
+<summary>Configure independent input, study facts and provider</summary>
 
 Configure `DEEPSEEK_API_KEY` in the analysis R process using your usual secret
-mechanism (`XAI_API_KEY` for Grok). Set the six non-secret environment values
-below using your verified model ID, current USD-per-million-token rates and
-chosen spending limits. The helper reads the key's presence but returns only
-its environment variable name. This block makes no model request.
+mechanism (`XAI_API_KEY` for Grok). Set the four non-secret environment values
+used below with your verified model ID and current USD-per-million-token rates.
+The rates support post-call reporting; omit `pricing` if unavailable. The helper
+checks for the key but returns only its environment variable name. This block
+makes no model request.
 
 ```r
 library(scAgentKit)
@@ -549,11 +551,8 @@ model_provider <- first_run_provider("deepseek", # or "grok" with XAI_API_KEY
     input_per_million = read_usd("SC_INPUT_USD_PER_MILLION"),
     output_per_million = read_usd("SC_OUTPUT_USD_PER_MILLION"),
     cached_input_per_million = read_usd("SC_CACHED_INPUT_USD_PER_MILLION")
-  ),
-  reservation_usd = read_usd("SC_REQUEST_RESERVATION_USD")
+  )
 )
-model_budget <- read_usd("SC_PROJECT_BUDGET_USD")
-stopifnot(model_provider$reservation_usd > 0, model_budget > 0)
 model_chat_fn <- NULL # use the configured built-in provider
 model_project <- file.path(getwd(), "pbmc-model-study") # must be new
 model_reviewer <- "your-name"
@@ -571,12 +570,12 @@ it stops before sending it:
 
 ```r
 model_run <- sc_analyze(model_input, model_project, context = model_context,
-  provider = model_provider, chat_fn = model_chat_fn, budget = model_budget,
+  provider = model_provider, chat_fn = model_chat_fn,
   review = list(allow_external = TRUE))
 model_transfer <- sc_review(model_run)
 ```
 
-Read that payload, provider, model and budget. If you consent to this exact
+Read that payload, provider, model and resource limits. If you consent to this exact
 disclosure, record the first transfer approval and explicitly request the
 response. Stop to read the returned complete strategy and projected QC impact:
 

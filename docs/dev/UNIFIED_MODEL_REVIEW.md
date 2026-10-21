@@ -34,7 +34,7 @@ foundation is reused. Raw counts and processed input have different authority.
 See [First run](../RESEARCHER_PROTOCOL_ZH.md), [strategy support](ANALYSIS_STRATEGY_SUPPORT.md) and
 [scoped child review](../SUBCLUSTER_REVIEW.md) for their supported computations.
 
-Choose the provider/model, generation settings, budget, aggregate-transfer policy
+Choose the provider/model, generation settings, aggregate-transfer policy
 and any required diagnostic inputs **at initialization**. The saved provider
 configuration is immutable. Model keys stay in the analysis machine's environment
 or user secret mechanism, and a custom callback stays in R memory. See the
@@ -46,7 +46,7 @@ belongs in context, RDS, logs, browser fields or URLs.
 provider or runtime callback/credential is a configuration boundary, not a model
 decision. Supply a manual typed proposal or restore the runtime environment for
 the exact initialized configuration. There is no late browser provider, model,
-endpoint, generation-setting or budget mutation. A different configuration needs
+endpoint or generation-setting mutation. A different configuration needs
 a new project.
 
 ## Reach the existing component from the installed entry
@@ -72,7 +72,7 @@ The public R action is `sc_run_suggest()`; its actions have distinct effects:
 
 | Action | Saved result | What to inspect before the next action |
 | --- | --- | --- |
-| `preview` | Exact aggregate evidence, purpose and initialized model/settings | The actual transmitted content, privacy implications and budget reservation |
+| `preview` | Exact aggregate evidence, purpose and initialized model/settings | The actual transmitted content, privacy implications, transfer consent and resource limits |
 | `approve` | Authority for that exact request snapshot | Its current project/input/evidence/request hashes and revision |
 | `request` | A validated typed candidate or a recoverable stop | Candidate parameters/labels, cited evidence, source, uncertainty, usage/cost and failure status |
 | `adopt` | The candidate becomes a new unapproved scientific proposal | Fresh proposal evidence, local impact and scientific review hashes |
@@ -90,7 +90,7 @@ source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", 
 project_dir <- tempfile("scagentkit-unified-demo-")
 unified_review_demo(project_dir)  # synthetic raw input; immutable mock provider
 view <- unified_review_inspect(project_dir, simulate = TRUE)
-view$suggestion$preview         # exact payload/model/settings and zero budget
+view$suggestion$preview         # exact payload/model/settings; no external call
 
 view <- unified_review_suggest(project_dir, view, "approve", simulate = TRUE,
   reviewer = "demo analyst", reason = "Reviewed this exact simulated request; no external transfer.")
@@ -117,7 +117,7 @@ displayed snapshot used for the following decision; an old CLI snapshot fails
 the revision checks instead of acquiring fresh authority.
 
 For your own matrix/Seurat/local RDS, use `unified_review_start(input, project_dir,
-context=..., strategy_proposal=..., provider=..., budget=..., review=...)` or the
+context=..., strategy_proposal=..., provider=..., review=...)` or the
 underlying `sc_run()` once. Supply your study-specific typed starting plan, or
 leave it unavailable for configured model/manual planning. Do not apply the
 synthetic keep-all plan to a real dataset by default. For an initialized built-in
@@ -137,14 +137,14 @@ Keeping the raw object on the analysis machine does not mean no information
 leaves it. The trusted local review browser is a different local evidence
 destination and may display exact scope/cell IDs.
 
-Requests use the saved cache and usage/reservation ledger. There is no automatic
-paid retry. Unknown usage retains a conservative hold, and a failed/stopped model
-request does not silently become an accepted proposal. The budget is per project;
-do not assume a shared provider account or all parent/child projects have a
-combined billing cap. Restore saved state and inspect the failure before making
-an explicit next request. A worker timeout/crash with ambiguous dispatch blocks
-browser resending; it needs explicit R ledger inspection/reconciliation. Do not
-delete its hold or edit the journal to force another request.
+Requests use the saved cache and post-call usage ledger. Known costs and the
+number of requests with unknown costs are reported separately; unknown costs
+are not zero. There is no monetary cap for a request, project or group of parent
+and child projects. There is no automatic paid retry, and a failed/stopped model
+request does not silently become an accepted proposal. Restore saved state and
+inspect the failure before making an explicit next request. A worker timeout or
+crash with ambiguous dispatch blocks browser resending; inspect and reconcile
+the R ledger explicitly. Do not edit the journal to force another request.
 
 After adopting a strategy or annotation candidate, approve its **whole** fresh
 scientific review with `sc_run_review()` or the same browser panel. Local
@@ -183,7 +183,7 @@ provider through a browser flag. Operator flags are not browser settings.
 The browser may preview the request, approve its exact payload, start an
 asynchronous request, inspect the saved candidate and adopt or discard it. It
 cannot submit R code, a callback, endpoint, key, arbitrary file path, provider,
-model/settings or budget. The fixed worker records job status and saved results;
+model/settings. The fixed worker records job status and saved results;
 browser refresh or HTTP disconnection is not a request retry or scientific
 approval. Check durable job/project state after a disconnect before another
 action. See [workbench startup and trust boundaries](../../workbench/RUN_REVIEW_QUICKSTART.md).
@@ -211,10 +211,9 @@ parent configuration. For operator-mediated child creation, explicitly enable
 `--subcluster-inherit-model` as well. Inheritance does not copy a key, runtime
 callback, parent request approval or scientific decision. Each child's current
 aggregate scope and candidate need their own exact request/scientific review.
-Each inherited child copies the parent's configured budget ceiling into its own
-ledger. It does not subtract the parent's prior spending or share a total parent/
-descendant balance; multiple children can therefore have separate ceilings. The
-zero-paid-call checks cannot establish an aggregate billing cap.
+Each child records its own request usage and available costs after calls; the
+parent's prior charges are not copied. Parent and child requests have no
+monetary cap.
 Use `sc_run_suggest()` and local Continue for configured-child model assistance;
 ordinary child `sc_run_resume()` is not a provider-attachment or dispatch path.
 

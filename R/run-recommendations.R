@@ -124,9 +124,8 @@
 }
 .sc_run_recommendations_verify <- function(record) {
   rec <- record$details$recommendations
-  # Older immutable reviews remain readable; their absent assessment is
-  # explicit below. A present projection must still pass all exact bindings.
-  if (is.null(rec)) return(invisible(NULL))
+  if (is.null(rec))
+    stop("Saved recommendation evidence is missing; review is invalid.", call. = FALSE)
   if (!identical(rec$schema, "scagentkit.recommendations.v1") ||
       !identical(rec$policy_version, "1") ||
       !identical(rec$binding$input_hash, record$input_hash) ||
@@ -141,11 +140,6 @@
   if (!isTRUE(state$config$strategy) || is.null(state$files$strategy_review)) return(NULL)
   record <- .sc_run_get(root, state, "strategy_review")
   rec <- .sc_run_recommendations_verify(record)
-  if (is.null(rec)) return(list(schema = "scagentkit.scientific-assessment.v1", certified_qc = FALSE,
-    workflow_status = state$status, unassessed_steps = list("legacy_recommendation_evidence"),
-    unresolved_steps = list("legacy_recommendation_evidence"), unresolved_details = list(),
-    qc_choice = "legacy_unassessed", source_review_hash = record$hash,
-    message = "This older immutable review has no saved recommendation assessment. Existing results remain readable; full QC and cell identities are not certified."))
   unassessed <- vapply(Filter(function(step) !identical(step$assessment, "assessed"), rec$steps), `[[`, character(1), "id")
   # Recommendations were issued before execution. Current durable artifacts
   # can establish completion of a numeric rule, never biological certification.
@@ -169,14 +163,18 @@
   unresolved <- Filter(function(step) length(step$missing) || length(step$conflicts), assessed_steps)
   unresolved_ids <- vapply(unresolved, `[[`, character(1), "id")
   qc <- record$details$canonical_proposal$qc
-  keep <- identical(qc$preset_id, "keep_all") || any(vapply(qc$rules, function(rule)
+  rules_policy <- !is.null(qc) && qc$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")
+  empty <- rules_policy && is.list(qc$rules) && length(qc$rules) == 0L
+  keep <- rules_policy && any(vapply(qc$rules, function(rule)
     identical(rule$op, "mad_preset") && identical(rule$preset_id, "keep_all"), logical(1)))
-  if (keep) unassessed <- unique(c("qc", unassessed))
+  if (empty || keep || is.null(qc)) unassessed <- unique(c("qc", unassessed))
   list(schema = "scagentkit.scientific-assessment.v1", certified_qc = FALSE,
     workflow_status = state$status, unassessed_steps = as.list(unassessed),
     unresolved_steps = as.list(unresolved_ids),
     unresolved_details = lapply(unresolved, function(step) step[c("id", "missing", "conflicts", "uncertainty")]),
-    qc_choice = if (keep) "keep_all_quality_deferred" else "explicit_reviewed_quality_rule",
+    qc_choice = if (is.null(qc)) "processed_reuse_raw_quality_unassessed" else
+      if (empty) "no_additional_filtering_quality_deferred" else
+      if (keep) "keep_all_quality_deferred" else "explicit_reviewed_quality_rule",
     message = if (length(union(unassessed, unresolved_ids))) paste0("Scientific assessment remains incomplete or has unresolved evidence for: ", paste(union(unassessed, unresolved_ids), collapse = ", "),
       ". Software completion does not certify full QC or cell identities.") else
       "Declared decisions and supported diagnostics are recorded; software completion is not biological or QC certification.",

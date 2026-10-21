@@ -48,9 +48,9 @@ for (const name of inputFiles) {const file = path.join(project, "checkpoints", n
 report.inputCheckpointSHA256 = inputDigests;
 const ledgerFile = path.join(project, "provider", "ledger.json"), ledgerBytes = await fs.readFile(ledgerFile), ledger = JSON.parse(ledgerBytes);
 const entries = array(ledger.entries); assert.equal(entries.length, 1, "Root prepares one saved mock strategy response");
-for (const entry of entries) {assert.equal(entry.provider?.external, false, "Only a local mock response belongs in this fixture"); assert.equal(entry.cost_usd, 0); assert.equal(entry.charged_or_held_usd, 0);}
+for (const entry of entries) {assert.equal(entry.provider?.external, false, "Only a local mock response belongs in this fixture"); assert.equal(entry.cost_usd, 0);}
 report.initialMockResponses = entries.length; report.initialLedgerSHA256 = sha(ledgerBytes);
-report.ledgerSummary = entries.map(entry => ({purpose: entry.purpose, status: entry.status, external: entry.provider.external, costUSD: entry.cost_usd, chargedOrHeldUSD: entry.charged_or_held_usd}));
+report.ledgerSummary = entries.map(entry => ({purpose: entry.purpose, status: entry.status, external: entry.provider.external, costUSD: entry.cost_usd}));
 let server, browser, context, page, profile, origin, token, activeJobId;
 const lifecycle = [];
 async function protectedInputs() {

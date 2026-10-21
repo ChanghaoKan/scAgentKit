@@ -10,6 +10,7 @@
 #' @return Invisibly, the URL, process ID and whether a service was reused.
 #' @export
 sc_run_open <- function(project_dir, checkout = NULL, python = NULL, browse = interactive()) {
+  .sc_project_format_entry(project_dir)
   root <- .sc_run_root(project_dir)
   .sc_run_load(root)
   preferences <- file.path(root, ".workbench-launcher", "preferences.json")

@@ -1,6 +1,6 @@
 # Fixed 80/85% diagnostics use only the first at most 50 actually computed
 # principal components. They are choices for review, not biological optima or
-# estimates of total expressed-gene variance. The legacy selector is unchanged.
+# estimates of total expressed-gene variance.
 .sc_run_pc_hash <- function(record) {
   record$hash <- NULL
   .sc_run_hash(record)

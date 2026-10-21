@@ -234,6 +234,7 @@
 sc_run_set_child_context <- function(project_dir, context, project_id, input_hash,
                                     expected_revision, expected_context_hash,
                                     reviewer, reason, request_id) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(project_id, "project_id")
   .sc_run_review_hash_string(input_hash, "input_hash")
   .sc_run_review_hash_string(expected_context_hash, "expected_context_hash")

@@ -61,16 +61,16 @@ server_demo_chat <- function(system_prompt, user_prompt) {
   payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
   evidence <- payload$evidence
   if (identical(evidence$schema, "scagentkit.qc.evidence.v1")) {
-    filters <- lapply(evidence$groups, function(group) list(op = "range",
+    rules <- lapply(evidence$groups, function(group) list(op = "range",
       metric = "nFeature", min = max(1, floor(group$metrics$nFeature$p05)),
       group = group$selector))
-    response <- list(schema = "scagentkit.qc.v1",
+    response <- list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
       rationale = paste("Offline mock only: illustrate a lower detected-feature",
         "bound derived from each supplied sample/capture group's observed p05.",
         "Review the predicted retention before applying it."),
       risks = list("A toy quantile rule is not a validated QC rule for real tissue.",
         "A low-depth population may be biologically real; thresholds need analyst review."),
-      filters = unname(filters))
+      rules = unname(rules))
   } else if (identical(evidence$schema, "scagentkit.annotation-evidence.v1")) {
     response <- list(schema = "scagentkit.annotation.v1",
       annotations = lapply(evidence$clusters, function(cluster) list(
@@ -94,7 +94,7 @@ server_demo_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     toy <- make_server_demo_input()
     source_hash <- digest::digest(toy, algo = "sha256")
     result <- sc_run(toy, project_dir = project_dir, context = server_demo_context(),
-      provider = server_demo_provider(), chat_fn = server_demo_chat, budget = 0,
+      provider = server_demo_provider(), chat_fn = server_demo_chat,
       analysis = list(nfeatures = 200L, npcs = 12L, dims = 1:10,
         resolution = 0.3, seed = 73031L, umap_neighbors = 20L))
     stopifnot(identical(source_hash, digest::digest(toy, algo = "sha256")))

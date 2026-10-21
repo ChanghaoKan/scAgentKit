@@ -24,7 +24,10 @@ class ContinueRestoreTests(unittest.TestCase):
         self.backups = 0
 
     def tearDown(self):
-        self.case.tearDown()
+        try:
+            self.case.tearDown()
+        finally:
+            self.case.doCleanups()
 
     def finish(self, mode="boundary"):
         with patch.dict(os.environ, {"FAKE_CONTINUE_MODE": mode}):
@@ -95,7 +98,11 @@ class ContinueRestoreTests(unittest.TestCase):
                 str(self.case.project), "--reviewer", "analyst", "--reason", "Backup restore"]
         missing = subprocess.run(args, capture_output=True, text=True)
         self.assertNotEqual(missing.returncode, 0)
-        result = subprocess.run(args + ["--confirm-original-stopped"], capture_output=True, text=True)
+        # The CLI uses its operator PATH; this explicit test executable simulates R.
+        rscript = self.case.fake.parent / "Rscript"
+        rscript.symlink_to(self.case.fake)
+        environment = dict(os.environ, PATH=str(rscript.parent) + os.pathsep + os.environ["PATH"])
+        result = subprocess.run(args + ["--confirm-original-stopped"], env=environment, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["restored_jobs"], 1)
         self.assertEqual(len(self.case.calls()), 1)

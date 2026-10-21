@@ -16,6 +16,7 @@ from server import main as serve
 from open_results import open_results
 from store import scrub_secrets
 from evidence import strict_json
+from qc_runtime import check_project_format
 
 ROOT = Path(__file__).resolve().parent
 
@@ -41,7 +42,7 @@ def main(argv=None):
     parser.add_argument("--context-file", help="Local JSON study context, including explicitly declared metadata roles/design")
     parser.add_argument("--scientific-review-file", help="Explicit local optional diagnostic settings for a new raw project")
     parser.add_argument("--doublet-mode", choices=("auto", "off", "flag", "remove"), help="New-project diagnostic/handling mode; no deletion before human review")
-    parser.add_argument("--model-config-file", help="Local creation-time provider, budget and transfer policy; never credentials")
+    parser.add_argument("--model-config-file", help="Local creation-time provider and transfer policy; never credentials")
     parser.add_argument("--source-checkout", help="Explicit matching developer source tree")
     model = parser.add_mutually_exclusive_group()
     model.add_argument("--model-suggestions", action="store_true", help="Enable existing exact-preview model workflow for the saved provider")
@@ -67,6 +68,8 @@ def main(argv=None):
     rscript = shutil.which(args.rscript)
     if not rscript:
         parser.error("An installed Rscript is required; no software is installed by this launcher")
+    if args.reopen:
+        check_project_format(project, args.r_library, rscript)
     # Fail before creating a project when localhost cannot be bound.
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", args.port))
@@ -107,8 +110,8 @@ def main(argv=None):
         if setup_path.stat().st_size > 65536:
             parser.error("Provider configuration exceeds 64 KB")
         setup = strict_json(setup_path.read_text(encoding="utf-8"))
-        if not isinstance(setup, dict) or not {"provider", "budget", "review"}.issubset(setup) or set(setup) - {"provider", "budget", "review", "cost_mode", "react", "biological_diagnostics"}:
-            parser.error("Provider configuration requires provider, budget and review")
+        if not isinstance(setup, dict) or not {"provider", "review"}.issubset(setup) or set(setup) - {"provider", "review", "react", "biological_diagnostics"}:
+            parser.error("Provider configuration requires provider and review, with only current supported fields")
         request["model_setup"] = setup
     env = scrub_secrets(dict(os.environ))
     library = args.r_library or env.get("R_LIBS_USER")

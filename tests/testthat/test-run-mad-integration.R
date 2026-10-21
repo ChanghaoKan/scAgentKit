@@ -88,7 +88,7 @@ mad_integration_begin <- function(root, object = mad_integration_fixture(),
   suppressWarnings(sc_run(input = object, project_dir = root, context = context,
     strategy = TRUE, strategy_proposal = proposal, qc_mad = options,
     doublet_diagnostics = if (doublet) mad_integration_doublet_options() else NULL,
-    provider = provider, chat_fn = chat_fn, budget = 0, review = review,
+    provider = provider, chat_fn = chat_fn, review = review,
     annotation_column = "reviewed_type"))
 }
 
@@ -102,8 +102,8 @@ mad_integration_plan <- function(root, preset = "keep_all", doublet = "keep") {
     rationale = "Review a fixed aggregate panel and explicit local preset as a single decision.",
     risks = list("Neither planted labels nor higher retention establishes an optimal biological QC policy."),
     inferences = list("The synthetic quality strata are supplied facts; their relation to donors is not inferred."),
-    qc = list(schema = "scagentkit.qc.mad.v1", preset_id = preset,
-      panel_hash = record$panel_hash,
+    qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
+      rules = list(list(op = "mad_preset", preset_id = preset, panel_hash = record$panel_hash)),
       rationale = "Explicitly select this exact immutable local candidate panel.",
       risks = list("MAD thresholds need interpretation; high RNA, ribosomal and hemoglobin signals are diagnostics.")),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
@@ -343,7 +343,7 @@ test_that("minimal prefilter and capture scoring precede one explicit sample-awa
   snapshot <- sc_run_inspect(root)
   expect_identical(snapshot$review_node$kind, "strategy")
   expect_identical(snapshot$strategy_review$details$qc_mad$panel_hash, record$panel_hash)
-  expect_identical(snapshot$strategy_review$details$qc_mad$choice$preset_id, "conservative_and3")
+  expect_identical(snapshot$strategy_review$details$qc_mad$choice$rules[[1L]]$preset_id, "conservative_and3")
   validated <- mad_integration_record(root, "qc_validated")
   expect_identical(validated$keep_cells, mad_integration_conservative_ids(object))
   expect_equal(validated$retention$retained, 252L)
@@ -468,14 +468,17 @@ test_that("bounded MAD proposals reject invented operations and stale concurrent
     list(grouping = "donor"), list(filters = list(list(op = "range", metric = "nCount", min = 1))))
   for (fields in invalid) {
     proposal <- mad_integration_plan(root, "conservative_and3")
-    for (key in names(fields)) proposal$qc[[key]] <- fields[[key]]
+    for (key in names(fields)) {
+      if (key %in% c("preset_id", "panel_hash")) proposal$qc$rules[[1L]][[key]] <- fields[[key]]
+      else proposal$qc[[key]] <- fields[[key]]
+    }
     expect_error(mad_integration_revise(root, proposal, snapshot))
     expect_identical(mad_integration_files(root), bytes)
   }
-  legacy <- mad_integration_plan(root)
-  legacy$qc <- list(schema = "scagentkit.qc.v1", rationale = "Legacy cannot silently replace MAD semantics.",
-    risks = list("Explicitly select a legacy project instead."), filters = list(list(op = "range", metric = "nCount", min = 1)))
-  expect_error(mad_integration_revise(root, legacy, snapshot), "MAD|schema|legacy|Unsupported")
+  unsupported <- mad_integration_plan(root)
+  unsupported$qc <- list(schema = "scagentkit.qc.v1", rationale = "Unsupported standalone schemas are not executable.",
+    risks = list("Use the current rules contract."), filters = list(list(op = "range", metric = "nCount", min = 1)))
+  expect_error(mad_integration_revise(root, unsupported, snapshot), "schema|Unsupported")
   expect_identical(mad_integration_files(root), bytes)
   wrong <- snapshot; wrong$revision <- wrong$revision + 1L
   expect_error(mad_integration_revise(root, mad_integration_plan(root), wrong), "[Ss]tale|revision")
@@ -597,9 +600,9 @@ test_that("a mock provider chooses only the saved aggregate preset panel and cac
   evidence <- mad_integration_record(root, "strategy_evidence")
   request$validator <- function(value) scAgentKit:::.sc_run_strategy_validate(value, evidence)$proposal
   ledger <- file.path(root, "provider", "ledger.json"); ledger_hash <- scAgentKit:::.sc_project_sha_file(ledger)
-  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback, budget = 0)
+  cached <- scAgentKit:::.sc_run_call(root, request, provider = provider, chat_fn = callback)
   expect_identical(cached$status, "ok"); expect_true(cached$cached)
-  expect_equal(cached$charged_or_held_usd, 0); expect_identical(calls, 1L)
+  expect_equal(cached$cost_usd, 0); expect_identical(calls, 1L)
   expect_identical(scAgentKit:::.sc_project_sha_file(ledger), ledger_hash)
   mad_integration_decide(root); mad_integration_continue(root)
   expect_identical(calls, 1L); expect_equal(detector$detector, 2L)

@@ -12,6 +12,12 @@ test_that("manual citation deletion publishes a verifiable review with the reduc
   evidence$private$candidates <- .empty_reference_matches()
   evidence$private$candidates_all <- .empty_reference_matches()
   evidence$private$reference_provenance <- list(status = "not_supplied")
+  evidence$private$reference_evidence <- list(schema = "scagentkit.reference-evidence.v1",
+    provenance = evidence$private$reference_provenance,
+    per_cluster = lapply(evidence$summary$clusters, function(cluster)
+      list(clusterId = cluster$clusterId, cellCount = cluster$cellCount, status = "not_supplied",
+        candidates = list(), all_candidates = list(),
+        marker_symbols = .sc_run_reference_symbols(vapply(cluster$markers, `[[`, character(1), "gene"), NULL))))
   state <- .sc_run_put(f$root, state, "annotation_evidence", evidence)
   .sc_run_save(f$root, state)
   run <- .sc_run_react_refine(f$root, f$baseline, react_mock())

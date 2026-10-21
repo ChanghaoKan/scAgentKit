@@ -5,9 +5,9 @@ The raw-count workflow has three scientific approvals. Existing projects retain
 their saved configuration and implementation identity when reopened.
 
 Choose manual or model-assisted initialization before creating the project.
-This example uses the manual default (`provider=NULL`, zero budget); you supply
+This example uses the manual default (`provider=NULL`); you supply
 annotation labels and confidence. For a model project, initialize the immutable
-provider/model/settings/budget directly in `sc_start()` for the browser, or in `sc_analyze()` for R-only review, following
+provider/model/settings directly in `sc_start()` for the browser, or in `sc_analyze()` for R-only review, following
 [model configuration](dev/UNIFIED_MODEL_REVIEW.md#what-remains-in-the-starting-r-call).
 Enabling a browser component later cannot add a provider to a manual project.
 
@@ -157,5 +157,8 @@ result <- sc_result(project)
 
 For an unfinished project, `sc_review()` displays the current stage so you can
 continue its review and execution. Opening a project does not resume work.
+The [format gate](../workbench/README.md#project-format-and-reopening) rejects
+missing or mismatched formats before project writes. Use the original software
+environment or create a new project; do not modify the format marker or state.
 See [recovery and saved results](RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)
 for interrupted runs and environment changes.

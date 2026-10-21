@@ -46,11 +46,10 @@
     rationale = "Explicit software starting plan for the selected raw-count child; review these finite settings before computation. This plan was not proposed by an AI.",
     risks = list("Parent selection is a conditional analysis scope, not independent biological validation.",
                  "Resolution 0.4 and bounded dimension/HVG settings are disclosed software starting choices, not a scientific optimum."),
-    inferences = list(), qc = list(schema = "scagentkit.qc.v1",
+    inferences = list(), qc = list(schema = "scagentkit.qc.rules.v1",
       rationale = "Retain the complete frozen parent selection; no second filtering or doublet removal is requested.",
       risks = list("Previous parent QC provenance remains relevant; retained cells are not guaranteed to be biologically valid."),
-      filters = list(list(op = "range", metric = "nFeature", min = 0,
-                          max = nrow(counts), group = NULL))),
+      remove_if = "any", rules = list()),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
                     nfeatures = nfeatures, npcs = npcs, seed = 17L),
     pcs = list(method = "fixed", ndim = as.integer(min(20L, npcs))),
@@ -226,8 +225,8 @@
 #' @param reviewer,reason Analyst identity and selection rationale.
 #' @param request_id Stable literal creation identifier for retry/idempotence.
 #' @param inherit_model Explicit TRUE to copy the parent's immutable provider,
-#'   per-project budget and transfer policy into a new child. No keys or runtime
-#'   callbacks are copied. Default FALSE creates a manual, zero-budget child.
+#'   transfer policy into a new child. No keys or runtime callbacks are copied.
+#'   Default FALSE creates a manual child with external transfer disabled.
 #' @param cluster_column Parent cluster column used for selection; NULL uses the
 #'   parent's saved column. Must match the column given to sc_run_subcluster_scope.
 #' @return Durable child status; no computation beyond local diagnostic evidence
@@ -241,6 +240,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
                               cycle_diagnostics = NULL, annotation_column = "sc_subtype",
                               reviewer, reason, request_id, inherit_model = FALSE,
                               cluster_column = NULL) {
+  .sc_project_format_entry(parent_project)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_run_review_hash_string(parent_scope_hash, "parent_scope_hash")
   request_id <- .sc_run_subcluster_request_id(request_id)
@@ -254,7 +254,6 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
   parent <- .sc_run_subcluster_parent(paths$parent, cluster_column)
   model_policy <- if (inherit_model) list(inherit_model = TRUE,
     provider = .sc_run_provider_spec(parent$state$config$provider)$metadata,
-    budget = parent$state$config$budget,
     allow_external = isTRUE(parent$state$config$review$allow_external)) else NULL
   .sc_run_qc_revision_check(parent$state, expected_parent_revision)
   origin <- .sc_run_subcluster_selection(parent, clusters)
@@ -320,7 +319,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
   .sc_run_subcluster_preflight(strategy_proposal, counts,
     !is.null(cycle_diagnostics) && !identical(cycle_diagnostics, FALSE))
   qc_preflight <- .sc_run_qc_validate(strategy_proposal$qc,
-    .sc_run_qc_evidence(child, context, assay, "counts"))
+    .sc_run_qc_evidence(child, context, assay, "counts"), retained_scope = NULL)
   if (identical(choices$qc, "retain_selected") && !setequal(qc_preflight$keep_cells, cells))
     stop("Child QC choice retain_selected prohibits a second filter; request qc='review' explicitly.", call. = FALSE)
   if (identical(choices$batch, "none") && !identical(strategy_proposal$batch$method, "none"))
@@ -345,8 +344,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
     creation$request_hash <- .sc_run_hash(payload)
     creation$model_policy <- model_policy
   }
-  if (!dir.exists(paths$child) && !dir.create(paths$child, showWarnings = FALSE))
-    stop("Child directory could not be created.", call. = FALSE)
+  .sc_project_format_create(paths$child)
   child_owner <- .sc_run_lock(paths$child)
   on.exit(.sc_run_release(paths$child, child_owner), add = TRUE, after = FALSE)
   receipt_path <- file.path(paths$child, ".subcluster-creation.rds")
@@ -363,7 +361,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
       return(sc_run_inspect(paths$child))
     }
   } else {
-    if (length(setdiff(list.files(paths$child, all.files = TRUE, no.. = TRUE), ".run-lock")))
+    if (length(setdiff(list.files(paths$child, all.files = TRUE, no.. = TRUE), c(".run-lock", "project-format.json"))))
       stop("Child directory contains foreign files; no creation was performed.", call. = FALSE)
     .sc_run_atomic(list(schema = "scagentkit.subcluster-initialization.v1", origin = origin,
       creation = creation), receipt_path)
@@ -372,7 +370,6 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
   .sc_run_subcluster_check_parent(origin)
   sc_run(child, paths$child, context = context,
     provider = if (inherit_model) model_policy$provider else NULL, chat_fn = NULL,
-    budget = if (inherit_model) model_policy$budget else 0,
     review = list(allow_external = if (inherit_model) model_policy$allow_external else FALSE), assay = assay,
     counts_layer = "counts", normalized_layer = "data", cluster_column = child_cluster,
     reference = inherited$reference, reference_review = inherited$options,

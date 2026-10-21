@@ -6,9 +6,10 @@ operator configuration. HTTP cannot set them. This feature checks for POSIX
 `flock` when enabled and adds no unconditional `fcntl` import. This increment does
 not establish support for the existing workbench on Windows.
 
-`describe(run=None)` reads saved JSON and a nonblocking job lock. It never starts
-R. A supplied full inspector may be used for the availability binding; otherwise
-the existing `status.json` convenience projection supplies it. That projection
+`describe(run=None)` performs a fresh read-only R project-format check, then
+reads saved JSON and a nonblocking job lock. Polling does not start scientific
+analysis or a model request. A supplied full inspector may be used for the
+availability binding; otherwise the existing `status.json` convenience projection supplies it. That projection
 only rejects obviously stale requests. The fixed R `sc_run_continue` call
 revalidates authoritative state, input, implementation, approval and revision
 under the existing R project lock before changing scientific state.
@@ -89,7 +90,8 @@ owner requires inspection through the existing R recovery procedures.
 There is no synchronous analysis timeout. R stdout/stderr are discarded, not
 sent to the browser or written to job logs. Private records retain process IDs,
 exit codes, code/config hashes and verified stop summaries. Provider keys are
-removed from both worker and R environments. The fixed bridge has one operation,
+removed from both worker and R environments. The fixed analysis bridge has one
+operation,
 `sc_run_continue`, and accepts no R code, callbacks, provider configuration or
 browser-selected paths. No new AI request is dispatched by this feature.
 
@@ -109,7 +111,11 @@ does not silently adopt those identities. Development builds containing the
 Stop the original project's browser service, workers, R processes and descendants,
 including any directly started R analysis, before taking/restoring a complete
 backup. A copied lock file cannot establish that the original workers stopped.
-Use the original recorded project path and matching R environment. Keep the backup.
+Use the original recorded project path and matching R environment. The complete
+backup must include `project-format.json` and `state.rds` with the current format.
+The [format gate](README.md#project-format-and-reopening) runs before restoration
+locks, job records or receipts are written. Restoration does not upgrade formats.
+Keep the backup.
 After verifying that the original processes are stopped, run from that R environment:
 
 ```r
@@ -140,9 +146,12 @@ can return their existing terminal result; a new Continue request uses a fresh
 job and the current binding. Copying the project again requires a new explicit
 restoration.
 
-This operation restores local job metadata only. The observed byte hashes are
-audit context, not an atomic R snapshot, R-state validation or scientific result.
+This operation restores local job metadata only. A fresh read-only R preflight
+validates the project format and state hash; it does not validate a scientific
+result. The receipt's observed byte hashes are audit context, not an atomic R
+snapshot.
 The continuation lock does not exclude directly started R operations.
 Normal R inspection and
 continuation still verify the authoritative state, evidence and approvals.
-Restoration starts no R worker, scientific computation or model request.
+Restoration may start the read-only R preflight. It starts no analysis worker,
+scientific computation or model request.

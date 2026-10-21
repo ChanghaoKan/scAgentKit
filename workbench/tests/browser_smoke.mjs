@@ -193,6 +193,12 @@ try {
   await page.goto(baseUrl, {waitUntil: 'networkidle'});
   await ui('cluster-6').waitFor({state: 'visible'});
 
+  await test('Frozen evidence exposes no portable registry and hides project controls', async () => {
+    const value = await api('/api/projects');
+    assert.deepEqual(value, {projects: [], selected: null, registry_available: false});
+    assert.equal(await page.locator('#project-controls').isHidden(), true);
+  });
+
   await test('Real frozen PBMC data: 2,638 cells, 9 clusters, cluster 6 = 155 cells', async () => {
     assert.equal(evidence.clusters.length, 9);
     assert.equal(evidence.umap.length, 2638);

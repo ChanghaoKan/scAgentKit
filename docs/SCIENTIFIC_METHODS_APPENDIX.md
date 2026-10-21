@@ -28,7 +28,7 @@ eligibility are software rules; no biological default benefit is assumed.
 | Cross-sample expression | For each cluster/sample with>=20 inside and outside cells, positive mean difference and positive detection difference | Report eligible sample count and all per-sample effects, consistency only for>=2 samples. No pseudobulk p-value or donor-level independence claim. |
 | Mixed lineage | Per-cell detected panel-gene counts; pairs meet min(2, measured panel genes) each | Exploratory coexpression display, not a doublet, ambient or cell-type classifier. The all-cited-genes review list is excluded from lineage pairs. |
 | Citation positivity | Known label requires every cited supplied marker to have saved FC>0 and pct1>pct2 | Minimum numerical support only. Unknown may retain uncertainty/counterevidence; no gene-label semantic proof. |
-| Fisher enrichment | Unique query/reference intersection with exact pre-test eligible gene universe; a=overlap,b=query-only,c=reference-only,d=neither; one-sided greater | Native Seurat FoldChange supplies pct prefilter values including its rounding; only supported zero-logFC/both-direction test settings. No universe from significant/top genes. BH across all tested labels per cluster before display. Original hits/coverage ranking remains unchanged. |
+| Fisher enrichment | Unique query/reference intersection with exact pre-test eligible gene universe; a=overlap,b=query-only,c=reference-only,d=neither; one-sided greater | Native Seurat FoldChange supplies pct prefilter values including its rounding; only supported zero-logFC/both-direction test settings. No universe from significant/top genes. BH across all tested labels per cluster before display. Fisher enrichment is reported separately from hits/coverage ranking. |
 
 Sparse counts stay sparse; exact literal cell/feature joins are validated before
 reordering. Reference aliases are applied consistently to query, reference and
@@ -92,14 +92,11 @@ Cell-type-specific deletion risk remains unassessed without independent
 identity evidence; QC review neither infers author labels nor requires a new
 annotation analysis.
 
-The published legacy MAD helper used different semantics (it is retired from this development build): log10(x) for positive
-counts/features, deletion at both their low and high tails, and upper-only
-MT/ribosomal/haemoglobin deletion with a one-percentage-point scaled-MAD floor.
-That helper could pool cells or use explicit groups. The single current engine instead
-uses log10(x+1), lower count/feature tails, flag-only high RNA and diagnostic-only
-ribosomal/haemoglobin values, without that MT floor. Its existing small-group,
-nonfinite and near-zero-MAD availability guards remain unchanged. These are
-different software policies, not interchangeable biological recommendations.
+The current MAD engine uses log10(x+1), lower count/feature tails, flag-only
+high RNA and diagnostic-only ribosomal/haemoglobin values. It does not impose
+a one-percentage-point mitochondrial scaled-MAD floor. Small groups, nonfinite
+measurements and near-zero MAD can make an assessment unavailable. These
+software rules require study-specific scientific review.
 
 ## Main annotation marker pool
 

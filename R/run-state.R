@@ -11,16 +11,19 @@
   if (!file.rename(temporary, path)) stop("Atomic state publication failed.", call. = FALSE)
   invisible(path)
 }
-.sc_run_root <- function(project_dir, create = FALSE) {
+.sc_run_root <- function(project_dir, create = FALSE, check_format = TRUE) {
   .sc_project_string(project_dir, "project_dir")
-  if (create) dir.create(path.expand(project_dir), recursive = TRUE, showWarnings = FALSE)
   # Check the literal path before normalizePath resolves the link away.
   literal <- sub("/+$", "", path.expand(project_dir))
-  if (nzchar(Sys.readlink(literal))) stop("Project directory must not be a symlink.", call. = FALSE)
+  link <- Sys.readlink(literal)
+  if (!is.na(link) && nzchar(link)) stop("Project directory must not be a symlink.", call. = FALSE)
+  if (create) .sc_project_format_create(literal)
   root <- normalizePath(literal, mustWork = TRUE)
+  if (check_format) .sc_project_format_check(root)
   root
 }
 .sc_run_lock <- function(root) {
+  .sc_project_format_check(root)
   path <- file.path(root, ".run-lock")
   locked <- "Project is locked. Inspect .run-lock/owner.rds; recover explicitly with sc_run_unlock after the owning process has stopped."
   writable <- "Project (including a parent project for child operations) must be writable to acquire its lock. Ask the project owner to restore writable access at the recorded project path, or restore the complete project at that same path. Otherwise start a new project from preserved input and reapprove; do not edit saved path bindings or bypass an existing lock."
@@ -60,6 +63,8 @@
   state
 }
 .sc_run_save <- function(root, state) {
+  .sc_project_format_check(root)
+  if (!.sc_project_format_valid(state$project_format_version)) .sc_project_format_fail()
   envelope <- list(schema = "scagentkit.run-state.v1", hash = .sc_run_hash(state), state = state)
   .sc_run_atomic(envelope, file.path(root, "state.rds"))
   # JSON is a convenience projection. state.rds remains the only commit authority.
@@ -72,6 +77,7 @@
   invisible(state)
 }
 .sc_run_load <- function(root, verify = TRUE, verify_subcluster = TRUE) {
+  .sc_project_format_check(root)
   envelope <- readRDS(file.path(root, "state.rds"))
   if (!identical(envelope$schema, "scagentkit.run-state.v1") || !identical(envelope$hash, .sc_run_hash(envelope$state)))
     stop("State checksum mismatch; no operation was performed.", call. = FALSE)
@@ -145,7 +151,7 @@
 }
 
 .sc_run_public <- function(state) {
-  result <- list(schema = "scagentkit.run.v1", project_id = state$project_id, status = state$status,
+  result <- list(schema = "scagentkit.run.v1", project_format_version = state$project_format_version, project_id = state$project_id, status = state$status,
        stage = state$stage, revision = state$revision, input_hash = state$input_hash,
        diagnostics = state$diagnostics, context = state$config$context, nodes = state$nodes,
        config_hash = state$config_hash, implementation_hash = state$implementation_hash,
@@ -214,6 +220,7 @@
 #' @return Status, proposal hash, aggregate evidence, diagnostics and output paths.
 #' @export
 sc_run_inspect <- function(project_dir) {
+  .sc_project_format_entry(project_dir)
   root <- .sc_run_root(project_dir)
   state <- .sc_run_load(root)
   result <- .sc_run_public(state)
@@ -260,8 +267,7 @@ sc_run_inspect <- function(project_dir) {
   result$scientific_assessment <- .sc_run_scientific_assessment(root, state)
   result$review_node <- .sc_run_review_node(root, state)
   result$annotation_preparation <- .sc_run_annotation_preparation(root, state)
-  # Completed/legacy projects retain their existing inspection contract. The
-  # suggestion view is relevant only to a current saved proposal stage.
+  # Suggestions are available only at the current saved proposal stage.
   if (state$stage %in% c("strategy_propose", "qc_propose", "annotation_propose"))
     result$suggestion <- .sc_run_suggestion_view(root, state)
   result
@@ -278,11 +284,13 @@ sc_run_inspect <- function(project_dir) {
 #' @return Updated run status. Approval does not run computation or contact a provider.
 #' @export
 sc_run_approve <- function(project_dir, proposal_hash, reviewer, reason = "", preview_hash = NULL, expected_revision = NULL) {
+  .sc_project_format_entry(project_dir)
   .sc_run_decide(project_dir, proposal_hash, reviewer, reason, TRUE, preview_hash, expected_revision)
 }
 #' @rdname sc_run_approve
 #' @export
 sc_run_reject <- function(project_dir, proposal_hash, reviewer, reason, preview_hash = NULL, expected_revision = NULL) {
+  .sc_project_format_entry(project_dir)
   .sc_run_decide(project_dir, proposal_hash, reviewer, reason, FALSE, preview_hash, expected_revision)
 }
 .sc_run_decide <- function(project_dir, proposal_hash, reviewer, reason, approve, preview_hash = NULL, expected_revision = NULL) {
@@ -368,6 +376,7 @@ sc_run_reject <- function(project_dir, proposal_hash, reviewer, reason, preview_
 #' @return Invisibly TRUE. Never removes a mismatching lock.
 #' @export
 sc_run_unlock <- function(project_dir, token, reason) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(reason, "reason")
   root <- .sc_run_root(project_dir); path <- file.path(root, ".run-lock", "owner.rds")
   owner <- readRDS(path)

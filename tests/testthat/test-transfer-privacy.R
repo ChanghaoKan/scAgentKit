@@ -52,8 +52,7 @@ test_that("privacy suppression leaves a complete local rule path through three e
   confirmation<-list(mode="project",confirmed=TRUE,reviewer="offline-human",reason="Public aggregate test scope only.",
     categories=c("study_context","aggregate_qc","aggregate_markers","aggregate_design","aggregate_expression"))
   x<-sc_analyze(seu,root,context=list(species="human",tissue="blood",columns=list(sample="sample")),
-    provider=list(name="offline_remote",external=TRUE,model="never-dispatched",reservation_usd=.01),budget=.1,
-    review=list(allow_external=TRUE,transfer_consent=confirmation),qc_mad=FALSE,cycle_diagnostics=FALSE,doublet_diagnostics=FALSE,
+    provider=list(name="offline_remote",external=TRUE,model="never-dispatched"),review=list(allow_external=TRUE,transfer_consent=confirmation),qc_mad=FALSE,cycle_diagnostics=FALSE,doublet_diagnostics=FALSE,
     plan=list(qc=list(nCount=c(0,NA)),analysis=list(nfeatures=100,npcs=6),pcs=4,diagnostic_resolutions=c(.4,.6),umap=FALSE))
   original<-.sc_run_load(root)$files$input
   before<-sc_run_suggest(root)

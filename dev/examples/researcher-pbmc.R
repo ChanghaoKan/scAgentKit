@@ -13,10 +13,10 @@ researcher_pbmc_plan <- function() {
       "The tutorial subset does not describe a complete called-cell capture.",
       "Clustering and annotation require scientific review; identities remain Unknown."),
     inferences = list(),
-    qc = list(schema = "scagentkit.qc.v1",
+    qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
       rationale = "Keep count-positive tutorial cells for the mechanism demonstration.",
       risks = list("nCount >= 1 is a software control, not a biologically validated QC rule."),
-      filters = list(list(op = "range", metric = "nCount", min = 1L))),
+      rules = list(list(op = "range", metric = "nCount", min = 1L))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 100L, npcs = 10L, seed = 20261006L),
     pcs = list(method = "fixed", ndim = 5L),
@@ -55,7 +55,7 @@ researcher_pbmc_start <- function(project_dir, chat_fn = make_researcher_pbmc_mo
       research_goal = "Learn the offline reviewed analysis workflow, not establish biological labels.",
       notes = "Public tutorial subset. orig.ident is a project label; donor and capture are unknown. No complete called-cell cohort is claimed."),
     provider = list(name = "mock", model = "protocol-mock-v1", external = FALSE),
-    chat_fn = chat_fn, budget = 0, review = list(allow_external = FALSE),
+    chat_fn = chat_fn, review = list(allow_external = FALSE),
     strategy = TRUE, annotation_column = "protocol_annotation")
 }
 

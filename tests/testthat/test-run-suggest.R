@@ -1,8 +1,8 @@
 # Small saved-table fixtures exercise the coordinator without scientific work
 # or HTTP. Actual end-to-end Seurat and browser validation is separate.
-suggestion_fixture <- function(external = FALSE, budget = if (external) .05 else 0,
+suggestion_fixture <- function(external = FALSE,
                                provider_name = "mock", pending = TRUE) {
-  root <- tempfile("suggestion-fixture-"); dir.create(root)
+  root <- tempfile("suggestion-fixture-"); .sc_project_format_create(root)
   cells <- data.frame(cell_id = c("private-cell-A", "private-cell-B"),
     cluster = c("01", "NA"), stringsAsFactors = FALSE)
   marker <- function(id, gene) list(clusterId = id, gene = gene,
@@ -15,15 +15,20 @@ suggestion_fixture <- function(external = FALSE, budget = if (external) .05 else
     private = list(input_cells = cells, cluster_column = "source_cluster",
       candidates = .empty_reference_matches(), candidates_all = .empty_reference_matches(),
       reference_provenance = list(status = "not_supplied", mode = "independent_local_reference")))
+  evidence$private$reference_evidence <- list(schema = "scagentkit.reference-evidence.v1",
+    provenance = evidence$private$reference_provenance,
+    per_cluster = lapply(evidence$summary$clusters, function(cluster)
+      list(clusterId = cluster$clusterId, cellCount = cluster$cellCount, status = "not_supplied",
+        candidates = list(), all_candidates = list(),
+        marker_symbols = .sc_run_reference_symbols(vapply(cluster$markers, `[[`, character(1), "gene"), NULL))))
   proposal <- list(schema = "scagentkit.annotation.v1", annotations = lapply(
     evidence$summary$clusters, function(row) list(clusterId = row$clusterId,
       label = "Unknown", confidence = "low", rationale = "Original manual uncertainty.", markers = list())))
   provider <- .sc_run_provider_spec(list(name = provider_name, model = "software-control-v1",
-    external = external, reservation_usd = if (external) .01 else 0))$metadata
+    external = external))$metadata
   config <- list(context = list(species = "human", tissue = "synthetic"),
-    annotation_column = "fresh_type", provider = provider, budget = budget,
-    review = list(allow_external = external), strategy = FALSE)
-  state <- list(project_id = "run-suggestion-fixture", status = "awaiting_configuration",
+    annotation_column = "fresh_type", provider = provider, review = list(allow_external = external), strategy = FALSE)
+  state <- list(project_format_version = .sc_project_format_version(), project_id = "run-suggestion-fixture", status = "awaiting_configuration",
     stage = "annotation_propose", revision = 0L, history = list(), nodes = list(),
     files = list(), approvals = list(), transfer_hashes = character(), completed = character(),
     config = config, config_hash = .sc_run_hash(config),
@@ -184,13 +189,13 @@ test_that("unsupported, overlong and truncated model proposals are durable cache
   }
 })
 
-test_that("unknown delivery and interrupted reservations never automatically repeat", {
+test_that("unknown delivery and interrupted requests never automatically repeat", {
   f <- suggestion_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   approved <- suggestion_action(f, "approve", simulate = FALSE)
   calls <- 0L; fn <- function(...) { calls <<- calls + 1L; stop("Sensitive HTTP body is not retained.") }
   failed <- suggestion_action(f, "request", simulate = FALSE, view = approved, chat_fn = fn)
   expect_identical(failed$response$status, "delivery_uncertain")
-  expect_equal(failed$preview$held_usd, 0)
+  expect_equal(failed$preview$unknown_cost_count, 1)
   expect_false(grepl("Sensitive HTTP", failed$response$error, fixed = TRUE))
   again <- suggestion_action(f, "request", simulate = FALSE, view = failed, chat_fn = fn)
   expect_true(again$response$cached); expect_identical(calls, 1L)
@@ -200,31 +205,34 @@ test_that("unknown delivery and interrupted reservations never automatically rep
   interrupted <- suggestion_action(g, "request", simulate = FALSE, view = approved,
     chat_fn = function(...) stop("must not be called"))
   expect_identical(interrupted$response$status, "interrupted")
-  expect_equal(interrupted$preview$held_usd, 0)
+  expect_equal(interrupted$preview$unknown_cost_count, 1)
   hold <- suggestion_action(g, "request", simulate = FALSE, view = interrupted,
     chat_fn = function(...) stop("must not be called"))
   expect_identical(hold$response$status, "delivery_uncertain")
   expect_length(.sc_run_provider_read(file.path(g$root, "provider", "ledger.json"))$entries, 1L)
 })
 
-test_that("post-call annotation costs do not reduce the one-shot allowance", {
-  f <- suggestion_fixture(TRUE, budget = .05)
+test_that("suggestion preview totals known costs and counts unknown costs", {
+  f <- suggestion_fixture(TRUE)
   on.exit(unlink(f$root, recursive = TRUE))
   dir.create(file.path(f$root, "provider"), showWarnings = FALSE)
+  metadata <- .sc_run_provider_response_metadata(NULL)
+  entry <- function(hash, cost_state, cost_usd) list(request_hash = strrep(hash, 64), status = "ok",
+    cost_state = cost_state, cost_usd = cost_usd, response_metadata = metadata,
+    response_metadata_hash = .sc_run_provider_hash(metadata))
   ledger <- list(schema = "scagentkit.provider-ledger.v1", entries = list(
-    list(request_hash = strrep("a", 64), cost_mode = "posthoc",
-      cost_state = "known", charged_or_held_usd = 2),
-    list(request_hash = strrep("b", 64), cost_state = "known", charged_or_held_usd = .01)))
+    entry("a", "known", 2), entry("b", "known", .01), entry("c", "unknown", NULL)))
   .sc_run_provider_write(ledger, file.path(f$root, "provider", "ledger.json"))
   view <- sc_run_suggest(f$root, "preview", simulate = FALSE)
-  expect_null(view$preview$remaining_usd)
+  expect_false(any(c("budget", "remaining_usd", "cost_mode", "reservation_usd",
+    "charged_or_held_usd", "held_usd") %in% names(view$preview)))
   expect_equal(view$preview$known_cost_usd, 2.01)
-  expect_equal(view$preview$held_usd, 0)
-  expect_length(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 2L)
+  expect_equal(view$preview$unknown_cost_count, 1)
+  expect_length(.sc_run_provider_read(file.path(f$root, "provider", "ledger.json"))$entries, 3L)
 })
 
-test_that("budget stops before callbacks and manual configuration cannot be enabled by simulation", {
-  f <- suggestion_fixture(TRUE, budget = .005); on.exit(unlink(f$root, recursive = TRUE))
+test_that("invalid drafts are reported and manual configuration cannot be enabled by simulation", {
+  f <- suggestion_fixture(TRUE); on.exit(unlink(f$root, recursive = TRUE))
   approved <- suggestion_action(f, "approve", simulate = FALSE)
   out <- suggestion_action(f, "request", simulate = FALSE, view = approved,
     chat_fn = function(...) list(content="{invalid", cost_usd=.001))

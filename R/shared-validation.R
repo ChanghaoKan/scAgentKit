@@ -1,4 +1,4 @@
-# Shared pure kernels. Extracted verbatim from legacy modules; callers own orchestration.
+# Shared pure validation kernels; callers own orchestration.
 
 .validate_annotation_response <- function(parsed, expected_cluster = NULL,
                                           vocabulary = NULL) {

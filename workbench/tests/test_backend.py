@@ -257,6 +257,16 @@ class HTTPTests(unittest.TestCase):
         self.assertNotIn("Access-Control-Allow-Origin", headers)
         self.assertTrue(content)
 
+    def test_frozen_evidence_has_no_portable_registry_and_rejects_project_binding(self):
+        status, _, content = self.request("GET", "/api/projects")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(content), {"projects": [], "selected": None, "registry_available": False})
+        status, _, content = self.request("GET", "/api/evidence", headers={"X-ScAgentKit-Project": "a" * 64})
+        self.assertEqual(status, 409)
+        self.assertEqual(json.loads(content)["error"], "Project binding requires a configured portable-project registry")
+        with self.assertRaisesRegex(StoreError, "no portable-project registry"):
+            self.server.select_project("a" * 64)
+
     def test_host_origin_cross_site_and_path_traversal_rejected(self):
         for headers in ({"Host": "attacker.example"}, {"Origin": "https://attacker.example"}, {"Sec-Fetch-Site": "cross-site"}):
             with self.subTest(headers=headers):

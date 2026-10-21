@@ -71,8 +71,8 @@ class SavedReview:
     def describe(self):
         view = self.runtime.describe()
         run = dict(view["run"])
-        # The legacy inspect route retains its full run shape. The unified
-        # display uses explicit section references to avoid duplicate payloads.
+        # Saved-run inspection expands section references into the full run
+        # projection. The unified display uses references to avoid duplication.
         for name, section, field in (("qc_preview", "qc", "preview"),
                                      ("strategy_review", "strategy", "review"),
                                      ("annotation_review", "annotation", "review"),

@@ -115,7 +115,7 @@ label and any posthoc result separately.
 | Undo and replay | Undo appends a compensation event; exporting/importing/replaying restores identical history and derived human decisions |
 | Changed evidence | Real source bytes and expression/taxonomy evidence fingerprints determine revisions; changed input makes old proposals/decisions stale and cannot silently transfer drafts |
 | No new evidence | Repeated directed review with the same evidence cannot claim a new independent result; it reuses the cached plan or explicitly stops |
-| Bounded loop | A configured round limit, budget cap, or absence of new evidence stops iteration with an explicit reason; no API key or request is needed for cached replay |
+| Bounded loop | A configured round limit or absence of new evidence stops iteration with an explicit reason; no API key or request is needed for cached replay |
 | Rendering and locality | Proposed labels/reasons/raw model content render as text; all browser assets and evidence requests stay on localhost |
 
 Scientific negative controls must be demonstrated by independent synthetic
@@ -139,7 +139,7 @@ cases in the domain/extraction test reports and, where visible, by the browser:
 
 If an LLM adapter is absent, browser QA verifies cached replay and no network
 requests and records the adapter as out of scope. It must not invent an API round
-or claim that a model was run. Budget/round-limit adapter cases only run if an
+or claim that a model was run. Round-limit adapter cases only run if an
 adapter is implemented and can be tested with a local deterministic fake.
 
 Run the directed browser suite independently of the Phase 2 smoke suite:

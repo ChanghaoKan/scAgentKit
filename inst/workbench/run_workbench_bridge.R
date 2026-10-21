@@ -47,7 +47,7 @@ answer <- tryCatch({
     "decision_id", "revision_reviewed", "revision_requested", "revision_created", "request_hash",
     "response_hash", "response_status", "suggestion_hash", "request_preview_hash", "parameters_hash",
     "rules_hash", "cell_scope_hash", "review_path", "target_column", "files", "output", "provider",
-    "cost", "cost_usd", "cost_state", "charged_or_held_usd", "cached", "dispatch", "external", "simulated",
+    "cost", "cost_usd", "cost_state", "known_cost_usd", "unknown_cost_count", "cached", "dispatch", "external", "simulated",
     "authority", "scientific_approval_required", "mode", "message", "retry", "error", "operation",
     "previous_proposal_hash", "previous_preview_hash", "previous_review_hash", "dependency_hashes",
     "canonical_proposal", "reused", "invalidated", "parent_project_id", "parent_revision", "parent_scope_hash",

@@ -91,11 +91,11 @@ test_that("offline external callbacks preserve separate exact transfer consent a
     list(content = as.character(jsonlite::toJSON(proposal, auto_unbox = TRUE, null = "null")),
       cost_usd = .0001, usage = list(input_tokens = 10, output_tokens = 10))
   }
-  provider <- list(name = "custom", model = "offline-callback-only", external = TRUE, reservation_usd = .001)
-  blocked <- sc_analyze(input, tempfile(), ui_context(), provider = provider, chat_fn = callback, budget = .01)
+  provider <- list(name = "custom", model = "offline-callback-only", external = TRUE)
+  blocked <- sc_analyze(input, tempfile(), ui_context(), provider = provider, chat_fn = callback)
   expect_identical(blocked$view$status, "awaiting_configuration"); expect_identical(calls, 0L)
   x <- sc_analyze(input, tempfile(), ui_context(), provider = provider, chat_fn = callback,
-    budget = .01, review = list(allow_external = TRUE))
+    review = list(allow_external = TRUE))
   transfer <- ui_review(x)
   expect_identical(transfer$view$pending$kind, "external_transfer")
   expect_identical(calls, 0L)
@@ -176,9 +176,9 @@ test_that('provider-function facade preserves the callback without persisting or
   proposal<-.sc_ui_plan(utils::modifyList(ui_plan(),list(diagnostic_resolutions=c(.4,.6))),dimensions=dim(input),mad=payload$evidence$qc_mad)
   list(content=.sc_run_provider_json(proposal),cost_usd=0)
  }
- consent<-list(mode='project',confirmed=TRUE,reviewer='offline-R-operator',reason='Explicit synthetic data and USD0.20 cap.',
+ consent<-list(mode='project',confirmed=TRUE,reviewer='offline-R-operator',reason='Explicit synthetic data categories and recipient scope.',
  categories=c('study_context','aggregate_qc','aggregate_markers','aggregate_design','aggregate_expression'))
- x<-sc_analyze(input,root,ui_context(),provider=callback,budget=.20,review=list(allow_external=TRUE,transfer_consent=consent))
+ x<-sc_analyze(input,root,ui_context(),provider=callback,review=list(allow_external=TRUE,transfer_consent=consent))
  expect_identical(calls,1L)
  expect_identical(x$view$status,'awaiting_review')
  state<-.sc_run_load(root)

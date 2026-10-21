@@ -91,9 +91,9 @@ doublet_schema_proposal <- function(processed = FALSE, method = NULL) {
   proposal <- list(schema = "scagentkit.strategy.v1",
     rationale = "Review authored doublet predictions on actual synthetic count evidence.",
     risks = character(), inferences = character(),
-    qc = if (processed) NULL else list(schema = "scagentkit.qc.v1",
+    qc = if (processed) NULL else list(schema = "scagentkit.qc.rules.v1",
       rationale = "Retain measured positive-count cells.", risks = character(),
-      filters = list(list(op = "range", metric = "nCount", min = 1))),
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1))),
     analysis = if (processed) NULL else list(normalization_method = "LogNormalize",
       scale_factor = 10000, nfeatures = 32L, npcs = 8L, seed = 11L),
     pcs = if (processed) NULL else list(method = "fixed", ndim = 5L),
@@ -169,7 +169,7 @@ test_that("doublet choice omission keeps all cells and removal is one exact QC i
   expect_identical(keep$doublet$removed_cells, character())
   expect_identical(keep$applicability$doublet$removed_cell_ids, character())
   p$doublet <- list(method = "remove_predicted", reason = "Review the authored exact set.")
-  p$qc$filters[[1L]]$max <- 2800
+  p$qc$rules[[1L]]$max <- 2800
   removed <- scAgentKit:::.sc_run_strategy_validate(p, f$evidence)
   qc_keep <- removed$qc_validated$keep_cells
   expected_removed <- qc_keep[qc_keep %in% f$record$predicted_cells]
@@ -306,7 +306,7 @@ test_that("doublet selection changes required downstream hashes without invalida
   changed <- p; changed$analysis$scale_factor <- 5000
   after <- scAgentKit:::.sc_run_strategy_validate(changed, f$evidence)$dependency_hashes
   expect_identical(doublet_schema_hash_changes(before, after), c("preprocess", "basis", "pcs", "batch", "neighbors", "clustering", "umap"))
-  changed <- p; changed$qc$filters[[1L]]$min <- 2
+  changed <- p; changed$qc$rules[[1L]]$min <- 2
   after <- scAgentKit:::.sc_run_strategy_validate(changed, f$evidence)$dependency_hashes
   expect_identical(doublet_schema_hash_changes(before, after), c("qc", "selection", "preprocess", "basis", "pcs", "batch", "neighbors", "clustering", "umap"))
   expect_identical(after$doublet, before$doublet)

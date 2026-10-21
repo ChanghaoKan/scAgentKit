@@ -54,7 +54,7 @@ async function protect() {
   assert.equal(sha(await fs.readFile(priorFile)), report.scientificBrowserAttempt.sha256);
   for (const [name, digest] of Object.entries(prior.immutableCheckpointSHA256)) assert.equal(sha(await fs.readFile(path.join(project, "checkpoints", name))), digest);
   assert.equal(await exists(ledgerFile), ledgerPresent); assert.equal(initialLedgerSHA256, prior.initialLedgerSHA256);
-  if (ledgerPresent) {const bytes = await fs.readFile(ledgerFile); assert.equal(sha(bytes), initialLedgerSHA256); for (const entry of array(JSON.parse(bytes).entries)) {assert.equal(entry.provider.external, false); assert.equal(entry.cost_usd, 0); assert.equal(entry.charged_or_held_usd, 0);}}
+  if (ledgerPresent) {const bytes = await fs.readFile(ledgerFile); assert.equal(sha(bytes), initialLedgerSHA256); for (const entry of array(JSON.parse(bytes).entries)) {assert.equal(entry.provider.external, false); assert.equal(entry.cost_usd, 0);}}
 }
 async function test(name, action) {const start = Date.now(); try {await action(); await protect(); report.tests.push({name, outcome: "passed", milliseconds: Date.now() - start}); console.log("PASS " + name);} catch (error) {report.tests.push({name, outcome: "failed", error: error.message}); throw error;}}
 async function startServer() {
@@ -84,7 +84,7 @@ try {
   assert.deepEqual(current.strategy_review.details.mad_panel, prior.savedMadPanel); assert.deepEqual(current.strategy_review.details.prefilter, prior.savedPrefilter);
   const impact = current.strategy_review.details.applicability.doublet, quality = current.strategy_review.details.qc_mad;
   assert.deepEqual(impact, prior.qualityImpact.doublet); assert.equal(impact.method, "keep"); assert.equal(impact.removed_cells, 0);
-  assert.equal(quality.choice.preset_id, prior.requestedPreset); assert.equal(quality.panel_hash, prior.savedMadPanel.panel_hash);
+  assert.equal(quality.choice.rules.find(rule => rule.op === "mad_preset").preset_id, prior.requestedPreset); assert.equal(quality.panel_hash, prior.savedMadPanel.panel_hash);
   profile = await fs.mkdtemp(path.join(output, ".owned-readonly-chrome-profile-")); context = await chromium.launchPersistentContext(profile, {headless: true, env, executablePath: args.chrome || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", viewport: {width: 1440, height: 1100}});
   browser = context.browser(); report.actualChrome = true; report.chromeVersion = browser?.version() || "Chrome persistent context";
   await context.route("**/*", route => {const request = route.request(), url = request.url(); if (!["GET", "HEAD"].includes(request.method())) {report.unexpectedMutationRequests.push({method: request.method(), path: new URL(url).pathname}); return route.abort();} if (url.startsWith(origin + "/") || url.startsWith("data:")) return route.continue(); report.externalRequests.push(url); return route.abort();});
@@ -93,8 +93,8 @@ try {
   await page.goto(origin + "/"); await renderedCurrent();
   await test("actual readonly Chrome displays completed PBMC output, concentrated MAD choice and exact quality scope", async () => {
     assert.equal(await ui("run-complete").isVisible(), true); assert.equal(await ui("run-strategy").isVisible(), true); assert.equal(await ui("run-qc").isVisible(), false); assert.equal(await ui("run-annotation").isVisible(), true);
-    for (const id of ["strategy-json", "strategy-approve", "strategy-save", "run-continue", "annotation-approve", "mad-preset-select"]) assert.equal(await ui(id).isDisabled(), true);
-    const proposal = JSON.parse(await ui("strategy-json").inputValue()); assert.equal(proposal.qc.preset_id, prior.requestedPreset); assert.equal(proposal.doublet.method, "keep");
+    for (const id of ["strategy-json", "strategy-approve", "strategy-save", "run-continue", "annotation-approve", "qc-mad-preset"]) assert.equal(await ui(id).isDisabled(), true);
+    const proposal = JSON.parse(await ui("strategy-json").inputValue()); assert.equal(proposal.qc.rules.find(rule => rule.op === "mad_preset").preset_id, prior.requestedPreset); assert.equal(proposal.doublet.method, "keep");
     assert.equal(await ui("mad-binding").getAttribute("data-status"), "verified"); assert.equal(await ui("mad-choice").getAttribute("data-preset"), prior.requestedPreset);
     await ui("mad-cell-scope").locator("summary").click(); assert.equal((await ui("mad-keep-ids").textContent()).trim(), prior.qualityImpact.keep.join("\n")); assert.equal((await ui("mad-remove-ids").textContent()).trim(), prior.qualityImpact.removed.length ? prior.qualityImpact.removed.join("\n") : "None"); await ui("mad-cell-scope").locator("summary").click();
     assert((await ui("mad-risk").textContent()).includes("High RNA is flagged only")); assert((await ui("mad-review-note").textContent()).includes("No preset is universally best")); assert((await ui("doublet-risk").textContent()).includes("not a calibrated probability"));

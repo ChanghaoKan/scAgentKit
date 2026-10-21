@@ -16,14 +16,14 @@ continue_fixture <- function() {
   object$old_annotation <- factor(rep(c("old label", NA_character_), 36), levels = c("old label", "unused"))
   object
 }
-continue_rule <- function() list(schema = "scagentkit.qc.v1",
+continue_rule <- function() list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
   rationale = "Remove only the explicitly synthetic zero-count cell.",
   risks = list("Mechanism test, not a biological threshold recommendation."),
-  filters = list(list(op = "range", metric = "nCount", min = 1L)))
+  rules = list(list(op = "range", metric = "nCount", min = 1L)))
 continue_begin <- function(root, object = continue_fixture(), provider = NULL, qc = continue_rule(), umap = FALSE) {
   sc_run(object, root, context = list(species = "human", tissue = "synthetic", columns = list(
     sample = "sample", capture = "capture", condition = "condition")),
-    provider = provider, budget = .2, review = list(allow_external = TRUE), qc_proposal = qc,
+    provider = provider, review = list(allow_external = TRUE), qc_proposal = qc,
     analysis = list(nfeatures = 40, npcs = 5, dims = 1:5, resolution = .4,
       run_umap = umap, umap_neighbors = 12, seed = 917), annotation_column = "reviewed_type")
 }

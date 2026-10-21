@@ -18,8 +18,8 @@ run_qc_context <- function() {
 }
 
 run_qc_proposal <- function(filters = list(list(op = "range", metric = "nCount", min = 1))) {
-  list(schema = "scagentkit.qc.v1", rationale = "Retain cells with measured counts in this synthetic test.",
-       risks = c("Thresholds require biological review."), filters = filters)
+  list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Retain cells with measured counts in this synthetic test.",
+       risks = c("Thresholds require biological review."), rules = filters)
 }
 
 test_that("run input validates raw matrices without repairing literal IDs or source order", {
@@ -138,7 +138,7 @@ test_that("typed QC predicts inclusive global and group retention using literal 
   expect_equal(validated$retention$retained, 4)
   expect_equal(validated$retention$removed, 2)
   expect_equal(vapply(validated$retention$groups, `[[`, integer(1), "retained"), c(2L, 0L, 2L))
-  expect_identical(validated$proposal$filters[[2]]$group, list(sample = "sample a", capture = "cap2"))
+  expect_identical(validated$proposal$rules[[2]]$group, list(sample = "sample a", capture = "cap2"))
   expect_error(scAgentKit:::.sc_run_qc_validate(run_qc_proposal(list(list(op = "range", metric = "nCount", min = 1, group = list(sample = "hallucinated")))), evidence), "does not match")
   expect_error(scAgentKit:::.sc_run_qc_validate(run_qc_proposal(list(list(op = "range", metric = "nCount", min = 1, group = list(batch = "Ca")))), evidence), "sample/capture")
 })
@@ -159,9 +159,9 @@ test_that("unsupported model operations empty responses and malformed bounds fai
   expect_error(scAgentKit:::.sc_run_qc_validate(NULL, evidence), "typed object")
   proposal <- run_qc_proposal()
   proposal$code <- "system('false')"
-  expect_error(scAgentKit:::.sc_run_qc_validate(proposal, evidence), "arbitrary code")
-  proposal <- run_qc_proposal(list())
-  expect_error(scAgentKit:::.sc_run_qc_validate(proposal, evidence), "nonempty array")
+  expect_error(scAgentKit:::.sc_run_qc_validate(proposal, evidence), "[Aa]rbitrary code")
+  proposal <- run_qc_proposal(NULL)
+  expect_error(scAgentKit:::.sc_run_qc_validate(proposal, evidence), "unnamed array")
   bad_filters <- list(list(op = "R", metric = "nCount", min = 1),
                       list(op = "range", metric = "doublet", min = 1),
                       list(op = "range", metric = "nCount", min = .5),
@@ -219,4 +219,23 @@ test_that("QC apply rejects edited evidence approval counts cell order and group
   changed <- seu
   changed$capture_id[1] <- "new capture"
   expect_error(scAgentKit:::.sc_run_qc_apply(changed, validated, evidence), "metadata changed")
+})
+
+
+test_that("empty rules add no filtering and unsupported standalone schemas are rejected", {
+  seu <- run_qc_fixture()
+  evidence <- scAgentKit:::.sc_run_qc_evidence(seu, run_qc_context())
+  for (logic in c("any", "all")) {
+    proposal <- run_qc_proposal(list()); proposal$remove_if <- logic
+    validated <- scAgentKit:::.sc_run_qc_validate(proposal, evidence)
+    expect_identical(validated$keep_cells, colnames(seu))
+    expect_equal(validated$summary$quality_removed, 0L)
+    expect_equal(validated$summary$prior_removed, 0L)
+    expect_identical(validated$proposal$remove_if, logic)
+    expect_identical(colnames(scAgentKit:::.sc_run_qc_apply(seu, validated, evidence)), colnames(seu))
+  }
+  for (schema in c("scagentkit.qc.v1", "scagentkit.qc.mad.v1")) {
+    proposal <- run_qc_proposal(); proposal$schema <- schema
+    expect_error(scAgentKit:::.sc_run_qc_validate(proposal, evidence), "Unsupported QC proposal schema")
+  }
 })

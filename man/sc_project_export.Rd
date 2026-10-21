@@ -83,7 +83,10 @@ canonicalized without expanding the full assay into a dense matrix. Cell
 and gene ordering, equivalent sparse representations, and unrelated metadata
 do not change the source fingerprint. Expression values and membership do.
 
-The bundle digest is SHA256 of the actual UTF-8 \code{project.json} bytes.
+The project snapshot records \code{project_format_version = 3}, independently
+of its schema name. Missing or mismatched project formats are refused on reopening
+without migration. The bundle digest is SHA256 of the actual UTF-8
+\code{project.json} bytes, including that format version.
 Its references include hashes of every dependent asset. Consequently,
 parameters and evidence may change the bundle digest without changing the
 expression source identity. \code{manifest.json} lists file byte counts and

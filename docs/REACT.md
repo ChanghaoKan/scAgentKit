@@ -27,8 +27,6 @@ step. The summary shows tool calls, recorded usage/cost and fallback reasons.
 Missing cost is unknown, not zero. Limits are six turns per cluster, sixty per
 session and three minutes per cluster. New default startup records usage and
 cost after calls, without counting estimates, reservations or a monetary cap.
-An explicitly supplied legacy `budget` preserves its historical one-shot cap;
-existing projects keep their saved accounting mode.
 
 If a model cannot use tools, times out, reaches a limit or returns an invalid
 draft, the saved one-shot draft remains available and the reason is displayed.
