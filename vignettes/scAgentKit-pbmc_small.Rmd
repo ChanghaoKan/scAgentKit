@@ -1,60 +1,108 @@
 ---
-title: "One reviewed pbmc_small workflow with scAgentKit"
+title: "Getting started with scAgentKit"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{One reviewed pbmc_small workflow with scAgentKit}
+  %\VignetteIndexEntry{Getting started with scAgentKit}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse=TRUE,comment="#>",eval=FALSE)
+knitr::opts_chunk$set(collapse=TRUE, comment="#>", eval=FALSE)
 ```
 
-The current development build has one project engine, used from R or the local
-browser. Starting from raw counts, it pauses for the initial strategy, measured
-clustering and annotation. Save edits, inspect the resulting snapshot, then
-approve each scientific decision separately. Opening a project does not run it.
+scAgentKit provides a local browser interface and R functions for single-cell
+RNA-seq analysis. You review the analysis plan, measured clustering and
+cell-type annotations before retrieving a completed Seurat object. This guide
+accompanies the package source from which it was built; use the matching
+software environment when reopening an existing project.
 
-## Offline public software control
+## Try the browser workflow
 
-```{r public-control, eval=FALSE, purl=FALSE}
+Use SeuratObject's bundled PBMC dataset for a first run:
+
+```{r browser}
 library(scAgentKit)
-source(system.file("examples","three-gate-analysis.R",package="scAgentKit"))
-checked <- three_gate_analysis(tempfile("pbmc-three-gates-"))
+data("pbmc_small", package = "SeuratObject")
+example_dir <- tempfile("scagentkit-example-")
+dir.create(example_dir)
+input <- file.path(example_dir, "pbmc-small.rds")
+saveRDS(pbmc_small, input)
+project_dir <- file.path(example_dir, "project")
+
+sc_start(input, project_dir,
+  context = list(species = "human", tissue = "blood",
+                 research_goal = "Explore the review workflow"),
+  provider = "mock", doublet = "off")
+```
+
+This opens a local browser page. The mock provider needs no API key and sends
+no data to an external model. Review the evidence at each step:
+
+1. Inspect QC distributions and the analysis plan. Save any edits, then approve
+   the reviewed plan to run the local analysis.
+2. Inspect the measured clustering, marker contrasts and sample composition.
+   Choose a resolution from the scan and approve the reviewed choice.
+3. Inspect the annotation worksheet, markers and reference candidates. Complete
+   each row with a label or Unknown, confidence, rationale and supporting
+   markers. Save the complete proposal, inspect it, then approve annotation.
+
+Saving a draft records edits without approving it. The small dataset and mock
+responses demonstrate operation; they do not establish biological accuracy or
+suitable parameters for a study.
+
+## Retrieve and reopen results
+
+After the browser reports completion:
+
+```{r results}
+result <- sc_result(project_dir)
+table(result$sc_annotation)
+sc_open(project_dir)$view$output
+```
+
+The project contains marker tables, figures, analysis settings and review
+records. Preserve the complete project directory, original inputs and software
+environment. A temporary directory is convenient for this trial; choose a
+durable path for a study.
+
+To reopen this example in the same environment:
+
+```{r reopen}
+sc_start(input, project_dir)
+```
+
+## Use your own data
+
+Pass an RDS file containing counts or a Seurat object, a 10x MEX directory, or
+a sample table to `sc_start()`. Supply verified species, tissue and sample
+information. Declare sample, donor, capture and batch roles using the actual
+metadata; unknown roles can remain unspecified. Inspect the import summary
+before approving the analysis plan.
+
+Model assistance is optional. Configure the selected provider and review the
+aggregate data-transfer scope before requesting a suggestion. Scientific
+approval is a separate decision. Function help describes the supported input
+and configuration arguments:
+
+```{r help}
+help("sc_start", package = "scAgentKit")
+help("sc_result", package = "scAgentKit")
+```
+
+## Complete scripted example
+
+For a software installation check, the package also includes an offline
+three-review tutorial:
+
+```{r scripted}
+source(system.file("examples", "three-gate-analysis.R",
+                   package = "scAgentKit", mustWork = TRUE))
+checked <- three_gate_analysis(tempfile("scagentkit-check-"))
 checked$receipt
 ```
 
-This helper explicitly approves a **public fixture only**: SeuratObject's
-`pbmc_small` (230 genes, 80 cells), ordinary resolution scan retained, limited
-PCs/HVGs and Unknown labels. It makes no model request. Its receipt requires
-three actual approvals and unchanged input; it does not validate biology or
-supply study parameters. Chunks are not evaluated during vignette build because
-scientific approval for a real dataset belongs to the researcher; the separate
-regression and installed-package acceptance execute this public helper.
-
-## Your study
-
-```{r study, eval=FALSE, purl=FALSE}
-project <- sc_analyze("counts.rds","new-study-project",
-  context=list(species="human",tissue="Actual tissue",research_goal="Actual question"))
-initial <- sc_review(project)
-# Inspect QC/retention and the complete plan before deciding.
-measured <- sc_review(initial,"approve",reviewer="analyst",
-  reason="Explain the reviewed initial plan.",continue=TRUE)
-measured <- sc_review(measured)
-measured$view$strategy_review$details$cluster_diagnostics
-# Inspect actual PCs, resolution scan/tree, marker contrasts and sample composition.
-annotation <- sc_review(measured,"approve",reviewer="analyst",
-  reason="Explain the measured clustering choice.",continue=TRUE)
-# Complete annotation$annotations with labels/Unknown, confidence, reasons and citations.
-# Revise, inspect the full proposal, then approve separately; see the R protocol.
-```
-
-Choose manual versus immutable configured-model initialization before creating a
-project. Model payload consent is separate from scientific approval. Inputs are
-not reinterpreted as donor/capture/batch based on names. `sc_result()` returns a
-Seurat; marker/reference utilities return tables and plot utilities return paths.
-There is no AgentSeurat analysis pipeline or automatic hybrid-score writeback.
-See package help and the repository R protocol
-for the complete annotation and reopening steps.
+This script approves only its bundled public fixture, assigns Unknown labels
+and checks completion and input preservation. Research data require your own
+review at each decision. The interactive examples in this vignette are shown
+without execution because they require browser interaction.

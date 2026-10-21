@@ -99,3 +99,19 @@ evidence of biological accuracy.
 Use [CITATION.cff](CITATION.cff) or `citation("scAgentKit")` to cite the software.
 Also cite the methods, datasets and reference resources used in the study,
 including [ACT](docs/ACT_LOCAL_REFERENCE.md) when applicable.
+
+## User distribution
+
+Provide an ordinary R build archive with its SHA-256 checksum and source-commit
+record for a release. Include the installation guide, rendered getting-started
+vignette and installed examples. Link users to the manual for that release;
+instructions on main can describe unreleased interfaces and project formats.
+
+The public v0.8.1 preview predates the current source. Give a new public release
+a distinct version and tag; do not replace the existing archive with different
+code under the same version. Record installation and offline-workflow checks
+for the new archive before publishing it.
+
+The current publication workflow and public-download acceptance are pinned to
+v0.8.1. Update their version gates and acceptance checks together when preparing
+the next release.

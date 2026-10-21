@@ -1,8 +1,11 @@
 # Documentation
 
-Start with [installation](user/INSTALL.md), then follow the
+The [user guide](user/README.md) is the starting point for downloading,
+installing and using scAgentKit. Follow the
 [workflow guide](user/WORKFLOW.md) from input through reviewed annotations.
-The [repository README](../README.md) provides a short offline example.
+The [repository README](../README.md) provides a short offline example. Guides
+on this branch describe the current source; published-preview users should
+follow the [matching manual](https://github.com/ChanghaoKan/scAgentKit/blob/v0.8.1/README.md).
 
 ## Analysis guides
 
@@ -37,7 +40,8 @@ Keep the source commit, dependency environment and input provenance with each
 analysis. Preserve the complete project directory to retain its data, decisions
 and execution records. Use [CITATION.cff](../CITATION.cff) for the software citation.
 
-## Development
+<details>
+<summary>For contributors and research evaluation</summary>
 
 The [developer index](dev/README.md) separates implementation references,
 validation procedures and historical records. The [research index](research/README.md)
@@ -45,3 +49,5 @@ lists study protocols and planned evaluations. [NEWS](../NEWS.md) describes
 version changes. Software test results and research-performance evaluation
 answer different questions; consult each report's methods, source revision and
 stated scope before using it as evidence.
+
+</details>

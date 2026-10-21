@@ -2,6 +2,12 @@
 
 ## Documentation and examples
 
+- Put downloads, installation, the analysis workflow and help at the user
+  entry points. Add a task-oriented user guide and update the installed
+  getting-started vignette with browser review, results and reopening.
+- Distinguish the published v0.8.1 preview and its version-matched manual from
+  current source instructions. Include httr2 in archive installation commands
+  for the structured provider client used by the offline examples.
 - Use English for maintained guides and research protocols. Separate user,
   developer and research documentation; archive earlier translations and designs.
 - Clarify source installation, reproducibility records and the distinction

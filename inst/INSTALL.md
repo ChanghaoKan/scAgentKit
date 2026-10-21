@@ -1,8 +1,9 @@
 # Install and check a source archive
 
 For GitHub source installation, see the repository's `docs/user/INSTALL.md`.
-This guide is included in the R archive so CI and users can check the same
-installation commands without relying on the homepage layout.
+This guide is included in the R archive. Follow the instructions supplied with
+the archive you downloaded, and keep its version, source commit and checksum
+with the analysis.
 
 Download the archive and its checksum from the same build. Verify SHA256 before
 running R (`shasum -a 256 -c SHA256SUMS` on macOS, `sha256sum -c SHA256SUMS` on Linux).
@@ -15,8 +16,7 @@ options(timeout = max(1800, getOption("timeout", 60)))
 lib <- path.expand("~/R/scagentkit-library")
 dir.create(lib, recursive = TRUE, showWarnings = FALSE)
 .libPaths(c(lib, .libPaths()))
-if (!requireNamespace("remotes", quietly = TRUE))
-  install.packages("remotes")
+install.packages(c("remotes", "httr2"), lib = lib)
 archives <- list.files(pattern = "^scAgentKit_[0-9][0-9.-]*[.]tar[.]gz$")
 stopifnot(length(archives) == 1L)
 remotes::install_local(archives[[1L]], lib = lib,
@@ -41,3 +41,17 @@ stopifnot(inherits(result, "Seurat"), ncol(result) > 0)
 This uses scripted approvals on a public software fixture, makes no provider
 calls and does not establish biological accuracy. Research projects require your
 own review of the three scientific decisions.
+
+## Start using the package
+
+Open the getting-started vignette and function reference from R:
+
+```r
+browseVignettes("scAgentKit")
+help("sc_start", package = "scAgentKit")
+help("sc_result", package = "scAgentKit")
+```
+
+The vignette covers opening the browser, the three review decisions, retrieving
+results and reopening a project. Installed examples are in
+`system.file("examples", package = "scAgentKit")`.
