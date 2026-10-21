@@ -1,5 +1,16 @@
 # Development resources
 
-Developer acceptance drivers, frozen environment/release tooling and retired API inventories are repository resources, not installed runtime requirements. The runtime manifest builder `tools/build-workbench-manifest.R` stays in the source archive because configure invokes it. `dev/` and `tools/{acceptance,release,environment}` are excluded from the R source archive.
+| Resource | Purpose |
+| --- | --- |
+| [Examples](examples/README.md) | Synthetic review drivers and a public-data workflow |
+| [Provider smoke driver](smoke/README.md) | Explicitly configured model checks |
+| [Acceptance tooling](../tools/acceptance/README.md) | Installed browser validation |
+| [Environment restoration](../docs/dev/ENVIRONMENT_RESTORE.md) | Historical source lock and restoration tools |
+| [Developer documentation](../docs/dev/README.md) | Current implementation and validation references |
 
-The historical `api-contract.json` records the superseded public API. Namespace tests retain the exact frozen retired-name assertions without installing that inventory as a runtime contract. Current exports are defined in NAMESPACE and installed help.
+Current exports are defined in `NAMESPACE` and installed help. Namespace tests
+assert the exclusion of retired exports.
+
+`dev/` and `tools/{acceptance,release,environment}` are excluded from the R
+source archive. `tools/build-workbench-manifest.R` is included because the
+package's configure script invokes it.

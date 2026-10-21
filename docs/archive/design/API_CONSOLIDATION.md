@@ -47,7 +47,7 @@ marker pool remain unchanged; see the [methods appendix](../../SCIENTIFIC_METHOD
 
 ## Removed exports
 
-The exact machine-readable surface is [inst/api-contract.json](../../../dev/api-contract.json).
+The exact machine-readable surface is [inst/api-contract.json](https://github.com/ChanghaoKan/scAgentKit/blob/f78f7d69922e8dd259be0d73a00e20af58d7ed05/dev/api-contract.json).
 The following 36 functions and the AgentSeurat class export are removed:
 
 - `qc_threshold`

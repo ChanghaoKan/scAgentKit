@@ -1,6 +1,5 @@
 test_that("development exports expose one project workflow and retained utilities", {
-  # Frozen retired-export assertions stay in tests; the historical inventory
-  # belongs to dev/ and is deliberately absent from installed package assets.
+  # Retired-export assertions belong in tests; no API inventory is installed.
   retired<-c(
     "qc_threshold", "qc_mad", "qc_doublet", "qc_remove_genes",
     "sc_normalize", "sc_find_hvg", "sc_scale", "sc_pca",

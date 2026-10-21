@@ -47,24 +47,26 @@ described in the [runtime requirements](../../docs/LINUX_RUNTIME_SUPPORT.md).
 The unified-model command-line driver uses simulation; its sourced functions
 can accept an explicitly configured external provider.
 
-## Public-data and inspection helpers
+## Public-data workflow
 
-These files define functions without a command-line entry point.
+[`researcher-pbmc.R`](researcher-pbmc.R) defines `researcher_pbmc_start(...)`,
+`researcher_pbmc_inspect(...)`, `researcher_pbmc_decide(...)` and
+`researcher_pbmc_resume(...)`. It uses `pbmc_small`, separate manual decisions
+and mock responses. Sourcing the file defines these functions without starting
+an analysis.
 
-| Script | Function | Purpose |
-| --- | --- | --- |
-| [researcher-pbmc.R](researcher-pbmc.R) | `researcher_pbmc_start(...)`, `researcher_pbmc_inspect(...)`, `researcher_pbmc_decide(...)`, `researcher_pbmc_resume(...)` | Offline `pbmc_small` review with separate manual decisions and mock responses |
-| [qc_pipeline_example.R](qc_pipeline_example.R) | `qc_pipeline_example(input, project_dir, context)` | Prepare a review using the public analysis interface |
-| [annotation_example.R](annotation_example.R) | `annotation_example(project_dir)` | Inspect a project at its annotation stage |
-| [report_example.R](report_example.R) | `report_example(project_dir)` | Read saved status, output paths and scientific-assessment information |
-| [brca_pipeline.R](brca_pipeline.R) | `brca_pipeline(input, project_dir, context)` | Prepare a review from caller-supplied study data; no breast-cancer-specific method is implemented |
+For the complete scripted three-review fixture, call the installed tutorial
+directly, as documented in the [installed example guide](../../inst/examples/README.md):
 
-## Workflow wrapper and scheduler template
+```r
+source(system.file("examples", "three-gate-analysis.R",
+                   package = "scAgentKit", mustWork = TRUE))
+trial <- three_gate_analysis(tempfile("scagentkit-fixture-"))
+```
 
-[`full_pipeline_example.R`](full_pipeline_example.R) defines
-`public_workflow_example(project_dir)`, a repository wrapper around the
-installed `three_gate_analysis()` tutorial. It requires a new project path and
-returns the tutorial's result, project and receipt.
+This tutorial records fixture approvals and makes no external model requests.
+
+## Scheduler template
 
 [`slurm_sc_run.sh`](slurm_sc_run.sh) is a site-specific submission template.
 It requires a project directory and a reviewed R driver, and executes that

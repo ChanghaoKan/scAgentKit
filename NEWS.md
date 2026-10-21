@@ -8,8 +8,19 @@
   between completed software checks and pending biological evaluation.
 - Add contribution guidance and correct the R software citation, with ACT
   retained as a separate reference-data citation.
-- Document example entry points and fix the full-pipeline wrapper's path to
-  the installed three-review tutorial.
+- Document example entry points and use the installed three-review tutorial
+  directly for complete workflow fixtures.
+
+## Repository maintenance
+
+- Remove five redundant development example wrappers, including the generic
+  wrapper named as a breast-cancer pipeline. Keep the distinct review drivers
+  and installed tutorials as the example entry points.
+- Remove the obsolete development Dockerfile, whose package and shared-core
+  versions do not match the current dependency requirements.
+- Remove the retired API inventory from the development tree. Current exports
+  are defined in NAMESPACE, with retired-name assertions in the namespace tests;
+  the archived design links to the inventory's recorded Git revision.
 
 ## Project formats and contracts
 

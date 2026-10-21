@@ -84,6 +84,10 @@ output. State whether they make external model calls. Keep scripted fixture
 approvals separate from instructions for reviewing a study. Explain unfamiliar
 parameters in terms of the analysis rather than the implementation history.
 
+Each example should demonstrate a distinct input, review boundary or execution
+mode. Reuse the installed tutorials for complete workflows. Keep reference data,
+benchmark results and environment records with their provenance.
+
 ## Reproducible reports
 
 For an analysis or benchmark, retain the source commit, package versions,

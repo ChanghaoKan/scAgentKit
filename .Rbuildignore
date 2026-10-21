@@ -2,7 +2,6 @@
 ^AGENTS\.md$
 ^CITATION\.cff$
 ^CONTRIBUTING\.md$
-^Dockerfile$
 ^benchmark$
 ^\.github$
 ^\.git$
@@ -16,6 +15,4 @@
 ^tools/release$
 ^tools/environment$
 ^tools/benchmark-react-tools\.R$
-
-
 ^tools/benchmark-react-session\.R$
