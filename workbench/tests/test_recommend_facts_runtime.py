@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from run_review_runtime import RunReviewRuntime
@@ -19,6 +20,9 @@ def request(facts=None):
 
 
 class FactsTransport(unittest.TestCase):
+    def setUp(self):
+        mock_format_authority(self)
+
     def test_valid_partial_nested_facts_and_literal_provenance(self):
         for facts in [dict(columns=dict(capture="physical_load", condition="condition")),
                       dict(doublet=dict(capture=dict(method="column", column="physical_load", source="Author loading manifest"))),
@@ -60,7 +64,7 @@ class FactsTransport(unittest.TestCase):
     def test_invalid_facts_never_start_the_R_bridge(self):
         with tempfile.TemporaryDirectory() as temp:
             project = Path(temp); (project / "state.rds").write_bytes(b"authority fixture")
-            (project / "project-format.json").write_text('{"project_format_version":2}')
+            (project / "project-format.json").write_text('{"project_format_version":3}')
             runtime = RunReviewRuntime(project)
             with patch("qc_runtime.subprocess.run") as process, self.assertRaises(StoreError):
                 runtime.decide(request(dict(columns=dict(infer_sample="forbidden"))), runtime.csrf_token)

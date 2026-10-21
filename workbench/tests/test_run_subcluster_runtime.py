@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -67,11 +68,12 @@ def context_result(payload=None, historical=False):
 
 class SubclusterRuntimeTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
         self.parent = self.root / "parent"; self.parent.mkdir()
         (self.parent / "state.rds").write_bytes(b"mock; never interpreted as R")
-        (self.parent / "project-format.json").write_text('{"project_format_version":2}')
+        (self.parent / "project-format.json").write_text('{"project_format_version":3}')
         self.workspace = self.root / "children"; self.workspace.mkdir()
         self.runtime = RunSubclusterRuntime(self.parent, self.workspace, library=str(self.root))
 
@@ -301,7 +303,7 @@ class SubclusterRuntimeTests(unittest.TestCase):
 
     def test_child_resolution_rechecks_r_registry_per_request_and_only_child_continuation(self):
         path = self.workspace / "child"; path.mkdir(); (path / "state.rds").write_bytes(b"mock")
-        (path / "project-format.json").write_text('{"project_format_version":2}')
+        (path / "project-format.json").write_text('{"project_format_version":3}')
         with patch("run_subcluster_runtime.subprocess.run", side_effect=self.process(result(path))) as call, \
                 patch("run_subcluster_runtime.RunReviewRuntime") as review, patch("run_subcluster_runtime.QCRuntime") as qc, patch("run_subcluster_runtime.RunContinueRuntime") as continuation:
             review.return_value.project = path.resolve()

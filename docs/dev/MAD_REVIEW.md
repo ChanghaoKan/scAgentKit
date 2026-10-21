@@ -70,12 +70,12 @@ Its declaration authorizes that limited operation before the later joint review.
 Changing it requires a new project. Scoring still has its own applicability
 checks; a lower prefilter bound does not make a low-count capture scoreable.
 
-Doublet diagnostics score the whole original input before the approved
-legacy range QC. With MAD disabled this legacy behavior remains. Enabling a
+Doublet diagnostics score the prefilter-eligible input before approved quality
+QC. With no prefilter, that reference is the whole original input. Enabling a
 prefilter changes the fixed scoring cohort and can change predictions, so the
 original-input, prefilter-eligible/pre-score and post-quality-QC scopes are
-displayed separately. No existing range proposal is silently translated to MAD.
-Legacy inclusive ranges retain their existing conjunction and group semantics.
+displayed separately. Inclusive ranges and hash-bound MAD presets are typed
+failure rules; the proposal explicitly chooses `remove_if="any"` or `"all"`.
 
 For declared standard 10x full called cohorts, the expected rate is resolved
 from the original declared capture cell counts, before this prefilter, and its
@@ -134,7 +134,7 @@ it does not reproduce the complete scuttle QC interface.
 | At least 30 finite values and a supported positive MAD for each required metric | The corresponding metric rule can be compared and selected |
 | Small group, zero/near-zero MAD, missing or nonfinite required values | Threshold/flag is unknown with a reason; a preset requiring that metric is unavailable |
 | Unknown metric threshold | It is stored as `NULL`, never a fabricated zero or infinite bound |
-| `keep_all` | Remains the explicit supported fallback for intact input, including groups with unsupported MAD thresholds |
+| `keep_all` | An explicit supported policy for prefilter-eligible input, including groups with unsupported MAD thresholds |
 | Group has no prefilter-eligible cells | The group remains in the scope audit with an observed zero; an unavailable metric statistic is not reported as measured zero |
 | Approved policy excludes an entire group | Observed post-QC size is zero and its fraction is recorded against the defined starting scope |
 | Multimodal/uneven distribution or apparent majority quality concern | A warning for analyst review; no automatic threshold change or biological diagnosis |
@@ -170,11 +170,21 @@ Build a complete strategy from that snapshot, selecting exactly one available
 preset by its ID and current `panel_hash`. The typed QC field is:
 
 ```r
-list(schema = "scagentkit.qc.mad.v1",
+list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
   rationale = "Why this explicit policy is appropriate for this comparison",
   risks = list("Remaining scientific uncertainty"),
-  preset_id = "keep_all", panel_hash = current_panel_hash)
+  rules = list(list(op = "mad_preset", preset_id = "keep_all",
+    panel_hash = current_panel_hash)))
 ```
+
+A proposal accepts 0–32 rules. An empty `rules = list()` means no additional
+filtering in this stage and leaves QC quality unassessed. It preserves the
+captured committed cell scope, including earlier QC or doublet exclusions, and
+never restores minimal-prefilter exclusions. `any` and `all` have the same
+empty-rule effect. A nonempty `mad_preset` rule selecting `keep_all` is an
+explicit policy revision: it can relax earlier quality filtering when reviewed,
+but cannot override the immutable prefilter. The separately reviewed doublet
+choice still determines predicted-doublet removal.
 
 The strategy revision creates a fresh whole review snapshot, including all
 group impacts, optional doublet/cycle summaries and analysis settings. Inspect

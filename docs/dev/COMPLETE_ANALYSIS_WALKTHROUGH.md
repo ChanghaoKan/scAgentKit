@@ -163,9 +163,9 @@ plan <- list(
   rationale = "PBMC starting plan, chosen after inspecting input QC distributions.",
   risks = list("Low-RNA populations may be affected by feature-count filtering."),
   inferences = list(),
-  qc = list(schema = "scagentkit.qc.v1",
+  qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any",
     rationale = "Inspect detected genes and mitochondrial counts before selecting cells.",
-    risks = list(), filters = list(
+    risks = list(), rules = list(
       list(op = "range", metric = "nFeature", min = 200L, max = 2500L),
       list(op = "range", metric = "percent_mt", max = 5))),
   analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
@@ -444,8 +444,11 @@ run <- sc_run_continue(project_dir, project_id = current$project_id,
 
 For an explicitly approved provider request, restore the key environment and use
 `sc_run_resume(project_dir)`. Completed projects resume without rerunning analysis.
-Keep the original checkout/R library for a saved project; inspect a failure before
-requesting a retry. Details are in the [recovery guide](../RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
+Keep the original checkout/R library for a saved project. The
+[format gate](../../workbench/README.md#project-format-and-reopening) rejects a
+missing or mismatched format before project writes; use the original environment
+or start a new project. Do not edit marker/state versions or hashes. Inspect a
+failure before requesting a retry. Details are in the [recovery guide](../RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
 
 With Python >= 3.9 and a source checkout, you can view saved QC, UMAP, markers
 and history in a browser, including the analysis checkpoint before annotation:

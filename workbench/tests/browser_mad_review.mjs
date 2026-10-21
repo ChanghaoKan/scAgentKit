@@ -157,9 +157,9 @@ async function history() {
 }
 function exactImpact(run, presetId) {
   const details = run.strategy_review.details, panel = details.mad_panel, saved = details.qc_mad, choice = details.canonical_proposal.qc;
-  assert.equal(panel.schema, "scagentkit.qc.mad.evidence.v1"); assert.equal(choice.schema, "scagentkit.qc.mad.v1");
-  assert.equal(choice.preset_id, presetId); assert.equal(saved.choice.preset_id, presetId);
-  assert(/^[a-f0-9]{64}$/.test(panel.panel_hash)); assert.equal(choice.panel_hash, panel.panel_hash); assert.equal(saved.panel_hash, panel.panel_hash); assert(/^[a-f0-9]{64}$/.test(saved.evidence_hash));
+  assert.equal(panel.schema, "scagentkit.qc.mad.evidence.v1"); assert.equal(choice.schema, "scagentkit.qc.rules.v1");
+  assert.equal(choice.rules.find(rule => rule.op === "mad_preset").preset_id, presetId); assert.equal(saved.choice.rules.find(rule => rule.op === "mad_preset").preset_id, presetId);
+  assert(/^[a-f0-9]{64}$/.test(panel.panel_hash)); assert.equal(choice.rules.find(rule => rule.op === "mad_preset").panel_hash, panel.panel_hash); assert.equal(saved.panel_hash, panel.panel_hash); assert(/^[a-f0-9]{64}$/.test(saved.evidence_hash));
   const candidate = array(panel.presets).find(row => row.preset_id === presetId); assert(candidate && candidate.available === true);
   const qc = details.qc_impact, keep = array(qc.keep_cells), removed = array(qc.remove_cells);
   for (const cells of [keep, removed]) {assert(cells.every(value => typeof value === "string" && value)); assert.equal(new Set(cells).size, cells.length);}
@@ -186,8 +186,8 @@ async function displayedImpact(run, presetId) {
   assert((await ui("mad-risk").textContent()).includes("High RNA is flagged only")); assert((await ui("mad-risk").textContent()).includes("diagnostic only"));
   assert((await ui("mad-review-note").textContent()).includes("No preset is universally best")); assert((await ui("mad-grouping").textContent()).includes("no relationship is inferred"));
   assert.equal(await page.locator("#mad-card button").count(), 0); assert.equal(await page.locator("#mad-card select").count(), 1);
-  for (const row of array(panel.presets)) {assert((await ui("mad-candidates").textContent()).includes(row.preset_id)); if (row.available !== true) assert.equal(await ui("mad-preset-select").locator('option[value="' + row.preset_id + '"]').isDisabled(), true);}
-  assert.equal(await ui("mad-preset-select").inputValue(), presetId); return result;
+  for (const row of array(panel.presets)) {assert((await ui("mad-candidates").textContent()).includes(row.preset_id)); if (row.available !== true) assert.equal(await ui("qc-mad-preset").locator('option[value="' + row.preset_id + '"]').isDisabled(), true);}
+  assert.equal(await ui("qc-mad-preset").inputValue(), presetId); return result;
 }
 async function debugPage() {
   if (!page || page.isClosed()) return;
@@ -236,9 +236,9 @@ try {
     await screenshot("01-central-public-mad-keep-all");
   });
   await test("actual concentrated preset selector drafts one complete plan; saved impact rejects stale approval without computation", async () => {
-    const beforeDraft = await scientificSnapshot(); await ui("mad-preset-select").selectOption(requestedPreset);
+    const beforeDraft = await scientificSnapshot(); await ui("qc-mad-preset").selectOption(requestedPreset);
     assert.equal(await ui("strategy-approve").isDisabled(), true); assert.deepEqual(await scientificSnapshot(), beforeDraft);
-    const proposal = JSON.parse(await ui("strategy-json").inputValue()); assert.equal(proposal.qc.preset_id, requestedPreset); assert.equal(proposal.qc.panel_hash, panel.panel_hash);
+    const proposal = JSON.parse(await ui("strategy-json").inputValue()); assert.equal(proposal.qc.rules.find(rule => rule.op === "mad_preset").preset_id, requestedPreset); assert.equal(proposal.qc.rules.find(rule => rule.op === "mad_preset").panel_hash, panel.panel_hash);
     assert.deepEqual(Object.keys(proposal.qc).sort(), ["schema", "rationale", "risks", "preset_id", "panel_hash"].sort()); assert.equal(proposal.doublet.method, "keep");
     await ui("strategy-reviewer").fill("Offline public MAD Chrome analyst"); await ui("strategy-reason").fill("Compare the deterministic finite quality candidates on the explicitly declared public PBMC QC pool, then inspect one whole-panel preset without biological-optimum or retention optimization claims.");
     const response = await responseFrom("strategy-save", "/api/run-review/decision"); assert.equal(response.status(), 200);
@@ -264,7 +264,7 @@ try {
     report.actualRBridge = true; report.jobs.push({public: completed.job, owner, codeHashes: config.code_hashes, responseSHA256: sha(responseBytes), result: response.result}); activeJobId = null;
     await refresh(); await rendered("awaiting_configuration", "annotation_propose"); stopped = (await inspect()).run;
     assert.equal(stopped.input_hash, initial.input_hash); assert(stopped.review_node == null); assert(stopped.output == null); assert(stopped.annotation_review == null);
-    assert.deepEqual(stopped.strategy_review.details.doublet_diagnostics, evidence); assert.deepEqual(stopped.strategy_review.details.mad_panel, panel); assert.equal(stopped.strategy_review.details.canonical_proposal.qc.preset_id, requestedPreset); assert.equal(stopped.strategy_review.details.canonical_proposal.doublet.method, "keep");
+    assert.deepEqual(stopped.strategy_review.details.doublet_diagnostics, evidence); assert.deepEqual(stopped.strategy_review.details.mad_panel, panel); assert.equal(stopped.strategy_review.details.canonical_proposal.qc.rules.find(rule => rule.op === "mad_preset").preset_id, requestedPreset); assert.equal(stopped.strategy_review.details.canonical_proposal.doublet.method, "keep");
     assert.equal(await ui("run-continue").isDisabled(), true); assert((await ui("run-continuation-note").textContent()).includes("current run needs configuration"));
     const after = await history(); assert.equal(after.approvals.filter(event => event.details.kind === "strategy").length, baseline.approvals.filter(event => event.details.kind === "strategy").length + 1);
     for (const kind of ["qc", "annotation"]) assert.equal(after.approvals.filter(event => event.details.kind === kind).length, 0);

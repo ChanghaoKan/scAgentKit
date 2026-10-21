@@ -56,12 +56,3 @@
       source = paste0("Explicit context$columns$", role, " declaration; no donor or capture role inferred."))
   list(grouping = grouping)
 }
-
-.sc_run_mad_bind_legacy_draft <- function(proposal, mad) {
-  if (!identical(proposal$qc$schema, "scagentkit.qc.v1")) return(proposal)
-  qc <- proposal$qc
-  proposal$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = qc$rationale,
-    risks = qc$risks, remove_if = "any", rules = c(qc$filters,
-      list(list(op = "mad_preset", preset_id = "keep_all", panel_hash = mad$panel_hash))))
-  proposal
-}

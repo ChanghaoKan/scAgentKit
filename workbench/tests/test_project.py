@@ -33,7 +33,7 @@ def project_fixture(project_id="Study ../A 中文", embedded=True):
              {"cellId": "001", "clusterId": "T alpha", "qc": {"nCount_RNA": 1234}},
              {"cellId": "1", "clusterId": "NA", "qc": {}},
              {"cellId": "cell 中文", "clusterId": "NA", "qc": {}}]
-    return {"project_format_version": 2, "schema": module.PROJECT_SCHEMA, "projectId": project_id, "displayName": "Local study",
+    return {"project_format_version": 3, "schema": module.PROJECT_SCHEMA, "projectId": project_id, "displayName": "Local study",
             "identity": {"algorithm": "scagentkit.source.v1", "fingerprint": "a" * 64,
                          "assay": "RNA", "countsLayer": "counts", "normalizedLayer": "data",
                          "clusterColumn": "seurat_clusters", "cellCount": 4, "featureCount": 100,

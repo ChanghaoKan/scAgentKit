@@ -183,6 +183,10 @@ facts. See [reuse limits](../README.md#limitations).
 | awaiting_review | Read the current proposal, Save edits, then approve. |
 | A busy job or uncertain response | Inspect the saved job/receipt and wait for the worker before submitting again. |
 | Input/layer mismatch or changed project environment | Check the input and recorded environment; use the original environment or a new project. |
+| Missing, damaged or mismatched project format | The gate reports “请用原软件环境打开，或新建项目”. Use that original environment or create a new project; do not edit the format marker, state or hashes. |
+
+The [format gate](../workbench/README.md#project-format-and-reopening) also applies
+to read-only result viewers and restored backups. It does not migrate projects.
 
 A complete backup copied back to its original path has new directory identities.
 For `Saved local continuation belongs to a different project directory`, development

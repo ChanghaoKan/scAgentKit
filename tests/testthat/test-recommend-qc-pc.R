@@ -23,7 +23,7 @@ recommend_qc_fixture <- function(joint = TRUE, mt = TRUE, n = 120L, smooth = FAL
     risks = list("Synthetic controls only."), remove_if = "any",
     rules = list(list(op = "range", metric = "nCount", min = 1),
       list(op = "mad_preset", preset_id = "keep_all", panel_hash = record$panel_hash)))
-  list(evidence = list(summary = list(start_stage = "qc", qc_mad = record$summary), qc = qc),
+  list(input = seu, evidence = list(summary = list(start_stage = "qc", qc_mad = record$summary), qc = qc),
     validated = list(proposal = list(qc = proposal), qc_validated = .sc_run_qc_validate(proposal, qc)))
 }
 
@@ -222,4 +222,73 @@ test_that("QC draft preselection is bound, guarded and never replaces an explici
   changed <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
   expect_false(changed$draft_preselection$automatic)
   expect_null(changed$draft_preselection$candidate_id)
+})
+
+
+test_that("removing the only MAD selector evaluates an empty candidate against saved exclusions", {
+  fixture <- recommend_qc_fixture()
+  root <- .sc_run_root(tempfile("recommend-retained-scope-"), create = TRUE)
+  on.exit(unlink(root, recursive = TRUE))
+  state <- list(files = list(), history = list(), revision = 0L)
+  state <- .sc_run_put(root, state, "input", fixture$input)
+  state$input_hash <- state$files$input$sha256
+  state <- .sc_run_put(root, state, "qc_evidence", fixture$evidence$qc)
+  state <- .sc_run_put(root, state, "qc_object", fixture$input[, seq_len(90L)])
+  state <- .sc_run_event(state, "executed", list(stage = "qc_apply", files = state$files))
+  scope <- .sc_run_qc_retained_scope(root, state, fixture$evidence$qc)
+  expect_invisible(.sc_run_qc_retained_scope_verify(root, state, scope, fixture$evidence$qc))
+  proposal <- fixture$validated$proposal$qc
+  proposal$rules <- proposal$rules[2L]
+  fixture$validated$proposal$qc <- proposal
+  fixture$validated$qc_validated <- .sc_run_qc_validate(proposal, fixture$evidence$qc, retained_scope = scope)
+  empty <- proposal; empty$rules <- list()
+  expected <- .sc_run_qc_validate(empty, fixture$evidence$qc, retained_scope = scope)
+  expect_lt(expected$retention$retained, fixture$validated$qc_validated$retention$retained)
+  before <- serialize(list(fixture, state, scope), NULL)
+  step <- .sc_run_recommend_qc(fixture$evidence, fixture$validated)
+  expect_gt(length(step$candidates), 0L)
+  for (candidate in step$candidates) {
+    expect_identical(candidate$impact$range_only_retained, expected$retention$retained)
+    expect_identical(candidate$impact$range_only_policy, "no_additional_filtering")
+    expect_match(candidate$impact$comparison, "prior exclusions")
+    checked <- .sc_run_qc_validate(candidate$changes$qc, fixture$evidence$qc, retained_scope = scope)
+    expect_identical(candidate$impact$retained, checked$retention$retained)
+  }
+  expect_identical(serialize(list(fixture, state, scope), NULL), before)
+})
+
+test_that("MAD recommendations retain v2 replacements and both diagnostic evidence hashes", {
+  fixture <- recommend_qc_fixture()
+  qc <- fixture$evidence$qc
+  cells <- qc$metrics$cell_id
+  membership <- stats::setNames(rep(c("0", "1"), each = length(cells) / 2L), cells)
+  record <- list(schema = "scagentkit.biology-diagnostic.v1",
+    options = .sc_run_biology_options(TRUE), qc_evidence_hash = qc$evidence_hash,
+    counts_hash = qc$counts_hash, cell_ids = cells, diagnostic_cells = cells,
+    membership = membership, membership_hash = .sc_run_hash(membership), minimum_counts = 0,
+    embedding = matrix(seq_len(length(cells) * 2L), ncol = 2L, dimnames = list(cells, c("PC1", "PC2"))),
+    markers = data.frame(), exclusions = .sc_run_biology_exclusions("human", qc$feature_ids),
+    summary = list(status = "available", membership_hash = .sc_run_hash(membership)))
+  record$hash <- .sc_run_hash(record)
+  qc$biology_record <- record; qc$summary$biology <- record$summary
+  qc$evidence_hash <- .sc_run_qc_hash(qc)
+  proposal <- fixture$validated$proposal$qc
+  proposal$schema <- "scagentkit.qc.rules.v2"
+  proposal$diagnostic_hash <- record$hash; proposal$membership_hash <- record$membership_hash
+  proposal$replacements <- list(list(cluster_id = "0", metric = "nCount", min = 1,
+    reason = "Explicit equal-bound software replacement; no marker-supported relaxation."))
+  fixture$evidence$qc <- qc
+  fixture$validated$proposal$qc <- proposal
+  fixture$validated$qc_validated <- .sc_run_qc_validate(proposal, qc)
+  step <- .sc_run_recommend_qc(fixture$evidence, fixture$validated)
+  expect_gt(length(step$candidates), 0L)
+  for (candidate in step$candidates) {
+    choice <- candidate$changes$qc
+    expect_identical(choice$schema, "scagentkit.qc.rules.v2")
+    expect_identical(choice$diagnostic_hash, proposal$diagnostic_hash)
+    expect_identical(choice$membership_hash, proposal$membership_hash)
+    expect_identical(choice$replacements, proposal$replacements)
+    expect_identical(choice$rules[[1L]], proposal$rules[[1L]])
+    expect_identical(choice$remove_if, proposal$remove_if)
+  }
 })

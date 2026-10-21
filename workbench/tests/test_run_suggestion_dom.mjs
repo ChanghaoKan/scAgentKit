@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {qcPreviewFixture} from "./qc_fixture.cjs";
 // Executes production review.js with an inert DOM and explicit simulated HTTP.
 // No native browser, R bridge, external provider, credential or network access.
 import assert from "node:assert/strict";
@@ -41,7 +42,7 @@ function harness(search = "", storage = new Map()) {
   h.state = vm.runInContext("state", context); h.call = (name, ...args) => vm.runInContext(name, context)(...args); h.el = id => document.getElementById(id);
   return h;
 }
-function strategy() {return {schema: "scagentkit.strategy.v1", rationale: "Explicit simulated candidate from actual fixture aggregates", risks: ["Model suggestions do not prove scientific benefit"], inferences: [], qc: {schema: "scagentkit.qc.v1", rationale: "Retain the selected cohort", risks: [], filters: [{op: "range", metric: "nFeature", min: 0, max: 5000, group: null}]}, analysis: {normalization_method: "LogNormalize", scale_factor: 10000, nfeatures: 100, npcs: 12, seed: 17}, pcs: {method: "fixed", ndim: 10}, batch: {method: "none", reason: "No declared technical batch"}, clustering: {resolution: .4}, umap: {run: true, n_neighbors: 20}};}
+function strategy() {return {schema: "scagentkit.strategy.v1", rationale: "Explicit simulated candidate from actual fixture aggregates", risks: ["Model suggestions do not prove scientific benefit"], inferences: [], qc: {schema: "scagentkit.qc.rules.v1", remove_if: "any", rationale: "Retain the selected cohort", risks: [], rules: [{op: "range", metric: "nFeature", min: 0, max: 5000, group: null}]}, analysis: {normalization_method: "LogNormalize", scale_factor: 10000, nfeatures: 100, npcs: 12, seed: 17}, pcs: {method: "fixed", ndim: 10}, batch: {method: "none", reason: "No declared technical batch"}, clustering: {resolution: .4}, umap: {run: true, n_neighbors: 20}};}
 function science(revision = 7, approved = false) {
   const value = {schema: "scagentkit.run-review.workbench.v1", csrf_token: "science-token", suggestion_enabled: true, run: {schema: "scagentkit.run.v1", project_id: "literal-project", input_hash: inputHash, revision, status: "awaiting_configuration", stage: "strategy_propose", context: {species: "human", tissue: "public fixture"}, review_node: null}};
   if (approved) value.run.status = "ready";
@@ -51,7 +52,7 @@ function scientificReview(revision = 9, approved = false) {
   const value = science(revision, approved), run = value.run;
   run.status = approved ? "ready" : "awaiting_review"; run.stage = approved ? "strategy_apply" : "strategy_propose";
   run.review_node = approved ? null : {kind: "strategy", project_id: run.project_id, input_hash: inputHash, expected_revision: revision, proposal_hash: proposalHash, review_hash: reviewHash, evidence_hash: evidenceHash, can_decide: true, can_revise: true, can_undo: false};
-  run.strategy_review = {schema: "scagentkit.strategy.review.v1", hash: reviewHash, input_hash: inputHash, evidence_hash: evidenceHash, details: {canonical_proposal: strategy(), background: {facts: run.context}, applicability: {executable: true, blockers: []}, source: {kind: "simulated_model_candidate"}, quality: {cell_count: 72}, qc_impact: {schema: "scagentkit.qc.preview.v1", retention: {before: 72, retained: 72, removed: 0}}, capabilities: {}, limitations: ["Simulated fixture"]}};
+  run.strategy_review = {schema: "scagentkit.strategy.review.v1", hash: reviewHash, input_hash: inputHash, evidence_hash: evidenceHash, details: {canonical_proposal: strategy(), background: {facts: run.context}, applicability: {executable: true, blockers: []}, source: {kind: "simulated_model_candidate"}, quality: {cell_count: 72}, qc_impact: qcPreviewFixture(strategy().qc, 72), capabilities: {qc_rules: {schema: "scagentkit.qc.rules.v1", operations: ["range", "mad_preset"]}, }, limitations: ["Simulated fixture"]}};
   value.continuation = {schema: "scagentkit.run-continue.workbench.v1", enabled: true, job: null, availability: {project_id: run.project_id, input_hash: inputHash, expected_revision: revision, can_continue: approved, can_retry: false, requires_explicit_retry: false, reason: approved ? "ready" : "review"}};
   return value;
 }

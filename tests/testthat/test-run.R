@@ -11,11 +11,11 @@ run_fixture <- function() {
   seu
 }
 run_context <- function() list(species = "human", tissue = "synthetic", columns = list(sample = "sample", capture = "capture", condition = "condition"), notes = "Public synthetic data; capture is not donor.")
-run_qc_rule <- function(minimum = 1) list(schema = "scagentkit.qc.v1", rationale = "Keep count-positive cells for this synthetic validation.", risks = list("This does not validate a biological QC threshold."), filters = list(list(op = "range", metric = "nCount", min = minimum, max = NULL, group = NULL)))
+run_qc_rule <- function(minimum = 1) list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Keep count-positive cells for this synthetic validation.", risks = list("This does not validate a biological QC threshold."), rules = list(list(op = "range", metric = "nCount", min = minimum, max = NULL, group = NULL)))
 run_mock <- function(counter) function(system_prompt, user_prompt) {
   counter$calls <- counter$calls + 1L
   payload <- jsonlite::fromJSON(user_prompt, simplifyVector = FALSE)
-  if (grepl("qc.v1", system_prompt, fixed = TRUE)) value <- run_qc_rule() else {
+  if (grepl("qc.rules.v1", system_prompt, fixed = TRUE)) value <- run_qc_rule() else {
     value <- list(schema = "scagentkit.annotation.v1", annotations = lapply(payload$evidence$clusters, function(cl) list(clusterId = cl$clusterId, label = "unknown", confidence = "low", rationale = "Synthetic validation; no claim of biological identity.", markers = list())))
   }
   as.character(jsonlite::toJSON(value, auto_unbox = TRUE, null = "null"))
@@ -154,7 +154,7 @@ test_that("processed source reuse records reason and preserves basic analysis", 
 
 test_that("typed invalid provider response can be explicitly retried without redoing upstream", {
   path <- tempfile(); calls <- 0L
-  bad <- function(system_prompt,user_prompt) { calls <<- calls+1L; value <- run_qc_rule(); value$filters[[1]]$op <- "eval"; jsonlite::toJSON(value,auto_unbox=TRUE,null="null") }
+  bad <- function(system_prompt,user_prompt) { calls <<- calls+1L; value <- run_qc_rule(); value$rules[[1]]$op <- "eval"; jsonlite::toJSON(value,auto_unbox=TRUE,null="null") }
   out <- sc_run(run_fixture(),path,context=run_context(),provider=list(name="mock"),chat_fn=bad)
   expect_identical(out$status,"failed"); expect_equal(calls,1L)
   good <- function(system_prompt,user_prompt) { calls <<- calls+1L; jsonlite::toJSON(run_qc_rule(),auto_unbox=TRUE,null="null") }

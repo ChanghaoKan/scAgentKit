@@ -59,11 +59,14 @@ first_run_inspect <- function(project_dir, save_snapshot = TRUE) {
     cat("Primary rule and predicted retention:\n")
     print(impact$canonical_parameters$proposal); print(impact$retention)
     cat("Measured removal causes may overlap; unavailable values are separate:\n")
+    if (!length(impact$filter_impacts))
+      cat("No additional QC rule; previously excluded cells are not restored.\n")
     print(do.call(rbind, lapply(impact$filter_impacts, function(item)
-      data.frame(id = item$id, metric = item$filter$metric, scoped = item$scoped,
+      data.frame(id = item$id, metric = if (is.null(item$filter$metric)) item$filter$op else item$filter$metric, scoped = item$scoped,
         low = item$low, high = item$high, unavailable = item$unavailable,
         independent = item$independently_removed, exclusive = item$exclusively_removed))))
-    overlap <- do.call(rbind, lapply(impact$overlap$counts, unlist, use.names = FALSE))
+    overlap <- if (length(impact$overlap$filter_ids))
+      do.call(rbind, lapply(impact$overlap$counts, unlist, use.names = FALSE)) else matrix(integer(), 0L, 0L)
     dimnames(overlap) <- list(impact$overlap$filter_ids, impact$overlap$filter_ids)
     cat("Measured exclusion overlap:\n"); print(overlap)
     cat("Unavailable metric counts:\n")
@@ -254,7 +257,10 @@ first_run_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     if (mode == "revise-qc") {
       if (!identical(snapshot$review_node$kind, "qc")) stop("Inspect the pending QC snapshot first.", call. = FALSE)
       replacement <- snapshot$qc_preview$details$canonical_parameters$proposal
-      replacement$filters[[1L]]$min <- 1L
+      if (!identical(replacement$schema, "scagentkit.qc.rules.v1") ||
+          !length(replacement$rules) || !identical(replacement$rules[[1L]]$op, "range"))
+        stop("The toy correction requires a current first range rule.", call. = FALSE)
+      replacement$rules[[1L]]$min <- 1L
       replacement$rationale <- "Explicit toy-only revision to the first supplied group's lower feature bound; inspect its changed exact retention before approving."
       result <- first_run_decide(project_dir, "revise", reason = "Demonstrate a deliberate toy QC correction; no general threshold recommendation.",
         reviewer = "synthetic-example-analyst", snapshot = snapshot, proposal = replacement)

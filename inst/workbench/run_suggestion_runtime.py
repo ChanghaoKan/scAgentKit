@@ -138,7 +138,7 @@ class RunSuggestionRuntime(QCRuntime):
         self.bridge = ROOT / "run_review_bridge.R"
         self.bridge_hash = _sha(self.bridge)
         self.runtime = ROOT / "run_suggestion_runtime.py"
-        self.code_hashes = {name: _sha(ROOT / name) for name in ("run_review_bridge.R", "run_suggestion_runtime.py", "run_continue_runtime.py", "qc_runtime.py", "evidence.py", "store.py")}
+        self.code_hashes = {name: _sha(ROOT / name) for name in ("run_review_bridge.R", "run_suggestion_runtime.py", "run_continue_runtime.py", "qc_runtime.py", "evidence.py", "store.py", "project_format_bridge.R")}
         self.base = _safe_directory(self.project / ".workbench-suggestions", create=True)
         self.base_identity = (self.base.stat().st_dev, self.base.stat().st_ino)
         self.identities = {}
@@ -266,8 +266,9 @@ class RunSuggestionRuntime(QCRuntime):
             try:
                 job, config = _current(self.base)
                 job = self._reconcile(job, fd is not None)
-                # R may own its scientific lock during the request; job polling
-                # reads the immutable verified preview rather than spawning R.
+                # R may own its scientific lock during the request. After the
+                # read-only format gate, polling reads the saved preview without
+                # calling the suggestion coordinator or a model.
                 suggestion = config["preview"] if fd is None and config is not None else self._call_suggestion("preview")
                 return self._answer(suggestion, job)
             finally:
@@ -391,7 +392,10 @@ class RunSuggestionRuntime(QCRuntime):
                 def reap():
                     code = process.wait()
                     try:
+                        self._fresh()
                         _atomic(directory / "worker-exit.json", {"worker_pid": process.pid, "exit_code": code, "finished_at": _time()})
+                    except (StoreError, OSError):
+                        pass  # An unsupported/replaced project must receive no exit receipt.
                     finally:
                         with self._worker_lock:
                             self._workers.pop(job_id, None)
@@ -408,14 +412,16 @@ def _worker(config_file, expected_hash, lock_fd):
     if config_file.is_symlink() or not config_file.is_file() or config_file.stat().st_size > MAX_RESULT or _sha(config_file) != expected_hash:
         return 2
     config = _read(config_file)
+    if set(config["code_hashes"]) != {"run_review_bridge.R", "run_suggestion_runtime.py", "run_continue_runtime.py", "qc_runtime.py", "evidence.py", "store.py", "project_format_bridge.R"}:
+        return 2
     for name, expected in config["code_hashes"].items():
-        if name not in {"run_review_bridge.R", "run_suggestion_runtime.py", "run_continue_runtime.py", "qc_runtime.py", "evidence.py", "store.py"}:
+        if name not in {"run_review_bridge.R", "run_suggestion_runtime.py", "run_continue_runtime.py", "qc_runtime.py", "evidence.py", "store.py", "project_format_bridge.R"}:
             return 2
         path = ROOT / name
         if path.is_symlink() or not path.is_file() or _sha(path) != expected:
             return 2
     project = Path(config["project"])
-    check_project_format(project)
+    check_project_format(project, config["library"], config["rscript"])
     base = project / ".workbench-suggestions"
     job, checked = _saved(base, config["job_id"])
     if checked != config or config_file != _job_dir(base, job["job_id"]) / "config.json":
@@ -478,11 +484,14 @@ def _worker(config_file, expected_hash, lock_fd):
             except (ProcessLookupError, subprocess.TimeoutExpired):
                 if process.poll() is None:
                     os.killpg(process.pid, signal.SIGKILL); process.wait(timeout=5)
-        owner.update(r_exit_code=process.returncode if process is not None else None, finished_at=_time())
-        _atomic(directory / "owner.json", owner)
-        job["updated_at"] = _time()
-        _atomic(directory / "job.json", job)
-        os.close(lock_fd)
+        try:
+            check_project_format(project, config["library"], config["rscript"])
+            owner.update(r_exit_code=process.returncode if process is not None else None, finished_at=_time())
+            _atomic(directory / "owner.json", owner)
+            job["updated_at"] = _time()
+            _atomic(directory / "job.json", job)
+        finally:
+            os.close(lock_fd)
     return 0 if job["status"] == "succeeded" else 1
 
 

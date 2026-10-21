@@ -17,13 +17,15 @@
 }
 .sc_run_qc_preview_hash <- function(record) .sc_run_hash(record[setdiff(names(record), "hash")])
 .sc_run_qc_preview_summary <- function(record) record[setdiff(names(record), c("details", "plots"))]
-.sc_run_qc_preview_publish <- function(root, state, validated, evidence) {
+.sc_run_qc_preview_publish <- function(root, state, validated, evidence, retained_scope = NULL) {
+  retained_scope <- .sc_run_qc_scope_for_publication(root, state, validated, evidence, retained_scope)
   options <- .sc_run_qc_current_options(state)
-  details <- .sc_run_qc_preview_build(validated$proposal, evidence, options$sensitivity, options$gene_panels)
+  details <- .sc_run_qc_preview_build(validated$proposal, evidence, options$sensitivity, options$gene_panels, retained_scope = retained_scope)
   state$qc_preview_options <- details$canonical_parameters[c("sensitivity", "gene_panels")]
   record <- list(schema = "scagentkit.qc.review.v1", input_hash = state$input_hash,
     config_hash = state$config_hash, implementation_hash = state$implementation_hash,
     evidence_hash = .sc_run_hash(evidence), rules_hash = .sc_run_hash(validated$proposal),
+    retained_scope_hash = retained_scope$hash,
     parameters_hash = .sc_run_hash(details$canonical_parameters),
     cell_scope_hash = .sc_run_hash(list(input = evidence$metrics$cell_id, keep = details$keep_cells, remove = details$remove_cells)),
     details = details)
@@ -72,9 +74,11 @@
     stop("QC preview/input/parameters fingerprint changed; approval is stale.", call. = FALSE)
   evidence <- .sc_run_get(root, state, "qc_evidence")
   validated <- .sc_run_get(root, state, "qc_validated")
+  retained_scope <- .sc_run_qc_scope_for_publication(root, state, validated, evidence)
   options <- .sc_run_qc_current_options(state)
-  current <- .sc_run_qc_preview_build(validated$proposal, evidence, options$sensitivity, options$gene_panels)
-  if (!identical(record$details, current) || !identical(record$evidence_hash, .sc_run_hash(evidence)) ||
+  current <- .sc_run_qc_preview_build(validated$proposal, evidence, options$sensitivity, options$gene_panels, retained_scope = retained_scope)
+  if (!identical(record$details, current) || !identical(record$retained_scope_hash, retained_scope$hash) ||
+      !identical(record$evidence_hash, .sc_run_hash(evidence)) ||
       !identical(record$rules_hash, .sc_run_hash(validated$proposal)) ||
       !identical(record$parameters_hash, .sc_run_hash(current$canonical_parameters)) ||
       !identical(current$keep_cells, validated$keep_cells) ||
@@ -115,7 +119,8 @@
   options <- .sc_run_qc_preview_options(options)
   evidence <- .sc_run_get(root, state, "qc_evidence")
   validated <- .sc_run_get(root, state, "qc_validated")
-  .sc_run_qc_preview_build(validated$proposal, evidence, options$sensitivity, options$gene_panels)
+  retained_scope <- .sc_run_qc_scope_for_publication(root, state, validated, evidence)
+  .sc_run_qc_preview_build(validated$proposal, evidence, options$sensitivity, options$gene_panels, retained_scope = retained_scope)
   state$qc_preview_options <- options
   previous_proposal_hash <- state$pending$hash
   state$pending <- NULL; state$approved <- NULL

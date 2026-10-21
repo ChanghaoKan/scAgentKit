@@ -15,6 +15,7 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from evidence import canonical
@@ -46,11 +47,12 @@ def decision(action="approve", kind="annotation"):
 
 class RunReviewRuntimeTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory()
         self.project = Path(self.temp.name) / "project"
         self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"fixture; never interpreted by Python")
-        (self.project / "project-format.json").write_text('{"project_format_version":2}')
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         self.runtime = RunReviewRuntime(self.project, library=self.temp.name)
 
     def tearDown(self):
@@ -222,7 +224,7 @@ class RunReviewRuntimeTests(unittest.TestCase):
     def test_replaced_project_directory_rejected(self):
         self.project.rename(self.project.with_name("old-project")); self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"replacement")
-        (self.project / "project-format.json").write_text('{"project_format_version":2}')
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         with patch("qc_runtime.subprocess.run") as process, self.assertRaises(StoreError): self.runtime.describe()
         process.assert_not_called()
 
@@ -319,9 +321,10 @@ class PassiveQC(QCRuntime):
 
 class RunReviewHTTPTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory()
         self.project = Path(self.temp.name); (self.project / "state.rds").write_bytes(b"fixture")
-        (self.project / "project-format.json").write_text('{"project_format_version":2}')
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         self.runtime = MockRunReview(self.project)
         self.server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()

@@ -89,13 +89,15 @@
   list(artifact = artifact, dependency_hash = execution$dependency_hash,
     basis_sha256 = execution$basis_sha256)
 }
-.sc_run_strategy_review_publish <- function(root, state, validated, evidence) {
+.sc_run_strategy_review_publish <- function(root, state, validated, evidence, retained_scope = NULL) {
   .sc_run_subcluster_guard(root, state)
   .sc_run_subcluster_strategy(state, validated, evidence)
   qc <- NULL
+  if (is.null(validated$qc_validated) && !is.null(retained_scope)) .sc_run_qc_scope_fail()
   if (!is.null(validated$qc_validated)) {
+    retained_scope <- .sc_run_qc_scope_for_publication(root, state, validated$qc_validated, evidence$qc, retained_scope)
     state <- .sc_run_put(root, state, "qc_validated", validated$qc_validated)
-    state <- .sc_run_qc_preview_publish(root, state, validated$qc_validated, evidence$qc)
+    state <- .sc_run_qc_preview_publish(root, state, validated$qc_validated, evidence$qc, retained_scope = retained_scope)
     qc <- .sc_run_get(root, state, "qc_preview")$details
   }
   state <- .sc_run_put(root, state, "strategy_validated", validated)
@@ -103,7 +105,7 @@
   record <- list(schema = "scagentkit.strategy.review.v1", input_hash = state$input_hash,
     config_hash = state$config_hash, implementation_hash = state$implementation_hash,
     calculation_scope_hash = .sc_run_strategy_scope_config_hash(state$config),
-    evidence_hash = evidence$evidence_hash,
+    evidence_hash = evidence$evidence_hash, retained_scope_hash = retained_scope$hash,
     cell_scope_hash = .sc_run_hash(if (!is.null(validated$selected_cells)) validated$selected_cells else
       if (is.null(validated$qc_validated)) evidence$private$cell_ids else validated$qc_validated$keep_cells),
     details = list(canonical_proposal = validated$proposal,
@@ -128,9 +130,9 @@
   record$details$cluster_diagnostics <- .sc_run_cluster_scan_get(root, state)
   if (state$config$start_stage != "processed")
     record$details$capabilities$qc_rules <- list(schema = "scagentkit.qc.rules.v1",
-      remove_if = c("any", "all"), max_rules = 32L, max_mad_predicates = 1L,
+      remove_if = c("any", "all"), min_rules = 0L, max_rules = 32L, max_mad_predicates = 1L,
       operations = if (is.null(summary$qc_mad)) "range" else c("range", "mad_preset"),
-      interpretation = "any/all combines failure predicates (OR/AND). Saved minimal-prefilter eligibility remains mandatory; doublet removal is a separate explicit choice.")
+      interpretation = "any/all combines nonempty failure predicates (OR/AND). Empty rules add no filtering and never restore previously excluded cells. Saved minimal-prefilter eligibility is mandatory; doublet removal is a separate explicit choice.")
   if (!is.null(state$config$subcluster_origin)) {
     record$details$subcluster <- list(
       parent_project_id = state$config$subcluster_origin$parent$project_id,
@@ -179,9 +181,8 @@
       evidence_hash = evidence$private$mad_record$evidence_hash,
       choice = if (is.null(validated$qc_validated)) NULL else validated$qc_validated$proposal,
       impact = validated$applicability$qc_mad)
-    record$details$execution_plan <- c(list(if (isTRUE(validated$proposal$qc$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
-      "Use the saved pre-score eligibility and exact sample-aware MAD statistics. One central approval selects the explicit range/MAD failure rules and OR/AND combination; no cells outside the prefilter cohort can be restored." else
-      "Use the saved sample-aware MAD statistics from the explicit pre-score cohort. One central approval selects one finite preset for all declared QC groups; no per-group approval or automatic preset change is performed."),
+    record$details$execution_plan <- c(list(
+      "Use saved pre-score eligibility and exact sample-aware MAD statistics for explicit range/MAD failure rules. Empty rules add no filtering and retain prior exclusions; every policy respects the mandatory prefilter cohort."),
       record$details$execution_plan)
   }
   if (!is.null(summary$cycle_diagnostics)) {
@@ -218,7 +219,10 @@
       stop("Biological diagnostic review differs from its bound checkpoint.", call. = FALSE)
   }
   saved <- .sc_run_get(root, state, "strategy_validated")
-  current <- .sc_run_strategy_validate(saved$proposal, evidence)
+  retained_scope <- if (is.null(saved$qc_validated)) NULL else
+    .sc_run_qc_scope_for_publication(root, state, saved$qc_validated, evidence$qc)
+  if (!identical(record$retained_scope_hash, retained_scope$hash)) .sc_run_qc_scope_fail()
+  current <- .sc_run_strategy_validate(saved$proposal, evidence, retained_scope = retained_scope)
   .sc_run_subcluster_strategy(state, current, evidence)
   if (!is.null(state$config$subcluster_origin) &&
       (is.null(record$details$subcluster) ||
@@ -355,7 +359,7 @@
     state$stage <- previous$stage; state$status <- previous$status
     state$pending <- previous$pending; state$approved <- previous$approved
     state <- .sc_run_event(state, "strategy_text_revision_reused", list(dependency_hashes = validated$dependency_hashes,
-      restored_stage = state$stage, reason = "Only explanatory text changed; calculations and downstream scientific authorization are unchanged."))
+      restored_stage = state$stage, reason = "Scientific calculation inputs match the reviewed execution; reuse its calculated artifacts and downstream scientific authorization."))
     .sc_run_save(root, state)
     return(state)
   }
@@ -372,7 +376,7 @@
     if (is.null(state$files$annotation_evidence)) "annotation_evidence" else "annotation_propose"
   .sc_run_checkpoint(root, state, "strategy_apply", next_stage)
 }
-.sc_run_strategy_propose_locked <- function(root, state, proposal, reviewer, reason, review_binding = NULL) {
+.sc_run_strategy_propose_locked <- function(root, state, proposal, reviewer, reason, review_binding = NULL, retained_scope = NULL) {
   .sc_run_subcluster_guard(root, state)
   if (!isTRUE(state$config$strategy)) stop("Strategy mode was not enabled for this project.", call. = FALSE)
   if (state$status %in% c("complete", "running") || "annotation_apply" %in% state$completed || !is.null(state$files$annotated))
@@ -380,7 +384,9 @@
   if (!identical(state$config_hash, .sc_run_hash(state$config)) || !identical(state$implementation_hash, .sc_run_implementation()))
     stop("Configuration or implementation changed; strategy revision is stale.", call. = FALSE)
   evidence <- .sc_run_get(root, state, "strategy_evidence")
-  validated <- .sc_run_strategy_validate(proposal, evidence)
+  if (is.null(retained_scope)) retained_scope <- .sc_run_qc_retained_scope_for_proposal(root, state, proposal, evidence, "strategy")
+  if (!is.null(retained_scope)) .sc_run_qc_retained_scope_verify(root, state, retained_scope, evidence$qc)
+  validated <- .sc_run_strategy_validate(proposal, evidence, retained_scope = retained_scope)
   .sc_run_subcluster_strategy(state, validated, evidence)
   old <- if (is.null(state$files$strategy_validated)) NULL else .sc_run_get(root, state, "strategy_validated")
   if (!isTRUE(review_binding$source %in% c("adopted_typed_suggestion", "local_rule_fallback")))
@@ -437,7 +443,7 @@
   state$strategy_return <- return_state
   state$pending <- NULL; state$approved <- NULL; state$failure <- NULL
   state <- .sc_run_put(root, state, "manual_strategy", validated$proposal)
-  state <- .sc_run_strategy_review_publish(root, state, validated, evidence)
+  state <- .sc_run_strategy_review_publish(root, state, validated, evidence, retained_scope = retained_scope)
   if (cached_runtime_changed) state <- .sc_run_event(state, "cached_harmony_runtime_invalidated", list(
     cached_runtime_changed = TRUE, old_source_hash = .sc_run_hash(old_source), new_source_hash = .sc_run_hash(new_source),
     preserved_basis_sha256 = state$files$strategy_basis$sha256,

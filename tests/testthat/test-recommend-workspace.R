@@ -107,3 +107,27 @@ test_that("scientific assessment is absent before a strategy review exists", {
   expect_null(.sc_run_scientific_assessment(NULL, list(config = list(strategy = FALSE))))
   expect_null(.sc_run_scientific_assessment(NULL, list(config = list(strategy = TRUE), files = list())))
 })
+
+
+test_that("scientific assessment distinguishes empty rules, explicit MAD deferral and processed reuse", {
+  qc <- list(schema = "scagentkit.qc.rules.v1", rationale = "No additional filtering.",
+    risks = list(), remove_if = "any", rules = list())
+  record <- list(input_hash = "input", config_hash = "config", evidence_hash = "evidence", hash = "review",
+    details = list(canonical_proposal = list(qc = qc), recommendations = list(
+      schema = "scagentkit.recommendations.v1", policy_version = "1",
+      binding = list(input_hash = "input", config_hash = "config", evidence_hash = "evidence"),
+      steps = list(list(id = "qc", assessment = "assessed", candidates = list(), missing = list(), conflicts = list())))))
+  local_mocked_bindings(.sc_run_get = function(...) record, .package = "scAgentKit")
+  state <- list(config = list(strategy = TRUE), files = list(strategy_review = list()), status = "awaiting_review")
+  value <- .sc_run_scientific_assessment(NULL, state)
+  expect_identical(value$qc_choice, "no_additional_filtering_quality_deferred")
+  expect_true("qc" %in% value$unassessed_steps)
+  record$details$canonical_proposal$qc$rules <- list(list(op = "mad_preset", preset_id = "keep_all", panel_hash = strrep("a", 64)))
+  expect_identical(.sc_run_scientific_assessment(NULL, state)$qc_choice, "keep_all_quality_deferred")
+  record$details$canonical_proposal$qc$rules <- list(list(op = "range", metric = "nCount", min = 1))
+  expect_identical(.sc_run_scientific_assessment(NULL, state)$qc_choice, "explicit_reviewed_quality_rule")
+  record$details$canonical_proposal$qc <- NULL
+  value <- .sc_run_scientific_assessment(NULL, state)
+  expect_identical(value$qc_choice, "processed_reuse_raw_quality_unassessed")
+  expect_true("qc" %in% value$unassessed_steps)
+})

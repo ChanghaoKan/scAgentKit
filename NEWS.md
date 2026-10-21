@@ -16,6 +16,12 @@
   behavior; incomplete historical preview shapes are rejected or unavailable.
   Workbench project discovery reports explicit registry availability; review
   journals require the current schema and exact project source identity.
+  QC uses typed rules for measured ranges and saved MAD predicates; rules v2
+  binds cluster overrides to their diagnostic and membership evidence. Empty
+  rules add no filtering and retain prior committed QC, doublet and mandatory
+  prefilter exclusions. Review snapshots bind that retained-cell context.
+  Project format 3 rejects earlier formats. Workbench admission checks the
+  authoritative saved state and parent formats before local job writes.
 
 ## Development: trial run controls
 

@@ -39,9 +39,9 @@ strategy_integration_plan <- function(umap = FALSE) list(schema = "scagentkit.st
   rationale = "A synthetic count-positive QC control and explicitly chosen local parameters.",
   risks = list("No biological QC, annotation, or integration conclusion is validated."),
   inferences = list("Expression programs are planted; this inference is not a user fact."),
-  qc = list(schema = "scagentkit.qc.v1", rationale = "Remove only the planted zero-count cell.",
+  qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Remove only the planted zero-count cell.",
     risks = list("A software control, not a recommended threshold."),
-    filters = list(list(op = "range", metric = "nCount", min = 1L))),
+    rules = list(list(op = "range", metric = "nCount", min = 1L))),
   analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
     nfeatures = 50L, npcs = 10L, seed = 7413L),
   pcs = list(method = "fixed", ndim = 5L),
@@ -329,7 +329,7 @@ test_that("strategy revisions reject unsupported operations atomically and exact
   invalid[[5]] <- strategy_integration_plan(); invalid[[5]]$analysis$r_code <- "stop('must never run')"
   invalid[[6]] <- strategy_integration_plan(); invalid[[6]]$pcs$ndim <- 100L
   invalid[[7]] <- strategy_integration_plan(); invalid[[7]]$clustering$diagnostic_resolutions <- c(.1, .2, .3, .4, .5, .6)
-  invalid[[8]] <- strategy_integration_plan(); invalid[[8]]$qc$filters[[1]]$metric <- "doublet_score"
+  invalid[[8]] <- strategy_integration_plan(); invalid[[8]]$qc$rules[[1]]$metric <- "doublet_score"
   invalid[[9]] <- strategy_integration_plan(); invalid[[9]]$umap$n_neighbors <- 95L
   invalid[[10]] <- strategy_integration_plan(); invalid[[10]]$analysis$nfeatures <- 121L
   for (proposal in invalid) {
@@ -415,7 +415,7 @@ test_that("resolution PC and QC revisions invalidate only affected active checkp
     proposal <- strategy_integration_plan()
     if (kind == "resolution") proposal$clustering$resolution <- .6
     if (kind == "pcs") proposal$pcs$ndim <- 4L
-    if (kind == "qc") proposal$qc$filters[[1]]$min <- 2L
+    if (kind == "qc") proposal$qc$rules[[1]]$min <- 2L
     revised <- strategy_integration_revise(root, proposal)
     expect_identical(revised$status, "awaiting_review")
     expect_identical(revised$pending$kind, "strategy")
@@ -469,6 +469,15 @@ test_that("pure explanatory strategy revision restores exact downstream annotati
     "annotation_evidence", "manual_annotation", "annotation_validated", "annotation_review")
   expect_identical(state$files[keys], original$files[keys])
   expect_identical(state$strategy_return$approved, original$approved)
+  before_validation <- .sc_run_get(root, original, "strategy_validated")
+  after_validation <- .sc_run_get(root, state, "strategy_validated")
+  before_review <- .sc_run_get(root, original, "strategy_review")
+  after_review <- .sc_run_get(root, state, "strategy_review")
+  expect_identical(after_validation$dependency_hashes, before_validation$dependency_hashes)
+  expect_identical(after_validation$qc_validated$keep_cells, before_validation$qc_validated$keep_cells)
+  expect_false(identical(after_review$retained_scope_hash, before_review$retained_scope_hash))
+  expect_identical(after_review$retained_scope_hash, after_validation$qc_validated$retained_scope$hash)
+  expect_false(identical(after_review$hash, before_review$hash))
   expect_identical(state$strategy_return$pending, original$pending)
   expect_null(state$approved)
   strategy_integration_decide(root)
@@ -557,5 +566,41 @@ test_that("changed saved input or strategy evidence cannot consume a previously 
     expect_identical(strategy_integration_files(root), files)
     expect_false(dir.exists(file.path(root, ".run-lock")))
   }
+  expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
+})
+
+test_that("new nonempty reviews refresh empty comparisons while approved previews remain retrospective", {
+  network <- strategy_integration_sentinels()
+  root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  object <- strategy_integration_fixture()
+  empty <- list(schema = "scagentkit.qc.rules.v1", rationale = "No additional filtering.",
+    risks = list("Quality is unassessed."), remove_if = "any", rules = list())
+  suppressWarnings(sc_run(object, root, context = strategy_integration_context(), strategy = TRUE,
+    strategy_proposal = strategy_integration_plan(), annotation_column = "reviewed_type",
+    qc_preview = list(sensitivity = list(list(id = "no-additional-filter", proposal = empty)))))
+  first <- .sc_run_load(root); first_preview <- .sc_run_get(root, first, "qc_preview")
+  first_scope <- .sc_run_get(root, first, "qc_validated")$retained_scope
+  expect_identical(first_preview$details$sensitivity[[1L]]$keep_cells, colnames(object))
+  strategy_integration_decide(root); strategy_integration_continue(root)
+  executed <- .sc_run_load(root); original <- .sc_run_get(root, executed, "strategy_validated")
+  expect_identical(original$qc_validated$retained_scope, first_scope)
+  expect_identical(.sc_run_qc_preview_verify(root, executed)$details$sensitivity[[1L]]$keep_cells,
+    first_preview$details$sensitivity[[1L]]$keep_cells)
+  old_bytes <- strategy_integration_files(root)
+  expect_error(sc_run_qc_preview(root, sensitivity = list(list(id = "new-empty", proposal = empty)),
+    reviewer = "scope QA", reason = "Not a pre-apply direct-QC node."), "current QC review node")
+  expect_identical(strategy_integration_files(root), old_bytes)
+  proposal <- original$proposal; proposal$rationale <- "Review the same nonempty selection with current comparisons."
+  strategy_integration_revise(root, proposal)
+  revised <- .sc_run_load(root); current <- .sc_run_get(root, revised, "strategy_validated")
+  preview <- .sc_run_qc_preview_verify(root, revised)
+  expect_identical(current$dependency_hashes, original$dependency_hashes)
+  expect_identical(current$qc_validated$keep_cells, original$qc_validated$keep_cells)
+  keys <- c("qc_object", "strategy_basis", "strategy_neighbors", "analysis")
+  expect_identical(revised$files[keys], executed$files[keys])
+  expect_identical(preview$details$sensitivity[[1L]]$keep_cells, original$qc_validated$keep_cells)
+  expect_false(identical(preview$retained_scope_hash, first_preview$retained_scope_hash))
+  expect_invisible(.sc_run_qc_retained_scope_verify(root, revised, first_scope, .sc_run_get(root, revised, "qc_evidence")))
+  expect_identical(readRDS(file.path(root, first$files$qc_preview$path)), first_preview)
   expect_identical(network$factory, 0L); expect_identical(network$http, 0L)
 })

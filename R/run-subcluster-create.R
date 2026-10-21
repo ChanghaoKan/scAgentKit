@@ -46,11 +46,10 @@
     rationale = "Explicit software starting plan for the selected raw-count child; review these finite settings before computation. This plan was not proposed by an AI.",
     risks = list("Parent selection is a conditional analysis scope, not independent biological validation.",
                  "Resolution 0.4 and bounded dimension/HVG settings are disclosed software starting choices, not a scientific optimum."),
-    inferences = list(), qc = list(schema = "scagentkit.qc.v1",
+    inferences = list(), qc = list(schema = "scagentkit.qc.rules.v1",
       rationale = "Retain the complete frozen parent selection; no second filtering or doublet removal is requested.",
       risks = list("Previous parent QC provenance remains relevant; retained cells are not guaranteed to be biologically valid."),
-      filters = list(list(op = "range", metric = "nFeature", min = 0,
-                          max = nrow(counts), group = NULL))),
+      remove_if = "any", rules = list()),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
                     nfeatures = nfeatures, npcs = npcs, seed = 17L),
     pcs = list(method = "fixed", ndim = as.integer(min(20L, npcs))),
@@ -320,7 +319,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
   .sc_run_subcluster_preflight(strategy_proposal, counts,
     !is.null(cycle_diagnostics) && !identical(cycle_diagnostics, FALSE))
   qc_preflight <- .sc_run_qc_validate(strategy_proposal$qc,
-    .sc_run_qc_evidence(child, context, assay, "counts"))
+    .sc_run_qc_evidence(child, context, assay, "counts"), retained_scope = NULL)
   if (identical(choices$qc, "retain_selected") && !setequal(qc_preflight$keep_cells, cells))
     stop("Child QC choice retain_selected prohibits a second filter; request qc='review' explicitly.", call. = FALSE)
   if (identical(choices$batch, "none") && !identical(strategy_proposal$batch$method, "none"))

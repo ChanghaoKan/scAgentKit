@@ -6,8 +6,6 @@ if (length(args) != 2L) stop("Usage: benchmark-react-session.R SYNTHETIC_FIXTURE
 source_dir <- normalizePath(args[[1L]], mustWork = TRUE)
 output <- args[[2L]]
 if (file.exists(output)) stop("Output directory must be new.")
-dir.create(output, recursive = TRUE)
-output <- normalizePath(output)
 internal <- function(name) getFromNamespace(name, "scAgentKit")
 write_json <- function(x, path) jsonlite::write_json(x, path, auto_unbox = TRUE,
   pretty = TRUE, null = "null", na = "null", digits = NA)
@@ -16,7 +14,9 @@ state <- internal(".sc_run_load")(source_root, verify = FALSE)
 if (!identical(state$project_id, "react-tools-synthetic-performance") ||
     length(state$approvals) || !is.null(state$approved) || !is.null(state$pending))
   stop("Only the unapproved synthetic benchmark fixture is accepted.")
-root <- file.path(output, "project"); dir.create(root)
+dir.create(output, recursive = TRUE)
+output <- normalizePath(output)
+root <- internal(".sc_run_root")(file.path(output, "project"), create = TRUE)
 for (record in state$files) {
   from <- file.path(source_root, record$path)
   stopifnot(identical(internal(".sc_project_sha_file")(from), record$sha256))

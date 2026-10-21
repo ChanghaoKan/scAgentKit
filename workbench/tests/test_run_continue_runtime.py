@@ -14,6 +14,7 @@ import threading
 import time
 import unittest
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import run_continue_runtime as module
@@ -23,6 +24,9 @@ from store import StoreError
 
 FAKE_R = '''#!/usr/bin/env python3
 import json, os, pathlib, sys, tempfile, time
+# Explicit test-only admission response; real RDS checks live in test_project_format.
+if len(sys.argv)==4 and pathlib.Path(sys.argv[2]).name=="project_format_bridge.R":
+ print("scagentkit.project-format.ok"); sys.exit(0)
 project=pathlib.Path(sys.argv[3]); request=pathlib.Path(sys.argv[4]); output=pathlib.Path(sys.argv[5])
 payload=json.loads(request.read_text()); run=json.loads((project/'status.json').read_text())
 def atomic(path,value):
@@ -59,13 +63,15 @@ def manifest(path):
 
 
 @unittest.skipIf(module.fcntl is None, "POSIX continuation requires flock")
+
 class ContinueRuntimeTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory(prefix="scagentkit-continue-test-")
         self.root = Path(self.temp.name)
         self.project = self.root / "project"; self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"fixture-authority-not-real-R")
-        (self.project / "project-format.json").write_text('{"project_format_version":2}')
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         self.run = {"schema": "scagentkit.run.v1", "project_id": "literal-project", "input_hash": "a"*64,
                     "revision": 9, "status": "ready", "stage": "qc_apply"}
         self.write_run()
@@ -102,8 +108,8 @@ class ContinueRuntimeTests(unittest.TestCase):
         path = self.project / "fake-calls.json"
         return json.loads(path.read_text()) if path.exists() else []
 
-    def test_describe_is_cheap_and_returns_exact_binding_without_process(self):
-        with patch.object(module.subprocess, "Popen", side_effect=AssertionError("poll must not spawn")):
+    def test_describe_returns_exact_binding_without_analysis_process(self):
+        with patch.object(module.subprocess, "Popen", side_effect=AssertionError("mechanism polling must not spawn analysis")):
             current = self.runtime.describe()
         self.assertTrue(current["enabled"]); self.assertIsNone(current["job"])
         self.assertTrue(current["availability"]["can_continue"])

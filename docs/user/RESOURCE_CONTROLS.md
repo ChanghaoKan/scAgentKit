@@ -34,10 +34,13 @@ scan may report a partial lower bound. Sizes are logical file sizes, not physica
 allocated space or a guarantee of available disk space.
 
 To archive, finish or stop active workers first. Copy the whole project to the
-archive destination, preserve its layout, and verify copied file hashes before
+archive destination, including `project-format.json` and `state.rds`, preserve
+its layout, and verify copied file hashes before
 considering the copy complete. Keep original inputs and a record of the R,
 package and dependency environment separately. Retain the source project until
 the archive is verified and you explicitly decide to remove it. A review ZIP is
-not a substitute for a complete scientific project archive. Automated archival,
+not a substitute for a complete scientific project archive. Copying or restoring
+a backup does not upgrade its format; open it with its matching software environment.
+Automated archival,
 journal segmentation and review-bundle/display limit configuration are not
 implemented by this checkpoint.

@@ -65,11 +65,11 @@ def main(argv=None):
     project = Path(args.project).expanduser().absolute()
     if not input_path.is_file() or project.is_symlink() or (project.exists() and not args.reopen):
         parser.error("Supply an RDS file and a new project path")
-    if args.reopen:
-        check_project_format(project)
     rscript = shutil.which(args.rscript)
     if not rscript:
         parser.error("An installed Rscript is required; no software is installed by this launcher")
+    if args.reopen:
+        check_project_format(project, args.r_library, rscript)
     # Fail before creating a project when localhost cannot be bound.
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", args.port))

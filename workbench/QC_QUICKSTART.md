@@ -15,7 +15,9 @@ python3 workbench/server.py --run-project /durable/path/to/project \
 Use the newly installed package version that created the project. Existing
 libraries can be supplied using the platform path separator, for example
 `--r-library '/private/new-library:/private/dependencies'` on macOS/Linux. The
-coordinator rejects an implementation change rather than reusing old approvals.
+coordinator checks the current project format and implementation fingerprints
+before project writes. A missing, damaged or mismatched format is rejected with
+“请用原软件环境打开，或新建项目”; see the [format gate](README.md#project-format-and-reopening).
 Choose a free port; starting this mode does not modify an existing workbench.
 
 Open `http://127.0.0.1:8772/review` locally. The unified page embeds the QC pane
@@ -37,13 +39,19 @@ Keep the local and remote tunnel port the same, as in `8772:127.0.0.1:8772`.
 Remapping the browser to another port is rejected with HTTP 403 by the exact
 Host check; the workbench does not loosen that check automatically.
 
-The QC page displays the saved typed ranges, exact retained/removed cell IDs,
+The QC page displays saved typed failure rules, exact retained/removed cell IDs,
 sample/capture scopes, independently failing and exclusively failing conditions,
 measured overlaps, disjoint failure patterns, measured quantile summaries and
 missing measurements. An optional named gene panel discloses feature
 availability only; expression, identity, singlet status and biological quality
 are not inferred. The page shows only the explicit sensitivity alternatives
 saved in the preview; it never generates or automatically chooses a cutoff.
+Rules v1 accepts 0–32 rules with an explicit `any`/`all` failure operator.
+Rules v2 requires 1–100 hash-bound diagnostic-cluster replacements and the
+baseline metric rules covering them, with at most 32 rules. A configured MAD
+preset is a typed rule bound to its saved panel. Empty v1 rules mean no additional
+filtering and do not restore cells excluded by earlier QC, minimal prefilter or
+doublet removal. The page labels this quality assessment as unassessed.
 
 The loopback browser receives exact cell IDs, per-cell QC measurements, declared
 sample/capture values and supplied project context. These local review details

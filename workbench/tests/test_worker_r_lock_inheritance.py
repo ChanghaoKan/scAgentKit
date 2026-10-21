@@ -38,7 +38,7 @@ class RWorkerLockTests(unittest.TestCase):
         # The wrapper delegates request execution to genuine Rscript. Suggestions'
         # read-only descriptor probes retain the established local fake fixture.
         prefix = "#!/usr/bin/env python3\nimport os,sys\n"
-        condition = "True" if kind == "continue" else "sys.argv[3]=='suggestion_request'"
+        condition = "len(sys.argv)==6" if kind == "continue" else "sys.argv[3]=='suggestion_request'"
         prefix += "if " + condition + ":\n os.execv(" + repr(shutil.which("Rscript")) + ", " + repr([
             shutil.which("Rscript"), "--vanilla", str(r_code), sys.executable, str(descendant), str(root)]) + ")\n"
         fake = continuation.FAKE_R if kind == "continue" else suggestion.FAKE_R
@@ -92,7 +92,10 @@ class RWorkerLockTests(unittest.TestCase):
                 self.assertTrue(final["requires_reconciliation"])
         finally:
             r_gate.touch(); child_gate.touch()
-            fixture.tearDown()
+            try:
+                fixture.tearDown()
+            finally:
+                fixture.doCleanups()
 
     @staticmethod
     def process_alive(pid):

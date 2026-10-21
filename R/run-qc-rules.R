@@ -45,7 +45,33 @@
     selected = selected, low = low, high = high, unavailable = unavailable, failed = low | high)
 }
 
-.sc_run_qc_rules_evaluate <- function(proposal, evidence) {
+# A valid empty policy has no failure predicates. v2 requires nonempty
+# replacements with baseline rule coverage, so it cannot be an empty policy.
+.sc_run_qc_empty_rules <- function(proposal) {
+  tryCatch({
+    .sc_run_strategy_fields(proposal, c("schema", "rationale", "risks", "remove_if", "rules"),
+      name = "Empty QC rules proposal")
+    .sc_run_strategy_text(proposal$rationale, "QC rules rationale")
+    .sc_run_strategy_array(proposal$risks, "QC rules risks")
+    identical(proposal$schema, "scagentkit.qc.rules.v1") &&
+      is.character(proposal$remove_if) && length(proposal$remove_if) == 1L &&
+      !is.na(proposal$remove_if) && proposal$remove_if %in% c("any", "all") &&
+      is.list(proposal$rules) && is.null(names(proposal$rules)) && length(proposal$rules) == 0L
+  }, error = function(e) FALSE)
+}
+
+# Only canonical scientific parameters determine computation reuse. Exact
+# proposal and preview hashes independently retain the author's text/operator.
+.sc_run_qc_scientific_key <- function(proposal) {
+  key <- proposal[intersect(c("schema", "remove_if", "rules", "diagnostic_hash",
+    "membership_hash", "replacements"), names(proposal))]
+  if (.sc_run_qc_empty_rules(proposal)) key$remove_if <- NULL
+  if (!is.null(key$replacements)) key$replacements <- lapply(key$replacements,
+    function(item) item[setdiff(names(item), "reason")])
+  key
+}
+
+.sc_run_qc_rules_evaluate <- function(proposal, evidence, retained_scope = NULL) {
   if (!is.list(evidence) || is.null(evidence$metrics) ||
       !identical(evidence$evidence_hash, .sc_run_qc_hash(evidence)))
     .sc_project_fail("QC evidence is missing or changed; regenerate the evidence and obtain a fresh proposal/approval.")
@@ -61,19 +87,17 @@
       is.na(proposal$remove_if) || !proposal$remove_if %in% c("any", "all"))
     .sc_project_fail("QC remove_if must be 'any' (OR failures) or 'all' (AND failures).")
   rules <- proposal$rules
-  if (!is.list(rules) || !length(rules) || length(rules) > 32L || !is.null(names(rules)))
-    .sc_project_fail("QC rules must be a nonempty unnamed array of at most 32 supported rules.")
+  if (!is.list(rules) || length(rules) > 32L || !is.null(names(rules)))
+    .sc_project_fail("QC rules must be an unnamed array of at most 32 supported rules; an empty array adds no filtering and cannot restore previously excluded cells.")
   metrics <- evidence$metrics; cells <- metrics$cell_id
   .sc_project_ids(cells, "QC evidence cell IDs")
   base <- rep(TRUE, length(cells)); record <- evidence$mad_record
   if (!is.null(record)) {
-    # Reuse the existing exact MAD-to-QC binding validation. keep_all verifies
-    # the pre-score base, without imposing a component's final-cell constraint.
-    baseline <- .sc_run_mad_validate(list(schema = "scagentkit.qc.mad.v1",
-      rationale = "Verify the immutable pre-score cohort for this combined review.",
-      risks = character(), preset_id = "keep_all", panel_hash = record$panel_hash), evidence)
-    base <- cells %in% baseline$keep_cells
+    record <- .sc_run_mad_bind_evidence(evidence)
+    base <- cells %in% record$prefilter_cells
   }
+  retained_cells <- .sc_run_qc_retained_scope_cells(retained_scope, evidence)
+  prior_excluded <- if (!length(rules)) base & !cells %in% retained_cells else rep(FALSE, length(cells))
   mad_count <- 0L
   statuses <- lapply(rules, function(rule) {
     if (!is.list(rule) || !is.character(rule$op) || length(rule$op) != 1L || is.na(rule$op))
@@ -126,11 +150,13 @@
   if (identical(proposal$remove_if, "all") && length(statuses) > 1L &&
       !any(base & Reduce(`&`, lapply(statuses, `[[`, "selected"))))
     .sc_project_fail("QC remove_if 'all' combines rules whose groups share no cell, so no cell could ever be removed; use 'any' or align the rule groups.")
-  failures <- do.call(cbind, lapply(statuses, `[[`, "failed"))
+  failures <- if (length(statuses)) do.call(cbind, lapply(statuses, `[[`, "failed")) else
+    matrix(FALSE, nrow = length(cells), ncol = 0L)
   # Outside a rule's literal group its failure is false, not a guessed match.
-  removed <- if (identical(proposal$remove_if, "any")) rowSums(failures) > 0L else
+  removed <- if (!length(statuses)) rep(FALSE, length(cells)) else
+    if (identical(proposal$remove_if, "any")) rowSums(failures) > 0L else
     rowSums(failures) == length(statuses)
-  keep <- base & !removed
+  keep <- base & !prior_excluded & !removed
   for (status in statuses) if (any(status$unavailable & keep))
     .sc_project_fail("QC metric is unavailable for one or more otherwise retained cells; unknown measurements cannot become an implicit keep or removal rule.")
   if (!any(keep)) .sc_project_fail("QC proposal would remove every cell; revise the rules before approval.")
@@ -158,7 +184,8 @@
   summary <- list(method = "typed_rules", remove_if = canonical$remove_if,
     rule_count = length(statuses), preset_id = if (length(mad_rule)) mad_rule[[1L]]$preset_id else NULL,
     original_cells = length(cells), pre_score_cells = sum(base), post_qc_cells = sum(keep),
-    prefilter_removed = sum(!base), quality_removed = sum(base & !keep),
+    prefilter_removed = sum(!base), prior_removed = sum(prior_excluded),
+    quality_removed = sum(base & removed),
     high_rna_action = if (replacing) "according to effective approved bounds" else "flag only",
     ribo_hb_action = "diagnostic only")
   if (replacing) {
@@ -179,10 +206,10 @@
   list(validated = list(proposal = canonical,
     retention = list(before = nrow(metrics), retained = sum(keep), removed = sum(!keep),
       fraction_retained = mean(keep), groups = retention_groups), keep_cells = cells[keep],
-    evidence_hash = evidence$evidence_hash, summary = summary),
-    statuses = statuses, failures = failures, base = base, keep = keep)
+    evidence_hash = evidence$evidence_hash, summary = summary, retained_scope = retained_scope),
+    statuses = statuses, failures = failures, base = base, prior_excluded = prior_excluded, keep = keep)
 }
 
-.sc_run_qc_rules_validate <- function(proposal, evidence) {
-  .sc_run_qc_rules_evaluate(proposal, evidence)$validated
+.sc_run_qc_rules_validate <- function(proposal, evidence, retained_scope = NULL) {
+  .sc_run_qc_rules_evaluate(proposal, evidence, retained_scope)$validated
 }

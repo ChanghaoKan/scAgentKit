@@ -54,8 +54,9 @@ requests leave rule/manual review available.
 | Find methods and requirements | [Documentation](docs/README.md) |
 | Contribute or inspect validation | [Developer index](docs/dev/README.md) |
 
-Before 1.0, scientific implementation changes can invalidate ongoing projects;
-preserve their original software environment. Advanced downstream analyses
+Saved projects must match the current project format. A mismatch is rejected
+before project writes: use the original software environment or create a new
+project. Preserve that environment and see the [format gate](workbench/README.md#project-format-and-reopening). Advanced downstream analyses
 (trajectory, communication, regulatory networks and condition comparisons) are
 outside this workflow. [Methods and limitations](docs/SCIENTIFIC_METHODS_APPENDIX.md).
 

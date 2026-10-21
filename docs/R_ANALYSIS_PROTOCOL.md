@@ -157,5 +157,8 @@ result <- sc_result(project)
 
 For an unfinished project, `sc_review()` displays the current stage so you can
 continue its review and execution. Opening a project does not resume work.
+The [format gate](../workbench/README.md#project-format-and-reopening) rejects
+missing or mismatched formats before project writes. Use the original software
+environment or create a new project; do not modify the format marker or state.
 See [recovery and saved results](RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)
 for interrupted runs and environment changes.

@@ -42,8 +42,8 @@ harmony_schema_proposal <- function(processed = FALSE, method = "none") {
     list(method = method, reason = "Explicit reviewed software fixture batch decision.")
   list(schema = "scagentkit.strategy.v1", rationale = "Review technical design and PC policy together.",
     risks = character(), inferences = character(),
-    qc = if (processed) NULL else list(schema = "scagentkit.qc.v1", rationale = "Explicit measured positive-count rule.",
-      risks = character(), filters = list(list(op = "range", metric = "nCount", min = 1))),
+    qc = if (processed) NULL else list(schema = "scagentkit.qc.rules.v1", rationale = "Explicit measured positive-count rule.",
+      risks = character(), remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1))),
     analysis = if (processed) NULL else list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 32L, npcs = 8L, seed = 11L),
     pcs = if (processed) NULL else list(method = "fixed", ndim = 5L), batch = batch,
@@ -138,7 +138,7 @@ test_that("Harmony design blockers use the post-QC cohort and retain explicit pr
   f <- harmony_schema_fixture(confounded_after_qc = TRUE)
   p <- harmony_schema_proposal(method = "harmony")
   expect_true(scAgentKit:::.sc_run_strategy_validate(p, f$evidence)$executable)
-  p$qc$filters[[1]]$max <- 10000
+  p$qc$rules[[1]]$max <- 10000
   v <- scAgentKit:::.sc_run_strategy_validate(p, f$evidence)
   expect_false(v$executable)
   expect_equal(v$applicability$retained_cells, 60L)

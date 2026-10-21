@@ -174,6 +174,10 @@ sc_run_open(project_dir)
 | awaiting_review | 阅读当前提案，保存编辑后再审批。 |
 | job 忙或响应不明确 | 先看保存的 job/回执，等 worker 完成后再提交。 |
 | 输入/layer 不符或项目环境改变 | 核对输入和记录的环境；使用原环境或另建项目。 |
+| 项目格式缺失、损坏或不匹配 | 闸门提示“请用原软件环境打开，或新建项目”；不要手改格式标记、状态或 hash。 |
+
+[格式闸门](../workbench/README.md#project-format-and-reopening) 同样适用于只读结果页
+和恢复后的备份，不执行项目迁移。
 
 完整备份复制回原路径后，目录身份会改变。若出现
 `Saved local continuation belongs to a different project directory`，

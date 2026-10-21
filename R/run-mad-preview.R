@@ -1,47 +1,4 @@
-# Pure local projection of one immutable finite MAD panel. Exact cell IDs and
-# flags belong to the local review, not its remote aggregate representation.
-.sc_run_mad_preview_build <- function(proposal, evidence, sensitivity = list(), gene_panels = list()) {
-  if (!is.list(sensitivity) || length(sensitivity))
-    stop("MAD review uses its saved finite preset panel; custom range sensitivity is unsupported.", call. = FALSE)
-  validated <- .sc_run_qc_validate(proposal, evidence)
-  record <- evidence$mad_record
-  .sc_run_mad_verify(record)
-  panels <- .sc_run_qc_preview_gene_panels(gene_panels, evidence)
-  cells <- evidence$metrics$cell_id
-  keep <- cells %in% validated$keep_cells
-  prefilter_keep <- record$flags$prefilter_pass[match(cells, record$flags$cell_id)]
-  if (anyNA(prefilter_keep) || any(keep & !prefilter_keep))
-    stop("MAD projection contradicts the exact prefilter eligibility.", call. = FALSE)
-  population <- list(prefilter_excluded = !prefilter_keep,
-    quality_removed = prefilter_keep & !keep, retained = keep)
-  patterns <- lapply(names(population), function(name) {
-    index <- population[[name]]
-    list(filter_ids = name, reason_ids = name, unavailable_filter_ids = character(),
-      count = sum(index), cell_ids = cells[index], retained = sum(index & keep), removed = sum(index & !keep))
-  })
-  list(schema = "scagentkit.qc.preview.v1", evidence_hash = validated$evidence_hash,
-    canonical_parameters = list(proposal = validated$proposal, sensitivity = list(), gene_panels = panels$parameters),
-    retention = validated$retention, keep_cells = cells[keep], remove_cells = cells[!keep],
-    keep_cell_hash = .sc_run_qc_preview_cells_hash(cells[keep]),
-    remove_cell_hash = .sc_run_qc_preview_cells_hash(cells[!keep]),
-    metrics = evidence$metrics, filter_impacts = list(), patterns = patterns,
-    overlap = list(filter_ids = character(), counts = list(),
-      interpretation = "One saved preset combines flags with its declared AND/OR logic; independent flags are not independent exclusions."),
-    distributions = .sc_run_qc_preview_distributions(evidence$metrics, keep),
-    unavailable = list(metrics = lapply(c("nCount", "nFeature", "percent_mt"), function(metric) {
-      missing <- !is.finite(evidence$metrics[[metric]])
-      list(metric = metric, count = sum(missing), cell_ids = cells[missing])
-    }), zero_count_cells = cells[evidence$metrics$nCount == 0],
-      mitochondrial = evidence$summary$mitochondrial, gene_panels = panels$records),
-    sensitivity = list(), mad_panel = record$summary, mad_flags = record$flags,
-    interpretation = c("Exact saved thresholds and preset logic execute; rounded display values do not define comparisons.",
-      "Minimal prefilter eligibility and later quality filtering are separate declared stages.",
-      "QC grouping is independent of capture/donor. Missing or inapplicable metrics remain Unknown, not zero.",
-      "High RNA is flag-only; ribosomal and hemoglobin measurements never authorize deletion.",
-      "Candidate impacts describe consequences, not a universal optimum or biological truth.",
-      "All exact cell IDs and per-cell flags in this preview remain local."))
-}
-
+# Local export of the immutable MAD panel and the exact approved rules outcome.
 .sc_run_mad_outputs <- function(root, state, seu, strategy_record) {
   record <- .sc_run_get(root, state, "qc_mad")
   prefilter <- .sc_run_get(root, state, "prefilter")
@@ -71,9 +28,9 @@
       post_quality = length(validated$qc_validated$keep_cells), post_doublet = ncol(seu)),
     rate_reference = if (is.null(doublet)) NULL else doublet$summary$capture_stats,
     actual_retained_cell_ids = colnames(seu),
-    interpretation = if (identical(validated$proposal$qc$schema, "scagentkit.qc.rules.v1"))
-      "Declared statistics, mandatory pre-score eligibility and exact reviewed range/MAD failure-rule combination; no automatic biological acceptance, best-rule selection or integration." else
-      "Declared statistics and exact reviewed preset execution; no automatic biological acceptance, best-preset selection or integration.")
+    interpretation = if (.sc_run_qc_empty_rules(validated$proposal$qc))
+      "No additional filtering; mandatory pre-score exclusions and previously committed exclusions are not restored. No automatic biological acceptance or integration." else
+      "Declared statistics, mandatory pre-score eligibility and exact reviewed range/MAD failure rules with any approved diagnostic replacements; no automatic biological acceptance, best-rule selection or integration.")
   .sc_run_atomic(output, file.path(root, "output", "qc_mad_summary.json"), json = TRUE)
   metric <- value <- qc_group <- NULL
   long <- do.call(rbind, lapply(c("nCount", "nFeature", "percent_mt"), function(name) {

@@ -56,10 +56,10 @@ context <- list(
 # input is your sparse raw-count matrix, Seurat object or local RDS path.
 # This is an explicit analyst rule; choose it for the actual study before use.
 rule <- list(
-  schema = "scagentkit.qc.v1",
+  schema = "scagentkit.qc.rules.v1", remove_if = "any",
   rationale = "State why these study-specific bounds need review.",
   risks = c("Low-depth cells can be biologically real."),
-  filters = list(list(op = "range", metric = "nCount", min = 1L))
+  rules = list(list(op = "range", metric = "nCount", min = 1L))
 )
 sc_run(input, project_dir, context = context, provider = NULL,
        review = list(allow_external = FALSE), qc_proposal = rule,
@@ -99,8 +99,15 @@ and pauses for configuration rather than inventing an AI decision.
 | Feature universe | Matrix input keeps all supplied genes (`min.cells=0`, `min.features=0`). Changing the gene universe changes QC evidence and requires a new review. |
 | Grouping | Only explicitly declared sample/capture columns. A filter can select literal values such as `group=list(sample="sample A", capture="capture 1")`. Scope is recorded as exact cell IDs. |
 | Biological context | Species, tissue, free-text notes, and declared condition/donor/batch roles. Condition is not inferred as batch, capture is not inferred as donor, and the default typed-range path skips integration; optional strategy Harmony has a separate reviewed contract. |
-| Operations | Only `op="range"` on `nCount`, `nFeature`, `percent_mt`. Bounds are inclusive; at least one finite nonnegative bound is required. Count/feature bounds are integers and mitochondrial bounds lie in 0–100. |
-| Execution | All filters are combined with AND; cells outside a group's scope are unaffected by that filter. No arbitrary R or model-generated code is executed. |
+| Operations | `qc.rules.v1` accepts 0–32 typed rules. A range uses `op="range"` on `nCount`, `nFeature`, `percent_mt`. Bounds are inclusive; at least one finite nonnegative bound is required. Count/feature bounds are integers and mitochondrial bounds lie in 0–100. A configured MAD panel also supports a `mad_preset` rule bound to its `panel_hash`. |
+| Execution | `remove_if="any"` removes cells failing any rule; `"all"` requires every rule to fail. Failure is false outside a rule's declared group. This example uses `"any"`, so all applicable ranges must pass for a cell to be retained. No arbitrary R or model-generated code is executed. |
+
+Empty `rules = list()` means this stage adds no filtering. It retains the saved
+committed cell scope and never restores cells excluded by earlier QC, minimal
+prefilter or doublet removal. Empty `any` and `all` have the same cell selection.
+This is deferral of quality assessment, not evidence that every retained cell is
+high quality. A later nonempty explicit policy can revise earlier quality or
+doublet choices through a new approval; the immutable prefilter still applies.
 
 `nCount` is the raw-count column total and `nFeature` is the number of features
 with positive raw counts. Matrix feature IDs that Seurat would automatically
@@ -130,7 +137,7 @@ At the initial call, add a small prespecified comparison set:
 
 ```r
 comparison_rule <- rule
-comparison_rule$filters[[1]]$min <- 2L
+comparison_rule$rules[[1]]$min <- 2L
 preview_options <- list(
   sensitivity = list(list(id = "explicit count comparison", proposal = comparison_rule)),
   gene_panels = list(epithelial = c("EPCAM", "KRT8"))
@@ -149,7 +156,7 @@ cutoffs, explicitly revise the primary proposal and review its new impact:
 ```r
 current <- sc_run_inspect(project_dir)
 replacement <- current$qc_preview$details$canonical_parameters$proposal
-replacement$filters[[1]]$min <- 2L     # explicit analyst edit, not an optimizer
+replacement$rules[[1]]$min <- 2L     # explicit analyst edit, not an optimizer
 current <- sc_run_qc_review(project_dir, action = "revise",
   proposal_hash = current$pending$hash, preview_hash = current$qc_preview$hash,
   expected_revision = current$revision,

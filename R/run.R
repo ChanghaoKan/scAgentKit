@@ -73,7 +73,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     stop("Enable strategy=TRUE to review doublet scores and any exact cell removal centrally.", call. = FALSE)
   mad_enabled <- !is.null(qc_mad) && !identical(qc_mad, FALSE)
   if (mad_enabled && (!strategy || start_stage != "qc"))
-    stop("qc_mad requires raw strategy entry; processed analysis and legacy range QC are separate supported paths.", call. = FALSE)
+    stop("qc_mad requires raw strategy entry; processed analysis and direct QC use their declared entry paths.", call. = FALSE)
   if (mad_enabled && (!is.list(qc_mad) || is.null(names(qc_mad)) ||
       anyNA(names(qc_mad)) || any(!nzchar(names(qc_mad))) || anyDuplicated(names(qc_mad))))
     stop("qc_mad requires an explicit named configuration, not TRUE.", call. = FALSE)
@@ -173,7 +173,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     config$prefilter <- .sc_run_prefilter_options(qc_mad$prefilter)
     config$qc_mad <- .sc_run_mad_options(checked$context, qc_mad[setdiff(names(qc_mad), "prefilter")])
     if (length(qc_preview$sensitivity))
-      stop("qc_mad uses its saved finite candidate panel; custom legacy sensitivity ranges cannot compete with it.", call. = FALSE)
+      stop("qc_mad uses its saved finite candidate panel; initial qc_preview sensitivity must be empty.", call. = FALSE)
   }
   .sc_project_json_check(config)
   state <- list(project_format_version = .sc_project_format_version(), project_id = paste0("run-", substr(.sc_run_hash(list(root, Sys.time())), 1, 16)),
@@ -341,10 +341,10 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       "choice_reasons contains exactly qc, doublet, cycle, batch, hvg, pcs, clustering and umap, each a nonempty reason of at most 700 characters based on supplied evidence and study purpose.",
       "User facts, missing facts and measured quantities are distinct. Put any model inference only in inferences; do not invent metadata, sample identities, design or goals.",
       if (is.null(config$qc_mad))
-        "For raw entry qc may use legacy scagentkit.qc.v1 with filters, or scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (1 to 32 operations). Derive concrete inclusive bounds from actual quality quantiles and disclose uncertainty. MAD operations are unavailable unless explicitly enabled." else
-        "For raw entry qc may use scagentkit.qc.mad.v1 with exactly schema, rationale, risks (array), preset_id and panel_hash copied from the supplied deterministic MAD panel, or scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (1 to 32 operations). A rules combination may include at most one mad_preset operation with the exact saved preset_id and panel_hash, plus measured range operations. Choose only available saved MAD predicates; do not invent multipliers, grouping or scores. Prefilter exclusions remain excluded independently of the chosen rule combination.",
-      'Legal unfiltered keep-all example without MAD: qc={"schema":"scagentkit.qc.v1","rationale":"QC unassessed; retain all for review.","risks":["Quality remains unassessed."],"filters":[{"op":"range","metric":"nCount","min":0}]}. Never encode keep-all as empty rules. With a MAD panel use its exact keep_all preset and panel_hash.',
-      "Range operations contain op='range', metric='nCount'|'nFeature'|'percent_mt', optional inclusive min/max and optional group containing only literal sample and/or capture present in evidence. Count/feature bounds are nonnegative integers; percent bounds are between 0 and 100. For qc.rules.v1 remove_if='any' removes cells failing any rule; remove_if='all' removes cells failing every rule. A rule scoped to a different group does not fail that cell. Unsupported or unavailable measurements and a final empty retained set are rejected. No code, genes, invented groups or unsupported operations.",
+        "For raw entry qc uses scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (0 to 32 operations). Derive concrete inclusive bounds from actual quality quantiles and disclose uncertainty. MAD operations are unavailable unless explicitly enabled." else
+        "For raw entry qc uses scagentkit.qc.rules.v1 with exactly schema, rationale, risks (array), remove_if ('any' or 'all') and rules (0 to 32 operations). A rules combination may include at most one mad_preset operation with the exact saved preset_id and panel_hash, plus measured range operations. Choose only available saved MAD predicates; do not invent multipliers, grouping or scores. Prefilter exclusions remain excluded independently of the chosen rule combination.",
+      'No-additional-filter example: qc={"schema":"scagentkit.qc.rules.v1","rationale":"QC unassessed; add no filtering.","risks":["Quality remains unassessed."],"remove_if":"any","rules":[]}. Empty rules never restore previously excluded cells, including prefilter and prior doublet exclusions. A nonempty mad_preset keep_all rule is an explicit policy with the saved panel_hash; it is distinct from empty rules.',
+      "Range operations contain op='range', metric='nCount'|'nFeature'|'percent_mt', optional inclusive min/max and optional group containing only literal sample and/or capture present in evidence. Count/feature bounds are nonnegative integers; percent bounds are between 0 and 100. For nonempty rules remove_if='any' removes cells failing any rule; remove_if='all' removes cells failing every rule. With zero rules both operators add no filtering. A rule scoped to a different group does not fail that cell. Unsupported or unavailable measurements and a final empty retained set are rejected. No code, genes, invented groups or unsupported operations.",
       "analysis has normalization_method='LogNormalize', scale_factor, nfeatures, npcs, seed. pcs has method='fixed',ndim OR method='computed_variance',threshold (any value strictly between 0 and 1, measured against all actually computed PCs) OR method='computed_top50',threshold (.80 or .85 only, measured against first min(50,actually computed PCs)). A threshold of .80 is an editable reference, not an established optimum. Saved candidates are unavailable before approved PCA. Computed-PC variance is not total expression variance.",
       "batch defaults to method='none',reason; manual is a blocked analyst boundary. Explicit harmony requires method,group_by_vars,theta,lambda,sigma,max_iter,nclust,reason, with optional nested_biology='reviewed_embedding_only' only for explicitly reviewed replicated donor/sample nesting. It requires declared technical provenance, audited biological roles and explicit batch/sample/donor column names. Never infer a correction covariate from condition, treatment or capture; fully confounded designs cannot establish preservation of treatment signals. Harmony changes embedding only. Subcluster actions remain unsupported.",
       "clustering has resolution in (0,2] and optional diagnostic_resolutions (at most five). umap has run (boolean) and n_neighbors.",
@@ -352,7 +352,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       "For processed entry qc, analysis, pcs, clustering and umap must all be null, explicitly reusing the provided processed analysis.",
       "No R code, arbitrary regressors, automatic biological batch choice or deletion of cycling/doublet cells. A proposal is a reviewable policy, not a claim of scientific optimality.")
   } else if (kind == "qc") {
-    "Return only JSON: {\"schema\":\"scagentkit.qc.v1\",\"rationale\":\"...\",\"risks\":[\"...\"],\"filters\":[{\"op\":\"range\",\"metric\":\"nFeature\",\"min\":0,\"max\":5000,\"group\":null}]}. Supported metrics: nCount,nFeature,percent_mt. Optional group only literal sample and/or capture in evidence. Thresholds must follow actual quantiles and context; no arbitrary code, batch selection or unsupported actions. Acknowledge uncertainty; no fixed universal threshold."
+    "Return only JSON with schema='scagentkit.qc.rules.v1', rationale, risks (array), remove_if='any'|'all', and rules (array of 0 to 32 operations). Range rules have op='range', metric nCount|nFeature|percent_mt, inclusive min and/or max; optional group contains only literal sample/capture in evidence. Nonempty any/all combines failure predicates by OR/AND. Empty rules mean no additional filtering and never restore previously excluded cells. Thresholds must follow actual quantiles and context; no arbitrary code, batch selection or unsupported actions. Acknowledge uncertainty; no fixed universal threshold."
   } else {
     "Return only complete JSON: {\"schema\":\"scagentkit.annotation.v1\",\"annotations\":[{\"clusterId\":\"literal ID\",\"label\":\"Unknown or type\",\"confidence\":\"low|medium|high\",\"rationale\":\"one short sentence\",\"markers\":[\"GENE\"]}]}. Include every supplied cluster exactly once, including uncertain clusters. Keep label at most 80 characters and rationale at most 240 characters. Cite at most 5 strongest marker genes actually supplied for that cluster; do not repeat the whole marker table. Use Unknown with low confidence when uncertain; its markers may be empty. Close every string, array and object. These are independent suggestions for human review, not automatic scientific acceptance."
   }
@@ -514,7 +514,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   request$approved_payload_hash <- if (external) request_hash else NULL
   local_evidence <- .sc_run_get(root, state, paste0(kind, "_evidence"))
-  request$validator <- if (kind == "strategy") function(x) .sc_run_strategy_validate(x, local_evidence)$proposal else if (kind == "qc") function(x) .sc_run_qc_validate(x, local_evidence)$proposal else function(x) {
+  request$validator <- if (kind %in% c("strategy", "qc")) function(x) {
+    scope <- .sc_run_qc_retained_scope_for_proposal(root, state, x, local_evidence, kind)
+    if (kind == "strategy") .sc_run_strategy_validate(x, local_evidence, retained_scope = scope)$proposal else
+      .sc_run_qc_validate(x, local_evidence, retained_scope = scope)$proposal
+  } else function(x) {
     if (!is.null(state$config$react)) return(.sc_run_react_baseline(x, local_evidence)$proposal)
     value <- .sc_run_annotation_response_validate(x, local_evidence)
     list(schema = value$schema, annotations = value$annotations)
@@ -562,7 +566,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   list(state = state, proposal = answer$content)
 }
-.sc_run_drive <- function(root, state, provider, chat_fn, retry, local_only = FALSE) {
+.sc_run_drive <- function(root, state, provider, chat_fn, retry, local_only = FALSE, retained_scope = NULL) {
   repeat {
     state <- .sc_run_control_audit(root, state)
     .sc_run_subcluster_guard(root, state)
@@ -653,9 +657,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
           proposal <- proposed$proposal
           mad <- evidence$private$mad_record
           if (!is.null(mad)) {
-            if (identical(proposal$qc$schema, "scagentkit.qc.v1")) proposal <- .sc_run_mad_bind_legacy_draft(proposal, mad)
-            if (identical(proposal$qc$schema, "scagentkit.qc.mad.v1")) proposal$qc$panel_hash <- mad$panel_hash
-            if (identical(proposal$qc$schema, "scagentkit.qc.rules.v1"))
+            if (isTRUE(proposal$qc$schema %in% c("scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2")))
               proposal$qc$rules <- lapply(proposal$qc$rules, function(rule) {
                 if (identical(rule$op, "mad_preset")) rule$panel_hash <- mad$panel_hash
                 rule
@@ -668,8 +670,9 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
           proposed$proposal <- proposal
           state$recommendation_rebuild <- NULL
         }
-        validated <- .sc_run_strategy_validate(proposed$proposal, evidence)
-        state <- .sc_run_strategy_review_publish(root, state, validated, evidence)
+        scope <- if (is.null(retained_scope)) .sc_run_qc_retained_scope_for_proposal(root, state, proposed$proposal, evidence, "strategy") else retained_scope
+        validated <- .sc_run_strategy_validate(proposed$proposal, evidence, retained_scope = scope)
+        state <- .sc_run_strategy_review_publish(root, state, validated, evidence, retained_scope = scope)
         state <- .sc_run_strategy_pending(root, state, validated, evidence)
         .sc_run_save(root, state)
       } else if (stage == "strategy_apply") {
@@ -739,12 +742,13 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
         proposed <- .sc_run_get_proposal(root, state, "qc", evidence$summary, provider, chat_fn, retry, local_only)
         state <- proposed$state
         if (is.null(proposed$proposal)) return(.sc_run_public(state))
-        validated <- .sc_run_qc_validate(proposed$proposal, evidence)
+        scope <- if (is.null(retained_scope)) .sc_run_qc_retained_scope_for_proposal(root, state, proposed$proposal, evidence, "qc") else retained_scope
+        validated <- .sc_run_qc_validate(proposed$proposal, evidence, retained_scope = scope)
         state <- .sc_run_put(root, state, "qc_validated", validated)
-        state <- .sc_run_qc_preview_publish(root, state, validated, evidence)
+        state <- .sc_run_qc_preview_publish(root, state, validated, evidence, retained_scope = scope)
         state$nodes[[stage]] <- "PROPOSED"
         state <- .sc_run_qc_pending(state, validated, evidence, root)
-        if (!is.null(state$config$review$preapprove_qc) && identical(validated$proposal, .sc_run_qc_validate(state$config$review$preapprove_qc, evidence)$proposal)) {
+        if (!is.null(state$config$review$preapprove_qc) && identical(validated$proposal, .sc_run_qc_validate(state$config$review$preapprove_qc, evidence, retained_scope = scope)$proposal)) {
           hash <- state$pending$hash
           state <- .sc_run_event(state, "approved", .sc_run_qc_decision_details(state, "explicit_preapproved_rule",
             "Explicit preapproved rule matched the validated proposal and impact preview.", root))
@@ -1013,7 +1017,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
   state <- .sc_run_cleanup(root, .sc_run_load(root))
   .sc_run_propose_locked(root, state, proposal, reviewer, reason)
 }
-.sc_run_propose_locked <- function(root, state, proposal, reviewer, reason, drive = TRUE, review_binding = NULL) {
+.sc_run_propose_locked <- function(root, state, proposal, reviewer, reason, drive = TRUE, review_binding = NULL, retained_scope = NULL) {
   if (is.character(proposal) && length(proposal) == 1L) {
     raw <- rawToChar(.sc_review_read(proposal, limit = 100000L))
     parsed <- .sc_run_provider_parse(raw)
@@ -1021,7 +1025,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     proposal <- parsed$content
   }
   if (isTRUE(state$config$strategy) && identical(proposal$schema, "scagentkit.strategy.v1"))
-    return(.sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason, review_binding))
+    return(.sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason, review_binding, retained_scope = retained_scope))
   if (!state$stage %in% c("qc_propose", "annotation_propose")) stop("Manual proposals are only accepted at a proposal stage.", call. = FALSE)
   kind <- if (state$stage == "qc_propose") "qc" else "annotation"
   evidence <- .sc_run_get(root, state, paste0(kind, "_evidence"))
@@ -1030,9 +1034,12 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     if (!identical(state$config_hash, .sc_run_hash(state$config)) ||
         !identical(state$implementation_hash, .sc_run_implementation()))
       stop("Configuration or implementation changed; proposal review is stale.", call. = FALSE)
-    proposal <- .sc_run_qc_validate(proposal, evidence)$proposal
+    if (is.null(retained_scope)) retained_scope <- .sc_run_qc_retained_scope_for_proposal(root, state, proposal, evidence, "qc")
+    .sc_run_qc_retained_scope_verify(root, state, retained_scope, evidence)
+    validated <- .sc_run_qc_validate(proposal, evidence, retained_scope = retained_scope)
+    proposal <- validated$proposal
     options <- .sc_run_qc_current_options(state)
-    .sc_run_qc_preview_build(proposal, evidence, options$sensitivity, options$gene_panels)
+    .sc_run_qc_preview_build(proposal, evidence, options$sensitivity, options$gene_panels, retained_scope = retained_scope)
   } else {
     if (!identical(state$config_hash, .sc_run_hash(state$config)) ||
         !identical(state$implementation_hash, .sc_run_implementation()))
@@ -1057,9 +1064,8 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     previous_preview_hash = previous_preview_hash), review_binding))
   if (!drive) {
     if (kind == "qc") {
-      validated <- .sc_run_qc_validate(proposal, evidence)
       state <- .sc_run_put(root, state, "qc_validated", validated)
-      state <- .sc_run_qc_preview_publish(root, state, validated, evidence)
+      state <- .sc_run_qc_preview_publish(root, state, validated, evidence, retained_scope = retained_scope)
       state$nodes$qc_propose <- "PROPOSED"
       state <- .sc_run_qc_pending(state, validated, evidence, root)
     } else {
@@ -1072,8 +1078,9 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
     .sc_run_save(root, state)
     return(.sc_run_public(state))
   }
+  if (kind == "qc") state <- .sc_run_put(root, state, "qc_validated", validated)
   .sc_run_save(root, state)
-  .sc_run_drive(root, state, state$config$provider, NULL, FALSE)
+  .sc_run_drive(root, state, state$config$provider, NULL, FALSE, retained_scope = retained_scope)
 }
 
 #' Undo accepted annotation writeback while retaining decision history

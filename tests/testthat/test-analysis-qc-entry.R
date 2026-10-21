@@ -15,16 +15,16 @@ test_that("main entry binds sample-aware MAD choices without automatic quality d
   expect_identical(panel$grouping$column, "sample")
   expect_length(panel$groups, 2L)
   expect_identical(x$plan$qc$schema, "scagentkit.qc.rules.v1")
-  expect_identical(x$plan$qc$rules[[1]]$metric, "nCount")
-  expect_equal(x$plan$qc$rules[[1]]$min, 0)
-  expect_identical(x$plan$qc$rules[[2]]$preset_id, "keep_all")
-  expect_match(x$plan$qc$rationale, "Unfiltered keep-all")
+  expect_length(x$plan$qc$rules, 1L)
+  expect_identical(x$plan$qc$rules[[1]]$op, "mad_preset")
+  expect_identical(x$plan$qc$rules[[1]]$preset_id, "keep_all")
+  expect_match(x$plan$qc$rationale, "No additional QC")
   expect_match(x$plan$qc$rationale, "QC remains unassessed")
   expect_match(paste(x$plan$qc$risks, collapse = " "), "empty-droplet")
   expect_length(.sc_run_get(x$project_dir, .sc_run_load(x$project_dir), "strategy_validated")$qc_validated$keep_cells, 80L)
   alternative <- .sc_ui_plan(list(qc_preset = "low_counts3"), base = x$plan)
-  expect_identical(alternative$qc$rules[[2]]$preset_id, "low_counts3")
-  expect_identical(alternative$qc$rules[[2]]$panel_hash, panel$panel_hash)
+  expect_identical(alternative$qc$rules[[1]]$preset_id, "low_counts3")
+  expect_identical(alternative$qc$rules[[1]]$panel_hash, panel$panel_hash)
   expect_identical(panel$method$high_rna_action, "flag only; no high-count/high-feature deletion")
   expect_identical(panel$method$ribo_hb_action, "diagnostic only; no deletion")
 })
@@ -34,6 +34,30 @@ test_that("undeclared samples disable implicit pooled MAD and QC edits stay boun
   expect_identical(cfg, FALSE)
   expect_null(.sc_run_mad_options(list(), cfg))
   expect_identical(.sc_ui_mad_setup(entry_qc_context())$grouping$declared_role, "sample")
+})
+
+test_that("public review can explicitly select saved MAD after removing its last selector", {
+  x <- sc_analyze(entry_qc_input(), tempfile(), entry_qc_context(),
+    plan = list(analysis = list(nfeatures = 100L, npcs = 6L), pcs = 4L, umap = FALSE))
+  panel_hash <- x$view$strategy_review$details$mad_panel$panel_hash
+  for (rules in list(list(), list(list(op = "range", metric = "nCount", min = 1, max = NULL, group = NULL)))) {
+    draft <- x$plan
+    draft$qc$rules <- rules
+    draft$qc$remove_if <- "all"
+    sc_run_propose(x$project_dir, draft, "author", "Explicitly remove the MAD selector for this review.")
+    invisible(capture.output(shown <- sc_review(x)))
+    expect_identical(shown$plan$qc$rules, rules)
+    invisible(capture.output(prose <- sc_review(shown, "revise", reviewer = "author",
+      reason = "Retain the reviewed QC policy.", plan = list(rationale = "Reviewed software fixture."))))
+    expect_identical(prose$plan$qc$rules, rules)
+    invisible(capture.output(selected <- sc_review(prose, "revise", reviewer = "author",
+      reason = "Explicitly select the saved MAD candidate.", plan = list(qc_preset = "keep_all"))))
+    expect_identical(selected$plan$qc$rules, c(rules,
+      list(list(op = "mad_preset", preset_id = "keep_all", panel_hash = panel_hash))))
+    expect_identical(selected$plan$qc$remove_if, "all")
+    expect_identical(selected$view$status, "awaiting_review")
+    expect_null(.sc_run_load(x$project_dir)$files$qc_object)
+  }
 })
 
 

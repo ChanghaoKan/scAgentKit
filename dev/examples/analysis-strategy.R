@@ -51,7 +51,7 @@ strategy_example_mock <- function(resolution = 0.4, npcs = 6L, ndim = 4L) {
       stop("The mock requires the coordinator's actual aggregate strategy evidence.")
     if (!identical(evidence$start_stage, "qc"))
       stop("Use strategy_example_processed() for an explicit processed reuse plan.")
-    filters <- lapply(evidence$quality$groups, function(group) {
+    rules <- lapply(evidence$quality$groups, function(group) {
       summary <- group$metrics$nFeature
       if (is.null(summary$p05) || is.null(summary$p99) ||
           !is.finite(summary$p05) || !is.finite(summary$p99))
@@ -65,8 +65,8 @@ strategy_example_mock <- function(resolution = 0.4, npcs = 6L, ndim = 4L) {
         "Mitochondrial filtering, cycle, doublet and automatic batch correction are not proposed.",
         "Fixed PCs and resolution are demonstration choices; their biological suitability remains unresolved."),
       inferences = list("Software-test policy only: no inferred cell type, donor identity or technical batch fact."),
-      qc = list(schema = "scagentkit.qc.v1", rationale = "Mock test rule derived from the supplied actual aggregate p05/p99 feature distributions.",
-        risks = list("Quantile tails may contain valid biological populations."), filters = filters),
+      qc = list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Mock test rule derived from the supplied actual aggregate p05/p99 feature distributions.",
+        risks = list("Quantile tails may contain valid biological populations."), rules = rules),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
         nfeatures = min(60L, evidence$input$expressed_features), npcs = npcs, seed = 17L),
       pcs = list(method = "fixed", ndim = ndim),

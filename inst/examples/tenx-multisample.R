@@ -4,10 +4,10 @@
 # A filtered matrix alone does not establish capture/donor facts or a complete
 # called-cell scoring cohort. The package will disclose missing prerequisites.
 tenx_multisample_start <- function(samples,cell_metadata,context,project_dir,
-                                   provider=NULL,budget=0,
+                                   provider=NULL,
                                    review=list(allow_external=FALSE),browse=interactive()) {
   scAgentKit::sc_start(samples,project_dir,context=context,cell_metadata=cell_metadata,
-    feature_key="id",provider=provider,budget=budget,review=review,browse=browse)
+    feature_key="id",provider=provider,review=review,browse=browse)
 }
 # Example shape only; replace all paths and biological facts deliberately:
 # samples <- data.frame(sample_id=c("sample_A","sample_B"),

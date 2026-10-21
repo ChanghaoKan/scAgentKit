@@ -42,8 +42,10 @@
   out$filter_impacts <- lapply(value$filter_impacts, .sc_wb_fields, fields = c("id", "filter", "scoped",
     "low", "high", "unavailable", "independently_removed", "exclusively_removed",
     "primary_retained_in_scope", "primary_removed_in_scope"))
+  out$rule_logic <- .sc_wb_fields(value$rule_logic, c("schema", "remove_if", "rule_ids",
+    "prefilter_applied", "prefilter_removed", "prior_removed", "quality_removed", "final_retained"))
   out$patterns <- lapply(value$patterns, .sc_wb_fields,
-    fields = c("filter_ids", "reason_ids", "unavailable_filter_ids", "count", "retained", "removed"))
+    fields = c("filter_ids", "reason_ids", "unavailable_filter_ids", "prefilter_excluded", "prior_excluded", "count", "retained", "removed"))
   out$overlap <- .sc_wb_fields(value$overlap, c("filter_ids", "counts", "interpretation"))
   # These are saved population counts/quantiles, not the per-cell metrics frame.
   out$distributions <- .sc_wb_fields(value$distributions, c("global", "groups"))

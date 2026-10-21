@@ -12,6 +12,7 @@ import tempfile
 import time
 import unittest
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import run_suggestion_runtime as module
@@ -20,6 +21,9 @@ from store import StoreError
 
 FAKE_R = r'''#!/usr/bin/env python3
 import json, os, pathlib, sys, tempfile, time
+# Explicit test-only admission response; real RDS checks live in test_project_format.
+if len(sys.argv)==4 and pathlib.Path(sys.argv[2]).name=="project_format_bridge.R":
+ print("scagentkit.project-format.ok"); sys.exit(0)
 operation=sys.argv[3]; project=pathlib.Path(sys.argv[4]); request=pathlib.Path(sys.argv[5]); output=pathlib.Path(sys.argv[6])
 payload=json.loads(request.read_text()); descriptor=json.loads((project/'fixture.json').read_text()); mode=json.loads((project/'mode.json').read_text())
 def atomic(path,value):
@@ -50,13 +54,15 @@ atomic(output,{'ok':True,'result':descriptor,'error':None})
 
 
 @unittest.skipIf(module.fcntl is None, 'POSIX flock required')
+
 class SuggestionRuntimeTests(unittest.TestCase):
     def setUp(self):
+        mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory(prefix='scagentkit-suggestion-mechanism-')
         self.root = Path(self.temp.name)
         self.project = self.root / 'project'; self.project.mkdir()
         (self.project / 'state.rds').write_bytes(b'explicit-simulated-R-authority')
-        (self.project / "project-format.json").write_text('{"project_format_version":2}')
+        (self.project / "project-format.json").write_text('{"project_format_version":3}')
         self.run = {'schema':'scagentkit.run.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'status':'awaiting_configuration','stage':'strategy_propose'}
         module._atomic(self.project/'status.json',self.run)
         self.descriptor = {'schema':'scagentkit.run-suggestion.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'kind':'strategy','available':True,'blocked_reason':None,'suggestion_hash':'b'*64,'status':'approved','preview':{'request_hash':'c'*64,'provider':{'name':'mock','model':'simulated','generation':{},'external':False,'pricing':{},'api_key_env':None},'external':False,'simulated':True,'system_prompt':'Simulated aggregate-only fixture','user_prompt':'No raw cells or barcodes','known_cost_usd':0,'unknown_cost_count':0},'candidate':None,'response':None,'can_approve':False,'can_request':True,'can_adopt':False,'can_discard':False}
@@ -142,7 +148,7 @@ class SuggestionRuntimeTests(unittest.TestCase):
         second=self.runtime.submit(dict(self.payload,request_id='click-002'))
         self.assertEqual(first['job']['job_id'],second['job']['job_id']);self.assertTrue(second['duplicate'])
         fresh=RunSuggestionRuntime(self.project,rscript=str(self.fake),simulate=True)
-        with patch.object(fresh,'_call_suggestion',side_effect=AssertionError('Active polling must not spawn R')):
+        with patch.object(fresh,'_call_suggestion',side_effect=AssertionError('Active polling must not call the suggestion coordinator')):
             poll=fresh.describe()
         self.assertEqual(poll['job']['job_id'],first['job']['job_id'])
         done=self.terminal(fresh)

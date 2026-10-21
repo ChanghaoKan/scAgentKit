@@ -1,12 +1,12 @@
 # Sourcing defines a helper and sends nothing. Credentials stay in the named
 # provider environment variable. Confirm aggregate data transfer once; every
 # scientific decision still needs a separate human approval in the browser.
-full_llm_start <- function(input, project_dir, context, provider, budget = NULL,
+full_llm_start <- function(input, project_dir, context, provider,
                            reviewer, reason, categories, confirmed = FALSE,
                            browse = interactive(), react = "auto") {
   if (!isTRUE(confirmed)) stop("Review the provider/model and aggregate data categories, then confirm transfer. Usage and costs are recorded afterwards.", call. = FALSE)
   scAgentKit::sc_start(input, project_dir, context = context, provider = provider,
-    budget = budget, react = react,
+    react = react,
     review = list(allow_external = TRUE, transfer_consent = list(mode = "project",
       confirmed = TRUE, reviewer = reviewer, reason = reason, categories = categories)),
     browse = browse)
@@ -24,5 +24,5 @@ full_llm_start <- function(input, project_dir, context, provider, budget = NULL,
 # react="all" checks every cluster; react="off" keeps the one-shot draft.
 # Strict per-payload transfer: sc_start(..., review=list(allow_external=TRUE)).
 # Missing key falls back visibly to manual mode. No call is resent automatically
-# after uncertain delivery. All requests use post-call accounting; the deprecated
-# budget argument does not impose a cap.
+# after uncertain delivery. All requests use post-call accounting without a
+# monetary cap.

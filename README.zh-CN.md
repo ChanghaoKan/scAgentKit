@@ -50,7 +50,8 @@ sc_start("input.rds", "new-project",
 | 查方法和环境要求 | [文档索引](docs/README.md) |
 | 开发、验证与阶段报告 | [开发者索引](docs/dev/README.md) |
 
-1.0 前影响科学结果的实现变更可能使旧项目无法继续，请保留原软件环境。
+项目格式不匹配时，系统会在写入前拒绝打开，提示“请用原软件环境打开，或新建项目”。
+请保留原软件环境；详见[项目格式与重开](workbench/README.md#project-format-and-reopening)。
 轨迹、通讯、调控网络和条件间比较等高级下游分析不在范围内。
 [方法与局限](docs/SCIENTIFIC_METHODS_APPENDIX.md)。
 

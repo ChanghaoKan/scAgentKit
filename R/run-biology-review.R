@@ -72,8 +72,7 @@
   proposal <- validated$proposal$qc
   metrics <- evidence$qc$metrics
   membership <- unname(record$membership[match(metrics$cell_id, names(record$membership))])
-  rules <- if (!is.null(proposal$rules)) proposal$rules else if (!is.null(proposal$filters))
-    proposal$filters else list(list(op = "mad_preset", preset_id = proposal$preset_id))
+  rules <- proposal$rules
   table <- list()
   add <- function(metric, selected, minimum, maximum, predicate) {
     for (cluster in sort(unique(record$membership))) {
@@ -110,6 +109,6 @@
   list(schema = "scagentkit.diagnostic-threshold-review.v1", table = table,
     minimum_prefilter_counts = record$minimum_counts,
     replacement_impact = validated$qc_validated$summary$replacement_impact,
-    remove_if = if (is.null(proposal$remove_if)) "any" else proposal$remove_if,
+    remove_if = proposal$remove_if,
     interpretation = "Rows are effective bounds within each saved predicate and diagnostic cluster. Existing rule AND/OR and MAD-preset logic still combine failures; minimal prefilter and other metrics remain active. Missing bounds are unrestricted, not zero.")
 }

@@ -37,7 +37,7 @@ Source-level validator/ARI signatures and bodies were preserved during moves.
 | `annot_map_to_cl` / `cl_lookup` | Label table or Seurat / query and explicit local ontology or documented cache | Exact dictionary matches or lookup candidates, never identity validation |
 | `annot_collapse_to_broad` | Explicit supplied labels and optional map | Standalone label transformation; never automatic during project review |
 | `annot_compare_with_reference` | Seurat label column plus explicit reference column or exact-ID vector | Descriptive agreement list with denominators; no prefix/role guessing or identity-truth claim |
-| `sc_project_prepare` / `sc_project_export` | Named counts/Seurat / prepared Seurat | Explicit preparation / verified portable bundle; input remains unchanged |
+| `sc_project_prepare` / `sc_project_export` | Named counts/Seurat / prepared Seurat | Explicit preparation / verified portable bundle; input is read-only |
 | `sc_review_validate` / `sc_review_apply` | Seurat, bound project/journal | Validation / a new Seurat copy with ID-aligned review metadata |
 
 These tools operate on copies/tables and do not silently modify project

@@ -43,9 +43,9 @@ subcluster_integration_context <- function() list(species = "human", tissue = "s
 subcluster_integration_plan <- function() list(schema = "scagentkit.strategy.v1",
   rationale = "A finite manually reviewed raw-count child software control.",
   risks = list("No biological identity or clustering optimum is established."),
-  inferences = list(), qc = list(schema = "scagentkit.qc.v1",
+  inferences = list(), qc = list(schema = "scagentkit.qc.rules.v1",
     rationale = "Keep every frozen selected parent cell.", risks = list("No second quality filter requested."),
-    filters = list(list(op = "range", metric = "nCount", min = 0L))),
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 0L))),
   analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
     nfeatures = 50L, npcs = 6L, seed = 6041L),
   pcs = list(method = "fixed", ndim = 4L),
@@ -374,9 +374,9 @@ test_that("second QC filtering requires explicit child choice and writeback bind
   parent <- subcluster_integration_parent(work, source)
   protected <- subcluster_integration_files(parent$root)
   plan <- subcluster_integration_plan()
-  plan$qc <- list(schema = "scagentkit.qc.v1", rationale = "Explicitly exclude only the planted one-count control.",
+  plan$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = "Explicitly exclude only the planted one-count control.",
     risks = list("Synthetic software exclusion, not a biological quality threshold."),
-    filters = list(list(op = "range", metric = "nCount", min = 2L)))
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 2L)))
   expect_error(subcluster_integration_create(parent, file.path(work, "not-authorized"), plan = plan),
     "retain_selected|filter|QC|choice")
   expect_false(file.exists(file.path(work, "not-authorized", "state.rds")))

@@ -69,9 +69,9 @@ cycle_integration_plan <- function(method = NULL) {
     rationale = "Use a count-positive software QC control and explicit local analysis choices.",
     risks = list("Planted expression and metadata do not validate biology or QC thresholds."),
     inferences = list("Synthetic expression programs are test controls, not user biological facts."),
-    qc = list(schema = "scagentkit.qc.v1", rationale = "Remove only the zero-count software control.",
+    qc = list(schema = "scagentkit.qc.rules.v1", rationale = "Remove only the zero-count software control.",
       risks = list("A test cutoff, not a recommended biological threshold."),
-      filters = list(list(op = "range", metric = "nCount", min = 1L))),
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1L))),
     analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
       nfeatures = 80L, npcs = 10L, seed = 17L),
     pcs = list(method = "fixed", ndim = 5L),
@@ -577,7 +577,7 @@ test_that("noncycle PC and actual QC revisions each approve Continue and complet
     root <- cycle_integration_copy(base); roots <- c(roots, root)
     proposal <- cycle_integration_plan()
     if (kind == "pcs") proposal$pcs$ndim <- 4L else {
-      proposal$qc$filters[[1L]]$min <- 2L
+      proposal$qc$rules[[1L]]$min <- 2L
       proposal$qc$rationale <- "Also remove the planted one-count control in this actual QC revision."
     }
     revised <- cycle_integration_revise(root, proposal)

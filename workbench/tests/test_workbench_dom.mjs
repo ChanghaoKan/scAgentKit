@@ -30,7 +30,7 @@ function view(id = "parent", options = {}) {
   const inputHash = h64(id === "parent" ? "a" : "b"), historyEvents = events(4, id), head = historyEvents.at(-1).hash, child = id !== "parent";
   const markers = [{clusterId: "01", gene: "CD3D", avgLog2FC: 2.1234567891234, pct1: .7, pct2: .1, pctDiff: .6, pAdj: .002, source: "saved public fixture"}, {clusterId: "1", gene: "CD79A", avgLog2FC: 1.7, pct1: .8, pct2: .2, pAdj: .003, source: "saved public fixture"}];
   const evidence = {projectId: "bundle-" + id, bundleDigest: h64("e"), sourceFingerprint: h64("c"), dataset: {retainedCells: 3, clusterCount: 2}, embeddingName: "UMAP", clusters: [{id: "01", cellCount: 2, cellIds: ["cell:A", "cell:B"], markers: [markers[0]], sourceAnnotations: [{value: "old T", count: 2}]}, {id: "1", cellCount: 1, cellIds: ["cell:C"], markers: [markers[1]]}], umap: [{cellId: "cell:A", clusterId: "01", x: 1.2, y: 3}, {cellId: "cell:B", clusterId: "01", x: 2.4, y: -1.7}, {cellId: "cell:C", clusterId: "1", x: -.8, y: 1.1}]};
-  const proposal = {schema: "scagentkit.strategy.v1", rationale: "Saved bounded child strategy", risks: ["Biology remains unresolved"], qc: {filters: [], rationale: "Retain exact selection"}, analysis: {normalization_method: "LogNormalize", nfeatures: 100, npcs: 12}, pcs: {method: "fixed", ndim: 10}, batch: {method: "none", reason: "Condition is not a batch"}, clustering: {resolution: .4}, umap: {run: true}};
+  const proposal = {schema: "scagentkit.strategy.v1", rationale: "Saved bounded child strategy", risks: ["Biology remains unresolved"], qc: {schema: "scagentkit.qc.rules.v1", remove_if: "any", rules: [], risks: [], rationale: "Retain exact selection"}, analysis: {normalization_method: "LogNormalize", nfeatures: 100, npcs: 12}, pcs: {method: "fixed", ndim: 10}, batch: {method: "none", reason: "Condition is not a batch"}, clustering: {resolution: .4}, umap: {run: true}};
   const strategyReview = child ? {details: {canonical_proposal: proposal, source: {kind: "mock"}, qc_impact: {schema: "scagentkit.qc.preview.v1", retention: {before: 3, retained: 3, removed: 0}}, applicability: {executable: true}}, lifecycle: {status: "executed"}} : null;
   const annotationReview = {details: {annotations: evidence.clusters.map(cluster => ({clusterId: cluster.id, cell_count: cluster.cellCount, proposal: {label: "Unknown", confidence: "low", rationale: "This public mock fixture does not establish cell identities", markers: cluster.markers.map(row => row.gene)}, supplied_marker_stats: cluster.markers, local_reference: {status: "not_supplied"}})), source: {kind: "mock"}}, lifecycle: {executed: true}};
   const run = {schema: "scagentkit.run.v1", project_id: id, input_hash: inputHash, config_hash: h64("b"), implementation_hash: h64("c"), revision: 4, history_head: head, status: options.pending ? "awaiting_review" : "complete", stage: options.pending ? "strategy_propose" : "complete", context: {species: options.species || "human", tissue: "Public fixture", notes: "Study-specific notes", columns: {condition: "Ca_Ctrl"}}, nodes: {qc_evidence: "EXECUTED", analysis: "EXECUTED", annotation_apply: "EXECUTED"}, output: {seurat: "outputs/seurat.rds", bundle: "/fixed/bundle"}, annotation_review: annotationReview, strategy_review: strategyReview};
@@ -164,6 +164,27 @@ await check("different QC scopes keep exact thresholds and overlap totals are ne
   assert.match(h.el("wb-flow-details").textContent, /ANY failed rule \(OR failures\).*counts are not added.*S1.*200.*S2.*400.*quality-QC preview.*removed 10.*not an execution receipt.*Projected retained.*Separate doublet policy: remove_predicted.*intersection/s);
   assert.equal(h.el("wb-flow-details").children[0].getAttribute("open"), null);
   value.qc.preview.details.canonical_parameters.proposal.remove_if = "all"; value.strategy.review.details.canonical_proposal.qc.remove_if = "all"; h.wire("child-A", value); await h.call("wbLoad"); assert.match(h.el("wb-flow-details").textContent, /ALL failed rules \(AND failures\)/);
+  assert(h.requests.every(request => request.options.method === "GET"));
+});
+for (const remove_if of ["any", "all"]) await check("empty " + remove_if + " QC shows no additional filtering and disjoint saved exclusions", async () => {
+  const h = harness("?child_id=child-A&project_id=child-A"), value = groupedQC(), record = value.qc.preview.details, proposal = record.canonical_parameters.proposal;
+  proposal.rules = []; proposal.remove_if = remove_if; record.filter_impacts = []; record.overlap = {filter_ids: [], counts: []};
+  record.rule_logic = {prefilter_removed: 2, prior_removed: 8, quality_removed: 0, final_retained: 30};
+  h.wire("child-A", value); await h.call("wbLoad");
+  assert.match(flowNode(h, "qc").textContent, /No additional filtering; previously excluded cells are not restored.*40 → 30/s);
+  assert.match(h.el("wb-flow-details").textContent, /Mandatory prefilter exclusions: 2; previously excluded cells: 8; new rule exclusions: 0/);
+  assert.match(h.el("wb-parameter-summary").textContent, /No additional filtering/);
+  assert.doesNotMatch(h.el("wb-flow-details").textContent, /ANY 0|ALL 0|ANY failed rule|ALL failed rules/);
+  assert(h.requests.every(request => request.options.method === "GET"));
+});
+await check("v2 QC keeps outer logic and exact cluster replacement binding visible", async () => {
+  const h = harness("?child_id=child-A&project_id=child-A"), value = groupedQC(), proposal = value.qc.preview.details.canonical_parameters.proposal;
+  Object.assign(proposal, {schema: "scagentkit.qc.rules.v2", remove_if: "all", diagnostic_hash: h64("d"), membership_hash: h64("e"), replacements: [{cluster_id: "C1", metric: "nFeature", min: 100, max: null, reason: "Explicit diagnostic review"}]});
+  h.wire("child-A", value); await h.call("wbLoad");
+  assert.match(h.el("wb-flow-details").textContent, /ALL failed rules.*Cluster-level replacements and exact evidence binding.*diagnostic_hash.*membership_hash.*C1.*Explicit diagnostic review/s);
+  assert(h.el("wb-flow-details").textContent.includes(proposal.diagnostic_hash));
+  assert(h.el("wb-flow-details").textContent.includes(proposal.membership_hash));
+  assert.match(h.el("wb-parameter-summary").textContent, /ALL 2 rules/);
   assert(h.requests.every(request => request.options.method === "GET"));
 });
 await check("approved strategy remains unexecuted until saved apply checkpoint completes", async () => {

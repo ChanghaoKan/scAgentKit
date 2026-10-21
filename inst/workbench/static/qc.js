@@ -84,22 +84,26 @@ function renderRules(details) {
   target.append(element("p", proposal.rationale));
   const risks = array(proposal.risks);
   if (risks.length) {const list = element("ul", null, {class: "qc-rule-risks"}); risks.forEach(value => list.append(element("li", value))); target.append(list);}
-  if (proposal.schema === "scagentkit.qc.rules.v1") {
-    target.append(element("p", proposal.remove_if === "any" ? "Remove if ANY rule fails (OR of failures)." : proposal.remove_if === "all" ? "Remove if ALL rules fail (AND of failures)." : "Failure combination unavailable."));
+  if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(proposal.schema)) {
+    target.append(element("p", Array.isArray(proposal.rules) && !proposal.rules.length ? "No additional filtering; previously excluded cells are not restored." : proposal.remove_if === "any" ? "Remove if ANY rule fails (OR of failures)." : proposal.remove_if === "all" ? "Remove if ALL rules fail (AND of failures)." : "Failure combination unavailable."));
     target.append(element("p", "Saved minimal-prefilter exclusions remain mandatory. Independent failure counts overlap; the final cell set is deduplicated. Doublet marking/removal is a separate reviewed choice."));
     target.append(table(["Rule", "Operation", "Metric / saved preset", "Minimum (inclusive)", "Maximum (inclusive)", "Scope"], array(proposal.rules).map((rule, i) => rule.op === "mad_preset" ?
       [i + 1, "Saved MAD predicate", rule.preset_id, "Exact saved panel", "Exact saved panel", "All saved QC groups"] :
       [i + 1, rule.op, rule.metric, rule.min == null ? "No lower bound" : fmt(rule.min), rule.max == null ? "No upper bound" : fmt(rule.max), selector(rule.group)])));
     array(proposal.rules).filter(rule => rule.op === "mad_preset").forEach(rule => target.append(element("p", "Saved MAD panel hash: " + rule.panel_hash)));
-  } else target.append(table(["Condition", "Metric", "Minimum (inclusive)", "Maximum (inclusive)", "Scope"], array(proposal.filters).map((f, i) => [i + 1, f.metric, f.min == null ? "No lower bound" : fmt(f.min), f.max == null ? "No upper bound" : fmt(f.max), selector(f.group)])));
+    if (proposal.schema === "scagentkit.qc.rules.v2") target.append(element("p", "Cluster-level replacements use the saved diagnostic and membership evidence."), raw({diagnostic_hash: proposal.diagnostic_hash, membership_hash: proposal.membership_hash, replacements: proposal.replacements}));
+  } else empty(target, "Unsupported QC proposal schema; rebuild the review in R.");
   $("qc-cell-scope").replaceChildren(ids("Retained", details?.keep_cells), ids("Removed", details?.remove_cells));
 }
 function renderImpacts(details) {
   const impacts = array(details?.filter_impacts), target = $("qc-filter-impacts"); target.replaceChildren();
-  if (!impacts.length) empty(target, "No verified impact preview is present.");
+  const emptyRules = Array.isArray(details?.canonical_parameters?.proposal?.rules) && !details.canonical_parameters.proposal.rules.length;
+  if (!impacts.length) empty(target, emptyRules ? "No additional filtering; previously excluded cells are not restored. No new rule impacts." : "No verified impact preview is present.");
   else target.append(table(["Condition / scope", "Scoped", "Below", "Above", "Unavailable", "Independent removal", "Exclusive removal"], impacts.map(f => [
     `${f.id} · ${f.filter?.metric || f.filter?.preset_id || ""} · ${selector(f.filter?.group)}`, fmt(f.scoped), fmt(f.low), fmt(f.high), fmt(f.unavailable), fmt(f.independently_removed), fmt(f.exclusively_removed)
   ])));
+  const logic = details?.rule_logic;
+  if (logic) target.append(element("p", "Mandatory prefilter exclusions: " + fmt(logic.prefilter_removed) + "; previously excluded cells: " + fmt(logic.prior_removed) + "; new rule exclusions: " + fmt(logic.quality_removed) + ". These are disjoint counts."));
   impacts.forEach(f => {
     const scope = element("details"); scope.append(element("summary", `${f.id} · exact condition scope and reasons`),
       ids("Scoped", f.scope_cells), ids("Below minimum", f.low_cells), ids("Above maximum", f.high_cells),
@@ -109,7 +113,7 @@ function renderImpacts(details) {
   const overlap = $("qc-overlap"); overlap.replaceChildren();
   const names = array(details?.overlap?.filter_ids), counts = array(details?.overlap?.counts);
   if (names.length) overlap.append(table(["Condition", ...names], names.map((name, i) => [name, ...array(counts[i]).map(fmt)])));
-  else empty(overlap, "No measured overlap table is available.");
+  else empty(overlap, emptyRules ? "No rule overlap applies to an empty rules proposal." : "No measured overlap table is available.");
   const patterns = $("qc-patterns"); patterns.replaceChildren();
   array(details?.patterns).forEach(pattern => {
     const card = ids(`${array(pattern.reason_ids).join(" + ") || "No measured failure"}; unavailable ${array(pattern.unavailable_filter_ids).join(", ") || "none"}; kept ${fmt(pattern.retained)} / removed ${fmt(pattern.removed)}`, pattern.cell_ids);

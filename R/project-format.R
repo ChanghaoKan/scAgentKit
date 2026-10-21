@@ -1,6 +1,6 @@
 # The project format is independent of individual JSON schema names. Increment
 # it whenever persisted execution contracts change; old projects are rejected.
-.sc_project_format_version <- function() 2L
+.sc_project_format_version <- function() 3L
 .sc_project_format_fail <- function() {
   stop("Project format is not supported. \u8bf7\u7528\u539f\u8f6f\u4ef6\u73af\u5883\u6253\u5f00\uff0c\u6216\u65b0\u5efa\u9879\u76ee\u3002", call. = FALSE)
 }
@@ -19,6 +19,9 @@
   if (!is.list(format) || !identical(names(format), "project_format_version") ||
       !.sc_project_format_valid(format$project_format_version)) .sc_project_format_fail()
   state_path <- file.path(root, "state.rds")
+  # A referenced parent is an existing project, never a new marker-only root.
+  if (length(seen) && (!utils::file_test("-f", state_path) ||
+      nzchar(Sys.readlink(state_path)))) .sc_project_format_fail()
   if (file.exists(state_path)) {
     if (nzchar(Sys.readlink(state_path)) || dir.exists(state_path)) .sc_project_format_fail()
     envelope <- tryCatch(readRDS(state_path), error = function(e) .sc_project_format_fail())

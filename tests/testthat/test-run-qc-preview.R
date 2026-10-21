@@ -22,8 +22,8 @@ qc_preview_proposal <- function(filters = list(
     list(op = "range", metric = "nCount", min = 3, max = 12),
     list(op = "range", metric = "nFeature", min = 3, max = 4),
     list(op = "range", metric = "percent_mt", max = 20))) {
-  list(schema = "scagentkit.qc.v1", rationale = "Explicit synthetic comparison, not optimal thresholds.",
-       risks = "Marker expression is not a QC gold standard.", filters = filters)
+  list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Explicit synthetic comparison, not optimal thresholds.",
+       risks = "Marker expression is not a QC gold standard.", rules = filters)
 }
 
 test_that("QC preview preserves exact scope order and overlapping reasons", {
@@ -46,9 +46,9 @@ test_that("QC preview preserves exact scope order and overlapping reasons", {
   expect_equal(sum(vapply(preview$patterns, `[[`, integer(1), "count")), 7L)
   expect_equal(sum(vapply(preview$patterns, `[[`, numeric(1), "removed")), 5L)
   zero_pattern <- Filter(function(pattern) "001" %in% pattern$cell_ids, preview$patterns)[[1]]
-  expect_identical(zero_pattern$filter_ids, c("filter1", "filter2"))
-  expect_identical(zero_pattern$reason_ids, c("filter1:low", "filter2:low"))
-  expect_identical(zero_pattern$unavailable_filter_ids, "filter3")
+  expect_identical(zero_pattern$filter_ids, c("rule1", "rule2"))
+  expect_identical(zero_pattern$reason_ids, c("rule1:low", "rule2:low"))
+  expect_identical(zero_pattern$unavailable_filter_ids, "rule3")
   expect_match(preview$overlap$interpretation, "unavailable.*separately")
   expect_identical(preview, scAgentKit:::.sc_run_qc_preview_build(qc_preview_proposal(), evidence))
 })
@@ -130,7 +130,7 @@ test_that("QC preview validates every candidate and fails closed on unsupported 
   expect_error(scAgentKit:::.sc_run_qc_preview_build(proposal, evidence,
     sensitivity = list(list(id = "extra", proposal = proposal, code = "stop()"))), "exactly")
   unsupported <- proposal
-  unsupported$filters[[1]]$metric <- "hallucinated"
+  unsupported$rules[[1]]$metric <- "hallucinated"
   expect_error(scAgentKit:::.sc_run_qc_preview_build(proposal, evidence,
     sensitivity = list(list(id = "invalid", proposal = unsupported))), "Unsupported QC metric")
   expect_error(scAgentKit:::.sc_run_qc_preview_build(proposal, evidence,
@@ -196,4 +196,29 @@ test_that("QC preview agrees with exact sparse Seurat application and leaves inp
   expect_s4_class(SeuratObject::LayerData(output, layer = "counts"), "sparseMatrix")
   expect_identical(SeuratObject::LayerData(output, layer = "counts"),
     SeuratObject::LayerData(seu, layer = "counts")[, preview$keep_cells, drop = FALSE])
+})
+
+
+test_that("empty-rule preview has zero predicates and complete original-length populations", {
+  evidence <- qc_preview_fixture()
+  for (logic in c("any", "all")) {
+    proposal <- qc_preview_proposal(list()); proposal$remove_if <- logic
+    evaluated <- scAgentKit:::.sc_run_qc_rules_evaluate(proposal, evidence)
+    preview <- scAgentKit:::.sc_run_qc_preview_build(proposal, evidence)
+    expect_identical(dim(evaluated$failures), c(nrow(evidence$metrics), 0L))
+    expect_type(evaluated$failures, "logical")
+    expect_identical(preview$keep_cells, evidence$metrics$cell_id)
+    expect_identical(preview$remove_cells, character())
+    expect_identical(preview$filter_impacts, list())
+    expect_identical(preview$overlap$filter_ids, character())
+    expect_identical(preview$overlap$counts, list())
+    expect_identical(preview$rule_logic$rule_ids, character())
+    expect_identical(preview$patterns[[1L]]$filter_ids, character())
+    expect_identical(preview$patterns[[1L]]$reason_ids, character())
+    expect_false(preview$patterns[[1L]]$prior_excluded)
+    expect_equal(preview$rule_logic$quality_removed, 0L)
+    expect_equal(preview$rule_logic$prior_removed, 0L)
+    expect_equal(sum(vapply(preview$patterns, `[[`, integer(1), "count")), nrow(evidence$metrics))
+    expect_identical(preview$canonical_parameters$proposal$remove_if, logic)
+  }
 })

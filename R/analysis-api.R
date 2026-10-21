@@ -57,10 +57,10 @@
       rationale = "Editable software starting draft. Review input QC and study facts before approval.",
       risks = list("Starting drafts and standard analysis parameters do not establish completed QC or scientific suitability.",
         "Resolution 0.5 is a provisional scan starting value, not a recommendation. Review the measured cluster tree before final author selection."),
-      inferences = list(), qc = list(schema = "scagentkit.qc.v1",
-        rationale = "Unfiltered keep-all starting draft: no cell is removed without a reviewed QC choice. Inspect distributions and candidate impacts before approval.",
-        risks = list("No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
-        filters = list(list(op = "range", metric = "nCount", min = 0))),
+      inferences = list(), qc = list(schema = "scagentkit.qc.rules.v1",
+        rationale = "No additional QC filtering is selected; quality remains unassessed. Inspect distributions and candidate impacts before approval.",
+        risks = list("Prior exclusions remain excluded. No study-specific quality threshold has been established. Raw MEX input does not establish completed empty-droplet calling."),
+        remove_if = "any", rules = list()),
       analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
         nfeatures = nfeatures, npcs = npcs, seed = 17L),
       pcs = list(method = "computed_top50", threshold = .80),
@@ -95,10 +95,11 @@
   if ("diagnostic_resolutions" %in% names(edits)) base$clustering["diagnostic_resolutions"] <- list(edits$diagnostic_resolutions)
   fallback <- if (new_draft) .sc_run_default_mad_choice(mad) else NULL
   if (new_draft) base$qc$rationale <- paste(if (isTRUE(fallback$eligible)) "Conservative AND3 starting draft." else base$qc$rationale, fallback$reason)
-  mad_rule <- if (!is.null(mad)) list(op = "mad_preset", preset_id = if (new_draft) fallback$preset_id else "keep_all", panel_hash = mad$panel_hash) else {
-    existing <- Filter(function(rule) identical(rule$op, "mad_preset"), base$qc$rules)
-    if (length(existing)) existing[[1L]] else NULL
-  }
+  existing <- Filter(function(rule) identical(rule$op, "mad_preset"), base$qc$rules)
+  mad_rule <- if (length(existing)) existing[[1L]] else
+    if (!is.null(mad) && (new_draft || "qc_preset" %in% names(edits))) list(
+      op = "mad_preset", preset_id = if (new_draft) fallback$preset_id else edits$qc_preset,
+      panel_hash = mad$panel_hash) else NULL
   if ("qc_preset" %in% names(edits)) {
     if (is.null(mad_rule)) stop("qc_preset requires the saved MAD candidate panel.", call. = FALSE)
     .sc_project_string(edits$qc_preset, "qc_preset")
@@ -109,7 +110,7 @@
     if (!is.list(qc) || is.null(names(qc)) || !length(qc) || anyDuplicated(names(qc)) ||
         length(setdiff(names(qc), c("nCount", "nFeature", "percent_mt"))))
       stop("qc is a named list of nCount, nFeature or percent_mt inclusive ranges c(min, max); use NA for an open bound.", call. = FALSE)
-    filters <- lapply(names(qc), function(metric) {
+    ranges <- lapply(names(qc), function(metric) {
       bounds <- qc[[metric]]
       if (!is.numeric(bounds) || length(bounds) != 2L || all(is.na(bounds)) || any(is.infinite(bounds)))
         stop("Each QC range needs two finite numbers or NA, with at least one bound.", call. = FALSE)
@@ -118,14 +119,17 @@
       if (!is.na(bounds[[2]])) row$max <- bounds[[2]]
       row
     })
-    base$qc <- list(schema = "scagentkit.qc.v1", rationale = base$rationale,
-      risks = base$risks, filters = filters)
+    # Keep any hash-bound cluster replacements; validation checks their new
+    # baseline instead of silently dropping evidence or changing schema.
+    base$qc$rationale <- base$rationale
+    base$qc$risks <- base$risks
+    base$qc$remove_if <- "any"
+    base$qc$rules <- ranges
   }
-  if (!is.null(mad_rule)) {
-    ranges <- if (identical(base$qc$schema, "scagentkit.qc.v1")) base$qc$filters else
-      Filter(function(rule) !identical(rule$op, "mad_preset"), base$qc$rules)
-    base$qc <- list(schema = "scagentkit.qc.rules.v1", rationale = base$qc$rationale,
-      risks = base$qc$risks, remove_if = "any", rules = c(ranges, list(mad_rule)))
+  if (!is.null(mad_rule) && (new_draft || any(c("qc", "qc_preset") %in% names(edits)))) {
+    index <- which(vapply(base$qc$rules, function(rule) identical(rule$op, "mad_preset"), logical(1)))
+    if (length(index)) base$qc$rules[[index[[1L]]]] <- mad_rule
+    else base$qc$rules <- c(base$qc$rules, list(mad_rule))
   }
   if (new_draft && !"choice_reasons" %in% names(edits)) base$choice_reasons <- .sc_run_default_choice_reasons(
     if (length(intersect(names(edits), c("qc", "qc_preset")))) "Explicit caller QC draft; review measured applicability and exact retained cells before approval." else fallback$reason,
@@ -267,14 +271,14 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
     if (!is.null(panel)) {
       qc$mad_record <- panel; qc$summary$mad <- panel$summary
       qc$evidence_hash <- .sc_run_qc_hash(qc)
-      selected <- .sc_run_qc_validate(proposal$qc, qc)$keep_cells
+      selected <- .sc_run_qc_validate(proposal$qc, qc, retained_scope = NULL)$keep_cells
       selected_object <- checked$seu[, selected]
     } else {
       config <- list(assay = if (is.null(extra$assay)) "RNA" else extra$assay,
         counts_layer = if (is.null(extra$counts_layer)) "counts" else extra$counts_layer)
       checked <- .sc_run_input(object, context, config$assay, config$counts_layer)
       qc <- .sc_run_qc_evidence(checked$seu, checked$context, config$assay, config$counts_layer)
-      selected <- .sc_run_qc_validate(proposal$qc, qc)$keep_cells
+      selected <- .sc_run_qc_validate(proposal$qc, qc, retained_scope = NULL)$keep_cells
       selected_object <- checked$seu[, selected]
     }
     limits <- .sc_ui_pc_limits(selected_object, config, proposal$analysis$scale_factor)
@@ -341,13 +345,15 @@ sc_review <- function(project, action = c("show", "revise", "approve", "reject",
     if (action == "revise") {
       if (is.null(plan) == is.null(annotations)) stop("Revise needs exactly one of plan or annotations.", call. = FALSE)
       if (!is.null(plan) && is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry. Inspect sc_review() and supply a complete supported plan before approval.", call. = FALSE)
-      proposal <- if (!is.null(plan)) .sc_ui_plan(plan, base = project$plan) else .sc_ui_annotation(annotations)
+      proposal <- if (is.null(plan)) .sc_ui_annotation(annotations) else NULL
       # Lock once to bind first drafts as strictly as revisions. The public
       # sc_run_propose lacks a revision argument, so never call it blindly.
       owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
       state <- .sc_run_load(root); .sc_ui_current(root, state, project)
       if (!is.null(plan)) {
         if (is.null(project$plan)) stop("No displayed strategy draft; use the advanced typed strategy entry. Inspect sc_review() and supply a complete supported plan before approval.", call. = FALSE)
+        evidence <- .sc_run_get(root, state, "strategy_evidence")
+        proposal <- .sc_ui_plan(plan, base = project$plan, mad = evidence$qc$mad_record)
         .sc_run_strategy_propose_locked(root, state, proposal, reviewer, reason)
       } else {
         .sc_run_propose_locked(root, state, proposal, reviewer, reason, drive = FALSE,

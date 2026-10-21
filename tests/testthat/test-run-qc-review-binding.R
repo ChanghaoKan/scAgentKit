@@ -23,8 +23,8 @@ qc_binding_rule <- function(minimum = 1, scoped = TRUE) {
   filters <- list(list(op = "range", metric = "nCount", min = minimum))
   if (scoped) filters[[2]] <- list(op = "range", metric = "nCount", max = 10,
                                  group = list(sample = "sample a", capture = "cap2"))
-  list(schema = "scagentkit.qc.v1", rationale = "Explicit synthetic count scope.",
-       risks = list("No biological optimality or cell identity claim."), filters = filters)
+  list(schema = "scagentkit.qc.rules.v1", remove_if = "any", rationale = "Explicit synthetic count scope.",
+       risks = list("No biological optimality or cell identity claim."), rules = filters)
 }
 
 qc_binding_begin <- function(path, input = qc_binding_fixture(), rule = qc_binding_rule(), review = list()) {

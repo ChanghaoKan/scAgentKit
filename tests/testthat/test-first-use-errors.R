@@ -159,9 +159,9 @@ test_that("missing built-in keys pause after approved payload without HTTP charg
   mock_calls <- 0L
   mock <- function(system_prompt, user_prompt) {
     mock_calls <<- mock_calls + 1L
-    proposal <- list(schema = "scagentkit.qc.v1", rationale = "Explicit offline recovery test.",
+    proposal <- list(schema = "scagentkit.qc.rules.v1", rationale = "Explicit offline recovery test.",
       risks = list("Synthetic typed rule, not biological validation."),
-      filters = list(list(op = "range", metric = "nCount", min = 1L)))
+      remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1L)))
     list(content = as.character(jsonlite::toJSON(proposal, auto_unbox = TRUE)),
          usage = list(input_tokens = 0, output_tokens = 0, cached_tokens = 0), cost_usd = 0,
          model = "offline-recovery-test")

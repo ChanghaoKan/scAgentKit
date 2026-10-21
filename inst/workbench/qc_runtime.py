@@ -24,14 +24,34 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent
 HASH = re.compile(r"[a-f0-9]{64}\Z")
 MAX_RESULT = 64 * 1024 * 1024
+FORMAT_BRIDGE = ROOT / "project_format_bridge.R"
+FORMAT_BRIDGE_HASH = hashlib.sha256(FORMAT_BRIDGE.read_bytes()).hexdigest()
 
 
-def check_project_format(project):
-    """Reject unsupported saved runs before creating locks, jobs or requests.
+def _check_project_state(project, library, rscript, timeout):
+    """Read authoritative R state and parent formats without project writes."""
+    if (FORMAT_BRIDGE.is_symlink() or not FORMAT_BRIDGE.is_file()
+            or hashlib.sha256(FORMAT_BRIDGE.read_bytes()).hexdigest() != FORMAT_BRIDGE_HASH):
+        raise StoreError("Project format bridge changed; restart and inspect", 409)
+    names = {"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "TMP", "TEMP", "LANG", "TZ",
+             "R_HOME", "R_LIBS", "R_LIBS_SITE", "R_LIBS_USER", "DYLD_FALLBACK_LIBRARY_PATH"}
+    env = {name: value for name, value in os.environ.items() if name in names or name.startswith("LC_")}
+    env.update({name: os.devnull for name in
+                ("R_PROFILE", "R_PROFILE_USER", "R_ENVIRON", "R_ENVIRON_USER")})
+    if library:
+        env["R_LIBS_USER"] = library
+    try:
+        result = subprocess.run([str(rscript), "--vanilla", str(FORMAT_BRIDGE), str(project)],
+            env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, timeout=timeout, shell=False)
+    except (OSError, subprocess.TimeoutExpired) as problem:
+        raise StoreError("Read-only project format verification failed. " + PROJECT_FORMAT_ERROR, 409) from problem
+    if result.returncode != 0 or result.stdout != b"scagentkit.project-format.ok\n":
+        raise StoreError(PROJECT_FORMAT_ERROR, 409)
 
-    This creation-time marker is admission metadata. R also checks the version
-    inside its authoritative state envelope before every coordinator write.
-    """
+
+def check_project_format(project, library=None, rscript="Rscript", timeout=120):
+    """Check marker, authoritative state and parents before local project writes."""
     marker = Path(project) / "project-format.json"
     try:
         if marker.is_symlink() or not marker.is_file() or marker.stat().st_size > 4096:
@@ -43,6 +63,10 @@ def check_project_format(project):
             raise ValueError("Unsupported project format")
     except (OSError, UnicodeError, ValueError) as problem:
         raise StoreError(PROJECT_FORMAT_ERROR, 409) from problem
+    state = Path(project) / "state.rds"
+    if state.is_symlink() or not state.is_file():
+        raise StoreError("Authoritative local state.rds is required. " + PROJECT_FORMAT_ERROR, 409)
+    _check_project_state(project, library, rscript, timeout)
 
 
 class QCRuntime:
@@ -51,13 +75,11 @@ class QCRuntime:
         if supplied.is_symlink() or not supplied.is_dir():
             raise StoreError("QC run project must be an existing nonsymlink directory")
         self.project = supplied.resolve()
-        check_project_format(self.project)
-        if (self.project / "state.rds").is_symlink() or not (self.project / "state.rds").is_file():
-            raise StoreError("QC run project requires its authoritative local state.rds")
         self.library = os.pathsep.join(str(Path(entry).expanduser().resolve())
                                       for entry in library.split(os.pathsep) if entry) if library else None
         self.rscript = rscript
         self.timeout = timeout
+        check_project_format(self.project, self.library, self.rscript, self.timeout)
         self.bridge = ROOT / "qc_bridge.R"
         self.bridge_hash = hashlib.sha256(self.bridge.read_bytes()).hexdigest()
         self.project_identity = (self.project.stat().st_dev, self.project.stat().st_ino)
@@ -66,7 +88,7 @@ class QCRuntime:
         self.lock = threading.RLock()
 
     def _fresh(self):
-        check_project_format(self.project)
+        check_project_format(self.project, self.library, self.rscript, self.timeout)
         if (self.project.is_symlink() or not self.project.is_dir()
                 or (self.project.stat().st_dev, self.project.stat().st_ino) != self.project_identity
                 or self.bridge.is_symlink()

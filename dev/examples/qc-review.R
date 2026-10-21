@@ -46,11 +46,11 @@ make_qc_review_input <- function() {
 }
 
 qc_review_rules <- function(feature_min = 30, count_min = 25) list(
-  schema = "scagentkit.qc.v1",
+  schema = "scagentkit.qc.rules.v1", remove_if = "any",
   rationale = "Explicit fixed toy cutoffs for testing review mechanics; not optimized for biology.",
   risks = c("Low-depth cells may be real; these synthetic cutoffs are not study recommendations.",
             "Positive expression and gene availability do not establish QC validity."),
-  filters = list(list(op = "range", metric = "nFeature", min = feature_min),
+  rules = list(list(op = "range", metric = "nFeature", min = feature_min),
                  list(op = "range", metric = "nCount", min = count_min),
                  list(op = "range", metric = "percent_mt", max = 10),
                  list(op = "range", metric = "nCount", max = 500,
@@ -62,12 +62,15 @@ qc_review_print <- function(current) {
     record <- current$qc_preview
     details <- record$details
     print(as.data.frame(details$retention[c("before", "retained", "removed", "fraction_retained")]))
+    if (!length(details$filter_impacts))
+      cat("No additional QC rule; previously excluded cells are not restored.\n")
     print(do.call(rbind, lapply(details$filter_impacts, function(item)
-      data.frame(id = item$id, metric = item$filter$metric, scoped = item$scoped,
+      data.frame(id = item$id, metric = if (is.null(item$filter$metric)) item$filter$op else item$filter$metric, scoped = item$scoped,
         low = item$low, high = item$high, unavailable = item$unavailable,
         independent = item$independently_removed, exclusive = item$exclusively_removed))))
     cat("Exact removed cells:\n"); print(details$remove_cells)
-    overlap <- do.call(rbind, lapply(details$overlap$counts, unlist, use.names = FALSE))
+    overlap <- if (length(details$overlap$filter_ids))
+      do.call(rbind, lapply(details$overlap$counts, unlist, use.names = FALSE)) else matrix(integer(), 0L, 0L)
     dimnames(overlap) <- list(details$overlap$filter_ids, details$overlap$filter_ids)
     cat("Measured exclusion overlap matrix:\n"); print(overlap)
     cat("Unavailable metric counts:\n")

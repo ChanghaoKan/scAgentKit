@@ -140,11 +140,34 @@ to create a registered child. Each child has its own strategy, review and output
 Project links keep browser tabs bound to their selected parent or child.
 
 After child completion, inspect and approve the exact-cell application to a
-**new** parent object. The original parent remains unchanged. The parent view
+**new** parent object. The original parent is read-only during this operation. The parent view
 lists derived receipts; apply and undo retain versioned history. See
 [subcluster review](../docs/SUBCLUSTER_REVIEW.md) for the R route and conflicts.
 `--subcluster-inherit-model` explicitly copies safe model configuration to new
 children; it does not copy keys, callbacks, request consent or scientific approvals.
+
+## Project format and reopening
+
+The current project format version is **3**, independent of envelope names such
+as `scagentkit.run-state.v1`. A run directory contains `project-format.json` with
+`{"project_format_version":3}` and an authoritative `state.rds` whose state
+contains the same version under its saved hash. The software creates both;
+do not construct or edit them to open a project from another format.
+
+R entry points check the format before project writes or write locks. Workbench
+startup, reopening and runtime access check the marker and use a fresh read-only
+R preflight to verify the authoritative state and any parent project chain.
+A failed, timed-out or unavailable preflight refuses access before project writes.
+This preflight can start an R process; it does not run scientific analysis or call a model. Read-only result
+viewers also pass this gate. Missing, damaged or mismatched versions are rejected
+without changing the project: “请用原软件环境打开，或新建项目” (use the original
+software environment or create a new project). There is no migration path.
+Matching the format does not replace input, implementation or approval checks.
+
+Keep the complete directory, including the marker and state, in backups.
+Restoring or moving files does not upgrade the format. Portable evidence exports
+instead store version 3 in `project.json`, bound by the bundle digest; see the
+[portable project contract](PROJECT_SCHEMA.md).
 
 ## Saved views and interrupted sessions
 

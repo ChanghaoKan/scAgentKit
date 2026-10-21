@@ -10,7 +10,7 @@ The optional workbench connects to an existing `sc_run()` project directory. R r
 
 ## Start a review session
 
-Install the current scAgentKit package in the R library used by the run. Use a project created with that same coordinator implementation; this addition does not migrate older project approvals across an implementation change. Start the workbench on the machine that holds the project:
+Install the current scAgentKit package in the R library used by the run. The saved project must pass the [format gate](README.md#project-format-and-reopening) and match the coordinator implementation. Before creating worker/job files or locks, the workbench checks the format marker and runs a fresh read-only R check of the authoritative state. Missing, damaged or mismatched formats are refused; use the original software environment or create a new project. Start the workbench on the machine that holds the project:
 
 ```sh
 python3 workbench/server.py \
@@ -92,7 +92,7 @@ After approving the whole saved plan, choose Continue to write the new Seurat ou
 
 Continue is asynchronous. Its persisted job identity and status are separate from the authoritative R run state. Repeated submission of the same bound action reuses that job rather than starting a second computation. A stale revision, changed input or different project is rejected. A finished job can still have a run awaiting review or configuration; only the run's `complete` status indicates finalized output.
 
-Local task receipts, configuration and owner/status records are stored under the project's `.workbench-jobs/`. They supplement the R checkpoints and do not replace `state.rds` or grant a scientific approval. Polling reads saved status; it never starts another R calculation.
+Local task receipts, configuration and owner/status records are stored under the project's `.workbench-jobs/`. They supplement the R checkpoints and do not replace `state.rds` or grant a scientific approval. Polling reads saved status after a fresh read-only R format check; it never starts scientific analysis or a model request.
 
 Closing or refreshing the browser, losing the tunnel, or restarting the HTTP service does not by itself cancel the detached local worker or remove saved checkpoints. Reconnect the service to the same project and inspect its saved job/run status before acting again. An unknown response is not permission to start another worker. Do not remove a lock to bypass an active computation.
 

@@ -74,14 +74,20 @@ executed cell count.
 
 ## QC, PCs and clustering
 
-`scagentkit.qc.rules.v1` combines at most 32 typed failure predicates with
+`scagentkit.qc.rules.v1` combines 0–32 typed failure predicates with
 `remove_if="any"` (OR failures) or `"all"` (AND failures). A range uses measured
 `nCount`, `nFeature` or available `percent_mt`, optional inclusive min/max bounds,
 and optional literal **declared** sample/capture selectors. Outside a selector,
-that rule's failure is false. Consequently, AND between disjoint groups cannot
-remove a cell. The example uses a global range and one actual sample/capture
-range. Its ToyGene IDs do not supply a mitochondrial convention, so it does not
+that rule's failure is false. AND between disjoint groups cannot remove a cell,
+so such a contradictory scoped proposal is rejected. The example uses a global
+range and one actual sample/capture range. Its ToyGene IDs do not supply a mitochondrial convention, so it does not
 filter an unavailable mitochondrial metric.
+
+An empty `rules = list()` means no additional filtering in this stage. Both
+outer operators retain the captured committed cell scope without restoring
+earlier QC, minimal-prefilter or doublet exclusions. Quality assessment is
+unassessed. A new nonempty explicit policy can relax prior reviewed quality or
+doublet choices after a new approval, but cannot undo the immutable prefilter.
 
 When `qc_mad` was explicitly configured, one rule may instead choose an available
 saved `mad_preset` and its exact `panel_hash`. The finite MAD candidates and
@@ -91,6 +97,12 @@ The review shows per-rule failures, overlaps, unique removals and exact retained
 cells. Doublet prediction/removal remains a separate explicit reviewed choice:
 minimal prefilter, fixed pre-score doublet diagnostics, then quality QC and the
 approved keep/remove-predicted intersection. This demo does not fit doublets.
+
+`scagentkit.qc.rules.v2` adds diagnostic-cluster threshold replacements bound to
+`diagnostic_hash` and `membership_hash`. Each replacement needs an existing
+baseline metric predicate and passes the recorded scope and relaxation checks;
+an empty baseline cannot authorize replacements. See
+[diagnostic QC evidence](BIOLOGICAL_DIAGNOSTICS.md).
 
 The example explicitly chooses `pcs=list(method="computed_variance",
 threshold=.80)`. Any finite fraction strictly between 0 and 1 can be supplied.

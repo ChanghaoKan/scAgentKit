@@ -37,8 +37,8 @@ test_that("missing, partial, ambiguous and species-conflicting mappings never fa
     expect_false(evidence$summary$mitochondrial$available)
     expect_match(evidence$summary$mitochondrial$unavailable_reason, "unavailable, not zero")
     expect_true(all(is.na(evidence$metrics$percent_mt)))
-    rule <- list(schema = "scagentkit.qc.v1", rationale = "Negative software control", risks = list(),
-      filters = list(list(op = "range", metric = "percent_mt", max = 20)))
+    rule <- list(schema = "scagentkit.qc.rules.v1", rationale = "Negative software control", risks = list(),
+      remove_if = "any", rules = list(list(op = "range", metric = "percent_mt", max = 20)))
     expect_error(.sc_run_qc_validate(rule, evidence), "unavailable")
   }
 })

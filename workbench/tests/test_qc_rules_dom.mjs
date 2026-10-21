@@ -33,12 +33,32 @@ function test(name, fn) {fn(); passed++; console.log("PASS " + name);}
 const range = {op: "range", metric: "nFeature", min: 200, max: null, group: {sample: "literal <img src=x onerror=alert(1)>"}};
 const mad = {op: "mad_preset", preset_id: "conservative_and3", panel_hash: "a".repeat(64)};
 const details = proposal => ({canonical_parameters: {proposal}, keep_cells: ["001", "cell space"], remove_cells: ["NA"]});
-test("legacy ranges retain their five-column table", () => {
-  api.renderRules(details({schema: "scagentkit.qc.v1", rationale: "Legacy", risks: [], filters: [range]}));
-  const table = descendants(nodes.get("qc-rules"), "table")[0];
-  assert.equal(descendants(table, "th").length, 5); assert.equal(descendants(table, "td").length, 5);
-  assert.match(table.textContent, /nFeature/); assert.match(table.textContent, /No upper bound/);
-  assert.doesNotMatch(nodes.get("qc-rules").textContent, /ANY|ALL/);
+test("unsupported QC schema has no inferred range display", () => {
+  api.renderRules(details({schema: "unsupported", rationale: "Invalid", risks: [], rules: [range]}));
+  assert.match(nodes.get("qc-rules").textContent, /Unsupported QC proposal schema/);
+  assert.equal(descendants(nodes.get("qc-rules"), "table").length, 0);
+});
+test("empty any and all rules disclose no restoration and preserve exact saved scope", () => {
+  for (const remove_if of ["any", "all"]) {
+    const value = details({schema: "scagentkit.qc.rules.v1", rationale: "No additional filtering", risks: [], remove_if, rules: []});
+    value.rule_logic = {remove_if, rule_ids: [], prefilter_removed: 0, prior_removed: 1, quality_removed: 0};
+    value.filter_impacts = []; value.overlap = {filter_ids: [], counts: []};
+    value.patterns = [{reason_ids: ["prior_excluded"], prior_excluded: true, prefilter_excluded: false, count: 1, retained: 0, removed: 1, cell_ids: ["NA"]}];
+    api.renderRules(value); api.renderImpacts(value);
+    assert.match(nodes.get("qc-rules").textContent, /No additional filtering; previously excluded cells are not restored/);
+    assert.doesNotMatch(nodes.get("qc-rules").textContent, /ANY rule fails|ALL rules fail/);
+    assert.match(nodes.get("qc-filter-impacts").textContent, /prefilter exclusions: 0; previously excluded cells: 1; new rule exclusions: 0/);
+    assert.match(nodes.get("qc-overlap").textContent, /No rule overlap applies/);
+    assert.match(nodes.get("qc-patterns").textContent, /prior_excluded.*NA/);
+    assert.match(nodes.get("qc-cell-scope").textContent, /Retained.*2 exact IDs.*Removed.*1 exact IDs/s);
+  }
+});
+test("v2 keeps rule logic and bound cluster replacement evidence visible", () => {
+  const value = details({schema: "scagentkit.qc.rules.v2", rationale: "Explicit cluster override", risks: [], remove_if: "all", rules: [range], diagnostic_hash: "b".repeat(64), membership_hash: "c".repeat(64), replacements: [{cluster_id: "C1", metric: "nFeature", min: 100}]});
+  api.renderRules(value);
+  assert.match(nodes.get("qc-rules").textContent, /ALL rules fail/);
+  assert.match(nodes.get("qc-rules").textContent, /Cluster-level replacements.*diagnostic_hash.*membership_hash.*C1/s);
+  assert.equal(descendants(nodes.get("qc-rules"), "table").length, 1);
 });
 test("OR combination displays every range and saved MAD predicate", () => {
   api.renderRules(details({schema: "scagentkit.qc.rules.v1", rationale: "Combined", risks: [], remove_if: "any", rules: [range, mad]}));

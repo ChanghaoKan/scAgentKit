@@ -163,7 +163,7 @@ try {
   });
   await test("explicit sensitivity and missing gene settings rebuild immutable preview", async () => {
     const current = (await api()).run, proposal = structuredClone(current.qc_preview.details.canonical_parameters.proposal);
-    const first = proposal.filters.find(f => f.min != null); assert(first, "Fixture needs one lower-bound range for this typed comparison"); first.min = 0;
+    const first = proposal.rules.find(f => f.min != null); assert(first, "Fixture needs one lower-bound range for this typed comparison"); first.min = 0;
     proposal.rationale = "Explicit test control with zero lower bound; no biological recommendation";
     await ui("qc-alternatives").fill(JSON.stringify([{id: "explicit-low-bound-control", proposal}], null, 2));
     await ui("qc-panels").fill(JSON.stringify({"availability-only-control": ["SCAGENTKIT_UNAVAILABLE_TEST_GENE"]}, null, 2));
@@ -178,7 +178,7 @@ try {
   });
   await test("unsupported operation fails without altering the saved project", async () => {
     const before = await snapshot(approveProject), run = (await api()).run;
-    const body = payload(run, "revise"); body.proposal = structuredClone(run.qc_preview.details.canonical_parameters.proposal); body.proposal.filters[0].op = "eval";
+    const body = payload(run, "revise"); body.proposal = structuredClone(run.qc_preview.details.canonical_parameters.proposal); body.proposal.rules[0].op = "eval";
     await api(body, 409); assert.deepEqual(await snapshot(approveProject), before);
   });
   await test("two browser tabs reject a stale approval", async () => {

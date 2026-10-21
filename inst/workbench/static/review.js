@@ -11,7 +11,7 @@ function scopedRunURL(path) {
   if (selected.project_id) suffix.set("project_id", selected.project_id);
   return suffix.size ? path + (path.includes("?") ? "&" : "?") + suffix.toString() : path;
 }
-const state = {view: null, scopes: null, scopeProject: null, busy: false, stale: false, selectedCluster: null, drafts: new Map(), strategyDraftText: null, madSelect: null, strategyControls: [], batchControls: null, pcControls: null, qcControls: null, clusteringControls: null, strategyFeedback: null, markerMode: "cited", citationInputs: [], continuation: null, pollTimer: null, pollGeneration: 0, pollInFlight: false, connectionLost: false, awaitingFreshInspect: false, pendingRequest: null, suggestion: null, suggestionBusy: false, suggestionChaining: false, suggestionLost: false, suggestionError: "", suggestionTimer: null, suggestionGeneration: 0, suggestionPollInFlight: false, suggestionPending: null};
+const state = {view: null, scopes: null, scopeProject: null, busy: false, stale: false, selectedCluster: null, drafts: new Map(), strategyDraftText: null, strategyControls: [], batchControls: null, pcControls: null, qcControls: null, clusteringControls: null, strategyFeedback: null, markerMode: "cited", citationInputs: [], continuation: null, pollTimer: null, pollGeneration: 0, pollInFlight: false, connectionLost: false, awaitingFreshInspect: false, pendingRequest: null, suggestion: null, suggestionBusy: false, suggestionChaining: false, suggestionLost: false, suggestionError: "", suggestionTimer: null, suggestionGeneration: 0, suggestionPollInFlight: false, suggestionPending: null};
 function scopeQuery() {
   const query = new URLSearchParams(window.location.search || "");
   if ([...query.keys()].some(key => !["child_id", "project_id"].includes(key))) throw new Error("Only registered project identities are accepted in this URL.");
@@ -98,10 +98,10 @@ function declaredHarmonyColumns(details = state.view?.run.strategy_review?.detai
 }
 function qcRulesEnabled(details) {return details?.capabilities?.qc_rules?.schema === "scagentkit.qc.rules.v1";}
 function typedQCRulesError(qc, details) {
-  const legacyRanges = qc?.schema === "scagentkit.qc.v1";
-  if (!legacyRanges && !["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema)) return null; // Other legacy choices keep their separate validation.
-  if (!legacyRanges && !qcRulesEnabled(details)) return "The saved runtime does not advertise typed combined QC rules. Rebuild the review with supported R capabilities before changing this schema.";
-  const fields = legacyRanges ? ["schema", "rationale", "risks", "filters"] : ["schema", "rationale", "risks", "remove_if", "rules"];
+  if (qc == null) return null; // Explicit processed-object reuse.
+  if (!["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc.schema)) return "QC requires the current rules schema; rebuild the proposal in R.";
+  if (!qcRulesEnabled(details)) return "The saved runtime does not advertise typed combined QC rules. Rebuild the review with supported R capabilities before changing this schema.";
+  const fields = ["schema", "rationale", "risks", "remove_if", "rules"];
   // R's canonical character/numeric vectors auto-unbox at length one.
   if (qc.schema === "scagentkit.qc.rules.v2") {
     fields.push("diagnostic_hash", "membership_hash", "replacements");
@@ -111,16 +111,18 @@ function typedQCRulesError(qc, details) {
   const risks = array(qc.risks);
   if (Object.keys(qc).some(key => !fields.includes(key)) || fields.some(key => !Object.hasOwn(qc, key)) ||
       typeof qc.rationale !== "string" || !qc.rationale.trim() || !(Array.isArray(qc.risks) || typeof qc.risks === "string") || risks.some(value => typeof value !== "string" || !value.trim()))
-    return legacyRanges ? "QC ranges require exactly schema, a nonempty rationale, risks as text entries and filters." : "QC rules require exactly schema, a nonempty rationale, risks as text entries, remove_if and rules.";
-  const rules = legacyRanges ? qc.filters : qc.rules;
-  if (legacyRanges ? !Array.isArray(rules) || !rules.length : !["any", "all"].includes(qc.remove_if) || !Array.isArray(rules) || !rules.length || rules.length > 32)
-    return legacyRanges ? "QC filters must be a nonempty array of explicit range operations; an empty response is not a keep-all decision." : "Choose failure logic any or all and 1–32 explicit QC rules.";
+    return "QC rules require exactly schema, a nonempty rationale, risks as text entries, remove_if and rules.";
+  const rules = qc.rules;
+  if (!["any", "all"].includes(qc.remove_if) || !Array.isArray(rules) || rules.length > 32)
+    return "Choose failure logic any or all and 0–32 explicit QC rules. Empty rules add no filtering and do not restore previously excluded cells.";
+  if (qc.schema === "scagentkit.qc.rules.v2" && !rules.length) return "Cluster replacements require baseline rules covering their bounds.";
   let mad = 0;
   for (const rule of rules) {
-    if (!rule || typeof rule !== "object" || Array.isArray(rule)) return legacyRanges ? "Every legacy QC filter must be a typed range operation." : "Each QC rule must be a typed range or one saved MAD preset.";
-    if (rule.op === "mad_preset" && !legacyRanges) {
+    if (!rule || typeof rule !== "object" || Array.isArray(rule)) return "Each QC rule must be a typed range or one saved MAD preset.";
+    if (rule.op === "mad_preset") {
       mad++;
-      const panel = details?.mad_panel;
+      const panel = details?.mad_panel, candidates = array(panel?.presets), ids = candidates.map(row => row?.preset_id);
+      if (panel?.schema !== "scagentkit.qc.mad.evidence.v1" || ids.some(id => !madPresets.includes(id)) || new Set(ids).size !== ids.length) return "QC MAD panel is unverified: rebuild the saved finite candidate evidence in R.";
       if (mad > 1 || Object.keys(rule).some(key => !["op", "preset_id", "panel_hash"].includes(key)) || !madPresets.includes(rule.preset_id) ||
           !hash(rule.panel_hash) || rule.panel_hash !== panel?.panel_hash || !array(panel?.presets).some(row => row.preset_id === rule.preset_id && row.available === true))
         return "QC supports at most one available MAD preset bound to the saved panel; no MAD parameters or unavailable candidate is invented.";
@@ -133,7 +135,7 @@ function typedQCRulesError(qc, details) {
       if (rule.min != null && rule.max != null && rule.min > rule.max) return "QC range minimum cannot exceed maximum.";
       if (rule.group != null && (typeof rule.group !== "object" || Array.isArray(rule.group) || !Object.keys(rule.group).length || Object.keys(rule.group).some(role => !["sample", "capture"].includes(role) || typeof rule.group[role] !== "string" || !rule.group[role])))
         return "QC grouping accepts only literal declared sample/capture selectors; donor, condition and batch are separate roles.";
-    } else return legacyRanges ? "The saved range-QC schema supports only typed range operations; no arbitrary code or MAD conversion is executed." : "Only typed range and saved mad_preset QC operations are supported; no arbitrary code is executed.";
+    } else return "Only typed range and saved mad_preset QC operations are supported; no arbitrary code is executed.";
   }
   return null;
 }
@@ -197,32 +199,10 @@ function doubletEnabled(details, proposal) {
   return details?.doublet_diagnostics != null || Object.hasOwn(proposal || {}, "doublet") || Array.isArray(details?.capabilities?.doublet);
 }
 const madPresets = ["keep_all", "conservative_and3", "low_counts3", "low_features3", "high_mt3", "any_quality3"];
-function madEnabled(details, proposal) {return details?.mad_panel != null || details?.qc_mad != null || proposal?.qc?.schema === "scagentkit.qc.mad.v1";}
-function madReviewError(details = state.view?.run.strategy_review?.details, proposal = details?.canonical_proposal) {
-  if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(proposal?.qc?.schema)) return qcRulesReviewError(details, proposal);
-  if (!madEnabled(details, proposal)) return null;
-  const saved = details?.qc_mad, panel = details?.mad_panel, choice = proposal?.qc;
-  if (choice?.schema !== "scagentkit.qc.mad.v1" || panel?.schema !== "scagentkit.qc.mad.evidence.v1" ||
-      !hash(choice.panel_hash) || choice.panel_hash !== saved.panel_hash || choice.panel_hash !== panel.panel_hash || !hash(saved.evidence_hash))
-    return "MAD review is unverified: the saved finite panel or proposal binding is unavailable or mismatched. Rebuild the complete review in R.";
-  const candidates = array(panel.presets), ids = candidates.map(row => row?.preset_id);
-  if (!madPresets.includes(choice.preset_id) || ids.some(id => !madPresets.includes(id)) || new Set(ids).size !== ids.length ||
-      !candidates.some(row => row.preset_id === choice.preset_id && row.available === true && row.all_cells_removed !== true))
-    return "MAD review is unverified: the selected preset is unsupported or unavailable. Choose an available saved candidate and save the complete strategy.";
-  if (saved.choice?.preset_id !== choice.preset_id || saved.choice?.panel_hash !== choice.panel_hash)
-    return "MAD review is unverified: the selected preset differs from its saved impact. Rebuild the complete review in R.";
-  const exact = details.qc_impact, selected = candidates.find(row => row.preset_id === choice.preset_id), scopes = {};
-  for (const key of ["keep_cells", "remove_cells"]) {
-    if (!exact || !Object.hasOwn(exact, key) || !(Array.isArray(exact[key]) || typeof exact[key] === "string"))
-      return "MAD review is unverified: the complete exact quality scope is unavailable. Rebuild the review in R.";
-    scopes[key] = array(exact[key]);
-    if (scopes[key].some(cell => typeof cell !== "string" || !cell) || new Set(scopes[key]).size !== scopes[key].length)
-      return "MAD review is unverified: exact quality cell IDs are missing or duplicated. Rebuild the review in R.";
-  }
-  if (!hash(exact.keep_cell_hash) || !hash(exact.remove_cell_hash) || scopes.keep_cells.some(cell => scopes.remove_cells.includes(cell)) ||
-      !Number.isInteger(selected.retained) || selected.retained <= 0 || selected.retained !== scopes.keep_cells.length || !Number.isInteger(selected.before) || selected.before !== scopes.keep_cells.length + scopes.remove_cells.length)
-    return "MAD review is unverified: quality scope fingerprints or counts do not match the selected panel candidate. Rebuild the review in R.";
-  return null;
+function madEnabled(details) {return details?.mad_panel != null;}
+function qcReviewError(details = state.view?.run.strategy_review?.details, proposal = details?.canonical_proposal) {
+  if (proposal?.qc == null) return null;
+  return qcRulesReviewError(details, proposal);
 }
 function qcRulesReviewError(details, proposal) {
   const error = typedQCRulesError(proposal.qc, details); if (error) return error;
@@ -233,24 +213,16 @@ function qcRulesReviewError(details, proposal) {
   const keep = array(preview.keep_cells), remove = array(preview.remove_cells), retention = preview.retention;
   if (!Object.hasOwn(preview, "keep_cells") || !Object.hasOwn(preview, "remove_cells") || !hash(preview.keep_cell_hash) || !hash(preview.remove_cell_hash) ||
       [...keep, ...remove].some(cell => typeof cell !== "string" || !cell) || new Set([...keep, ...remove]).size !== keep.length + remove.length ||
-      !Number.isInteger(retention?.before) || !Number.isInteger(retention?.retained) || retention.retained < 1 || retention.retained !== keep.length || retention.before !== keep.length + remove.length)
+      !Number.isInteger(retention?.before) || !Number.isInteger(retention?.retained) || retention.retained < 1 || retention.retained !== keep.length || retention.before !== keep.length + remove.length || retention.removed !== remove.length)
     return "QC rule review is unverified: exact retained/removed IDs, counts or fingerprints do not partition the original input.";
+  const exclusions = [logic.prefilter_removed, logic.prior_removed, logic.quality_removed];
+  if (exclusions.some(count => !Number.isInteger(count) || count < 0) || exclusions.reduce((sum, count) => sum + count, 0) !== retention.removed ||
+      logic.final_retained !== retention.retained || (!proposal.qc.rules.length && logic.quality_removed !== 0) || (proposal.qc.rules.length && logic.prior_removed !== 0))
+    return "QC rule review is unverified: mandatory prefilter, prior exclusions and new rule counts do not partition the saved scope.";
   if (proposal.qc.rules.some(rule => rule.op === "mad_preset") && (!hash(details?.qc_mad?.evidence_hash) ||
       details.qc_mad.panel_hash !== details.mad_panel?.panel_hash || json(details.qc_mad.choice) !== json(proposal.qc)))
     return "QC rule review is unverified: the saved MAD panel or combined choice is mismatched. Rebuild in R.";
   return null;
-}
-function chooseMadPreset(presetId) {
-  if (!ready() || node()?.kind !== "strategy" || !node()?.can_revise) return;
-  const saved = state.view?.run.strategy_review?.details?.qc_mad;
-  if (!madPresets.includes(presetId) || !array(state.view?.run.strategy_review?.details?.mad_panel?.presets).some(row => row.preset_id === presetId && row.available === true && row.all_cells_removed !== true)) return;
-  try {
-    const draft = strategyDraft();
-    draft.qc = {schema: "scagentkit.qc.mad.v1", rationale: "Analyst selected the saved " + presetId + " candidate for concentrated impact review.",
-      risks: array(draft.qc?.risks), preset_id: presetId, panel_hash: saved.panel_hash};
-    state.strategyDraftText = json(draft); $("strategy-json").value = state.strategyDraftText;
-    updateStrategyDraftStatus(); buttons();
-  } catch (_) {message("Correct the complete strategy JSON before selecting a saved MAD preset.", true);}
 }
 function namedEvidenceRows(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? Object.entries(value).filter(([, row]) => row && typeof row === "object" && !Array.isArray(row)) : [];
@@ -331,7 +303,7 @@ function verifySuggestion(answer) {
       typeof preview.transfer_consent?.reason !== "string" || !preview.transfer_consent.reason.trim()))
     throw new Error("Automatic draft has no confirmed project transfer identity.");
   if (item.candidate != null) {
-    const schema = item.kind === "strategy" ? "scagentkit.strategy.v1" : item.kind === "qc" ? ["scagentkit.qc.v1", "scagentkit.qc.mad.v1"] : "scagentkit.annotation.v1";
+    const schema = item.kind === "strategy" ? "scagentkit.strategy.v1" : item.kind === "qc" ? ["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"] : "scagentkit.annotation.v1";
     if (typeof item.candidate !== "object" || Array.isArray(item.candidate) || !array(schema).includes(item.candidate.schema)) throw new Error("The model candidate is not a supported typed proposal.");
   } else if (item.can_adopt) throw new Error("There is no typed candidate to review.");
   const job = answer.job;
@@ -343,17 +315,17 @@ function verifySuggestion(answer) {
 }
 function qcRulesSummary(qc) {
   const rules = Array.isArray(qc.rules) ? qc.rules : [], ranges = rules.filter(rule => rule?.op === "range").length, mad = rules.filter(rule => rule?.op === "mad_preset").length;
+  if (!rules.length) return "QC: No additional filtering; previously excluded cells are not restored.";
   return "QC: " + rules.length + " typed failure rules (" + ranges + " fixed ranges; " + mad + " saved MAD presets) · remove_if " + qc.remove_if + (qc.remove_if === "all" ? " · AND" : qc.remove_if === "any" ? " · OR" : " · unsupported logic");
 }
 function suggestionSummary(candidate, kind) {
   if (!candidate) return [];
   if (kind === "annotation") return array(candidate.annotations).map(row => `${String(row.clusterId)}: ${row.label} · ${row.confidence} confidence`);
-  if (kind === "qc" && candidate.schema === "scagentkit.qc.rules.v1") return [candidate.rationale || "Typed QC proposal", qcRulesSummary(candidate)];
-  if (kind === "qc") return [candidate.rationale || "Typed QC proposal", candidate.preset_id ? "Saved MAD preset: " + candidate.preset_id : "Supported range rules: " + array(candidate.filters).length];
+  if (kind === "qc" && ["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(candidate.schema)) return [candidate.rationale || "Typed QC proposal", qcRulesSummary(candidate)];
+  if (kind === "qc") return ["Unsupported QC proposal; rebuild in R."];
   const parts = [candidate.rationale || "Typed analysis strategy"];
   if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(candidate.qc?.schema)) parts.push(qcRulesSummary(candidate.qc));
-  else if (candidate.qc?.preset_id) parts.push("QC: saved MAD preset " + candidate.qc.preset_id);
-  else if (candidate.qc) parts.push("QC: " + array(candidate.qc.filters).length + " supported range rules");
+
   if (candidate.analysis) parts.push(`${candidate.analysis.normalization_method} · ${candidate.analysis.nfeatures} requested HVGs · ${candidate.analysis.npcs} requested PCs`);
   if (candidate.batch) parts.push("Batch: " + candidate.batch.method);
   if (candidate.clustering) parts.push("Clustering resolution: " + candidate.clustering.resolution);
@@ -564,12 +536,11 @@ function buttons() {
   for (const id of ["annotation-reviewer", "annotation-reason", "run-undo-reviewer", "run-undo-reason"]) $(id).disabled = state.busy || activeJob() || activeSuggestion() || state.suggestionBusy;
   const strategy = ready() && node()?.kind === "strategy" && !recommendationFactsDirty();
   $("strategy-save").disabled = !strategy || !node().can_revise || !strategyDirty() || !!strategyDraftError();
-  $("strategy-approve").disabled = !strategy || !node().can_decide || strategyDirty() || !!typedStrategyError(strategyProposal()) || !!doubletReviewError() || !!madReviewError();
+  $("strategy-approve").disabled = !strategy || !node().can_decide || strategyDirty() || !!typedStrategyError(strategyProposal()) || !!doubletReviewError() || !!qcReviewError();
   $("strategy-approve-continue").hidden = !continuationEnabled();
   $("strategy-approve-continue").disabled = $("strategy-approve").disabled || !continuationEnabled();
   $("strategy-reject").disabled = !strategy || !node().can_decide;
   $("strategy-json").disabled = !strategy || !node().can_revise;
-  if (state.madSelect) state.madSelect.disabled = !strategy || !node()?.can_revise || !!madReviewError();
   for (const control of state.strategyControls) control.disabled = !strategy || !node()?.can_revise || control.getAttribute("data-unavailable") === "true";
   for (const id of ["strategy-reviewer", "strategy-reason"]) $(id).disabled = state.busy || activeJob() || activeSuggestion() || state.suggestionBusy;
   $("run-qc").inert = activeJob() || activeSuggestion() || state.suggestionBusy;
@@ -606,7 +577,7 @@ function supportedSavedLocalRetry(run, job) {
 }
 function canContinue(retry) {
   const run = state.view?.run, availability = state.continuation?.availability;
-  if (!ready() || !continuationEnabled() || dirty() || strategyProposal() && typedStrategyError(strategyProposal()) || doubletReviewError() || madReviewError() || !availability || availability.expected_revision !== run.revision ||
+  if (!ready() || !continuationEnabled() || dirty() || strategyProposal() && typedStrategyError(strategyProposal()) || doubletReviewError() || qcReviewError() || !availability || availability.expected_revision !== run.revision ||
       availability.project_id !== run.project_id || availability.input_hash !== run.input_hash ||
       ["awaiting_review", "awaiting_configuration", "rejected", "complete"].includes(run.status)) return false;
   if (retry) return availability.can_retry && availability.requires_explicit_retry && supportedSavedLocalRetry(run, state.continuation.job);
@@ -1086,8 +1057,6 @@ function setStrategyDraft(draft, rebuildControls = false) {
 }
 function qcDraftRules(qc) {
   if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema)) return array(qc.rules);
-  if (qc?.schema === "scagentkit.qc.v1") return array(qc.filters);
-  if (qc?.schema === "scagentkit.qc.mad.v1") return [{op: "mad_preset", preset_id: qc.preset_id, panel_hash: qc.panel_hash}];
   return [];
 }
 function rulesQC(qc, rules, removeIf = qc?.remove_if || "any") {
@@ -1113,11 +1082,8 @@ function chooseQCDraft() {
     if (controls.logic.value === "all" && !qcRulesEnabled(state.view.run.strategy_review.details)) return;
     const rules = controls.rows.map(row => row.op === "range" ? {op: "range", metric: row.metric.value, min: numericDraft(row.min.value), max: numericDraft(row.max.value), group: JSON.parse(row.group.value)} :
       row.op === "mad_preset" ? {op: "mad_preset", preset_id: row.preset.value, panel_hash: controls.panelHash} : row.rule);
-    const previousSchema = draft.qc?.schema;
-    if (previousSchema === "scagentkit.qc.v1" && controls.logic.value === "any" && rules.every(rule => rule.op === "range")) draft.qc = {...draft.qc, filters: rules};
-    else if (previousSchema === "scagentkit.qc.mad.v1" && controls.logic.value === "any" && rules.length === 1 && rules[0].op === "mad_preset") draft.qc = {...draft.qc, preset_id: rules[0].preset_id, panel_hash: rules[0].panel_hash};
-    else draft.qc = rulesQC(draft.qc, rules, controls.logic.value);
-    setStrategyDraft(draft, previousSchema !== draft.qc.schema);
+    draft.qc = rulesQC(draft.qc, rules, controls.logic.value);
+    setStrategyDraft(draft);
   } catch (_) {message("Correct the complete JSON draft before changing QC rules.", true);}
 }
 function changeQCRules(action, index) {
@@ -1133,11 +1099,15 @@ function changeQCRules(action, index) {
   } catch (_) {message("Correct the complete JSON draft before adding or removing a QC rule.", true);}
 }
 function renderQCControls(details, proposal) {
-  const qc = proposal.qc, supported = ["scagentkit.qc.v1", "scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema);
-  if (!supported) return strategySection("QC and cell retention", qc, "Processed QC is reused; no new cell filtering is implied.");
+  const qc = proposal.qc, supported = ["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(qc?.schema);
+  if (!supported) {
+    const card = strategySection("QC and cell retention", qc, "Processed QC is reused; no new cell filtering is implied.");
+    if (qc != null) card.append(element("p", "Unsupported QC proposal schema; rebuild the review in R."));
+    return card;
+  }
   const card = cycleNode("section", null, "qc-parameter-card", {class: "strategy-evidence-card qc-parameter-card"});
   card.append(element("h3", "QC rules")); state.strategyFeedback = cycleNode("p", null, "strategy-controls-status", {class: "microcopy strategy-controls-status", role: "status", "aria-live": "polite"}); card.append(state.strategyFeedback);
-  card.append(element("p", "Fixed inclusive ranges and at most one saved sample-aware MAD preset. Any / all combines rule failures, not individual thresholds. Editing creates a complete typed draft; no impact is recalculated here.", {class: "microcopy"}));
+  card.append(element("p", "Fixed inclusive ranges and at most one saved sample-aware MAD preset. Any / all combines rule failures, not individual thresholds. Empty rules add no filtering and do not restore previously excluded cells. Editing creates a complete typed draft; no impact is recalculated here.", {class: "microcopy"}));
   const rules = qcDraftRules(qc), logic = strategyControl("select", "qc-rule-combine", null, {"aria-label": "Combine explicit QC rule failures"});
   const allOption = element("option", "Remove only if all rules fail · AND", {value: "all"}); allOption.disabled = !qcRulesEnabled(details);
   logic.append(element("option", "Remove if any rule fails · OR", {value: "any"}), allOption); logic.value = qc.remove_if || "any";
@@ -1157,21 +1127,16 @@ function renderQCControls(details, proposal) {
       for (const [key, title] of [["metric", "Metric"], ["min", "Inclusive minimum"], ["max", "Inclusive maximum"], ["group", "Declared QC scope"]]) {const label = element("label", title); label.append(fields[key]); grid.append(label); fields[key].addEventListener(key === "metric" || key === "group" ? "change" : "input", chooseQCDraft);}
       row.append(grid); controls.rows.push(fields);
     } else if (rule.op === "mad_preset") {
-      if (qc.schema === "scagentkit.qc.mad.v1") {
-        row.append(element("p", "Saved dynamic choice: " + rule.preset_id + ". Use the single candidate picker in the sample-aware quality section below."));
-        controls.rows.push({op: "mad_preset", preset: {get value() {return state.madSelect?.value || rule.preset_id;}}});
-      } else {
-        const preset = strategyControl("select", "qc-mad-preset", null, {"aria-label": "One saved dynamic MAD preset"}); preset.append(element("option", "Choose a saved available preset", {value: ""}));
-        for (const candidate of array(details.mad_panel?.presets)) {const option = element("option", (candidate.label || candidate.preset_id) + (candidate.available === true ? "" : " · unavailable"), {value: candidate.preset_id}); option.disabled = candidate.available !== true || !madPresets.includes(candidate.preset_id); preset.append(option);}
-        preset.value = rule.preset_id; preset.addEventListener("change", chooseQCDraft); row.append(preset); controls.rows.push({op: "mad_preset", preset});
-      }
+      const preset = strategyControl("select", "qc-mad-preset", null, {"aria-label": "One saved dynamic MAD preset"}); preset.append(element("option", "Choose a saved available preset", {value: ""}));
+      for (const candidate of array(details.mad_panel?.presets)) {const option = element("option", (candidate.label || candidate.preset_id) + (candidate.available === true ? "" : " · unavailable"), {value: candidate.preset_id}); option.disabled = candidate.available !== true || !madPresets.includes(candidate.preset_id); preset.append(option);}
+      preset.value = rule.preset_id; preset.addEventListener("change", chooseQCDraft); row.append(preset); controls.rows.push({op: "mad_preset", preset});
     } else {row.append(raw(rule)); controls.rows.push({op: "unsupported", rule});}
     const remove = strategyControl("button", "qc-rule-remove-" + index, null, {type: "button", class: "button quiet", "data-unavailable": String(!qcRulesEnabled(details))}); remove.textContent = "Remove this draft rule"; remove.addEventListener("click", () => changeQCRules("remove", index)); row.append(remove); card.append(row);
   });
   const addRange = strategyControl("button", "qc-add-range", null, {type: "button", class: "button quiet", "data-unavailable": String(!qcRulesEnabled(details) || rules.length >= 32)}); addRange.textContent = "Add fixed range"; addRange.addEventListener("click", () => changeQCRules("range"));
   const addMad = strategyControl("button", "qc-add-mad", null, {type: "button", class: "button quiet", "data-unavailable": String(!qcRulesEnabled(details) || !array(details.capabilities?.qc_rules?.operations).includes("mad_preset") || rules.length >= 32 || rules.some(rule => rule.op === "mad_preset") || !hash(details.mad_panel?.panel_hash))}); addMad.textContent = "Add saved dynamic MAD rule"; addMad.addEventListener("click", () => changeQCRules("mad"));
   const actions = element("div", null, {class: "parameter-actions"}); actions.append(addRange, addMad); card.append(actions);
-  card.append(cycleNode("p", "Fields update the complete JSON draft only. Save once, inspect the rebuilt exact impact, then approve the whole strategy. Blank bounds are unbounded; at least one real bound is required. Unknown measurements are not zero or an automatic failure.", "qc-draft-note", {class: "microcopy"}));
+  card.append(cycleNode("p", "Fields update the complete JSON draft only. Save once, inspect the rebuilt exact impact, then approve the whole strategy. Blank bounds are unbounded; at least one real bound is required. Removing every rule means no additional filtering; previously excluded cells are not restored. Unknown measurements are not zero or an automatic failure.", "qc-draft-note", {class: "microcopy"}));
   const record = element("details"); record.append(element("summary", "Saved QC parameters and dynamic panel provenance"), raw({saved_qc: details.canonical_proposal?.qc, mad_panel: details.mad_panel ?? null})); card.append(record); return card;
 }
 function renderSampleQCComparison(comparison) {
@@ -1198,16 +1163,16 @@ function renderQCImpact(details) {
   const percent = value => typeof value === "number" && Number.isFinite(value) && typeof original === "number" && original > 0 ? (100 * value / original).toFixed(2) + "%" : "Unavailable";
   card.append(cycleNode("p", "Original input: " + evidenceNumber(original) + "; pre-score: " + evidenceNumber(preScore) + "; after QC: " + evidenceNumber(retention.retained) + "; total QC removals from original: " + evidenceNumber(retention.removed) + "; after separate doublet choice: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? stage.final_selected_cells) + ".", "qc-stage-counts", {class: "parameter-impact-summary"}));
   card.append(cycleNode("p", "Saved preview only. New draft values have not been evaluated; Save rebuilds this evidence in R. All percentages below use original input as denominator. Independent failures overlap and must not be added. Exclusive means actually removed while failing only that rule. Any/all applies to failed rules; Unknown is disclosed separately.", "qc-impact-note", {class: "microcopy"}));
-  card.append(cycleNode("p", "Explicit minimal prefilter exclusions cannot be restored by any later fixed range, MAD preset or any/all choice. Saved prefilter removed: " + evidenceNumber(logic.prefilter_removed) + "; quality removed among eligible cells: " + evidenceNumber(logic.quality_removed) + ". Doublet predictions and keep/remove_predicted remain a separate later choice; cells already excluded by QC are not removed twice.", "qc-prefilter-boundary", {class: "microcopy"}));
+  card.append(cycleNode("p", "Explicit minimal prefilter exclusions cannot be restored by any later fixed range, MAD preset or any/all choice. Mandatory prefilter exclusions: " + evidenceNumber(logic.prefilter_removed) + "; previously excluded cells: " + evidenceNumber(logic.prior_removed) + "; new rule exclusions: " + evidenceNumber(logic.quality_removed) + ". Doublet predictions and keep/remove_predicted remain a separate later choice; cells already excluded by QC are not removed twice.", "qc-prefilter-boundary", {class: "microcopy"}));
   const rows = array(preview.filter_impacts);
   if (rows.length) card.append(table(["Rule", "Saved condition", "Scoped", "Independent failures", "% original", "Exclusive removals", "% original", "Unknown"], rows.map(row => [row.id, row.filter?.op === "mad_preset" ? "MAD " + row.filter.preset_id : (row.filter?.metric || "Unknown") + " [" + (row.filter?.min ?? "unbounded") + ", " + (row.filter?.max ?? "unbounded") + "]", evidenceNumber(row.scoped), evidenceNumber(row.independently_removed), percent(row.independently_removed), evidenceNumber(row.exclusively_removed), percent(row.exclusively_removed), evidenceNumber(row.unavailable)])));
-  else empty(card, "Rule-level impacts are not recorded.");
+  else empty(card, Array.isArray(preview.canonical_parameters?.proposal?.rules) && !preview.canonical_parameters.proposal.rules.length ? "No additional filtering; previously excluded cells are not restored. There are no new rule impacts." : "Rule-level impacts are not recorded.");
   const groups = element("details"); groups.append(element("summary", "QC retention for every declared sample/capture group"));
   groups.append(table(["Literal QC group", "Original input", "Retained", "Removed", "Retained / group original"], array(retention.groups).map(row => [json(row.selector), evidenceNumber(row.before), evidenceNumber(row.retained), evidenceNumber(row.removed), typeof row.fraction_retained === "number" ? (100 * row.fraction_retained).toFixed(2) + "%" : "Unavailable"]))); card.append(groups);
   const overlaps = element("details"); overlaps.append(element("summary", "Pairwise failure overlap and complete failure patterns"));
   const ids = array(preview.overlap?.filter_ids), matrix = array(preview.overlap?.counts);
   if (ids.length) overlaps.append(table(["Failed rule", ...ids], ids.map((id, index) => [id, ...array(matrix[index]).map(evidenceNumber)])));
-  overlaps.append(table(["Failed rules", "Unavailable rules", "Prefilter excluded", "Cells", "Retained", "Removed"], array(preview.patterns).map(row => [array(row.filter_ids).join(", ") || "None", array(row.unavailable_filter_ids).join(", ") || "None", typeof row.prefilter_excluded === "boolean" ? String(row.prefilter_excluded) : "Not recorded", evidenceNumber(row.count), evidenceNumber(row.retained), evidenceNumber(row.removed)]))); card.append(overlaps);
+  overlaps.append(table(["Failed rules", "Unavailable rules", "Prefilter excluded", "Previously excluded", "Cells", "Retained", "Removed"], array(preview.patterns).map(row => [array(row.filter_ids).join(", ") || "None", array(row.unavailable_filter_ids).join(", ") || "None", typeof row.prefilter_excluded === "boolean" ? String(row.prefilter_excluded) : "Not recorded", typeof row.prior_excluded === "boolean" ? String(row.prior_excluded) : "Not recorded", evidenceNumber(row.count), evidenceNumber(row.retained), evidenceNumber(row.removed)]))); card.append(overlaps);
   const audit = element("details"); audit.append(element("summary", "Complete saved QC record and exact local scope fingerprints"), raw(preview)); card.append(audit); return card;
 }
 function chooseClusteringDraft() {
@@ -1340,35 +1305,27 @@ function renderPCs(details, proposal) {
   const bound = cycleNode("details", null, "pc-details"); bound.append(element("summary", "Saved actual PC variances, denominator, shortfall and basis binding"), raw(record)); card.append(bound); return card;
 }
 function renderMad(details, proposal) {
-  const saved = details.qc_mad || {}, panel = details.mad_panel || {}, choice = proposal.qc || {}, selected = array(panel.presets).find(row => row?.preset_id === choice.preset_id), error = madReviewError(details, proposal);
+  const saved = details.qc_mad || {}, panel = details.mad_panel || {}, choice = qcDraftRules(proposal.qc).find(rule => rule.op === "mad_preset") || {}, selected = array(panel.presets).find(row => row?.preset_id === choice.preset_id), error = qcReviewError(details, proposal);
   const card = cycleNode("section", null, "mad-card", {class: "strategy-evidence-card mad-card"});
-  card.append(element("h3", "Sample-aware quality candidates"), cycleNode("p", "QC in saved proposal: " + (choice.preset_id || "Unknown") + (choice.preset_id === "keep_all" ? " · default starting retention choice; not by itself a completed QC assessment" : " · explicit candidate in the saved proposal; approval is separate"), "mad-choice", {"data-preset": choice.preset_id || "unknown"}));
+  card.append(element("h3", "Sample-aware quality candidates"), cycleNode("p", "QC in saved proposal: " + (choice.preset_id || "No MAD rule selected") + (choice.preset_id === "keep_all" ? " · explicit retained-input predicate; not by itself a completed QC assessment" : choice.preset_id ? " · explicit candidate in the saved proposal; approval is separate" : " · the panel provides evidence without adding a filter"), "mad-choice", {"data-preset": choice.preset_id || "unknown"}));
   card.append(cycleNode("p", "One saved panel covers every declared QC group. A choice edits the complete plan draft only; save, inspect and approve the whole plan before Continue. No preset is universally best and retained cell counts are not biological truth.", "mad-review-note", {class: "microcopy"}));
   const grouping = panel.grouping || {}, capture = details.doublet_diagnostics?.capture || {}, method = panel.method || {};
   card.append(cycleNode("p", "QC grouping: " + (grouping.column || grouping.id || "Unknown") + "; role: " + (grouping.declared_role || "Unknown") + "; source: " + (grouping.source || "Unknown") + ". Capture/loading unit: " + (capture.column || capture.id || "Unknown") + ". QC group, sample, capture and donor are distinct declarations; no relationship is inferred.", "mad-grouping", {class: "microcopy"}));
   card.append(cycleNode("p", "Counts/features: log10(x+1), low-tail deletion below median − " + evidenceNumber(method.k) + " × scaled MAD; upper bands flag only. Scaled MAD constant: " + evidenceNumber(method.mad_constant) + ". Mitochondrial fraction: upper tail on its original scale. Strict comparisons use the saved exact thresholds; rounded display values never control execution.", "mad-method", {class: "microcopy"}));
   card.append(cycleNode("p", "High RNA is flagged only. Ribosomal and haemoglobin measurements are diagnostic only; none authorizes automatic deletion. MAD zero/near zero, small groups or missing/nonfinite values can make a candidate unavailable. Distribution warnings are interpretive and do not impose a normality gate. Unknown is distinct from an observed zero.", "mad-risk", {class: "evidence-explainer"}));
   const stage = panel.stage_counts || {}, impact = saved.impact || {}, counts = details.qc_stage_counts || details.stage_counts || impact.stage_counts || {};
-  card.append(cycleNode("p", "Original: " + evidenceNumber(counts.original_cells ?? stage.original_cells) + "; minimal prefilter: " + evidenceNumber(counts.prefilter_cells ?? stage.pre_score_cells) + "; pre-score: " + evidenceNumber(counts.pre_score_cells ?? stage.pre_score_cells) + "; post-QC: " + evidenceNumber(counts.post_qc_cells ?? impact.impact?.post_qc_cells ?? impact.retained ?? impact.retained_cells ?? selected?.retained) + "; post-doublet: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? counts.final_selected_cells) + ". Quality statistics cells: " + evidenceNumber(stage.statistics_cells) + ".", "mad-stage-counts", {class: "microcopy"}));
+  card.append(cycleNode("p", "Original: " + evidenceNumber(counts.original_cells ?? stage.original_cells) + "; minimal prefilter: " + evidenceNumber(counts.prefilter_cells ?? stage.pre_score_cells) + "; pre-score: " + evidenceNumber(counts.pre_score_cells ?? stage.pre_score_cells) + "; post-QC: " + evidenceNumber(counts.post_qc_cells ?? details.qc_impact?.retention?.retained ?? impact.impact?.post_qc_cells ?? impact.retained ?? impact.retained_cells ?? selected?.retained) + "; post-doublet: " + evidenceNumber(details.applicability?.doublet?.retained_cells ?? counts.final_selected_cells) + ". Quality statistics cells: " + evidenceNumber(stage.statistics_cells) + ".", "mad-stage-counts", {class: "microcopy"}));
   const rate = details.doublet_diagnostics?.rate || {}, reference = details.doublet_diagnostics?.reference;
   card.append(cycleNode("p", "Doublet rate method: " + (rate.method || "Unknown") + "; source: " + (rate.source || "Unknown") + "; score reference: " + (reference || "Unknown") + ". The rate provenance remains separate from the post-QC retained count.", "mad-rate-source", {class: "microcopy"}));
   const prefilter = details.prefilter || {}, prefilterOptions = prefilter.options || {};
-  card.append(cycleNode("p", "Minimal prefilter: " + (prefilterOptions.method === "none" ? "none; every supplied cell remains eligible" : prefilterOptions.method === "min_counts" ? "raw total counts >= " + String(prefilterOptions.min_counts) + " (inclusive, explicit preapproved rule)" : "Unknown; inspect the recorded R configuration") + ". Source: " + (prefilterOptions.source || "Unknown") + ". Later quality filtering follows this stage and the saved capture scores; the preset panel does not silently alter legacy range rules.", "mad-prefilter", {class: "microcopy"}));
-  const select = cycleNode("select", null, "mad-preset-select", {"aria-label": "Draft whole-plan MAD quality preset"});
-  state.madSelect = select;
-  for (const candidate of array(panel.presets)) {
-    const option = element("option", (candidate.label || candidate.preset_id || "Unknown") + (candidate.available === true ? "" : " · unavailable"), {value: candidate.preset_id || "unknown"});
-    option.disabled = candidate.available !== true || candidate.all_cells_removed === true || !madPresets.includes(candidate.preset_id); select.append(option);
-  }
-  select.value = choice.preset_id || ""; select.addEventListener("change", () => chooseMadPreset(select.value));
-  card.append(element("label", "Draft candidate for the whole plan", {for: "mad-preset-select"}), select);
+  card.append(cycleNode("p", "Minimal prefilter: " + (prefilterOptions.method === "none" ? "none; every supplied cell remains eligible" : prefilterOptions.method === "min_counts" ? "raw total counts >= " + String(prefilterOptions.min_counts) + " (inclusive, explicit preapproved rule)" : "Unknown; inspect the recorded R configuration") + ". Source: " + (prefilterOptions.source || "Unknown") + ". Later quality filtering follows this stage and the saved capture scores. The rules editor combines a selected MAD predicate with explicit range rules.", "mad-prefilter", {class: "microcopy"}));
   const candidates = cycleNode("div", null, "mad-candidates"); candidates.append(table(["Preset", "Rule", "Available", "Pre-score", "Retained", "Removed", "Retained fraction", "Unavailable reasons"], array(panel.presets).map(row => [row.preset_id, row.rule || row.label || "Unknown", row.available === true ? "Yes" : "No", evidenceNumber(row.pre_score), evidenceNumber(row.retained), evidenceNumber(row.removed), evidenceNumber(row.fraction_retained), array(row.unavailable_reasons).join("; ") || "None recorded"]))); card.append(candidates);
   const warnings = cycleNode("div", null, "mad-warnings"); warnings.append(element("h4", "Saved panel warnings")); for (const warning of array(panel.warnings)) warnings.append(element("p", typeof warning === "string" ? warning : json(warning))); if (!array(panel.warnings).length) empty(warnings, "None recorded; this does not establish an optimal distribution."); card.append(warnings);
   const flags = cycleNode("section",null,"mad-flag-summary");
   flags.append(element("h4","Single-metric flags and overlaps before choosing a QC rule"),
     element("p","Each row uses its QC group's pre-score denominator. Only means failing exactly one of low counts, low features and high mt. 2+ flags is overlapping evidence, not extra removals. These flags do not select a rule; high RNA is diagnostic only.",{class:"microcopy"}),
     table(["QC group","Pre-score denominator","Low counts only","Low features only","High mt only","2+ flags","No quality flag","Unknown flag rows"],array(panel.groups).map(group=>{const f=group.flag_summary||{},p=f.patterns||{};return[group.value||"Unknown",evidenceNumber(f.denominator),evidenceNumber(p.low_count_only),evidenceNumber(p.low_feature_only),evidenceNumber(p.high_mt_only),evidenceNumber(f.multiple_quality_flags),evidenceNumber(p.none),evidenceNumber(f.unknown_cells)];})),
-    element("p","Actual removal and retention follow the selected saved candidate below. Cell-type-specific deletion risk is not assessed here; no independent identity evidence or author labels are assumed.",{class:"microcopy"}));
+    element("p","Actual removal and retention follow the complete saved rules and their combination; candidate counts below describe each predicate separately. Cell-type-specific deletion risk is not assessed here; no independent identity evidence or author labels are assumed.",{class:"microcopy"}));
   card.append(flags);
   const margins=cycleNode("section",null,"mad-mt-absolute-margins");
   margins.append(element("h4","Mitochondrial absolute margins · percentage points"),
@@ -1386,9 +1343,9 @@ function renderMad(details, proposal) {
     section.append(table(["Preset", "Pre-score", "Retained", "Removed / group original", "Retained / group original"], effects)); groupDetails.append(section);
   }
   card.append(groupDetails);
-  const scope = cycleNode("details", null, "mad-cell-scope"); scope.append(element("summary", "Complete exact quality retained / removed cell IDs"), cycleNode("p", error ? "Unavailable — rebuild the saved binding before approving." : "Retained: " + array(details.qc_impact?.keep_cells).length + "; removed from original input: " + array(details.qc_impact?.remove_cells).length + ". Includes explicit prefilter exclusions; every literal ID is shown without truncation.", "mad-cell-count"), element("h4", "Retained quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.keep_cells).join("\n") || "None", "mad-keep-ids", {class: "doublet-id-list", tabindex: "0"}), element("h4", "Removed quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.remove_cells).join("\n") || "None", "mad-remove-ids", {class: "doublet-id-list", tabindex: "0"})); card.append(scope);
+  const scope = cycleNode("details", null, "mad-cell-scope"); scope.append(element("summary", "Complete exact quality retained / removed cell IDs"), cycleNode("p", error ? "Unavailable — rebuild the saved binding before approving." : "Retained: " + array(details.qc_impact?.keep_cells).length + "; removed from original input: " + array(details.qc_impact?.remove_cells).length + ". Includes mandatory prefilter and any retained prior exclusions; every literal ID is shown without truncation.", "mad-cell-count"), element("h4", "Retained quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.keep_cells).join("\n") || "None", "mad-keep-ids", {class: "doublet-id-list", tabindex: "0"}), element("h4", "Removed quality cells"), cycleNode("pre", error ? "Unavailable" : array(details.qc_impact?.remove_cells).join("\n") || "None", "mad-remove-ids", {class: "doublet-id-list", tabindex: "0"})); card.append(scope);
   const record = cycleNode("details", null, "mad-details"); record.append(element("summary", "Saved panel, provenance and selection fingerprints"), cycleNode("div", null, "mad-record")); record.children[1].append(raw({panel, ...saved})); card.append(record);
-  card.append(cycleNode("p", error || "Panel and selected preset bindings verified locally in the saved review. R rechecks the exact approval before execution.", "mad-binding", {class: "mad-binding" + (error ? " blocked" : ""), "data-status": error ? "unverified" : "verified"}));
+  card.append(cycleNode("p", error || "Saved QC scope and any selected MAD rule bindings verified locally in the saved review. R rechecks the exact approval before execution.", "mad-binding", {class: "mad-binding" + (error ? " blocked" : ""), "data-status": error ? "unverified" : "verified"}));
   return card;
 }
 function cycleNode(tag, text, id, attributes = {}) {
@@ -1482,7 +1439,7 @@ function renderDoublet(details, proposal) {
   return card;
 }
 function updateStrategyDraftStatus() {
-  const typedError = strategyDraftError(), dirty = strategyDirty(), savedError = dirty ? null : doubletReviewError() || madReviewError();
+  const typedError = strategyDraftError(), dirty = strategyDirty(), savedError = dirty ? null : doubletReviewError() || qcReviewError();
   const status = typedError || (dirty ? "Unsaved complete strategy. Saved preview is unchanged. Save to run local validation and rebuild the review before approval." : savedError || "This typed JSON matches the saved strategy proposal.");
   $("strategy-draft-status").textContent = status;
   if (state.strategyFeedback) {state.strategyFeedback.textContent = status; state.strategyFeedback.setAttribute("data-invalid", String(!!(typedError || savedError)));}
@@ -1500,6 +1457,8 @@ function renderScientificAssessment() {
   const unresolved=array(assessment.unresolved_steps),incomplete=assessment.unassessed_steps.length>0||unresolved.length>0;
   target.append(element("h2",incomplete?"Scientific assessment remains incomplete":"Recorded decisions and diagnostic assessment"),element("p",assessment.message||"Software completion is not biological or QC certification."));
   if(assessment.qc_choice==="keep_all_quality_deferred")target.append(element("p","QC thresholds remain deferred: the keep-all quality starting point does not establish adequate QC.",{class:"scientific-assessment-deferred"}));
+  if(assessment.qc_choice==="no_additional_filtering_quality_deferred")target.append(element("p","No additional filtering; previously excluded cells are not restored. QC assessment remains deferred; an empty rule set does not establish adequate QC.",{class:"scientific-assessment-deferred"}));
+  if(assessment.qc_choice==="processed_reuse_raw_quality_unassessed")target.append(element("p","This run reuses the processed input. Raw-input quality was not assessed by this run; reuse does not establish adequate QC.",{class:"scientific-assessment-deferred"}));
   if(assessment.unassessed_steps.length)target.append(element("p","Unassessed steps: "+assessment.unassessed_steps.join(", "),{"data-testid":"scientific-unassessed-steps"}));
   if(unresolved.length)target.append(element("p","Unresolved decisions or conflicts: "+unresolved.join(", "),{"data-testid":"scientific-unresolved-steps"}));
   if(array(assessment.unresolved_details).length){const details=element("details");details.append(element("summary","Unresolved facts, conflicts and uncertainty"));for(const step of assessment.unresolved_details){details.append(element("h3",step.id));recommendationList(details,"Missing facts",step.missing);recommendationList(details,"Conflicts",step.conflicts);recommendationList(details,"Uncertainty",step.uncertainty);}target.append(details);}
@@ -1723,10 +1682,11 @@ function savedOperationSummary(key, proposal) {
   const choice = proposal[key === "qc-mad" ? "qc" : key];
   if (choice === null) return "Explicit reuse · no new parameters";
   if (choice == null) return "No saved choice supplied";
-  if (key === "qc-mad") return choice.preset_id ? "Saved preset · " + choice.preset_id : "Inspect the saved QC panel and choice";
+  if (key === "qc-mad") {const mad = qcDraftRules(choice).find(rule => rule.op === "mad_preset"); return mad ? "Saved preset · " + mad.preset_id : "No MAD rule selected · inspect saved panel evidence";}
   if (key === "qc") {
-    if (["scagentkit.qc.v1", "scagentkit.qc.mad.v1", "scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(choice.schema)) {
+    if (["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(choice.schema)) {
       const rules = qcDraftRules(choice), fixed = rules.filter(rule => rule.op === "range").length, mad = rules.filter(rule => rule.op === "mad_preset").length;
+      if (!rules.length) return "No additional filtering · previously excluded cells are not restored";
       return `${fixed} fixed ranges · ${mad} saved MAD presets · remove_if ${choice.remove_if || "any"}`;
     }
     return "Inspect the saved QC record";
@@ -1743,7 +1703,7 @@ function strategyOperationGroup(key, title, card, savedProposal, opened) {
   group.append(summary, card); group.open = opened.has(key); return group;
 }
 function renderStrategyOperations(details, proposal) {
-  state.strategyFeedback = null; state.madSelect = null; state.strategyControls = []; state.batchControls = null; state.pcControls = null; state.qcControls = null; state.clusteringControls = null;
+  state.strategyFeedback = null; state.strategyControls = []; state.batchControls = null; state.pcControls = null; state.qcControls = null; state.clusteringControls = null;
   const operations = $("strategy-operations"), opened = new Set([...operations.children].filter(child => child.open).map(child => child.getAttribute("data-operation"))); operations.replaceChildren();
   if (proposal.choice_reasons) {
     const reasons = element("details",null,{"data-testid":"strategy-choice-reasons"});
@@ -1768,7 +1728,7 @@ function renderStrategyOperations(details, proposal) {
     const card = key === "qc" ? renderQCControls(details, proposal) : key === "pcs" ? renderPCs(details, proposal) : key === "clustering" ? renderClustering(details, proposal) : harmonyEnabled(details) && key === "batch" ? renderBatch(details, proposal) : strategySection(title, proposal[key], "Reuse is explicit for a processed start; consult the saved execution plan for this step.");
     operations.append(strategyOperationGroup(key, title, card, details.canonical_proposal || {}, opened));
   }
-  if (madEnabled(details, proposal) && !["scagentkit.qc.rules.v1", "scagentkit.qc.rules.v2"].includes(proposal.qc?.schema)) {operations.append(strategyOperationGroup("qc-mad", "Saved sample-aware MAD panel", renderMad(details, details.canonical_proposal), details.canonical_proposal || {}, opened)); if (state.madSelect && proposal.qc?.schema === "scagentkit.qc.mad.v1") state.madSelect.value = proposal.qc.preset_id;}
+  if (madEnabled(details)) operations.append(strategyOperationGroup("qc-mad", "Saved sample-aware MAD panel", renderMad(details, details.canonical_proposal), details.canonical_proposal || {}, opened));
   if (details.cycle_diagnostics != null || Object.hasOwn(proposal, "cycle") || Array.isArray(details.capabilities?.cycle)) operations.append(strategyOperationGroup("cycle", "Cell-cycle choice and evidence", renderCycle(details, details.canonical_proposal), details.canonical_proposal || {}, opened));
   if (doubletEnabled(details, proposal)) operations.append(strategyOperationGroup("doublet", "Separate doublet choice and evidence", renderDoublet(details, proposal), details.canonical_proposal || {}, opened));
 }
@@ -1945,7 +1905,7 @@ async function decideStrategy(action, continueAfter = false) {
   if (action === "approve" && strategyDirty()) {message("Save the complete strategy and inspect the rebuilt review before approval.", true); return;}
   if (action === "approve" && typedStrategyError(strategyProposal())) {message(typedStrategyError(strategyProposal()), true); return;}
   if (action === "approve" && doubletReviewError()) {message(doubletReviewError(), true); return;}
-  if (action === "approve" && madReviewError()) {message(madReviewError(), true); return;}
+  if (action === "approve" && qcReviewError()) {message(qcReviewError(), true); return;}
   if (action === "revise" && strategyDraftError()) {message(strategyDraftError(), true); return;}
   if (!$("strategy-decision-form").reportValidity()) return;
   const payload = basePayload(action, $("strategy-reviewer").value.trim(), $("strategy-reason").value.trim());

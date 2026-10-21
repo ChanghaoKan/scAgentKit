@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from format_test_support import mock_format_authority
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from evidence import canonical
@@ -31,6 +32,9 @@ def proposal():
 
 
 class StrategyReviewBoundaryTests(unittest.TestCase):
+    def setUp(self):
+        mock_format_authority(self)
+
     def test_complete_strategy_actions_are_allowlisted(self):
         for action in ("approve", "reject", "revise"):
             payload = decision(action)
@@ -82,7 +86,7 @@ class StrategyReviewBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"; project.mkdir()
             (project / "state.rds").write_bytes(b"Not interpreted by Python")
-            (project / "project-format.json").write_text('{"project_format_version":2}')
+            (project / "project-format.json").write_text('{"project_format_version":3}')
             runtime = RunReviewRuntime(project, library=directory)
             value = proposal(); value["rationale"] = "$(touch /never-execute) `literal`; source('x')"
             payload = dict(decision("revise"), proposal=value)
@@ -110,7 +114,7 @@ class StrategyReviewBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"; project.mkdir()
             (project / "state.rds").write_bytes(b"fixture")
-            (project / "project-format.json").write_text('{"project_format_version":2}')
+            (project / "project-format.json").write_text('{"project_format_version":3}')
             runtime = RunReviewRuntime(project)
             with patch("qc_runtime.subprocess.run") as process:
                 with self.assertRaises(StoreError) as problem: runtime.decide(decision(), "old-token")

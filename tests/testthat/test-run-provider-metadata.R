@@ -276,9 +276,9 @@ test_that("provider configuration attributes cannot reach real run state or expo
     dimnames = list(c("MT-CO1", "GENE2", "GENE3", "GENE4"), paste0("fixture-cell-", 1:8)))
   counts <- Matrix::Matrix(counts, sparse = TRUE)
   input_before <- serialize(counts, NULL, version = 2L)
-  proposal <- list(schema = "scagentkit.qc.v1", rationale = "Synthetic fixture review.",
+  proposal <- list(schema = "scagentkit.qc.rules.v1", rationale = "Synthetic fixture review.",
     risks = list("No biological conclusion."),
-    filters = list(list(op = "range", metric = "nCount", min = 1, max = NULL, group = NULL)))
+    remove_if = "any", rules = list(list(op = "range", metric = "nCount", min = 1, max = NULL, group = NULL)))
   calls <- 0L
   out <- sc_run(counts, root, context = list(species = "human"), provider = fixture$value,
     chat_fn = function(...) { calls <<- calls + 1L; .sc_run_provider_json(proposal) })
