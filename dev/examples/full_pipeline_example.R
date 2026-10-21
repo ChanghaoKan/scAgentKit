@@ -4,6 +4,7 @@
 # Source and call public_workflow_example() with a NEW project directory.
 public_workflow_example <- function(project_dir) {
   env<-new.env(parent=environment())
-  sys.source(file.path(getOption("scAgentKit.dev_examples", file.path(getwd(), "dev", "examples")), "three-gate-analysis.R"),envir=env)
+  sys.source(system.file("examples", "three-gate-analysis.R",
+    package="scAgentKit", mustWork=TRUE),envir=env)
   env$three_gate_analysis(project_dir)
 }

@@ -43,11 +43,11 @@ Source-level validator/ARI signatures and bodies were preserved during moves.
 These tools operate on copies/tables and do not silently modify project
 checkpoints or grant review authority. An ontology or reference match is an
 inspectable hypothesis. Supporting-citation positivity and the selected main
-marker pool remain unchanged; see the [methods appendix](../SCIENTIFIC_METHODS_APPENDIX.md).
+marker pool remain unchanged; see the [methods appendix](../../SCIENTIFIC_METHODS_APPENDIX.md).
 
 ## Removed exports
 
-The exact machine-readable surface is [inst/api-contract.json](../../dev/api-contract.json).
+The exact machine-readable surface is [inst/api-contract.json](../../../dev/api-contract.json).
 The following 36 functions and the AgentSeurat class export are removed:
 
 - `qc_threshold`
@@ -103,10 +103,10 @@ not full parity with every arbitrary old normalization/regression/model option.
 ## Repository code, tests and dependencies
 
 Old model-specific benchmark drivers are replaced by
-[the counts-only reviewed workflow](../../benchmark/evaluation-v1/run_workflow.R).
+[the counts-only reviewed workflow](../../../benchmark/evaluation-v1/run_workflow.R).
 Its input/reference are frozen, it writes a new directory, uses three explicit
 software-control approvals, and retains Unknown labels with provider=NULL.
-[The benchmark guide](../../benchmark/README.md) identifies the single command.
+[The benchmark guide](../../../benchmark/README.md) identifies the single command.
 Old result/metric files are preserved for comparison. They are not overwritten
 or presented as newly validated biology.
 

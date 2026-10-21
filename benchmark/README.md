@@ -28,7 +28,7 @@ path. Current development uses the installed-package and offline-comparison
 contracts linked below.
 
 - [Protocol and original frozen outcomes](evaluation-v1/README.md)
-- [Registered evaluation boundaries](../docs/dev/EVALUATION_PROTOCOL_V1.md)
+- [Registered evaluation boundaries](../docs/archive/protocols/EVALUATION_PROTOCOL_V1.md)
 - [Installed package/runtime contract](contracts/installed_package_smoke.R)
 - [Standalone offline comparison contract](contracts/compare_offline.py)
 - [Local performance evidence](LOCAL_PERFORMANCE.md)

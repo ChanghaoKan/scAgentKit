@@ -1,6 +1,6 @@
 # Request and review model suggestions in the same project
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Use `sc_run()` once to initialize a project with verified input, study context and
 an optional model configuration. The unified model-review component then saves
@@ -31,14 +31,14 @@ Use `strategy=TRUE` for the existing whole QC/analysis strategy review. An alrea
 processed Seurat may enter at `start_stage="processed"` with the selected layer,
 cluster column and an explicit `processed_reason`; that entry records which
 foundation is reused. Raw counts and processed input have different authority.
-See [First run](../RESEARCHER_PROTOCOL_ZH.md), [strategy support](ANALYSIS_STRATEGY_SUPPORT.md) and
+See [First run](../SCIENTIFIC_REVIEW_QUICKSTART.md), [strategy support](ANALYSIS_STRATEGY_SUPPORT.md) and
 [scoped child review](../SUBCLUSTER_REVIEW.md) for their supported computations.
 
 Choose the provider/model, generation settings, aggregate-transfer policy
 and any required diagnostic inputs **at initialization**. The saved provider
 configuration is immutable. Model keys stay in the analysis machine's environment
 or user secret mechanism, and a custom callback stays in R memory. See the
-[environment-based provider example](../RESEARCHER_PROTOCOL_ZH.md).
+[environment-based provider example](../SCIENTIFIC_REVIEW_QUICKSTART.md).
 The built-in factories read `DEEPSEEK_API_KEY` or `XAI_API_KEY` at dispatch; no key
 belongs in context, RDS, logs, browser fields or URLs.
 

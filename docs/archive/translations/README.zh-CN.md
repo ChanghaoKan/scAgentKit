@@ -1,6 +1,6 @@
 # scAgentKit
 
-[English](README.md) · **简体中文**
+[English](../../../README.md) · **简体中文**
 
 面向长期研究使用的、受控的 LLM 单细胞基础分析助手。从计数矩阵到注释好的
 Seurat 对象，QC、批次处理、分群和注释的关键决策都有明确记录：
@@ -26,7 +26,7 @@ sc_start("input.rds", "new-project",
 一次确认汇总数据外发范围，然后依次审阅 **分析方案 → 实测分群 → 注释**。
 采纳或保存草稿不等于批准。支持 RDS、10x MEX 和样本表；
 用 `provider = "mock"` 可离线试用软件流程。
-[安装与试用](docs/user/INSTALL.zh-CN.md) · [输入格式](docs/TENX_INPUT.md)。
+[安装与试用](INSTALL.zh-CN.md) · [输入格式](../../TENX_INPUT.md)。
 
 ## 可以核对什么
 
@@ -42,17 +42,17 @@ sc_start("input.rds", "new-project",
 
 | 任务 | 入口 |
 | --- | --- |
-| 三道审批、取结果、重开项目 | [完整流程](docs/user/WORKFLOW.zh-CN.md) |
-| 理解注释查证 | [ReAct](docs/REACT_ZH.md) · [ACT](docs/ACT_LOCAL_REFERENCE.md) |
-| 取消、续跑和磁盘额度 | [运行控制](docs/user/TRIAL_CONTROLS.zh.md) |
-| 评估与离线重放 | [评估指南](docs/REACT_EVALUATION_ZH.md) |
-| 运行完整示例 | [示例索引](inst/examples/README.md) |
-| 查方法和环境要求 | [文档索引](docs/README.md) |
-| 开发、验证与阶段报告 | [开发者索引](docs/dev/README.md) |
+| 三道审批、取结果、重开项目 | [完整流程](WORKFLOW.zh-CN.md) |
+| 理解注释查证 | [ReAct](REACT_ZH.md) · [ACT](../../ACT_LOCAL_REFERENCE.md) |
+| 取消、续跑和磁盘额度 | [运行控制](TRIAL_CONTROLS.zh.md) |
+| 评估与离线重放 | [评估指南](REACT_EVALUATION_ZH.md) |
+| 运行完整示例 | [示例索引](../../../inst/examples/README.md) |
+| 查方法和环境要求 | [文档索引](../../README.md) |
+| 开发、验证与阶段报告 | [开发者索引](../../dev/README.md) |
 
 项目格式不匹配时，系统会在写入前拒绝打开，提示“请用原软件环境打开，或新建项目”。
-请保留原软件环境；详见[项目格式与重开](workbench/README.md#project-format-and-reopening)。
+请保留原软件环境；详见[项目格式与重开](../../../workbench/README.md#project-format-and-reopening)。
 轨迹、通讯、调控网络和条件间比较等高级下游分析不在范围内。
-[方法与局限](docs/SCIENTIFIC_METHODS_APPENDIX.md)。
+[方法与局限](../../SCIENTIFIC_METHODS_APPENDIX.md)。
 
-[版本记录](NEWS.md) · [许可证](LICENSE.md) · [引用](CITATION.cff)
+[版本记录](../../../NEWS.md) · [许可证](../../../LICENSE.md) · [引用](../../../CITATION.cff)

@@ -1,6 +1,6 @@
 # R analysis protocol
 
-This is the **0.8.1** protocol linked from the [README](../README.md#analysis-protocol).
+This is the **0.8.1** protocol linked from the [workflow guide](user/WORKFLOW.md).
 The raw-count workflow has three scientific approvals. Existing projects retain
 their saved configuration and implementation identity when reopened.
 
@@ -116,8 +116,17 @@ for every cluster:
 For example, concordant CD79A and MS4A1 evidence can support a B-cell assignment;
 its worksheet entry would cite `CD79A;MS4A1` and explain that interpretation.
 Use `Unknown` with a rationale for unresolved populations. Cluster IDs and
-annotations depend on the data and analysis settings. For file-based editing,
-see the [detailed walkthrough](dev/COMPLETE_ANALYSIS_WALKTHROUGH.md#3-read-markers-and-submit-annotations).
+annotations depend on the data and analysis settings. As an alternative to
+`utils::edit()`, export the worksheet, edit the TSV file, and read it back:
+
+```r
+write.table(annotation$annotations, "annotations.tsv", sep = "\t",
+  quote = TRUE, row.names = FALSE)
+# Edit annotations.tsv before reading it back. Keep all cluster IDs and columns.
+annotations <- read.delim("annotations.tsv", check.names = FALSE,
+  colClasses = "character", na.strings = character(), quote = '"')
+```
+
 The [annotation guide](dev/ANNOTATION_REVIEW.md) describes evidence and review decisions.
 
 Save the completed worksheet, inspect the full annotation proposal returned by
@@ -160,5 +169,5 @@ continue its review and execution. Opening a project does not resume work.
 The [format gate](../workbench/README.md#project-format-and-reopening) rejects
 missing or mismatched formats before project writes. Use the original software
 environment or create a new project; do not modify the format marker or state.
-See [recovery and saved results](RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录)
+See [recovery and saved results](SCIENTIFIC_REVIEW_QUICKSTART.md#11-results-reopening-and-errors)
 for interrupted runs and environment changes.

@@ -1,47 +1,43 @@
-# Provider 型号、协议与用量契约
+# Provider models, protocols, and usage reporting
 
-2026-10-20。按维护者最新决定修订：论文主矩阵是 **DeepSeek + Grok**；费用只在运行后记录并比较。本文件是实现契约和来源核实，不是已实现适配器或真实 API 验证报告。E0 历史阶段报告保留原样。科学定义见[协议 v2](EVALUATION_PROTOCOL_V2.md)，顺序见[论文里程碑](PAPER_MILESTONE_PLAN.md)。
+Date: 2026-10-20. The paper's primary model comparison is **DeepSeek + Grok**. Costs are recorded and compared after execution. This document specifies implementation requirements and dated qualification evidence; it does not establish formal scientific validation. The original E0 stage report is a historical record. See the [evaluation protocol](../research/EVALUATION_PROTOCOL_V2.md) for scientific definitions and the [paper milestone plan](../research/PAPER_MILESTONE_PLAN.md) for dependencies.
 
-## 支持范围与实施顺序
+## Support targets and implementation order
 
-产品正式支持目标是 DeepSeek、xAI Grok、Anthropic Claude、OpenAI，由用户选择。每家分别提交 M1 PR，型号逐个验收。先做论文需要的 **M1-xAI：原生 Responses**；Anthropic/OpenAI 的正式支持随后实现，可在论文之后。其他届时已支持 provider 各做公开开发集 N=3 `accept_drafts` 可用性验证，与论文主准确率/稳定性实验分开，不阻塞主矩阵。
+The product aims to support DeepSeek, xAI Grok, Anthropic Claude, and OpenAI, with the provider selected by the user. Each provider has a separate M1 pull request and each model requires qualification. **M1-xAI, using the native Responses API, comes first** because the paper requires it. Formal Anthropic and OpenAI support follows and may be completed after the paper. Other providers supported by then each receive N=3 `accept_drafts` usability runs on public development data. These checks are separate from the paper's accuracy and stability experiments and do not block its primary model comparison.
 
-DeepSeek 初始产品配置仍为 Flash、thinking disabled、temperature 0。Grok 推荐候选 `grok-4.7`：官方自定义工具能力已核实，Core 与 scAgentKit 引擎的合成 live smoke 已通过，公开真实数据产品验证仍未完成。精确型号和生成设置须与对照 preset 一起冻结；不根据报价选型或增加总费用估算门槛。
+The initial DeepSeek product configuration is Flash, thinking disabled, temperature 0. The recommended Grok candidate is `grok-4.7`: official custom-tool support has been verified, and synthetic live smoke tests of Core and the scAgentKit engine have passed. Product validation on real public data is still incomplete. Exact model IDs and generation settings must be frozen together with the comparator presets after qualification. Model selection does not depend on prices or a pre-execution estimate of total cost.
 
-CASSIA 1.4.0 的实际 SDK/内存 HTTP 探针验证了 Flash、V4 Pro、Grok4.7 在三个 agent 中的精确型号透传；Flash 的 requested none 没有关闭 thinking，Grok 的 requested effort 没有传入。V4 Pro non-thinking/temperature 0 与 Grok4.7 默认 high/temperature .7 是无补丁匹配候选，尚未成为正式实验配置。修复传输参数或调整受影响 arm 必须在冻结前记录；不因此暗改产品默认，也不把同型号等同于同协议。见[对照资格](../../benchmark/evaluation-v2/manifests/model-qualification.md)。
+Tests with the actual CASSIA 1.4.0 SDK and in-memory HTTP probes confirmed exact forwarding of the Flash, V4 Pro, and Grok4.7 model IDs through its three agents. Flash's requested `none` did not disable thinking; Grok's requested effort was not forwarded. V4 Pro with thinking disabled and temperature 0, and Grok4.7 with its default high effort and temperature .7, are candidates for matching configurations without a patch. They are not yet formal experimental presets. Transport-parameter fixes or changes to affected arms must be documented before freezing. They must not silently change product defaults, and identical model IDs must not be treated as evidence of identical protocols. See [comparator qualification](../../benchmark/evaluation-v2/manifests/model-qualification.md).
 
-## 费用只在运行后报告
+## Costs are reported after execution
 
-单次请求和结构化 turn **没有金额上限**，逐次在账本中保存服务返回的 usage、可得费用、时间和状态。发送前不进行 token 计数、输入估算或金额预留。价格或费用字段未知不阻止发送；已知费用与未知费用条数分开汇总，未知费用不记作零。
+Individual requests and structured turns have **no monetary cap**. Each ledger entry records returned usage, available costs, time, and status. Requests do not use pre-execution token counting, input-cost estimates, or monetary reservations. Unknown prices or costs do not prevent sending. Known costs and the number of requests with unknown costs are reported separately; unknown is not zero.
 
-优先保存服务报告的实际收费；只有实际 usage 和适用单价时，运行后折算并明确标“按用量折算”，附币种、价格来源/日期、缓存和推理字段口径。无法计算时为 unknown，不记零。费用报告分别列已知金额、按用量折算金额和费用未知的请求数，不把缺项的总和称为完整总花费。模型比较在完成运行后按相同数据、方法和重复范围汇总；具体字段见[E5 费用报告](../../benchmark/evaluation-v2/manifests/E5_COST_REPORTING.md)。
+Prefer charges reported by the service. When actual usage and an applicable unit price are available, calculate cost after execution and label it as usage-derived. Record the currency, price source and date, and the treatment of cached and reasoning tokens. Otherwise, report unknown. Cost reports distinguish service-reported charges, usage-derived costs, and requests with unknown costs. An incomplete sum is not a complete total. Model comparisons aggregate costs after execution over the same datasets, methods, and replicates; field definitions are in [E5 cost reporting](../../benchmark/evaluation-v2/manifests/E5_COST_REPORTING.md).
 
-不确定交付仍不得自动重发。即使没有合法草稿，也要保存收到的 usage/拒绝/失败状态；超时不意味着服务没有计费。后续拿到账单证据时追加 receipt，不改写原事件。不因为费用超出某个估计停止新 turn，因为新 turn 没有此估计或金额门槛。
+A request with uncertain delivery must not be resent automatically. Save returned usage, refusals, and failure status even when no valid draft is produced. A timeout does not establish that no charge occurred. Later billing evidence is appended as a receipt without rewriting the original event. A new turn is not stopped because costs exceed an estimate: no such estimate or monetary threshold governs turns.
 
-## 授权、只读和审批保持
+## Authorization, read-only tools, and approval
 
-创建项目时的一次性会话授权包含默认 ReAct；严格模式仍逐次确认准确 payload。全外发历史、工具定义、参数、结果和错误都通过既有隐私/大小检查。每轮保存 payload hash、response hash、投递状态和 event；state/ledger/checkpoint 仍是权威，不新增账本或会话状态库。
+Project-level session consent includes default ReAct use; strict mode requires confirmation of each exact payload. The complete outgoing history, tool definitions, arguments, results, and errors pass the existing privacy and size checks. Every turn records payload and response hashes, delivery status, and an event. The existing state, ledger, and checkpoints remain authoritative; no additional ledger or session-state store is introduced.
 
-工具只读，只返回汇总统计。每簇 6 turn、每次注释 60 turn、每簇 180 秒、每工具 60 秒的默认边界不变；厂商建议更长请求超时不会自动扩大这些限制。模型/工具/格式/时间失败按合法 baseline 回退，无 baseline 标 `baseline_unavailable`；完整性损坏阻断。保存仍不等于批准，模型永远不能批准。
+Tools are read-only and return aggregate statistics. Default limits are 6 turns per cluster, 60 turns per annotation, 180 seconds per cluster, and 60 seconds per tool. A provider's recommendation for longer request timeouts does not increase these limits. Model, tool, format, or timeout failures fall back to a valid baseline; absence of a baseline is recorded as `baseline_unavailable`. Integrity failures block execution. Saving a draft does not approve it, and a model cannot grant approval.
 
-## M1-xAI 协议要点
+## M1-xAI protocol requirements
 
-使用 `POST https://api.x.ai/v1/responses`，`store=false`，显式 `include=["reasoning.encrypted_content"]`，`tool_choice="auto"`、`parallel_tool_calls=false`。保存并按原顺序续传完整 `response.output`，追加配对的 `function_call_output`。不把历史压成纯文本，不依赖仅远端 response ID 才可恢复的状态。`store=false` 不能被表述为对服务全部日志的零保留承诺。
+Use `POST https://api.x.ai/v1/responses` with `store=false`, explicit `include=["reasoning.encrypted_content"]`, `tool_choice="auto"`, and `parallel_tool_calls=false`. Save and resend the complete `response.output` in order, appending the paired `function_call_output`. Do not flatten history into plain text or depend on a remote response ID as the only means of recovery. `store=false` is not a promise that the service retains no logs.
 
-必要的 encrypted reasoning 作为版本化 provider envelope 的私有协议原件保存，绑定当前会话及响应 hash；不解密、不当作生物学证据或公开预览。未知 item 类型不能静默丢弃。明文仍接受完整隐私检查。这个兼容扩展复用 Core turn 与既有审计，不引入新执行框架。
+Required encrypted reasoning is retained as a private protocol artifact in a versioned provider envelope, bound to the current session and response hash. It is not decrypted, presented as biological evidence, or included in public previews. Unknown item types must not be silently discarded. Plaintext content passes the complete privacy checks. The envelope uses Core turns and the existing audit records without introducing another execution framework.
 
-Grok4.7 不能关闭 reasoning，默认 effort high；其他 effort 是否用于实验须连同 CASSIA preset 核实。可见输出长度字段不覆盖全部推理和函数调用 token，不能称费用上限。工具 `strict` 在官方 OpenAPI 标为兼容但不支持，R 参数校验继续负责确定性检查。详细来源、模型限制和当前价格见[xAI 资格记录](../../benchmark/evaluation-v2/manifests/xai-qualification.md)。
+Grok4.7 reasoning cannot be disabled; default effort is high. Use of other effort settings in experiments requires qualification together with the CASSIA preset. The visible-output length field does not cover all reasoning and function-call tokens and must not be described as a cost limit. The official OpenAPI lists tool `strict` as accepted for compatibility but unsupported; R argument validation performs the deterministic checks. Sources, model limitations, and current prices are recorded in the [xAI qualification record](../../benchmark/evaluation-v2/manifests/xai-qualification.md).
 
-不启用服务端 web/X/code 工具、自动 context compaction、后台 agent 或未审查的模型切换。CASSIA 的 legacy Chat 路径可作为同型号的方法对照，但必须披露其不保留 Responses 的 encrypted reasoning；ReAct on/off 的单因素结论来自 scAgentKit 内部配对消融。
+Server-side web/X/code tools, automatic context compaction, background agents, and unreviewed model switching are not enabled. CASSIA's Chat API path can serve as a method comparator using the same model, provided the report discloses that it does not retain Responses encrypted reasoning. Single-factor conclusions about ReAct come from paired on/off ablations within scAgentKit.
 
-## 型号清单与验收
+## Model registry and qualification
 
-清单保存 provider、精确 API ID、返回 model、endpoint、日期/别名语义、支持参数、工具能力、source/offline/live 状态及来源。官方文档、离线 mock、真实开发冒烟、完整 preset 分列，只有相应验收完成才称产品已验证。用户可填写清单外型号并明确标 `unverified`；未实现 provider 返回 unsupported。未知价格不禁止发送，未知工具协议不能伪称已支持。
+The registry records the provider, exact API ID, returned model, endpoint, date and alias semantics, supported parameters, tool capabilities, source/offline/live verification status, and supporting sources. Official documentation, offline mocks, live development smoke tests, and complete presets have separate statuses. A capability is described as validated only after its corresponding qualification succeeds. Users may configure models outside the registry with an explicit `unverified` status. Unimplemented providers return unsupported. Unknown prices do not prevent sending, but unknown tool protocols must not be presented as supported.
 
-验收复用现有测试机制：完整工具历史和 opaque item 顺序、参数/大小/隐私、投递不明不重发、拒绝/缺 usage、实际用量字段映射、离线重放。真实冒烟在 CI 外执行并记录结果；本次没有调用任何 provider API，也没有真实费用或准确率结果。
+Qualification uses the existing test mechanisms: complete tool history and opaque-item ordering; parameter, size, and privacy checks; no resend after uncertain delivery; refusals and missing usage; mapping of actual usage fields; and offline replay. Live smoke tests run outside CI and retain their results. Work on this contract did not call a provider API or produce real cost or accuracy measurements.
 
-
-M1-xAI 当前原生 Responses 适配覆盖结构化 ReAct turns。原有一次性草稿
-仍沿用既有文本 provider 路径；本阶段没有把三个审批的所有调用都迁移为
-Responses，也不据此宣布完整产品支持。会话能力记录写入合成冒烟验证日期和
-`formal_support=false`；正式资格仍以完整产品/公开数据验收为准。
+The current M1-xAI native Responses adapter covers structured ReAct turns. One-shot drafts use the existing text-provider path. This stage does not migrate every call at the three approval stages to Responses and does not establish complete product support. The session capability record includes the synthetic smoke-test date and `formal_support=false`. Formal qualification requires complete product and public-data validation.

@@ -1,9 +1,10 @@
-# Pause, continue and project disk allowance
+# Cancellation, recovery and disk limits
 
-All new entry points record actual provider usage and cost after calls. A missing
-key leaves the chosen provider configured: set its environment variable and
-explicitly request the draft again in the same project. Model or scientific
-configuration changes are not part of resume.
+These controls apply to one saved project. Resuming uses its recorded
+configuration; it does not revise scientific choices or provider settings.
+Use the [review workflow](WORKFLOW.md) to revise a scientific proposal.
+
+## Cancel and continue
 
 In the workbench, **Cancel after current call** requests a safe stop for the active
 model task. The current API call may finish and be billed. Cancellation does not
@@ -13,27 +14,38 @@ kill R or another project. From R, the same project control is:
 sc_run_control(project_dir, cancel = TRUE, reason = "Pause for inspection")
 ```
 
-Before continuing, inspect the saved status and provider ledger. Clear the stop:
+Before continuing, inspect the saved status and provider ledger. Clear the
+cancellation request, then explicitly retry the approved computation:
 
 ```r
 sc_run_control(project_dir, cancel = FALSE, reason = "Continue the same analysis")
-sc_run_resume(project_dir, retry = TRUE)  # approved local/coordinator stages
+sc_run_resume(project_dir, retry = TRUE)
 ```
 
-For a model suggestion task, reopen the same project and explicitly request its
-saved preview again. The exact baseline response is read from cache, completed
-ReAct clusters are skipped, and saved completed tool turns are reused. If the
-process stopped during transmission, delivery may be unknown: reconcile that
-record in R before continuing. A cost receipt alone does not resolve delivery.
-Use `sc_run_provider_reconcile(..., delivery="not_sent")` only when the provider
-confirms no transmission, or `delivery="received"` for confirmed receipt, with
-the verification reason recorded. Neither reload nor resume automatically resends
-an uncertain request. A stale process lock requires explicit `sc_run_unlock`
-after verifying that its owner has stopped; never delete locks while a worker lives.
+For a model suggestion, reopen the project and request its saved preview
+again. Cached baseline responses, completed ReAct clusters and completed tool
+turns are reused. If a missing API key caused the stop, set the provider's
+environment variable before requesting the draft again.
 
 An unfinished computation resumes at its last completed function/stage boundary;
 it does not restore an arbitrary instruction inside a running algorithm.
 Completed projects reopen for review without rerunning analysis.
+
+## Resolve interrupted requests
+
+If a process stopped during transmission, the provider may have received the
+request without returning a response. Inspect the provider record and reconcile
+it with `sc_run_provider_reconcile()` before retrying. Supply the request hash,
+confirmed cost, reviewer and verification reason. Set `delivery="not_sent"`
+only with confirmation that the request was not transmitted, or
+`delivery="received"` with confirmation of receipt. A cost receipt alone does
+not establish delivery. Reloading or resuming never automatically resends an
+uncertain request.
+
+Recover a stale process lock with `sc_run_unlock()` only after verifying that
+its owner has stopped. Do not delete a lock held by a running worker.
+
+## Set a project disk allowance
 
 Disk allowance is optional and unlimited by default. After creating a project:
 
@@ -50,6 +62,7 @@ temporary files and essential audit records can temporarily exceed it. On a
 limit stop, raise/remove the allowance and explicitly continue; saved results
 are not deleted. The workbench's storage button measures current usage.
 
-Repeated identical tool evidence without progress causes a baseline fallback;
-a validated final draft ends refinement immediately. Existing configured step
-and timeout bounds still apply. The user must approve scientific decisions.
+For request sizes, worker timeouts, storage measurement and project archives,
+see [resource controls](RESOURCE_CONTROLS.md). Provider usage and costs are
+recorded after calls; neither cancellation nor a disk allowance is a spending
+cap.

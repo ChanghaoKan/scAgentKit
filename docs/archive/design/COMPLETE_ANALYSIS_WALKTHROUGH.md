@@ -1,6 +1,6 @@
 # scAgentKit
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../../README.md#analysis-protocol) for a study.
 
 scAgentKit takes a single-cell count matrix through QC, PCA, clustering, marker
 analysis and annotation with Seurat. The result is a new Seurat object, marker
@@ -12,12 +12,12 @@ This guide walks through both routes. The examples use human PBMC data; replace
 the study background and analysis choices for your experiment. The current
 planned release version is **0.6.0**.
 
-[中文完整指南](../RESEARCHER_PROTOCOL_ZH.md) ·
-[All documentation](../README.md) · [Changes](../../NEWS.md)
+[中文完整指南](../translations/RESEARCHER_PROTOCOL_ZH.md) ·
+[All documentation](../../README.md) · [Changes](../../../NEWS.md)
 
 ## Installation
 
-Install the versioned Release archive using the [canonical installation instructions](../../README.md#installation), then:
+Install the versioned Release archive using the [canonical installation instructions](../../../README.md#installation), then:
 
 ```r
 library(scAgentKit)
@@ -27,7 +27,7 @@ reviewer <- "your-name"
 ```
 
 The bundled `first_run_*` helpers display saved evidence and pass the identifiers
-needed to record your decisions. See the [installation guide](../RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认)
+needed to record your decisions. See the [installation guide](../translations/RESEARCHER_PROTOCOL_ZH.md#2-安装与版本确认)
 for separate libraries and reproducible environments.
 
 ## 1. Load counts and describe the study
@@ -398,7 +398,7 @@ stopifnot(identical(done$status, "complete"))
 
 These are two separate requests and two analysis decisions, not an approval
 loop. A failed request needs inspection before any retry; see
-[model review](UNIFIED_MODEL_REVIEW.md) for cache and usage handling.
+[model review](../../dev/UNIFIED_MODEL_REVIEW.md) for cache and usage handling.
 
 ## Results and reopening
 
@@ -445,10 +445,10 @@ run <- sc_run_continue(project_dir, project_id = current$project_id,
 For an explicitly approved provider request, restore the key environment and use
 `sc_run_resume(project_dir)`. Completed projects resume without rerunning analysis.
 Keep the original checkout/R library for a saved project. The
-[format gate](../../workbench/README.md#project-format-and-reopening) rejects a
+[format gate](../../../workbench/README.md#project-format-and-reopening) rejects a
 missing or mismatched format before project writes; use the original environment
 or start a new project. Do not edit marker/state versions or hashes. Inspect a
-failure before requesting a retry. Details are in the [recovery guide](../RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
+failure before requesting a retry. Details are in the [recovery guide](../translations/RESEARCHER_PROTOCOL_ZH.md#11-输出恢复与可复现记录).
 
 With Python >= 3.9 and a source checkout, you can view saved QC, UMAP, markers
 and history in a browser, including the analysis checkpoint before annotation:
@@ -459,7 +459,7 @@ sc_run_open(project_dir, checkout = "/path/to/scAgentKit")
 sc_run_open(project_dir)
 ```
 
-The [workbench guide](../../workbench/README.md) explains browser-based decisions,
+The [workbench guide](../../../workbench/README.md) explains browser-based decisions,
 local computation and remote access. The service binds to loopback; shared-host
 access needs appropriate isolation.
 
@@ -468,18 +468,18 @@ access needs appropriate isolation.
 - **Processed Seurat:** use `start_stage = "processed"` and a meaningful
   `processed_reason` to reuse an existing foundation. Set `cluster_column` if
   its clusters use a column other than `seurat_clusters`. See the
-  [processed-entry example](../RESEARCHER_PROTOCOL_ZH.md#52-已有-processed-seurat不重做基础计算).
+  [processed-entry example](../translations/RESEARCHER_PROTOCOL_ZH.md#52-已有-processed-seurat不重做基础计算).
 - **Subclusters:** `sc_run_subcluster()` creates an independent analysis from
   selected parent clusters; applying labels writes a new parent object.
-  See [subcluster analysis](../SUBCLUSTER_REVIEW.md).
+  See [subcluster analysis](../../SUBCLUSTER_REVIEW.md).
 - **MAD QC, doublets, cell cycle and Harmony:** optional choices with their own
-  inputs and applicability. See the [method guides](../README.md#analysis-and-review).
+  inputs and applicability. See the [method guides](../../README.md#analysis-and-review).
 - **Local marker references:** add a permitted local reference for annotation
-  evidence. See [CellMarker/reference matching](CM2_EVIDENCE_REVIEW.md).
+  evidence. See [CellMarker/reference matching](../../dev/CM2_EVIDENCE_REVIEW.md).
 
 Analysis choices and biological interpretation remain study-specific. Models
 receive the approved aggregate payload, which may include sensitive context;
-review it before disclosure. The [complete guide](../RESEARCHER_PROTOCOL_ZH.md)
+review it before disclosure. The [complete guide](../translations/RESEARCHER_PROTOCOL_ZH.md)
 covers data handling and the additional methods.
 
 ## Installation test without a model

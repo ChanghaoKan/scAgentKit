@@ -1,81 +1,194 @@
-# xAI / Grok 主矩阵资格记录
+# xAI/Grok qualification for the primary comparison
 
-核实日期：2026-10-20。依据 xAI 官方文档、OpenAPI 和官方 SDK 源码；未读取 API key，未调用推理、tokenize 或账户 API。**官方能力已核实；scAgentKit 适配、真实冒烟和正式实验资格尚未完成。** 主矩阵按维护者决定为 DeepSeek + Grok，M1-xAI 优先；Anthropic/OpenAI 随后作为正式产品支持。费用只在运行后记录和比较。
+Assessment date: 2026-10-20. The initial E0 assessment used xAI's official
+documentation, OpenAPI definition and SDK source. It read no API keys and made
+no inference, tokenization or account API calls. At that point, official
+capabilities had been checked, but scAgentKit integration, live smoke tests and
+formal experiment qualification were incomplete. Later implementation and smoke
+test results are recorded at the end of this document.
 
-## 具体候选和参数
+The maintainer selected DeepSeek and Grok for the primary comparison, with
+M1-xAI first and formal Anthropic/OpenAI product support to follow. Costs are
+recorded and compared after execution.
 
-| 项目 | 官方资料 | 资格边界 |
+## Candidate model and parameters
+
+| Item | Official specification | Qualification limit |
 | --- | --- | --- |
-| API model | `grok-4.7` | 未查到日期后缀快照，不能声称永不更新；记录请求/返回 model 和日期 |
-| context | 500,000 tokens | 容量规格，不是费用上限 |
-| 知识截止 | May 2026 | 官方 knowledge cutoff，不是训练数据清单或未见数据的证明 |
-| 模态 | text/image 输入、text 输出 | 本项目只启用文本 |
-| 工具 | custom function calling、structured outputs | 只连接四个本地只读工具，不启用服务端搜索/代码/MCP |
-| reasoning | low、medium、high、xhigh，默认 high | 4.7 不能关闭 thinking；低 effort 仍可能产生推理 token |
-| sampling | temperature 支持 0–2；官方建议 .7 和 top_p .95 | provider 专属设置在开发资格后冻结，不套用 DeepSeek temperature 0 |
+| API model | `grok-4.7` | No date-suffixed snapshot was found. Do not assume the ID is immutable; record requested and returned models and the request date. |
+| Context | 500,000 tokens | A capacity specification, not a cost ceiling. |
+| Knowledge cutoff | May 2026 | The stated cutoff is neither a training-data inventory nor proof that particular data were unseen. |
+| Modalities | Text/image input, text output | This project enables text only. |
+| Tools | Custom function calling and structured outputs | Connect only the four local read-only tools; do not enable server-side search, code execution or MCP. |
+| Reasoning | low, medium, high and xhigh; default high | Thinking cannot be disabled for 4.7. Low effort can still produce reasoning tokens. |
+| Sampling | Temperature supports 0–2; official recommendations are .7 and top_p .95 | Freeze provider-specific settings after development qualification rather than applying DeepSeek's temperature 0 setting. |
 
-型号和日期依据：[Developer Guide](https://docs.x.ai/developers/grok-4-7)、[型号页](https://docs.x.ai/developers/models/grok-4.7)；生成设置依据：[Reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning)、[最佳实践](https://docs.x.ai/developers/model-capabilities/text/best-practices)。官方 API 目前没有公开 `grok-4.7-fast`；不从其他产品的 fast 名称推导可调用 ID。
+Model and date sources:
+[developer guide](https://docs.x.ai/developers/grok-4-7) and
+[model page](https://docs.x.ai/developers/models/grok-4.7).
+Generation settings:
+[reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning) and
+[best practices](https://docs.x.ai/developers/model-capabilities/text/best-practices).
+The official API did not list `grok-4.7-fast`; a fast model name in another
+product does not establish an available API ID.
 
-原样 CASSIA 的 Grok 请求没有传入 effort，依赖官方默认 high，temperature .7 已在离线 HTTP 请求中核实。因此 high 是无补丁匹配候选；low/medium 可用于开发延迟评估，但正式 preset 须同时核实对照，不能擅自定为已冻结参数。详情见[同型号对照记录](model-qualification.md)。
+Unmodified CASSIA does not send Grok effort and relies on the documented default,
+high. Temperature .7 was confirmed in its captured offline HTTP requests. High
+is therefore a candidate for matching without a patch. Low or medium may be
+used to assess development latency, but a formal preset must also verify the
+comparator's setting before it is considered frozen. See the
+[model-matched comparator record](model-qualification.md).
 
-厂商建议长请求超时及流式调用，但项目已有**每簇 180 秒**边界保持。开发试跑报告实际超时率；不自动放宽、不因一般重试建议覆盖“不确定交付不重发”。
+The vendor recommends long request timeouts and streaming, but the project's
+existing **180-second per-cluster** limit applies. Development runs must report
+observed timeout rates. Do not automatically extend that limit or let general
+retry advice override the rule against resending requests with uncertain
+delivery.
 
-## 推荐 Responses；完整保存协议历史
+## Responses protocol and complete history
 
-采用 `POST https://api.x.ai/v1/responses`。Chat Completions 已标 legacy，不能继续作为新 M1-xAI 的默认协议。官方 native SDK/gRPC 也能处理加密历史，但当前没有必要增加该依赖；R/Core 可用原生 REST。依据：[接口比较](https://docs.x.ai/developers/model-capabilities/text/comparison)、[legacy Chat](https://docs.x.ai/developers/model-capabilities/legacy/chat-completions)。
+Use `POST https://api.x.ai/v1/responses`. Chat Completions is marked legacy and
+was not selected as the default protocol for the new M1-xAI implementation.
+The native SDK/gRPC route can also handle encrypted history, but it does not
+justify an additional dependency here; R/Core can use native REST.
+[Interface comparison](https://docs.x.ai/developers/model-capabilities/text/comparison);
+[legacy Chat](https://docs.x.ai/developers/model-capabilities/legacy/chat-completions).
 
-请求明确 `store=false`、`include=["reasoning.encrypted_content"]`；4.7 当前即使不指定 include 也返回 encrypted reasoning，仍显式写入以固定意图。`store=false` 避免以服务保存的 response ID 作为续接依赖，不代表对全部服务日志的零保留承诺。[Responses 参考](https://docs.x.ai/developers/rest-api-reference/inference/responses.md)、[加密 reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning)。
+Send `store=false` and `include=["reasoning.encrypted_content"]` explicitly.
+Although 4.7 currently returns encrypted reasoning without the include setting,
+recording it makes the intended protocol explicit. `store=false` avoids relying
+on a service-stored response ID for continuation; it does not promise zero
+retention across all service logs.
+[Responses reference](https://docs.x.ai/developers/rest-api-reference/inference/responses.md);
+[encrypted reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning).
 
-每轮保存完整 `response.output`，下一轮保持全部 item 的内容和顺序，再追加配对的 `function_call_output`。reasoning、message、function-call 项不能缩写成 assistant 文本。每个 call_id 对应一个结果；`parallel_tool_calls=false`，仍校验意外多调用。未知 item 不静默丢弃。固定会话 `prompt_cache_key` 可帮助服务路由，但不预先认定缓存命中。
+Save the complete `response.output` from each turn. On the next turn, retain
+all item content and ordering, then append the matching `function_call_output`.
+Do not reduce reasoning, message and function-call items to assistant text.
+Each call_id must have one result. Set `parallel_tool_calls=false` and still
+validate unexpected multiple calls. Do not silently discard unknown items.
+A fixed session `prompt_cache_key` may help routing but does not establish a
+cache hit.
 
-opaque reasoning 只能是来自本会话的原始协议记录，保存来源、hash、大小及前序响应绑定；不解密、不公开作生物学证据，不接受任意伪造密文。明文仍通过完整外发隐私/大小检查。Core 需要兼容扩展版本化 provider envelope，保留旧 turn/文本接口；复用既有 ledger/state/checkpoint，无新执行框架。不用远端历史、自动 compaction 或后台 agent 来省略本地审计。
+Opaque reasoning must be the original protocol record from the same session,
+with source, hash, size and preceding-response binding retained. Do not decrypt
+it, publish it as biological evidence or accept arbitrary fabricated ciphertext.
+Plaintext still undergoes complete outbound privacy and size checks. The E0
+design proposed extending Core's versioned provider envelope while retaining
+the existing turn and text interfaces, reusing the ledger, state and checkpoints
+without a new execution framework. Remote history, automatic compaction and
+background agents must not replace the local audit record.
 
-## 工具形状与确定性检查
+## Tool format and deterministic checks
 
-Responses 的工具定义为 `{type:"function", name, description, parameters}`；模型调用是 `{type:"function_call", call_id, name, arguments,...}`；本地结果是 `{type:"function_call_output", call_id, output}`。第一版用 `tool_choice="auto"`；官方指定工具的示例与 OpenAPI 对 name 嵌套位置并不完全一致，不采用尚未资格验证的强制分支。[Function Calling](https://docs.x.ai/developers/tools/function-calling)。
+Responses defines tools as `{type:"function", name, description, parameters}`,
+model calls as `{type:"function_call", call_id, name, arguments,...}`, and local
+results as `{type:"function_call_output", call_id, output}`. Use
+`tool_choice="auto"` in the first implementation. The official forced-tool
+example and OpenAPI definition differ in the nesting of name, so the unqualified
+forced-tool branch is excluded.
+[Function calling](https://docs.x.ai/developers/tools/function-calling).
 
-OpenAPI 的 `FunctionDefinition.strict` 标为兼容字段、不支持；对象 schema 的 grammar 说明也不能替代本地严格校验。四个工具的参数、只读权限、汇总隐私和返回大小仍由 R 校验器执行。来源：[官方 OpenAPI](https://docs.x.ai/openapi.json)。
+OpenAPI marks `FunctionDefinition.strict` as an unsupported compatibility field.
+Its object-schema grammar description also does not replace local strict
+validation. R validators enforce arguments, read-only access, aggregate-data
+privacy and result sizes for all four tools.
+[Official OpenAPI](https://docs.x.ai/openapi.json).
 
-## 用量与费用：调用后记录
+## Usage and cost after execution
 
-Responses 的 `max_output_tokens` 以及 legacy Chat 的 `max_completion_tokens` 只限制可见输出，排除 reasoning 和 function-call tokens。不能将其称全部 token 或费用上限；thinking 不能关闭不再阻塞接入，因为新 turn 没有金额封顶。保留输出长度、步数和时间控制即可。[Responses 参数](https://docs.x.ai/developers/rest-api-reference/inference/responses.md)、[Chat 参数](https://docs.x.ai/developers/rest-api-reference/inference/chat-completions.md)。
+Responses `max_output_tokens` and legacy Chat `max_completion_tokens` limit
+visible output only; reasoning and function-call tokens are excluded. These
+parameters are not total-token or cost ceilings. The inability to disable
+thinking is not an integration blocker because structured turns have no
+monetary cap. Output-length, step and time controls still apply.
+[Responses parameters](https://docs.x.ai/developers/rest-api-reference/inference/responses.md);
+[Chat parameters](https://docs.x.ai/developers/rest-api-reference/inference/chat-completions.md).
 
-核实日全球标准渠道的 USD/百万 token：
+At the assessment date, standard global pricing in USD per million tokens was:
 
-| prompt 范围 | 普通输入 | 缓存输入 | 输出 |
+| Prompt size | Uncached input | Cached input | Output |
 | --- | ---: | ---: | ---: |
 | <200,000 | 2.00 | 0.50 | 6.00 |
 | ≥200,000 | 4.00 | 1.00 | 12.00 |
 
-跨阈值时整次请求使用对应档位；US 区域接口有 10% 溢价，不隐式切换渠道。推理和生成工具调用文本计费，本地工具执行本身没有服务端工具调用费。部分生成前违规拒绝可能收 $0.05/request，生成后拒绝仍可收生成费用；不是全部 refusal 都固定收费或免费。来源：[价格](https://docs.x.ai/developers/pricing)、[区域接口](https://docs.x.ai/developers/advanced-api-usage/regions)。这些单价用于理解运行后记录，不是发送或选择模型的前置门槛。
+The applicable tier covers the whole request when the threshold is crossed.
+The US regional endpoint has a 10% premium; do not switch regions implicitly.
+Reasoning and generated tool-call text are billed, whereas local tool execution
+has no server-side tool-call fee. Some policy refusals before generation may
+cost $0.05/request, and refusals after generation may still incur generation
+charges. Neither a fixed fee nor zero applies to every refusal.
+[Pricing](https://docs.x.ai/developers/pricing);
+[regional endpoints](https://docs.x.ai/developers/advanced-api-usage/regions).
+These prices help interpret post-run records; they are not prerequisites for
+sending requests or selecting a model.
 
-优先使用服务返回的 `usage.cost_in_usd_ticks / 10^10`；保留原始整数单位，不能混用另一个 `cost_in_nano_usd` 字段或丢失精度。官方定义该金额包括适用折扣和工具费。缺失时按实际 usage 与可核实单价事后折算，仍不足就标 unknown。[Cost Tracking](https://docs.x.ai/developers/cost-tracking)。
+Prefer service-reported `usage.cost_in_usd_ticks / 10^10`. Retain the original
+integer unit without losing precision or confusing it with the separate
+`cost_in_nano_usd` field. The official definition includes applicable discounts
+and tool charges. If absent, calculate cost after the run from actual usage and
+verifiable unit prices; if those are insufficient, record unknown.
+[Cost tracking](https://docs.x.ai/developers/cost-tracking).
 
-保留原始 usage 再作 provider 映射，不能假定 output 总包含 reasoning，或机械使用 input+output=total。官方 Responses 示例的 input=32、output=9、reasoning=110、total=151 提示必须核对字段关系；`context_details` 是上下文信息，不是账单。真实 4.7 字段关系仍需 live smoke 验证。[Responses 返回结构](https://docs.x.ai/developers/rest-api-reference/inference/responses.md)。
+Retain raw usage before mapping provider fields. Do not assume that output
+always includes reasoning or mechanically apply input+output=total. The official
+Responses example gives input=32, output=9, reasoning=110 and total=151,
+illustrating why field relationships must be checked. `context_details`
+describes context, not billing. Actual 4.7 field relationships still required
+live-smoke verification at E0.
+[Responses return structure](https://docs.x.ai/developers/rest-api-reference/inference/responses.md).
 
-不新增计数 API、本地 tokenizer、输入估算、系数或预留前置；价格/usage 未知不阻止新结构化请求。已知费用和未知请求数分报，不能把缺项总和称完整花费。超时不证明免费，投递不确定仍不重发。详见[E5 费用报告](E5_COST_REPORTING.md)。
+Do not add a counting API, local tokenizer, input estimate, multiplier or
+reservation as a prerequisite. Unknown prices or usage do not prevent new
+structured requests. Report known costs and the number of requests with unknown
+cost separately; an incomplete sum is not total expenditure. A timeout does
+not establish zero cost, and uncertain delivery still prevents resending. See
+the [E5 cost-reporting rules](E5_COST_REPORTING.md).
 
-## 后续资格和来源固定
+## Remaining qualification and fixed sources
 
-M1-xAI 的 mock 验收覆盖完整 item 顺序/续传、call_id、非法参数、未知 item、usage 变体/ticks、拒绝、截断/断流、投递不明、完整历史隐私/大小限制、无需远端历史的离线重放。真实资格还须验证账号型号可用性、至少两轮工具调用和合法 final JSON、实际 usage/收费字段、固定工作量的耗时/超时率。真实调用不进 CI；本次均未执行。
+M1-xAI mock acceptance must cover complete item order and continuation, call_id
+matching, invalid arguments, unknown items, usage variants and ticks, refusals,
+truncation or interrupted streams, uncertain delivery, privacy and size limits
+across the full history, and offline replay without remote history. Live
+qualification must additionally verify account-level model availability, at
+least two rounds of tool calls followed by valid final JSON, actual usage and
+billing fields, and elapsed time and timeout rates for fixed workloads. Live
+calls are excluded from CI. None were performed in the initial E0 assessment.
 
-公开 OpenAPI 快照 SHA256：`ee418da1de9d6b66648250e1ecb9fdd98cef472dde7b05c66cc9d0db8dad7f1f`。官方 SDK 查阅 commit：`1d9e1dffc9a0521ede0e6bc7f2b906177b940d34`，[chat.py 固定来源](https://github.com/xai-org/xai-sdk-python/blob/1d9e1dffc9a0521ede0e6bc7f2b906177b940d34/src/xai_sdk/chat.py)。这些证明查阅来源与接口声明，不证明 live 服务或单细胞性能。产品清单和正式实验记录须继续区分 source、offline、live 和完整 preset 状态。
+Public OpenAPI snapshot SHA256:
+`ee418da1de9d6b66648250e1ecb9fdd98cef472dde7b05c66cc9d0db8dad7f1f`.
+The official SDK source was inspected at commit
+`1d9e1dffc9a0521ede0e6bc7f2b906177b940d34`:
+[fixed chat.py source](https://github.com/xai-org/xai-sdk-python/blob/1d9e1dffc9a0521ede0e6bc7f2b906177b940d34/src/xai_sdk/chat.py).
+These references identify inspected sources and interface declarations; they
+do not establish live service behavior or single-cell performance. Product
+inventories and formal experiment records must distinguish source inspection,
+offline checks, live checks and complete preset qualification.
 
-## 2026-10-20 后续实现与协议冒烟记录
+## Subsequent implementation and protocol smoke tests, 2026-10-20
 
-前文是 E0 的离线资格记录，保留其时间边界。其后 Core #4 实现了原生
-Responses，`bc349db` 离线 238 条断言及完整 R-CMD-check 通过。维护者授权的
-两轮合成汇总数据协议冒烟在 `8a48825` 上通过：grok-4.7、temperature 0、
-effort high、每轮可见输出上限 512、timeout 60 秒，工具调用后返回合法 JSON，
-完整 output / encrypted reasoning 原样续传。耗时 6.107 秒，input 2928、
-output 165、total 3093、reasoning 134（不重复加到 total），费用由服务 ticks
-返回为 $0.003198。没有私有数据、留出集或生物学效果实验。
+The preceding sections record the initial E0 assessment. Core #4 subsequently
+implemented native Responses. Commit `bc349db` passed 238 offline assertions
+and a complete R-CMD-check. A maintainer-authorized two-turn protocol smoke test
+using synthetic aggregate data passed on `8a48825`: grok-4.7, temperature 0,
+effort high, visible-output limit 512 per turn, and timeout 60 seconds. A tool
+call was followed by valid JSON, with complete output and encrypted reasoning
+continued unchanged. Elapsed time was 6.107 seconds; input 2928, output 165,
+total 3093, and reasoning 134, which is not added to total again. The service
+reported a cost of $0.003198 in ticks. No private data, held-out data or
+biological-performance experiment was involved.
 
-scAgentKit M1 原生会话与 2B 集成仍为独立草稿；完整公开数据验收和 CASSIA
-真实 preset 尚未完成，不标为产品正式支持，也不将开发参数写成正式实验冻结值。
+At that stage, the scAgentKit M1 native session and 2B integration remained
+separate drafts. Full public-data acceptance and the live CASSIA preset were
+incomplete. These results did not establish formal product support or freeze
+development parameters for formal experiments.
 
-随后 scAgentKit 原生引擎合成冒烟（`d1e1ebf`）通过：5 轮、4 次本地工具调用、
-74.820 秒，合法 Unknown 草稿且未批准。输入 26476、输出 5117、total 31593；
-这些实际返回的 reasoning 4534 已包含在 output 中，不重复相加。原始 ticks
-合计 527420000，即 $0.052742。[逐轮记录](../../../docs/dev/benchmarks/provider-smoke/grok-engine-2026-10-20.json)。
-该结果增加了产品引擎协议证据，未完成公开真实数据验证或正式实验资格。
+A subsequent synthetic smoke test of the scAgentKit native engine passed at
+`d1e1ebf`: 5 turns, 4 local tool calls, 74.820 seconds, and a valid Unknown draft
+that was not approved. Input was 26476, output 5117 and total 31593. The returned
+reasoning count, 4534, was included in output and must not be added again. Raw
+ticks totaled 527420000, equivalent to $0.052742.
+[Per-turn record](../../../docs/dev/benchmarks/provider-smoke/grok-engine-2026-10-20.json).
+This adds protocol evidence from the product engine; it does not complete
+validation on real public data or qualification for formal experiments.

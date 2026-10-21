@@ -9,7 +9,7 @@ resampling, extra resolution extension, sample-consensus HVGs remain off by defa
 selection is described below; incomplete evidence stays keep-all. Cross-sample/mixed-lineage expression
 extensions and R-only SoupX/decontX also remain explicit choices. No evidence
 display authorizes a data transfer, chooses optimal settings or certifies labels. See the registered
-[evaluation protocol](dev/EVALUATION_PROTOCOL_V1.md) and
+[evaluation protocol](archive/protocols/EVALUATION_PROTOCOL_V1.md) and
 [operator guide](SCIENTIFIC_REVIEW_QUICKSTART.md). Preset and diagnostic
 eligibility are software rules; no biological default benefit is assumed.
 

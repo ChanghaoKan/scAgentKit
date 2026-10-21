@@ -1,6 +1,6 @@
 # Doublet evidence and an explicit cell-selection decision
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 Enable `doublet_diagnostics` in `sc_run(..., strategy = TRUE)` to obtain real,
 capture-specific scDblFinder scores before the concentrated strategy review.
@@ -338,7 +338,7 @@ written into the project, browser, exported objects or logs.
 A configured workbench binds to loopback and can be reached by an explicit SSH
 tunnel. It does not open a public listener, change authentication/firewall rules,
 automatically submit scheduler jobs or require a browser to keep R running.
-See [researcher guide](../RESEARCHER_PROTOCOL_ZH.md) for the existing launch/recovery workflow.
+See [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md) for the existing launch/recovery workflow.
 The current
 separately reviewed contracts are in [Harmony/PC review](HARMONY_PC_REVIEW.md)
 and [subcluster review](../SUBCLUSTER_REVIEW.md); batch or child analysis is never

@@ -1,6 +1,6 @@
 # Evaluation v2 — implementation contract
 
-**E0 is approved; the 4E scoring adapter is available in development. No runner, injector or formal model result is supplied yet.** The scientific and scoring contract is [the v2 protocol](../../docs/dev/EVALUATION_PROTOCOL_V2.md); implementation order and the paper/1.0 split are in [the milestone plan](../../docs/dev/PAPER_MILESTONE_PLAN.md).
+**E0 is approved; the 4E scoring adapter is available in development. No runner, injector or formal model result is supplied yet.** The scientific and scoring contract is [the v2 protocol](../../docs/research/EVALUATION_PROTOCOL_V2.md); implementation order and the paper/1.0 split are in [the milestone plan](../../docs/research/PAPER_MILESTONE_PLAN.md).
 
 `evaluate_react.R` is a thin adapter to the package's versioned `sc_react_eval`.
 Use prepared inputs and named sections from `evaluation-v1/label-map.json`;

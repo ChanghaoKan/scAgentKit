@@ -1,4 +1,17 @@
-# Development: current project contracts
+# scAgentKit development (unreleased)
+
+## Documentation and examples
+
+- Use English for maintained guides and research protocols. Separate user,
+  developer and research documentation; archive earlier translations and designs.
+- Clarify source installation, reproducibility records and the distinction
+  between completed software checks and pending biological evaluation.
+- Add contribution guidance and correct the R software citation, with ACT
+  retained as a separate reference-data citation.
+- Document example entry points and fix the full-pipeline wrapper's path to
+  the installed three-review tutorial.
+
+## Project formats and contracts
 
 - Breaking contract cleanup: projects carry an explicit format version checked
   before opening, locking or writing; projects with a different or missing
@@ -23,14 +36,14 @@
   Project format 3 rejects earlier formats. Workbench admission checks the
   authoritative saved state and parent formats before local job writes.
 
-## Development: trial run controls
+## Run controls
 
 - New projects use post-call accounting through sc_start, sc_analyze and sc_run. Missing keys preserve the selected provider for later use in the same project.
 - Added project-scoped cooperative cancellation and optional logical disk allowance with immutable control receipts. Saved outputs are preserved; no process-wide termination or deletion is performed.
 - ReAct detects repeated evidence without progress and preserves remaining cluster time across completed-turn checkpoints. Existing delivery-uncertainty guards and three human approvals remain.
 - Scientific implementation hash changes; this candidate requires new test projects. No scientific thresholds or analysis algorithms changed.
 
-# Development changes (unreleased)
+## Requests and runtime
 
 - New ReAct policies default to unlimited application request bytes, with optional
   hash-bound finite quotas shared by one-shot and turn requests. Scan space is

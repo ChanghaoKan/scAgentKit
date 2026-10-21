@@ -86,7 +86,7 @@ sc_run_resume(project_dir)
 For a plain matrix without metadata, omit `context$columns`; the coordinator
 then discloses that separate sample/capture assessment is unavailable. For a
 Seurat object, declared columns must already exist. Provider setup and the
-processed-object entry point are described in [researcher guide](../RESEARCHER_PROTOCOL_ZH.md).
+processed-object entry point are described in [researcher guide](../SCIENTIFIC_REVIEW_QUICKSTART.md).
 If neither a provider nor a manual rule is supplied, the run diagnoses the data
 and pauses for configuration rather than inventing an AI decision.
 

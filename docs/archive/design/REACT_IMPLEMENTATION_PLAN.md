@@ -5,9 +5,9 @@ scientific approval. The first implementation contains four internal read-only
 tools. It does not enable model tool calling or change the public annotation
 workflow. Each subsequent stage has its own pull request.
 
-The approved 2026-10-20 [paper milestone plan](PAPER_MILESTONE_PLAN.md)
+The approved 2026-10-20 [paper milestone plan](../../research/PAPER_MILESTONE_PLAN.md)
 integrates this first release with B1/B2 and evaluation E0–E5. It records the
-paper/1.0 split and provider-specific M1 work. The [evaluation protocol](EVALUATION_PROTOCOL_V2.md)
+paper/1.0 split and provider-specific M1 work. The [evaluation protocol](../../research/EVALUATION_PROTOCOL_V2.md)
 is the authority for scoring definitions and experiment gates; its engineering
 approval is not a formal experiment freeze.
 
@@ -114,7 +114,7 @@ prerequisites. Single-request and structured-turn calls both use post-call
 accounting without monetary caps or reservations. Unknown price or usage remains
 unknown rather than zero and does not itself prevent a new structured request.
 Uncertain delivery is never automatically resent. Reuse the existing ledger,
-consent and events. The [provider contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
+consent and events. The [provider contract](../../dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md)
 defines model qualification, complete protocol history, refusals and post-run
 cost reporting. No pre-run total-cost estimate gates model choice or a stage.
 

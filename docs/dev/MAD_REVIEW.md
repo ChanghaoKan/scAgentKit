@@ -1,6 +1,6 @@
 # Sample-aware MAD candidates and one joint review
 
-Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../../README.md#analysis-protocol) for a study.
+Developer driver: run from the repository root or set `options(scAgentKit.dev_examples="/absolute/path/to/scAgentKit/dev/examples")`. These focused drivers are not installed; use the [current researcher entry](../user/WORKFLOW.md) for a study.
 
 `sc_run(..., strategy = TRUE, qc_mad = ...)` adds a deterministic, local QC
 candidate panel. It calculates declared group statistics, compares six supported

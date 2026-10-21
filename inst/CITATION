@@ -1,4 +1,13 @@
+citHeader("Cite scAgentKit when using the software. Cite ACT separately when using its reference data.")
+
+bibentry(bibtype="Manual",
+ title="scAgentKit: Human-in-the-Loop, Auditable scRNA-Seq Toolkit",
+ author=person("Changhao", "Kan"),
+ year="2026",
+ note=paste("R package version", meta$Version),
+ url="https://github.com/ChanghaoKan/scAgentKit")
+
 bibentry(bibtype="Article", title="Annotation of cell types (ACT): a convenient web server for cell type annotation",
  author=c(person("Fei","Quan"),person("Xin","Liang"),person("Mingjiang","Cheng"),person("Huan","Yang"),person("Kun","Liu"),person("Shengyuan","He"),person("Shangqin","Sun"),person("Menglan","Deng"),person("Yanzhen","He"),person("Wei","Liu"),person("Shuai","Wang"),person("Shuxiang","Zhao"),person("Lantian","Deng"),person("Xiaobo","Hou"),person("Xinxin","Zhang"),person("Yun","Xiao")),
  journal="Genome Medicine",year="2023",volume="15",pages="91",doi="10.1186/s13073-023-01249-5",
- note="ACT reference snapshot attribution for scAgentKit 0.8.1. PMID37924118.")
+ note="Reference-data attribution for the bundled ACT snapshot. PMID: 37924118.")

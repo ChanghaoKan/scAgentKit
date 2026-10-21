@@ -1,12 +1,12 @@
 # Scientific review: operator guide
 
-This guide describes the current development source build on the data machine. [中文操作指南](RESEARCHER_PROTOCOL_ZH.md).
+This guide covers scientific review using the current development source on the machine that holds the data.
 See [README](../README.md) for installation, pre-1.0 policy and [limitations](../README.md#limitations).
 
 ## Model setup in this source build
 
 Configure provider/model and confirm aggregate transfer once in `sc_start()`;
-follow the [README entry](../README.md#analysis-protocol) and installed
+follow the [workflow guide](user/WORKFLOW.md) and installed
 `full-llm-workflow.R`. Existing environment keys only; missing keys leave a
 manual workflow. Without project-scope consent, each exact payload needs
 separate approval. Draft adoption/Save never approves science. New default
@@ -21,7 +21,7 @@ for every choice. A condition is not a technical batch, and Harmony design guard
 still apply. Measured resolution choices must come from the actual scan grid.
 
 ACT is the default local reference; see [input and provenance](ACT_LOCAL_REFERENCE.md).
-This PRIVATE LOCAL build includes a pinned offline ACT snapshot; redistribution permission remains unconfirmed. No automatic download occurs. Missing/unmatched records have
+The package includes a fixed offline ACT snapshot; its redistribution permission remains unconfirmed. No automatic download occurs. Missing/unmatched records have
 an explicit notice. Marker-only annotation precedes reference comparison; at most
 one guided difference request is allowed. Inspect actual positive marker citations
 and immutable PNG evidence. Exact CL mapping may remain missing. Human edits survive
@@ -183,7 +183,7 @@ facts. See [reuse limits](../README.md#limitations).
 | awaiting_review | Read the current proposal, Save edits, then approve. |
 | A busy job or uncertain response | Inspect the saved job/receipt and wait for the worker before submitting again. |
 | Input/layer mismatch or changed project environment | Check the input and recorded environment; use the original environment or a new project. |
-| Missing, damaged or mismatched project format | The gate reports “请用原软件环境打开，或新建项目”. Use that original environment or create a new project; do not edit the format marker, state or hashes. |
+| Missing, damaged or mismatched project format | Use the original software environment or create a new project; do not edit the format marker, state or hashes. |
 
 The [format gate](../workbench/README.md#project-format-and-reopening) also applies
 to read-only result viewers and restored backups. It does not migrate projects.

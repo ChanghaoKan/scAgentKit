@@ -16,8 +16,8 @@ Use the newly installed package version that created the project. Existing
 libraries can be supplied using the platform path separator, for example
 `--r-library '/private/new-library:/private/dependencies'` on macOS/Linux. The
 coordinator checks the current project format and implementation fingerprints
-before project writes. A missing, damaged or mismatched format is rejected with
-“请用原软件环境打开，或新建项目”; see the [format gate](README.md#project-format-and-reopening).
+before project writes. A missing, damaged or mismatched format requires the
+original software environment or a new project; see the [format gate](README.md#project-format-and-reopening).
 Choose a free port; starting this mode does not modify an existing workbench.
 
 Open `http://127.0.0.1:8772/review` locally. The unified page embeds the QC pane

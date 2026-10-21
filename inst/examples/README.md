@@ -1,10 +1,51 @@
-# scAgentKit — User examples
+# Installed examples
 
-- `react-three-gate-mock.R`: real local startup plus three scripted accept-draft approvals, ReAct all and API-free replay; public fixture only, no paid calls.
-- `three-gate-analysis.R`: explicit offline public `pbmc_small` software control, three approvals and Unknown labels; no biological recommendation or model call.
-- `simple-analysis.R`: installation-check wrapper around that same three-gate helper.
-- `full-llm-workflow.R`: configured provider/model, explicit creation-time aggregate consent, ReAct auto and post-call accounting, then browser drafts with three human approvals. Sourcing defines a function and sends nothing.
-- `tenx-multisample.R`: explicit local MEX sample table and exact metadata joins; no inferred capture or technical batch.
-- `subcluster-review.R`: independently reviewed exact-cell child and explicit writeback/undo.
+These scripts are included in the R package. Use the offline tutorial first,
+then choose an entry helper for your own data. Sourcing a script defines its
+functions; it does not start an analysis. `subcluster-review.R` also loads the
+package and checks that the required functions are available.
 
-Focused developer and historical drivers live in repository `dev/examples` and are not installed. None of these files installs dependencies or creates credentials. For a study, choose the facts and inspect each saved scientific review; do not reuse the public fixture's scripted approvals.
+## Offline tutorial
+
+This example uses SeuratObject's public `pbmc_small` dataset, runs the three
+review steps with scripted approvals, and assigns `Unknown` labels. It makes
+no external model requests.
+
+```r
+library(scAgentKit)
+source(system.file("examples", "three-gate-analysis.R",
+                   package = "scAgentKit", mustWork = TRUE))
+project_dir <- tempfile("scagentkit-example-")
+example <- three_gate_analysis(project_dir)
+example$receipt
+example$result
+```
+
+The receipt records completion, 80 cells, three approvals and zero provider
+calls. These checks demonstrate software behavior. The scripted choices and
+approvals are specific to this dataset; research analyses require the
+researcher's own review.
+
+## Available scripts
+
+| Script | Entry point | Purpose |
+| --- | --- | --- |
+| [three-gate-analysis.R](three-gate-analysis.R) | `three_gate_analysis(project_dir)` | Complete offline tutorial; returns the result, project and receipt |
+| [simple-analysis.R](simple-analysis.R) | `simple_analysis_after(project_dir)` | Installation check using the same tutorial; returns the Seurat object |
+| [react-three-gate-mock.R](react-three-gate-mock.R) | `react_three_gate_mock(project_dir, input_path)` | Starts a local workbench, exercises mock drafts and ReAct replay, then stops its service |
+| [full-llm-workflow.R](full-llm-workflow.R) | `full_llm_start(...)` | Starts model-assisted review after the caller supplies provider settings and confirms the data-transfer scope |
+| [tenx-multisample.R](tenx-multisample.R) | `tenx_multisample_start(...)` | Opens caller-supplied 10x MEX samples and joins cell metadata by sample ID and barcode |
+| [subcluster-review.R](subcluster-review.R) | `subcluster_example_scope(...)` and related helpers | Reviews a subset of a completed parent project, with separate creation, approval, application and undo operations |
+
+Both offline tutorials require a new project path. The ReAct mock example also
+requires an input path that does not already exist. The model-assisted helper
+uses credentials from the configured provider's environment variable; it does
+not create or store credentials. Its analysis decisions remain separate from
+permission to send data.
+
+`subcluster-review.R` also supports command-line operation:
+`Rscript --vanilla subcluster-review.R PARENT CHILD MODE [CLUSTER_IDS...]`.
+Its source lists the modes and the order in which to inspect and approve them.
+
+Repository-only diagnostic and historical drivers are listed in
+[`dev/examples`](../../dev/examples/README.md).

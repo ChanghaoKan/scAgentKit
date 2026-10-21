@@ -96,7 +96,7 @@ Local task receipts, configuration and owner/status records are stored under the
 
 Closing or refreshing the browser, losing the tunnel, or restarting the HTTP service does not by itself cancel the detached local worker or remove saved checkpoints. Reconnect the service to the same project and inspect its saved job/run status before acting again. An unknown response is not permission to start another worker. Do not remove a lock to bypass an active computation.
 
-Terminating R or losing the compute node is a different boundary: a completed checkpoint is reusable, but an interrupted uncommitted stage may need an explicit local-compute retry and owner-verified lock recovery. Continue does not automatically retry a failed stage or replay a provider request. The filesystem and shared-node limitations in [the researcher guide](../docs/RESEARCHER_PROTOCOL_ZH.md) still apply.
+Terminating R or losing the compute node is a different boundary: a completed checkpoint is reusable, but an interrupted uncommitted stage may need an explicit local-compute retry and owner-verified lock recovery. Continue does not automatically retry a failed stage or replay a provider request. The filesystem and shared-node limitations in [the researcher guide](../docs/SCIENTIFIC_REVIEW_QUICKSTART.md) still apply.
 
 The HTTP service launches local computation on its own machine; it is not a scheduler client. Start it on an appropriate machine or allocated compute node. It does not submit a job, allocate resources or establish that it is safe to compute on a login node.
 
