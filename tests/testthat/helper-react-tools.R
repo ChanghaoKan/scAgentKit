@@ -1,5 +1,5 @@
 react_tool_fixture <- function() {
-  root <- tempfile("react-tools-"); dir.create(root)
+  root <- tempfile("react-tools-"); .sc_project_format_create(root)
   cells <- paste0("private-cell-", sprintf("%02d", 12:1))
   genes <- c(paste0("G", sprintf("%02d", 1:60)), "RPL3", "MT-CO1")
   counts <- Matrix::Matrix(matrix(rep(c(0, 0, 1, 4), length.out = length(genes) * length(cells)),
@@ -27,7 +27,7 @@ react_tool_fixture <- function() {
   config <- list(assay = "RNA", counts_layer = "counts", normalized_layer = "data",
     cluster_column = "seurat_clusters", context = list(species = "human", tissue = "blood",
       columns = list(sample = "sample_label")))
-  state <- list(project_id = "react-software-fixture", input_hash = .sc_run_hash(seu), config = config,
+  state <- list(project_format_version = .sc_project_format_version(), project_id = "react-software-fixture", input_hash = .sc_run_hash(seu), config = config,
     config_hash = .sc_run_hash(config), implementation_hash = .sc_run_implementation(),
     files = list(), history = list(), revision = 0L, stage = "annotation_propose", pending = NULL)
   evidence <- list(summary = list(), private = list(input_cells = data.frame(cell_id = cells,

@@ -775,6 +775,7 @@
 #' @return Invisibly, the reconciled ledger entry.
 #' @export
 sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, reviewer, reason, delivery = NULL) {
+  .sc_project_format_entry(project_dir)
   if (!is.null(delivery) && (!is.character(delivery) || length(delivery) != 1L || !delivery %in% c("not_sent", "received")))
     stop("delivery must be NULL, not_sent or received, confirmed by the operator.", call. = FALSE)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")

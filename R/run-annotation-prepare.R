@@ -26,6 +26,7 @@
 #' @export
 sc_run_prepare_annotation <- function(project_dir, project_id, input_hash,
   expected_revision, evidence_hash, proposal, reviewer, reason, request_id) {
+  .sc_project_format_entry(project_dir)
   for (field in c("project_id", "reviewer", "reason", "request_id"))
     .sc_project_string(get(field), field)
   .sc_run_review_hash_string(input_hash, "input_hash")

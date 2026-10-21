@@ -53,6 +53,7 @@
 #' @return Current operational settings, invisibly.
 #' @export
 sc_run_control <- function(project_dir, cancel, disk_limit_bytes, reason = "Operator request") {
+  .sc_project_format_entry(project_dir)
   root <- .sc_run_root(project_dir)
   state <- .sc_run_load(root, verify = FALSE)
   .sc_project_string(reason, "reason")

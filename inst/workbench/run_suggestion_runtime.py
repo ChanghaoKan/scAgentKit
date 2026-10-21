@@ -19,13 +19,13 @@ import threading
 
 try:
     from .evidence import canonical, strict_json
-    from .qc_runtime import QCRuntime
+    from .qc_runtime import QCRuntime, check_project_format
     from .store import StoreError
     from .run_continue_runtime import (ROOT, HASH, JOB_ID, KEYS, fcntl, _time, _sha,
         _payload_hash, _read, _atomic, _once, _alive, _safe_directory, _lock, _projection)
 except ImportError:
     from evidence import canonical, strict_json
-    from qc_runtime import QCRuntime
+    from qc_runtime import QCRuntime, check_project_format
     from store import StoreError
     from run_continue_runtime import (ROOT, HASH, JOB_ID, KEYS, fcntl, _time, _sha,
         _payload_hash, _read, _atomic, _once, _alive, _safe_directory, _lock, _projection)
@@ -415,6 +415,7 @@ def _worker(config_file, expected_hash, lock_fd):
         if path.is_symlink() or not path.is_file() or _sha(path) != expected:
             return 2
     project = Path(config["project"])
+    check_project_format(project)
     base = project / ".workbench-suggestions"
     job, checked = _saved(base, config["job_id"])
     if checked != config or config_file != _job_dir(base, job["job_id"]) / "config.json":

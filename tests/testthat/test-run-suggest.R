@@ -2,7 +2,7 @@
 # or HTTP. Actual end-to-end Seurat and browser validation is separate.
 suggestion_fixture <- function(external = FALSE, budget = if (external) .05 else 0,
                                provider_name = "mock", pending = TRUE) {
-  root <- tempfile("suggestion-fixture-"); dir.create(root)
+  root <- tempfile("suggestion-fixture-"); .sc_project_format_create(root)
   cells <- data.frame(cell_id = c("private-cell-A", "private-cell-B"),
     cluster = c("01", "NA"), stringsAsFactors = FALSE)
   marker <- function(id, gene) list(clusterId = id, gene = gene,
@@ -23,7 +23,7 @@ suggestion_fixture <- function(external = FALSE, budget = if (external) .05 else
   config <- list(context = list(species = "human", tissue = "synthetic"),
     annotation_column = "fresh_type", provider = provider, budget = budget,
     review = list(allow_external = external), strategy = FALSE)
-  state <- list(project_id = "run-suggestion-fixture", status = "awaiting_configuration",
+  state <- list(project_format_version = .sc_project_format_version(), project_id = "run-suggestion-fixture", status = "awaiting_configuration",
     stage = "annotation_propose", revision = 0L, history = list(), nodes = list(),
     files = list(), approvals = list(), transfer_hashes = character(), completed = character(),
     config = config, config_hash = .sc_run_hash(config),

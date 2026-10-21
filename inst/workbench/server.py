@@ -19,7 +19,7 @@ try:
     from .evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from .store import SessionStore, StoreError
     from .directed_runtime import DirectedRuntime
-    from .project import ProjectRegistry, ProjectError
+    from .project import ProjectRegistry, ProjectLoader, ProjectError
     from .project_store import ProjectStoreError
     from .project_runtime import ProjectRuntime
     from .qc_runtime import QCRuntime
@@ -33,7 +33,7 @@ except ImportError:
     from evidence import EvidenceError, EvidenceLoader, canonical, strict_json
     from store import SessionStore, StoreError
     from directed_runtime import DirectedRuntime
-    from project import ProjectRegistry, ProjectError
+    from project import ProjectRegistry, ProjectLoader, ProjectError
     from project_store import ProjectStoreError
     from project_runtime import ProjectRuntime
     from qc_runtime import QCRuntime
@@ -680,6 +680,8 @@ def main(argv=None):
         elif args.project:
             if args.directed_source:
                 parser.error("Generic projects replay explicitly exported RNA assets; --directed-source belongs to the legacy adapter")
+            for path in args.project:
+                ProjectLoader(path).load()
             registry = ProjectRegistry(args.project_cache, args.journal_root, initial_project=args.project[0])
             for path in args.project[1:]:
                 registry.add_directory(path)

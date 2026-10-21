@@ -1,5 +1,5 @@
 turn_fixture <- function(external = FALSE, project_consent = TRUE, policy = NULL, budget = 1, priced = TRUE) {
-  root <- tempfile("turn-project-"); dir.create(root)
+  root <- tempfile("turn-project-"); .sc_project_format_create(root)
   cells <- paste0("private-cell-", 1:8)
   counts <- Matrix::Matrix(matrix(rep(c(1, 3, 0, 4), 40), nrow = 20,
     dimnames = list(paste0("G", 1:20), cells)), sparse = TRUE)
@@ -18,7 +18,7 @@ turn_fixture <- function(external = FALSE, project_consent = TRUE, policy = NULL
   config <- list(assay = "RNA", counts_layer = "counts", normalized_layer = "data",
     cluster_column = "seurat_clusters", context = list(species = "human", tissue = "blood"),
     provider = provider, budget = budget, review = list(allow_external = external, transfer_consent = consent))
-  state <- list(project_id = "turn-fixture", input_hash = .sc_run_hash(seu), config = config,
+  state <- list(project_format_version = .sc_project_format_version(), project_id = "turn-fixture", input_hash = .sc_run_hash(seu), config = config,
     config_hash = .sc_run_hash(config), implementation_hash = .sc_run_implementation(),
     files = list(), history = list(), revision = 0L, stage = "annotation_propose", pending = NULL)
   for (name in c("input", "analysis")) state <- .sc_run_put(root, state, name, seu)

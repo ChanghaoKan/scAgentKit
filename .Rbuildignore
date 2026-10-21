@@ -1,4 +1,5 @@
 ^LICENSE\.md$
+^AGENTS\.md$
 ^CITATION\.cff$
 ^Dockerfile$
 ^benchmark$

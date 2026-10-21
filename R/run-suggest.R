@@ -328,6 +328,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
                            project_id = NULL, input_hash = NULL, expected_revision = NULL,
                            suggestion_hash = NULL, reviewer = NULL, reason = NULL,
                            chat_fn = NULL, simulate = FALSE) {
+  .sc_project_format_entry(project_dir)
   action <- match.arg(action)
   if (!is.null(chat_fn) && (action != "request" || !is.function(chat_fn)))
     stop("Only request accepts an in-memory R chat_fn.", call. = FALSE)

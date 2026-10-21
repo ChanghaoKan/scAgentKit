@@ -139,6 +139,7 @@
 #' @export
 sc_run_qc_preview <- function(project_dir, sensitivity = NULL, gene_panels = NULL, reviewer = NULL,
                               reason = NULL, proposal_hash = NULL, preview_hash = NULL, expected_revision = NULL) {
+  .sc_project_format_entry(project_dir)
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_load(root)
   .sc_run_qc_revision_check(state, expected_revision)
@@ -164,6 +165,7 @@ sc_run_qc_preview <- function(project_dir, sensitivity = NULL, gene_panels = NUL
 #' @export
 sc_run_qc_review <- function(project_dir, action, proposal_hash, preview_hash, expected_revision,
                              reviewer, reason, proposal = NULL, sensitivity = NULL, gene_panels = NULL) {
+  .sc_project_format_entry(project_dir)
   if (!is.character(action) || length(action) != 1L || is.na(action) ||
       !action %in% c("approve", "reject", "revise", "preview")) stop("Unsupported QC review action.", call. = FALSE)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")

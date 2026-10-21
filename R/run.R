@@ -61,6 +61,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
                    subcluster_origin = NULL, subcluster_creation = NULL,
                    .subcluster_lock_owner = NULL, input_policy = NULL, react = NULL,
                    biological_diagnostics = NULL, cost_mode = "posthoc") {
+  .sc_project_format_entry(project_dir, allow_new = TRUE)
   cost_mode <- "posthoc"
   if(is.list(scientific_review) && is.character(scientific_review$panels) && length(scientific_review$panels)==1L &&
       !identical(.sc_run_species(context$species,allow_missing=TRUE),"human"))
@@ -183,7 +184,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
       stop("qc_mad uses its saved finite candidate panel; custom legacy sensitivity ranges cannot compete with it.", call. = FALSE)
   }
   .sc_project_json_check(config)
-  state <- list(project_id = paste0("run-", substr(.sc_run_hash(list(root, Sys.time())), 1, 16)),
+  state <- list(project_format_version = .sc_project_format_version(), project_id = paste0("run-", substr(.sc_run_hash(list(root, Sys.time())), 1, 16)),
                 status = "ready", stage = "qc_evidence", revision = 0L, history = list(),
                 config = config, config_hash = .sc_run_hash(config), implementation_hash = .sc_run_implementation(),
                 source = checked$source, diagnostics = checked$diagnostics, files = list(),
@@ -244,7 +245,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
   # A replaced/mocked coordinator can have a different lexical environment;
   # its environment must never redirect discovery away from package bindings.
   ns <- asNamespace("scAgentKit")
-  selected <- sort(grep("^(sc_run|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE), method = "radix")
+  selected <- sort(grep("^(sc_run|\\.sc_project_format_|\\.sc_run_)", ls(ns, all.names = TRUE), value = TRUE), method = "radix")
   selected <- unique(c(selected, "sc_project_prepare", ".sc_project_layer", ".sc_project_identity", ".adjusted_rand_index", "sc_cycle_gene_set"))
   # Coordinator wrappers call scientific helpers outside the sc_run prefix.
   # Follow their package-local references transitively, without executing any
@@ -310,6 +311,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
 #' @return Updated durable status.
 #' @export
 sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = FALSE) {
+  .sc_project_format_entry(project_dir)
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_load(root)
   if (!identical(state$config_hash, .sc_run_hash(state$config)) || !identical(state$implementation_hash, .sc_run_implementation()))
@@ -1013,6 +1015,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
 #' @return Updated status, awaiting exact proposal approval.
 #' @export
 sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_cleanup(root, .sc_run_load(root))
@@ -1088,6 +1091,7 @@ sc_run_propose <- function(project_dir, proposal, reviewer, reason) {
 #' @return Status ready for a new annotation proposal. Previous versioned artifacts remain.
 #' @export
 sc_run_undo <- function(project_dir, decision_id, reviewer, reason) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_load(root)
@@ -1137,6 +1141,7 @@ sc_run_undo <- function(project_dir, decision_id, reviewer, reason) {
 #' @return Completed run status with RESULT_ACCEPTED.
 #' @export
 sc_run_accept <- function(project_dir, reviewer, reason) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- .sc_run_load(root)

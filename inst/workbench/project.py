@@ -19,9 +19,9 @@ from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 
 try:
-    from .evidence import strict_json
+    from .evidence import strict_json, PROJECT_FORMAT_VERSION, PROJECT_FORMAT_ERROR
 except ImportError:
-    from evidence import strict_json
+    from evidence import strict_json, PROJECT_FORMAT_VERSION, PROJECT_FORMAT_ERROR
 
 BUNDLE_SCHEMA = "scagentkit.project-bundle.v1"
 PROJECT_SCHEMA = "scagentkit.project.v1"
@@ -269,7 +269,10 @@ def _validate_files_impl(blobs):
     if hashlib.sha256(project_bytes).hexdigest() != manifest["bundleDigest"]:
         raise ProjectError("Project bundle digest does not match actual project.json bytes")
     project = _object(_json(project_bytes, "project.json"), "project")
-    required = {"schema", "projectId", "displayName", "identity", "cells", "clusters", "embedding", "markers", "candidates", "models", "parameters", "provenance", "directed"}
+    if (type(project.get("project_format_version")) is not int
+            or project["project_format_version"] != PROJECT_FORMAT_VERSION):
+        raise ProjectError(PROJECT_FORMAT_ERROR, 409)
+    required = {"project_format_version", "schema", "projectId", "displayName", "identity", "cells", "clusters", "embedding", "markers", "candidates", "models", "parameters", "provenance", "directed"}
     if set(project) not in (required, required | {"sourceAnnotation"}) or project["schema"] != PROJECT_SCHEMA:
         raise ProjectError("Unknown project schema or fields")
     if project["projectId"] != manifest["projectId"]:
@@ -601,7 +604,8 @@ class ProjectLoader:
         umap = [{"cellId": row["cellId"], "clusterId": cells[row["cellId"]], "x": row["x"], "y": row["y"]}
                 for row in embedding["points"]] if embedding else []
         statuses = [row["strictStatus"] for row in project["models"]]
-        return {"schemaVersion": 1, "projectSchema": PROJECT_SCHEMA, "projectId": project["projectId"],
+        return {"project_format_version": project["project_format_version"],
+                "schemaVersion": 1, "projectSchema": PROJECT_SCHEMA, "projectId": project["projectId"],
                 "displayName": project["displayName"], "revision": manifest["bundleDigest"], "bundleDigest": manifest["bundleDigest"],
                 "sourceFingerprint": manifest["sourceFingerprint"], "identity": copy.deepcopy(project["identity"]),
                 "dataset": {"id": project["projectId"], "name": project["displayName"], "inputCells": len(cells),
@@ -707,11 +711,13 @@ class ProjectRegistry:
 
     def add_directory(self, path):
         _, blobs = _directory_bytes(path)
+        _validate_files(blobs)
         with self._cache_locked():
             return self._add(blobs)
 
     def import_zip(self, data):
         blobs = zip_bytes(data)
+        _validate_files(blobs)
         with self._cache_locked():
             return self._add(blobs)
 

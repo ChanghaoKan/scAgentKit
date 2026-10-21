@@ -22,9 +22,11 @@ import threading
 from datetime import datetime, timezone
 
 try:
+    from .qc_runtime import check_project_format
     from .evidence import canonical, strict_json
     from .store import SECRET_NAMES, StoreError, scrub_secrets
 except ImportError:
+    from qc_runtime import check_project_format
     from evidence import canonical, strict_json
     from store import SECRET_NAMES, StoreError, scrub_secrets
 
@@ -340,6 +342,7 @@ class RunContinueRuntime:
         if supplied.is_symlink() or not supplied.is_dir():
             raise StoreError("Continue requires an existing nonsymlink local project")
         self.project = supplied.resolve()
+        check_project_format(self.project)
         if (self.project / "state.rds").is_symlink() or not (self.project / "state.rds").is_file():
             raise StoreError("Continue requires the authoritative local state.rds")
         if isinstance(threads, bool) or not isinstance(threads, int) or not 1 <= threads <= 64:
@@ -497,6 +500,7 @@ class RunContinueRuntime:
                 "observed_status_sha256": _sha(self.project / "status.json")}
 
     def _fresh(self):
+        check_project_format(self.project)
         for path, expected in ((self.project, self.project_identity), (self.base, self.base_identity)):
             if path.is_symlink() or not path.is_dir() or (path.stat().st_dev, path.stat().st_ino) != expected:
                 raise StoreError("Configured continuation project/directory changed; restart and inspect", 409)

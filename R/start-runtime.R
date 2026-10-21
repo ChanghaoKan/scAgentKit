@@ -11,7 +11,7 @@
   manifest <- jsonlite::fromJSON(manifest_path,simplifyVector=FALSE)
   if (!identical(manifest$schema,"scagentkit.runtime.v1")) stop("Unsupported runtime manifest.",call.=FALSE)
   ns <- asNamespace("scAgentKit")
-  selected <- sort(unique(c(grep("^(sc_run|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)",ls(ns,all.names=TRUE),value=TRUE),
+  selected <- sort(unique(c(grep("^(sc_run|\\.sc_project_format_|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)",ls(ns,all.names=TRUE),value=TRUE),
     "sc_analyze","sc_open","sc_review","sc_start","sc_project_prepare",".sc_project_layer",
     ".sc_project_identity",".adjusted_rand_index","sc_cycle_gene_set")))
   if (!setequal(selected,names(manifest$functions))) stop("Installed package and runtime expose different workflow functions.",call.=FALSE)
@@ -30,8 +30,8 @@
           is.symbol(expr[[2]]) && is.call(expr[[3]]) && identical(expr[[3]][[1]],as.name("function")))
         definitions[[as.character(expr[[2]])]] <- eval(expr[[3]],envir=baseenv())
     }
-    source_names <- grep("^(sc_run|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)",names(definitions),value=TRUE)
-    if (!setequal(source_names,grep("^(sc_run|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)",selected,value=TRUE)))
+    source_names <- grep("^(sc_run|\\.sc_project_format_|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)",names(definitions),value=TRUE)
+    if (!setequal(source_names,grep("^(sc_run|\\.sc_project_format_|\\.sc_run_|\\.sc_ui_|\\.sc_start_|\\.sc_marker_|\\.sc_reference_|\\.validate_|\\.decision_|\\.review_)",selected,value=TRUE)))
       stop("Installed package and source checkout expose different workflow functions.",call.=FALSE)
     for (name in selected) if (is.null(definitions[[name]]) ||
         !identical(.sc_start_signature(get(name,ns)),.sc_start_signature(definitions[[name]])))

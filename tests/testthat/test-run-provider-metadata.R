@@ -1,5 +1,5 @@
 provider_metadata_fixture <- function(external = FALSE) {
-  root <- tempfile("provider-metadata-"); dir.create(root)
+  root <- tempfile("provider-metadata-"); .sc_project_format_create(root)
   provider <- list(name = if (external) "testremote" else "mock", model = "fixture-model",
     external = external, reservation_usd = if (external) 0.05 else 0,
     generation = list(max_tokens = 64L))

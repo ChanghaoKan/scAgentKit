@@ -15,15 +15,34 @@ import threading
 from pathlib import Path
 
 try:
-    from .evidence import canonical, strict_json
+    from .evidence import canonical, strict_json, PROJECT_FORMAT_VERSION, PROJECT_FORMAT_ERROR
     from .store import StoreError, scrub_secrets
 except ImportError:
-    from evidence import canonical, strict_json
+    from evidence import canonical, strict_json, PROJECT_FORMAT_VERSION, PROJECT_FORMAT_ERROR
     from store import StoreError, scrub_secrets
 
 ROOT = Path(__file__).resolve().parent
 HASH = re.compile(r"[a-f0-9]{64}\Z")
 MAX_RESULT = 64 * 1024 * 1024
+
+
+def check_project_format(project):
+    """Reject unsupported saved runs before creating locks, jobs or requests.
+
+    This creation-time marker is admission metadata. R also checks the version
+    inside its authoritative state envelope before every coordinator write.
+    """
+    marker = Path(project) / "project-format.json"
+    try:
+        if marker.is_symlink() or not marker.is_file() or marker.stat().st_size > 4096:
+            raise ValueError("Missing or invalid project format marker")
+        value = strict_json(marker.read_text(encoding="utf-8"))
+        if (not isinstance(value, dict) or set(value) != {"project_format_version"}
+                or type(value["project_format_version"]) is not int
+                or value["project_format_version"] != PROJECT_FORMAT_VERSION):
+            raise ValueError("Unsupported project format")
+    except (OSError, UnicodeError, ValueError) as problem:
+        raise StoreError(PROJECT_FORMAT_ERROR, 409) from problem
 
 
 class QCRuntime:
@@ -32,6 +51,7 @@ class QCRuntime:
         if supplied.is_symlink() or not supplied.is_dir():
             raise StoreError("QC run project must be an existing nonsymlink directory")
         self.project = supplied.resolve()
+        check_project_format(self.project)
         if (self.project / "state.rds").is_symlink() or not (self.project / "state.rds").is_file():
             raise StoreError("QC run project requires its authoritative local state.rds")
         self.library = os.pathsep.join(str(Path(entry).expanduser().resolve())
@@ -46,6 +66,7 @@ class QCRuntime:
         self.lock = threading.RLock()
 
     def _fresh(self):
+        check_project_format(self.project)
         if (self.project.is_symlink() or not self.project.is_dir()
                 or (self.project.stat().st_dev, self.project.stat().st_ino) != self.project_identity
                 or self.bridge.is_symlink()

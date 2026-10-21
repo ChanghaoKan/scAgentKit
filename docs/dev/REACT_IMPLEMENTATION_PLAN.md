@@ -106,8 +106,8 @@ transfer confirmation. Strict mode requires approval of each exact outgoing
 payload. Every turn has a separate payload hash and ledger entry. New structured
 turns have no monetary cap: record provider usage and costs after each response,
 without added token counters, safety factors, pre-send estimates or reservation
-prerequisites. Preserve the legacy one-shot budget behavior for compatibility;
-do not create a generic billing-mode framework. Unknown price or usage remains
+prerequisites. Single-request and structured-turn calls both use post-call
+accounting without monetary caps or reservations. Unknown price or usage remains
 unknown rather than zero and does not itself prevent a new structured request.
 Uncertain delivery is never automatically resent. Reuse the existing ledger,
 consent and events. The [provider contract](PROVIDER_MODEL_AND_USAGE_CONTRACT.md)

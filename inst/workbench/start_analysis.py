@@ -16,6 +16,7 @@ from server import main as serve
 from open_results import open_results
 from store import scrub_secrets
 from evidence import strict_json
+from qc_runtime import check_project_format
 
 ROOT = Path(__file__).resolve().parent
 
@@ -64,6 +65,8 @@ def main(argv=None):
     project = Path(args.project).expanduser().absolute()
     if not input_path.is_file() or project.is_symlink() or (project.exists() and not args.reopen):
         parser.error("Supply an RDS file and a new project path")
+    if args.reopen:
+        check_project_format(project)
     rscript = shutil.which(args.rscript)
     if not rscript:
         parser.error("An installed Rscript is required; no software is installed by this launcher")

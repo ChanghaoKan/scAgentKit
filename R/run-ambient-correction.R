@@ -13,6 +13,7 @@
 sc_run_ambient_correction <- function(input, method=c("SoupX","decontX"), capture,
   clusters, raw_counts=NULL, assay="RNA", counts_layer="counts", seed=42L,
   round_counts=FALSE, output_dir=NULL) {
+  if (!is.null(output_dir)) .sc_project_format_entry(output_dir, allow_new = TRUE)
   method <- match.arg(method)
   .sc_run_strategy_fields(capture,c("id","source","complete"),name="capture")
   .sc_project_string(capture$id,"capture id"); .sc_project_string(capture$source,"capture source")

@@ -12,6 +12,7 @@ class AnnotationPlotTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
         (self.root/"state.rds").write_bytes(b"opaque fixed R fixture")
+        (self.root / "project-format.json").write_text('{"project_format_version":2}')
         self.runtime=RunReviewRuntime(self.root)
         self.data=b"\x89PNG\r\n\x1a\n"+b"offline immutable PNG transport fixture"
         self.sha=hashlib.sha256(self.data).hexdigest()

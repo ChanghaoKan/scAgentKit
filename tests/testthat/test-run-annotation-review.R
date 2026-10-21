@@ -1,6 +1,6 @@
 annotation_review_fixture <- function(manual = TRUE, response = NULL, reference = FALSE) {
   root <- tempfile("annotation-review-")
-  dir.create(root)
+  .sc_project_format_create(root)
   input <- data.frame(cell_id = c("001", "1", "NA", "cell space", "Ca", "Ctrl"),
                       cluster = rep(c("01", "NA"), 3), stringsAsFactors = FALSE)
   marker <- function(id, gene, fold, within, outside) list(clusterId = id, gene = gene,
@@ -28,7 +28,7 @@ annotation_review_fixture <- function(manual = TRUE, response = NULL, reference 
   validated <- scAgentKit:::.sc_run_annotation_validate(proposal, evidence)
   config <- list(annotation_column = "fresh_annotation", provider = list(name = "deepseek",
     model = "configured-only", generation = list(temperature = 0), external = TRUE))
-  state <- list(config = config, config_hash = scAgentKit:::.sc_run_hash(config),
+  state <- list(project_format_version = .sc_project_format_version(), config = config, config_hash = scAgentKit:::.sc_run_hash(config),
     implementation_hash = scAgentKit:::.sc_run_implementation(),
     files = list(), history = list(), revision = 0L, approvals = list(),
     pending = NULL, approved = NULL, completed = character(), nodes = list(),

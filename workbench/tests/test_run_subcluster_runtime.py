@@ -71,6 +71,7 @@ class SubclusterRuntimeTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.parent = self.root / "parent"; self.parent.mkdir()
         (self.parent / "state.rds").write_bytes(b"mock; never interpreted as R")
+        (self.parent / "project-format.json").write_text('{"project_format_version":2}')
         self.workspace = self.root / "children"; self.workspace.mkdir()
         self.runtime = RunSubclusterRuntime(self.parent, self.workspace, library=str(self.root))
 
@@ -300,6 +301,7 @@ class SubclusterRuntimeTests(unittest.TestCase):
 
     def test_child_resolution_rechecks_r_registry_per_request_and_only_child_continuation(self):
         path = self.workspace / "child"; path.mkdir(); (path / "state.rds").write_bytes(b"mock")
+        (path / "project-format.json").write_text('{"project_format_version":2}')
         with patch("run_subcluster_runtime.subprocess.run", side_effect=self.process(result(path))) as call, \
                 patch("run_subcluster_runtime.RunReviewRuntime") as review, patch("run_subcluster_runtime.QCRuntime") as qc, patch("run_subcluster_runtime.RunContinueRuntime") as continuation:
             review.return_value.project = path.resolve()

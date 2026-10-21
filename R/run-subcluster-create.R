@@ -241,6 +241,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
                               cycle_diagnostics = NULL, annotation_column = "sc_subtype",
                               reviewer, reason, request_id, inherit_model = FALSE,
                               cluster_column = NULL) {
+  .sc_project_format_entry(parent_project)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_run_review_hash_string(parent_scope_hash, "parent_scope_hash")
   request_id <- .sc_run_subcluster_request_id(request_id)
@@ -345,8 +346,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
     creation$request_hash <- .sc_run_hash(payload)
     creation$model_policy <- model_policy
   }
-  if (!dir.exists(paths$child) && !dir.create(paths$child, showWarnings = FALSE))
-    stop("Child directory could not be created.", call. = FALSE)
+  .sc_project_format_create(paths$child)
   child_owner <- .sc_run_lock(paths$child)
   on.exit(.sc_run_release(paths$child, child_owner), add = TRUE, after = FALSE)
   receipt_path <- file.path(paths$child, ".subcluster-creation.rds")
@@ -363,7 +363,7 @@ sc_run_subcluster <- function(parent_project, child_project, clusters,
       return(sc_run_inspect(paths$child))
     }
   } else {
-    if (length(setdiff(list.files(paths$child, all.files = TRUE, no.. = TRUE), ".run-lock")))
+    if (length(setdiff(list.files(paths$child, all.files = TRUE, no.. = TRUE), c(".run-lock", "project-format.json"))))
       stop("Child directory contains foreign files; no creation was performed.", call. = FALSE)
     .sc_run_atomic(list(schema = "scagentkit.subcluster-initialization.v1", origin = origin,
       creation = creation), receipt_path)

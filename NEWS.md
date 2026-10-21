@@ -1,3 +1,10 @@
+# Development: current project contracts
+
+- Breaking contract cleanup: projects carry an explicit format version checked
+  before opening, locking or writing; projects with a different or missing
+  version must be opened in their original software environment or replaced
+  with a new project. Development guidance follows the current contract.
+
 ## Development: trial run controls
 
 - New projects use post-call accounting through sc_start, sc_analyze and sc_run. Missing keys preserve the selected provider for later use in the same project.

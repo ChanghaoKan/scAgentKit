@@ -12,6 +12,7 @@
 sc_run_set_reference <- function(project_dir, reference, project_id, input_hash,
                                  expected_revision, reviewer, reason,
                                  reference_review = NULL, annotation_history = NULL) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(project_id, "project_id")
   .sc_run_review_hash_string(input_hash, "input_hash")
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")

@@ -193,6 +193,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
                        chat_fn = NULL, budget = NULL, review = list(allow_external = FALSE),
                        sample_id = NULL, matrix_kind = NULL, cell_metadata = NULL,
                        feature_key = c("name", "id"), doublet = c("auto", "off", "flag", "remove"), ...) {
+  .sc_project_format_entry(project_dir, allow_new = TRUE)
   imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
   input <- imported$input; context <- imported$context
   if (imported$imported) {

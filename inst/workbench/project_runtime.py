@@ -7,10 +7,10 @@ import types
 from pathlib import Path
 
 try:
-    from .evidence import canonical, digest
+    from .evidence import canonical, digest, PROJECT_FORMAT_VERSION, PROJECT_FORMAT_ERROR
     from .store import StoreError, portable_content
 except ImportError:
-    from evidence import canonical, digest
+    from evidence import canonical, digest, PROJECT_FORMAT_VERSION, PROJECT_FORMAT_ERROR
     from store import StoreError, portable_content
 
 ROOT = Path(__file__).resolve().parent
@@ -36,6 +36,7 @@ class ProjectRuntime:
             raise StoreError("RNA rules or taxonomy changed; restart the server before replaying evidence", 409)
 
     def describe(self, evidence, cluster_id=None, session=None):
+        self._check_format(evidence)
         self._fresh_rules()
         cluster_id = cluster_id or evidence["clusters"][0]["id"]
         cluster = self.domain._cluster(evidence, cluster_id)
@@ -95,7 +96,14 @@ class ProjectRuntime:
             "modelReview": {"enabled": False, "calls": 0, "incrementalCostUSD": 0,
                 "stopReason": "No provider transport is configured."}}
 
+    @staticmethod
+    def _check_format(evidence):
+        version = evidence.get("project_format_version")
+        if type(version) is not int or version != PROJECT_FORMAT_VERSION:
+            raise StoreError(PROJECT_FORMAT_ERROR, 409)
+
     def augment(self, evidence):
+        self._check_format(evidence)
         result = dict(evidence)
         artifacts = {}
         for cluster in evidence["clusters"]:

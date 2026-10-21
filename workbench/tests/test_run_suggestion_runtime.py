@@ -56,6 +56,7 @@ class SuggestionRuntimeTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.project = self.root / 'project'; self.project.mkdir()
         (self.project / 'state.rds').write_bytes(b'explicit-simulated-R-authority')
+        (self.project / "project-format.json").write_text('{"project_format_version":2}')
         self.run = {'schema':'scagentkit.run.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'status':'awaiting_configuration','stage':'strategy_propose'}
         module._atomic(self.project/'status.json',self.run)
         self.descriptor = {'schema':'scagentkit.run-suggestion.v1','project_id':'project-literal','input_hash':'a'*64,'revision':9,'kind':'strategy','available':True,'blocked_reason':None,'suggestion_hash':'b'*64,'status':'approved','preview':{'request_hash':'c'*64,'provider':{'name':'mock','model':'simulated','generation':{},'external':False,'reservation_usd':0,'pricing':{},'api_key_env':None},'external':False,'simulated':True,'system_prompt':'Simulated aggregate-only fixture','user_prompt':'No raw cells or barcodes','budget':{'max_usd':0}},'candidate':None,'response':None,'can_approve':False,'can_request':True,'can_adopt':False,'can_discard':False}

@@ -36,6 +36,7 @@ def main():
     module.__file__ = str(runtime_file)
     exec(compile(runtime_file.read_bytes(), str(runtime_file), "exec"), module.__dict__)
     project = Path(config["project"])
+    module.check_project_format(project)
     base = project / ".workbench-jobs"
     if project.is_symlink() or base.is_symlink() or list((project.stat().st_dev, project.stat().st_ino)) != config["project_identity"] or list((base.stat().st_dev, base.stat().st_ino)) != config["base_identity"]:
         return 2

@@ -64,6 +64,7 @@ sc_run_review <- function(project_dir, action, kind, project_id, input_hash,
                           proposal_hash, review_hash, expected_revision, reviewer, reason,
                           proposal = NULL, sensitivity = NULL, gene_panels = NULL, decision_id = NULL,
                           facts = NULL) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_project_string(project_id, "project_id")
   .sc_run_review_hash_string(input_hash, "input_hash")

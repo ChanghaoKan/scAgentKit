@@ -463,6 +463,7 @@
 #' @export
 sc_run_strategy_revise <- function(project_dir, proposal, project_id, input_hash,
                                    expected_revision, reviewer, reason) {
+  .sc_project_format_entry(project_dir)
   .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
   .sc_run_review_hash_string(input_hash, "input_hash")
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)

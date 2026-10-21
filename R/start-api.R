@@ -37,6 +37,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   doublet = c("auto", "off", "flag", "remove"),
   react = c("auto", "all", "off"), biological_diagnostics = TRUE,
   model_timeout = NULL) {
+  .sc_project_format_entry(project_dir, allow_new = TRUE)
   react_supplied <- !missing(react)
   biology_supplied <- !missing(biological_diagnostics)
   react <- .sc_run_turn_policy(if (is.list(react)) react else list(mode = match.arg(react)))

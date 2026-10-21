@@ -65,6 +65,7 @@ class ContinueRuntimeTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.project = self.root / "project"; self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"fixture-authority-not-real-R")
+        (self.project / "project-format.json").write_text('{"project_format_version":2}')
         self.run = {"schema": "scagentkit.run.v1", "project_id": "literal-project", "input_hash": "a"*64,
                     "revision": 9, "status": "ready", "stage": "qc_apply"}
         self.write_run()

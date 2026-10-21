@@ -110,8 +110,6 @@ software-control approvals, and retains Unknown labels with provider=NULL.
 Old result/metric files are preserved for comparison. They are not overwritten
 or presented as newly validated biology.
 
-Tests of retired object/API contracts are inventoried in
-[tests/retired-workflow-tests.json](../../tests/retired-workflow-tests.json).
 Strict JSON, IDs, source-layer identity, markers/references, approval/undo,
 child scopes and provider accounting continue to be checked in the project
 suite and new Seurat/table utility tests. Test retirement is not a declaration
