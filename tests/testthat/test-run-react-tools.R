@@ -252,7 +252,8 @@ test_that("ACT tools honor an explicit reference scope without replacing study t
   out <- react_local(fixture,"act_lookup",list(genes="G01"))$result
   expect_identical(out$status,"matched")
   expect_identical(out$tissue,"blood")
-  expect_identical(out$study_tissue,"Peripheral blood study")
+  expect_identical(fixture$context$config$context$tissue,"Peripheral blood study")
+  expect_null(out$study_tissue) # Retain the existing bounded public tool projection.
   expect_true(all(vapply(out$entries,function(row)row$tissue=="blood",logical(1))))
   expect_identical(.sc_project_sha_file(file.path(fixture$root,"state.rds")),before)
 })

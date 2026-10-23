@@ -181,7 +181,6 @@
   version <- text(attr(reference, "source_version"))
   list(status = if (total) "matched" else "zero_matches", source = "ACT",
     snapshot_version = version, species = species, tissue = trimws(tissue),
-    study_tissue = context$config$context$tissue,
     rows_available = total, returned = nrow(selected), offset = offset,
     next_offset = if (offset + nrow(selected) < total) offset + nrow(selected) else NULL,
     truncated = offset > 0L || total > nrow(selected),
