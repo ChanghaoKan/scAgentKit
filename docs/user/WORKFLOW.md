@@ -158,7 +158,7 @@ before using **Approve and continue**. Saved corrections follow the same rule.
 The status badge names the next task. Raw engine status, hashes and lifecycle
 remain under **Snapshot fingerprints**. The current strategy decision precedes
 optional comparisons; expand recommendations and parameter groups as needed.
-Plan, measured clustering and annotation remain separate scientific decisions.
+Earlier completed review records are disclosed below the current task. Plan, measured clustering and annotation remain separate scientific decisions.
 
 If a task stops, the recovery panel distinguishes saved progress from uncertain
 model delivery and gives the appropriate explicit next action. See

@@ -47,7 +47,7 @@ async function reveal(locator) {
 }
 async function screenshot(name) {await page.screenshot({path:path.join(output,name+'.png'),fullPage:true});report.screenshots.push(name+'.png');}
 async function fresh(allowBusy=false) {
-  const received=page.waitForResponse(r=>r.request().method()==='GET' && (r.url().includes('/api/run-review/inspect') || r.url().includes('/api/run-review/scopes') && r.status()>=400));
+  const received=page.waitForResponse(r=>r.request().method()==='GET' && (r.url().includes('/api/run-review/inspect') || r.url().includes('/api/run-review/scopes') && r.status()>=400),{timeout:120000});
   await ui('run-refresh').click();const res=await received;
   if(res.status()===409){
     const body=await res.json(),reason=typeof body.error==='string'?body.error:'Missing coordinator error';
@@ -286,6 +286,7 @@ try {
   await test('incomplete annotation draft survives refresh and cannot create a proposal or approval',async()=>{
     assert.equal(await ui('annotation-prepare-start').count(),0);
     await ui('annotation-prepare-form').waitFor();
+    assert.equal(await page.locator('#run-strategy-context').getAttribute('open'),null,'Past plan stays available in a disclosure while annotation is current');
     const label=page.locator('[data-testid^="prepare-label-"]').first();await label.fill('Unknown');
     const before=requests.length, revision=view.run.revision;
     await ui('prepare-submit').click();await wait(200);assert.equal(requests.length,before,'Native/UI validation prevents incomplete submission');

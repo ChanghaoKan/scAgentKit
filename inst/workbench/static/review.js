@@ -1869,8 +1869,14 @@ function render() {
   else next.append(element("p", "Saved status: " + run.status + ". Inspect or resume the computation in R, then refresh the saved state."));
   $("run-qc").hidden = !run.stage.startsWith("qc") || current?.kind !== "qc";
   if (!$("run-qc").hidden && !$("run-qc-frame").getAttribute("src")) $("run-qc-frame").setAttribute("src", scopedRunURL(continuationEnabled() ? "/review-qc?localContinue=1" : "/review-qc"));
+  $("run-strategy-context").hidden = !run.strategy_review;
+  $("run-strategy-context").open = !!run.strategy_review && (current?.kind === "strategy" && run.status !== "complete" || /^#(?:run-strategy|strategy-)/.test(window.location.hash || ""));
+  $("run-strategy-context-title").textContent = $("run-strategy-context").open ? "Current analysis strategy" : "Earlier reviewed analysis strategy";
   $("run-strategy").hidden = !run.strategy_review;
   if (run.strategy_review) renderStrategy(); else {state.strategyDraftText = null; state.recommendationFacts = null;}
+  $("run-annotation-context").hidden = !run.annotation_review;
+  $("run-annotation-context").open = !!run.annotation_review && (current?.kind === "annotation" && run.status !== "complete" || /^#annotation-cluster=/.test(window.location.hash || ""));
+  $("run-annotation-context-title").textContent = $("run-annotation-context").open ? "Current annotation review" : "Saved annotation review";
   $("run-annotation").hidden = !run.annotation_review;
   if (run.annotation_review) renderAnnotation(); else state.drafts.clear();
   renderAnnotationPreparation();

@@ -28,7 +28,7 @@
     reviewed_plan = if (is.null(strategy)) list(analysis=state$config$analysis) else strategy$details$canonical_proposal,
     reviewed_qc_retention = if (is.null(state$files$qc_preview)) NULL else .sc_run_get(root,state,"qc_preview")$details$retention,
     observed_execution = if (identical(state$config$start_stage,"processed")) list(foundation_reused=TRUE) else
-      list(foundation_reused=FALSE, active_reduction=seu@misc$strategy_execution$neighbors$reduction,
+      if (!isTRUE(state$config$strategy)) list(foundation_reused=FALSE, notice="Detailed strategy execution not recorded for this basic entry.") else list(foundation_reused=FALSE, active_reduction=seu@misc$strategy_execution$neighbors$reduction,
         selected_pcs=seu@misc$strategy_execution$neighbors$pcs,
         selected_resolution=seu@misc$strategy_execution$cluster$resolution),
     final_features = nrow(seu), annotation_column = state$config$annotation_column,

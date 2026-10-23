@@ -39,6 +39,7 @@
     <p class="compact-action-note">No model request. Missing proposals need a model preview or manual R configuration.</p><details class="compact-help"><summary>Local execution and acceptance</summary><p>Run the next approved computation on the data machine. Execution stops at the next review or configuration step.</p><p class="microcopy">This button makes no model request. At a model boundary, preview and request the next suggestion above, or supply a supported manual proposal in R. A successful local task is a saved stopping point; biological result acceptance remains an analyst judgement.</p></details>
   </section>
   <section id="run-qc" data-testid="run-qc" hidden><iframe id="run-qc-frame" data-testid="run-qc-frame" title="QC impact preview and exact-scope decisions"></iframe></section>
+  <details id="run-strategy-context" open><summary id="run-strategy-context-title">Current analysis strategy</summary>
   <section id="run-strategy" data-testid="run-strategy" hidden>
     <div class="review-annotation-head"><h2>Review the complete analysis strategy</h2><span id="strategy-source" data-testid="strategy-source" class="pill blue"></span></div>
     <section class="panel strategy-overview" aria-labelledby="strategy-summary-title">
@@ -63,6 +64,8 @@
     </div>
     <details class="panel qc-section review-provenance"><summary>Saved strategy limits and immutable review record</summary><ul id="strategy-limitations" data-testid="strategy-limitations" class="limits"></ul><details><summary>Complete immutable strategy review record</summary><div id="strategy-record" data-testid="strategy-record"></div></details></details>
   </section>
+  </details>
+  <details id="run-annotation-context" open><summary id="run-annotation-context-title">Current annotation review</summary>
   <section id="run-annotation" data-testid="run-annotation" hidden>
     <div class="review-annotation-head"><h2>Annotation proposals</h2><p id="annotation-counts" data-testid="annotation-counts"></p></div>
     <details class="panel qc-section" open><summary>Complete saved annotation plan</summary><p class="evidence-explainer">All rows below belong to the saved proposal. Inspect the complete plan before approval. Unsaved edits in the cluster editor do not change this table; save corrections to rebuild it.</p><div id="annotation-plan-overview" data-testid="annotation-plan-overview"></div></details>
@@ -80,6 +83,7 @@
     </div>
     <section class="panel qc-section review-provenance"><h2>Saved source and limits</h2><div id="annotation-provenance" data-testid="annotation-provenance"></div><ul id="annotation-limitations" data-testid="annotation-limitations" class="limits"></ul></section>
   </section>
+  </details>
   <section id="annotation-preparation" data-testid="annotation-preparation" class="panel qc-section" hidden></section>
   <section id="run-complete" data-testid="run-complete" class="panel qc-section" hidden><h2>Saved analysis output</h2><div id="run-output" data-testid="run-output"></div><div id="run-undo" data-testid="run-undo" hidden><p class="evidence-explainer">Reopen annotation from saved analysis; prior outputs stay archived. QC is not undone.</p><details class="compact-help"><summary>Undo scope and preserved history</summary><p class="evidence-explainer">Undo uses the R coordinator's existing annotation authority. It archives the completed outputs and reopens annotation configuration from the saved processed object; immutable checkpoints and history are retained. It does not undo QC.</p></details><form id="run-undo-form"><div class="form-row"><label>Reviewer<input id="run-undo-reviewer" data-testid="run-undo-reviewer" maxlength="200" required autocomplete="off"></label><label>Reason for undo<textarea id="run-undo-reason" data-testid="run-undo-reason" maxlength="4000" required></textarea></label></div><button type="button" id="run-undo-button" data-testid="run-undo-button" class="button quiet" disabled>Undo the executed annotation decision</button></form></div></section>
   <details id="project-storage" class="panel qc-section"><summary>Project storage and archiving</summary><button id="storage-refresh" type="button">Measure local storage</button><p id="storage-summary">Measured only on request; no files are removed.</p><p>Before archiving, stop local and model workers, preserve the whole project and its original R environment, then verify the copied file hashes. A review ZIP is not a project backup. Reopen with the matching package; an archive does not upgrade its format.</p></details>

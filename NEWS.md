@@ -1,4 +1,6 @@
-# scAgentKit 0.9.1.9000 (development)
+# scAgentKit 0.9.1.9000
+
+Development version.
 
 - Complete the product-review corrections: show manual annotation worksheets
   directly, keep child annotation in Review, move storage to project-level

@@ -89,7 +89,7 @@ async function main() {
     assert.match(h.call("typedQCRulesError", stale, details), /current diagnostic/);
     assert.equal(h.requests.length, 0);
   });
-  await check("verified central strategy snapshot renders without calculation", () => {const h = setup(); assert.equal(h.el("run-strategy").hidden, false); assert.equal(h.el("run-qc").hidden, true); assert.equal(h.el("run-annotation").hidden, true); assert.equal(h.requests.length, 0); assert.match(h.el("run-progress").textContent, /Review analysis plan and QC/);});
+  await check("verified central strategy snapshot renders without calculation", () => {const h = setup(); assert.equal(h.el("run-strategy").hidden, false); assert.equal(h.el("run-strategy-context").open, true); assert.equal(h.el("run-qc").hidden, true); assert.equal(h.el("run-annotation").hidden, true); assert.equal(h.requests.length, 0); assert.match(h.el("run-progress").textContent, /Review analysis plan and QC/);});
   await check("next-action labels distinguish plan, measured clustering and annotation", () => {
     const h=setup();
     assert.equal(h.el("run-status").textContent,"Review analysis plan and QC");
