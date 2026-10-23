@@ -73,7 +73,7 @@ async function inspect() {
   assert(answer.run.annotation_review == null); assert.equal(answer.run.output, null); assert.equal(answer.run.strategy_review.details.canonical_proposal.cycle.method, "none"); return answer;
 }
 const ui = id => page.locator('[data-testid="' + id + '"]');
-async function rendered() {await page.waitForFunction(() => document.getElementById("run-status").textContent.trim() === "awaiting_configuration / annotation_propose" && !document.getElementById("run-refresh").disabled, null, {timeout: 45000});}
+async function rendered() {await page.waitForFunction(() => document.getElementById("run-status").getAttribute("data-engine-status").trim() === "awaiting_configuration / annotation_propose" && !document.getElementById("run-refresh").disabled, null, {timeout: 45000});}
 async function captureFailure() {
   if (!page || page.isClosed()) return;
   try {

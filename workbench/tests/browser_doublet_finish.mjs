@@ -72,7 +72,7 @@ async function inspect() {
   const response = await fetch(origin + "/api/run-review/inspect"), answer = await response.json(); assert.equal(response.status, 200); assert.equal(answer.schema, "scagentkit.run-review.workbench.v1"); assert.equal(answer.run.implementation_hash, args.implementation); assert.equal(answer.run.input_hash, prior.initialInputHash); return answer;
 }
 const ui = id => page.locator('[data-testid="' + id + '"]');
-async function renderedCurrent() {await page.waitForFunction(({status, stage}) => document.getElementById("run-status").textContent.trim() === status + " / " + stage && !document.getElementById("run-refresh").disabled, {status: current.status, stage: current.stage}, {timeout: 45000});}
+async function renderedCurrent() {await page.waitForFunction(({status, stage}) => document.getElementById("run-status").getAttribute("data-engine-status").trim() === status + " / " + stage && !document.getElementById("run-refresh").disabled, {status: current.status, stage: current.stage}, {timeout: 45000});}
 async function screenshot(label) {const file = path.join(output, label + ".png"); assert.equal(await exists(file), false); await page.screenshot({path: file, fullPage: true}); report.screenshots.push(file);}
 async function debugPage() {
   if (!page || page.isClosed()) return;

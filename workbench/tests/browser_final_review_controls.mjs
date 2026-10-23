@@ -58,7 +58,7 @@ try {
     active = clone(fixture); const page = await context.newPage();
     page.on('pageerror', error => report.pageErrors.push(error.message));
     await page.goto('http://127.0.0.1:19999/review?project_id=' + encodeURIComponent(active.run.project_id));
-    await page.waitForFunction(() => !document.getElementById('run-refresh').disabled && document.getElementById('run-status').textContent.includes('awaiting_review'));
+    await page.waitForFunction(() => !document.getElementById('run-refresh').disabled && document.getElementById('run-status').getAttribute("data-engine-status").includes('awaiting_review'));
     assert.equal(await page.locator('#run-message').isVisible(), false, await page.locator('#run-message').textContent());
     return page;
   };

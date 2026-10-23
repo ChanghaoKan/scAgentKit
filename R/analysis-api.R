@@ -213,7 +213,7 @@ sc_analyze <- function(input, project_dir, context, plan = NULL, provider = NULL
   # Only a new modern project gets the private default. Explicit reference=NULL
   # remains an opt-out; the coordinator saves the selected table as an artifact.
   if (!"reference" %in% names(extra)) {
-    extra$reference <- .sc_ui_act_default(context)
+    extra$reference <- .sc_ui_act_default(context, if (is.null(extra$reference_review$tissue)) context$tissue else extra$reference_review$tissue)
     private_provenance <- .sc_ui_act_provenance(extra$reference)
     if (length(private_provenance)) {
       if (is.null(extra$reference_review$provenance)) extra$reference_review$provenance <- list()

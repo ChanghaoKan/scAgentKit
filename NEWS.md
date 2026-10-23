@@ -1,3 +1,37 @@
+# scAgentKit 0.9.1.9000 (development)
+
+- Complete the product-review corrections: show manual annotation worksheets
+  directly, keep child annotation in Review, move storage to project-level
+  operations and show actionable workflow states with distinct plan and
+  measured-clustering reviews. Put the current strategy decision before
+  disclosed recommendations and remove the inactive QC auto-preselection option.
+- Download/import unfinished, non-authoritative annotation worksheets bound to
+  exact project, evidence and revision; show explicit recovery guidance without
+  automatic retry, provider resend or lock removal.
+- Reopen protected checkpoints with `sc_start(project_dir=...)`; expose an
+  explicit separate `subcluster_workspace`, resolved provider/consent/method
+  readiness, and correct explicit R-library precedence in every subprocess.
+- List pinned ACT tissue keys with `annot_act_scopes()` and allow an explicit
+  reference tissue independently of study text. Preserve original facts and
+  default scoping; this optional scope is an analyst scientific choice.
+- Preflight multi-sample MEX feature mappings before reading matrices and show
+  bounded sample/key difference summaries without repairing counts or IDs.
+- Include a researcher report, audit JSON and a portable audit projection in
+  the result Seurat object. Keep the original project and software environment;
+  these execution changes require new projects or the original matching package
+  for existing studies. No migration or saved-hash replacement is provided.
+- Align maintained startup documentation and installed-browser acceptance with
+  conservative QC policy and current combined actions. See the product-review
+  follow-up for retained boundaries and verification limits.
+- Add a read-only interactive workflow map to the project workbench. Hover,
+  keyboard focus or tap a step to inspect its proposal origin, saved evidence,
+  human review boundary and optional ReAct traces. Distinguish reused inputs,
+  simulations and historical suggestions from current model-derived proposals.
+- Remove the twelve generic chat, provider-factory and token-utility re-exports.
+  Use these utilities directly from agentomicsCore. Reviewed project model
+  requests and their recorded usage and costs continue through the existing
+  scAgentKit workflow.
+
 # scAgentKit 0.9.0
 
 ## Analysis and review

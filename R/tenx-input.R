@@ -19,12 +19,11 @@
     " (plain or .gz); restore missing files or remove ambiguous duplicate copies.",call.=FALSE)
   normalizePath(paths,mustWork=TRUE)
 }
-.sc_ui_tenx_read <- function(directory, feature_key) {
+.sc_ui_tenx_read <- function(directory, feature_key, preflight = FALSE) {
   if (!dir.exists(directory)) stop("10x directory is missing; correct the sample table path.",call.=FALSE)
   files <- c(matrix=.sc_ui_tenx_file(directory,"matrix.mtx"),
     features=.sc_ui_tenx_file(directory,c("features.tsv","genes.tsv")),
     barcodes=.sc_ui_tenx_file(directory,"barcodes.tsv"))
-  hashes <- vapply(files,.sc_project_sha_file,character(1))
   tab <- function(path)utils::read.delim(path,header=FALSE,colClasses="character",quote="",comment.char="",check.names=FALSE,na.strings=character())
   features <- tab(files[["features"]]); barcodes <- tab(files[["barcodes"]])
   if (!ncol(features)%in%c(2L,3L)||ncol(barcodes)!=1L)
@@ -35,13 +34,6 @@
   .sc_project_ids(barcodes[[1]],"10x barcodes")
   if (any(grepl("::",barcodes[[1]],fixed=TRUE))) stop("10x barcode contains reserved '::'; provide literal unprefixed barcodes.",call.=FALSE)
   if (anyNA(features)||any(!nzchar(as.matrix(features)))) stop("10x feature fields must not be empty.",call.=FALSE)
-  con <- if (grepl("[.]gz$",files[["matrix"]])) gzfile(files[["matrix"]],"rt") else file(files[["matrix"]],"rt")
-  on.exit(close(con),add=TRUE)
-  counts <- Matrix::readMM(con)
-  if (!"x"%in%methods::slotNames(counts) || any(!is.finite(counts@x)) || any(counts@x<0) || any(counts@x!=floor(counts@x)))
-    stop("10x MEX entries must be finite nonnegative integer raw counts before sparse aggregation; restore a genuine counts matrix.",call.=FALSE)
-  counts <- methods::as(counts,"CsparseMatrix")
-  if (!identical(dim(counts),c(nrow(features),nrow(barcodes)))) stop("10x matrix dimensions do not match features/barcodes; restore a matching file set.",call.=FALSE)
   keep <- features$feature_type=="Gene Expression"
   if (!any(keep)) stop("10x files contain no Gene Expression features; choose the gene-expression MEX directory.",call.=FALSE)
   selected <- features[keep,,drop=FALSE]
@@ -60,11 +52,33 @@
   }
   if (anyDuplicated(keys)||any(grepl("[_|]",keys))) stop("10x analysis keys are duplicated or Seurat-incompatible; resolve an explicit feature mapping before importing.",call.=FALSE)
   selected$analysis_key<-keys;selected$analysis_reason<-reason
+  if (preflight) return(list(features=selected))
+  hashes <- vapply(files,.sc_project_sha_file,character(1))
+  con <- if (grepl("[.]gz$",files[["matrix"]])) gzfile(files[["matrix"]],"rt") else file(files[["matrix"]],"rt")
+  on.exit(close(con),add=TRUE)
+  counts <- Matrix::readMM(con)
+  if (!"x"%in%methods::slotNames(counts) || any(!is.finite(counts@x)) || any(counts@x<0) || any(counts@x!=floor(counts@x)))
+    stop("10x MEX entries must be finite nonnegative integer raw counts before sparse aggregation; restore a genuine counts matrix.",call.=FALSE)
+  counts <- methods::as(counts,"CsparseMatrix")
+  if (!identical(dim(counts),c(nrow(features),nrow(barcodes)))) stop("10x matrix dimensions do not match features/barcodes; restore a matching file set.",call.=FALSE)
   counts <- counts[keep,,drop=FALSE]; dimnames(counts)<-list(keys,barcodes[[1]])
   .sc_project_matrix(counts,"10x Gene Expression counts",raw_counts=TRUE)
   if (!identical(hashes,vapply(files,.sc_project_sha_file,character(1)))) stop("10x source changed while reading; retry with stable files.",call.=FALSE)
   list(counts=counts,features=selected,files=as.list(files),sha256=as.list(hashes),
     excluded_features=sum(!keep),excluded_feature_types=sort(unique(features$feature_type[!keep])))
+}
+.sc_ui_tenx_examples <- function(ids) paste(utils::head(ids,5L),collapse=", ")
+.sc_ui_tenx_compare <- function(first, features, first_id, sample_id) {
+  missing <- setdiff(first$feature_id,features$feature_id)
+  extra <- setdiff(features$feature_id,first$feature_id)
+  if (length(missing) || length(extra)) stop("Gene Expression feature sets differ: sample ", sample_id, " vs ", first_id,
+    "; missing ",length(missing)," [",.sc_ui_tenx_examples(missing),
+    "]; extra ",length(extra)," [",.sc_ui_tenx_examples(extra),"]. No intersection/union is applied; resolve an explicit recorded mapping.",call.=FALSE)
+  order <- match(first$feature_id,features$feature_id)
+  different <- rowSums(as.matrix(features[order,,drop=FALSE]) != as.matrix(first)) > 0L
+  if (any(different)) stop("Feature ID/name/type mapping differs: sample ",sample_id," vs ",first_id,"; conflicting ",sum(different),
+    " IDs [",.sc_ui_tenx_examples(first$feature_id[different]),"]. Resolve the annotation explicitly; counts and names were not repaired.",call.=FALSE)
+  invisible(TRUE)
 }
 .sc_ui_tenx_input <- function(input,context,sample_id=NULL,matrix_kind=NULL,cell_metadata=NULL,feature_key="name") {
   feature_key <- match.arg(feature_key,c("name","id"))
@@ -102,15 +116,15 @@
     normalizePath(path,mustWork=TRUE)
   },character(1))
   if (anyDuplicated(samples$path)) stop("A 10x directory occurs more than once; list each source once with its actual sample_id.",call.=FALSE)
+  headers <- lapply(samples$path, .sc_ui_tenx_read, feature_key=feature_key, preflight=TRUE)
+  for (i in seq_along(headers)) .sc_ui_tenx_compare(headers[[1]]$features, headers[[i]]$features, samples$sample_id[1], samples$sample_id[i])
   reads<-lapply(samples$path,.sc_ui_tenx_read,feature_key=feature_key)
   first<-reads[[1]]$features
   metadata<-vector("list",length(reads))
   for (i in seq_along(reads)) {
     features<-reads[[i]]$features
-    if (!setequal(features$feature_id,first$feature_id)) stop("Gene Expression feature sets differ between samples. No intersection/union is applied; harmonize explicitly with a recorded mapping before importing.",call.=FALSE)
+    .sc_ui_tenx_compare(first, features, samples$sample_id[1], samples$sample_id[i])
     order<-match(first$feature_id,features$feature_id)
-    if (!identical(unname(as.matrix(features[order,,drop=FALSE])),unname(as.matrix(first))))
-      stop("Feature ID/name/type mapping differs between samples; resolve the conflicting feature annotation explicitly.",call.=FALSE)
     reads[[i]]$counts<-reads[[i]]$counts[order,,drop=FALSE]
     barcodes<-colnames(reads[[i]]$counts)
     ids<-paste(samples$sample_id[i],barcodes,sep="::")
@@ -126,7 +140,12 @@
     cells<-.sc_ui_tenx_table(cell_metadata,"Cell metadata")
     if (!all(c("sample_id","barcode")%in%names(cells))) stop("Cell metadata needs explicit sample_id and barcode columns; do not rely on row order.",call.=FALSE)
     ids<-paste(cells$sample_id,cells$barcode,sep="::")
-    if (anyDuplicated(ids)||!setequal(ids,colnames(counts))) stop("Cell metadata must cover every imported sample_id/barcode exactly once with no extra cells; correct missing/duplicate/foreign keys.",call.=FALSE)
+    if (anyDuplicated(ids)||!setequal(ids,colnames(counts))) {
+      missing <- setdiff(colnames(counts),ids); extra <- setdiff(ids,colnames(counts)); duplicates <- unique(ids[duplicated(ids)])
+      stop("Cell metadata must cover every imported sample_id/barcode exactly once. Missing ",length(missing)," [",.sc_ui_tenx_examples(missing),
+        "]; extra ",length(extra)," [",.sc_ui_tenx_examples(extra),
+        "]; duplicate ",length(duplicates)," [",.sc_ui_tenx_examples(duplicates),"]. Correct the explicit keys; no positional repair was applied.",call.=FALSE)
+    }
     extra<-setdiff(names(cells),c("sample_id","barcode"))
     if (length(intersect(extra,names(metadata)))) stop("Cell metadata repeats sample-level or reserved columns; keep each field in one table.",call.=FALSE)
     reordered<-!identical(ids,colnames(counts));joined<-TRUE

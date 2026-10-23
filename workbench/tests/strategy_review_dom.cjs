@@ -89,7 +89,15 @@ async function main() {
     assert.match(h.call("typedQCRulesError", stale, details), /current diagnostic/);
     assert.equal(h.requests.length, 0);
   });
-  await check("verified central strategy snapshot renders without calculation", () => {const h = setup(); assert.equal(h.el("run-strategy").hidden, false); assert.equal(h.el("run-qc").hidden, true); assert.equal(h.el("run-annotation").hidden, true); assert.equal(h.requests.length, 0); assert.match(h.el("run-progress").textContent, /Analysis strategy review/);});
+  await check("verified central strategy snapshot renders without calculation", () => {const h = setup(); assert.equal(h.el("run-strategy").hidden, false); assert.equal(h.el("run-qc").hidden, true); assert.equal(h.el("run-annotation").hidden, true); assert.equal(h.requests.length, 0); assert.match(h.el("run-progress").textContent, /Review analysis plan and QC/);});
+  await check("next-action labels distinguish plan, measured clustering and annotation", () => {
+    const h=setup();
+    assert.equal(h.el("run-status").textContent,"Review analysis plan and QC");
+    assert.equal(h.el("run-status").getAttribute("data-engine-status"),"awaiting_review / strategy_propose");
+    assert.equal(h.call("runActionLabel", {status:"awaiting_review",review_node:{kind:"strategy"},strategy_review:{details:{cluster_diagnostics:{hash:reviewHash}}}}),"Review measured clustering");
+    assert.equal(h.call("runActionLabel", {status:"awaiting_review",review_node:{kind:"annotation"}}),"Review cluster annotations");
+    assert.equal(h.call("runActionLabel", {status:"complete"}),"Inspect saved results");
+  });
   await check("user facts missing background and model inferences remain separate", () => {const h = setup(); const cards = h.el("strategy-background").children; assert.equal(cards.length, 3); assert.match(cards[0].textContent, /User-provided facts.*condition.*Ca.*Ctrl/s); assert.doesNotMatch(cards[0].textContent, /unverified design/); assert.match(cards[1].textContent, /Missing background.*batch assignment/s); assert.match(cards[2].textContent, /Model \/ proposal inferences.*unverified design/s);});
   await check("all six saved operation sections are readonly observations", () => {const h = setup(); const cards = h.el("strategy-operations").children; assert.equal(cards.length, 6); assert.match(cards.map(value => value.textContent).join(" "), /QC and cell retention.*LogNormalize.*PC selection.*ndim.*Batch handling.*Clustering and resolution.*UMAP/s); assert.match(h.el("strategy-unsupported").textContent, /regression does not mean deleting cycling cells/); assert.match(h.el("strategy-unsupported").textContent, /doublet score alone does not authorize removal/);});
   await check("quality QC impact and execution evidence use saved values", () => {const h = setup(); assert.match(h.el("strategy-quality").textContent, /96.*saved measured QC/s); assert.match(h.el("strategy-qc-impact").textContent, /Original input: 96;.*after QC: 90/s); assert.match(h.el("strategy-impact-summary").textContent, /Saved projected retention: 90 of 96 input cells/); assert.match(h.el("strategy-capabilities").textContent, /computed_variance.*unsupported.*strategy_neighbors/s);});

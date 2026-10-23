@@ -40,7 +40,7 @@ still require the researcher's review and approval.
 
 ## Measure storage and archive a project
 
-The review page has **Measure local storage**. It reads local file sizes on
+The review page has **Project storage and archiving**, independent of optional model suggestions, with **Measure local storage**. It reads local file sizes on
 request, does not follow symbolic links, and never removes files. A bounded
 scan may report a partial lower bound. Sizes are logical file sizes, not physical
 allocated space or available disk space. To set an optional project allowance,
@@ -56,3 +56,31 @@ not a substitute for a complete scientific project archive. Copying or restoring
 a backup does not upgrade its format; open it with its matching software environment.
 Archival is a manual operation; the application does not provide automated
 archiving or journal segmentation.
+
+### Verify the copy
+
+1. Stop local and model workers at their safe boundaries. Resolve uncertain
+   provider delivery before considering the archive settled.
+2. Preserve the complete project and the original package/dependency environment.
+   `output/audit.json` contains the verified checkpoint index and loaded package
+   versions; it is an index, not an archive of the installed environment.
+3. Generate a whole-directory checksum manifest outside the stopped project,
+   copy both, and verify every listed file at the destination. For GNU/Linux:
+
+   ```sh
+   cd /path/to/stopped-project
+   find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > ../project-files.sha256
+   # After copying, from the copied project directory:
+   sha256sum -c ../project-files.sha256
+   ```
+
+   This does not follow symlinks. Preserve and inspect links separately; do not
+   treat skipped external targets as archived. Protect this manifest with the
+   archive and retain the source until verification succeeds.
+4. Open the copy with its matching environment. Original-path bindings remain
+   meaningful. Rebinding terminal browser-job metadata after same-path restore
+   is an explicit operation described in the workbench restore guide; it does
+   not authorize retrying uncertain requests or unlocking a live worker.
+
+No new archive service or checkpoint-pruning process is introduced. The stable
+manual stop/copy/hash procedure remains explicit.

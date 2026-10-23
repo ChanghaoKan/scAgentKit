@@ -1,5 +1,5 @@
 #' Start or reopen a reviewed analysis in the local browser
-#' @param input Local RDS, 10x MEX directory, or sample table (data.frame/CSV/TSV).
+#' @param input Local RDS, MEX directory, or sample table; NULL reopens saved checkpoints.
 #' @param sample_id Explicit ID for one MEX directory; table inputs declare it per row.
 #' @param matrix_kind Explicit raw/filtered declaration for one MEX directory.
 #' @param cell_metadata Optional keyed sample_id/barcode cell metadata data.frame/CSV/TSV.
@@ -15,6 +15,8 @@
 #' @param browse Open the local URL in the browser.
 #' @param provider Explicit provider name/list; NULL detects exactly one DeepSeek/Grok key, otherwise manual.
 #' @param react Auto (default), all, off, or a validated ReAct policy list.
+#' @param subcluster_workspace Separate existing directory for explicit child analyses; NULL disables it.
+#' @param reference_tissue Explicit exact ACT scope, separate from the study tissue; NULL uses study tissue.
 #' @param model_timeout Whole suggestion-worker seconds (1–86400); NULL derives a bound from saved policy.
 #' @param biological_diagnostics Diagnostic-only QC/batch evidence for raw input; TRUE by default.
 #' @param review Creation-time transfer policy; optional explicit project scope skips repeated
@@ -26,7 +28,7 @@
 #' @param cluster_column Saved cluster column for processed reuse.
 #' @return Invisibly, local service URL, PID, project ID and reuse status.
 #' @export
-sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
+sc_start <- function(input = NULL, project_dir, context = NULL, checkout = NULL,
   python = NULL, browse = interactive(), reuse_processed = FALSE,
   processed_reason = NULL, cluster_column = "seurat_clusters",
   model_suggestions = c("auto", "off", "configured", "simulate"),
@@ -35,7 +37,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   provider = NULL, review = list(allow_external = FALSE),
   doublet = c("auto", "off", "flag", "remove"),
   react = c("auto", "all", "off"), biological_diagnostics = TRUE,
-  model_timeout = NULL) {
+  model_timeout = NULL, subcluster_workspace = NULL, reference_tissue = NULL) {
   .sc_project_format_entry(project_dir, allow_new = TRUE)
   react_supplied <- !missing(react)
   biology_supplied <- !missing(biological_diagnostics)
@@ -54,18 +56,25 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   doublet <- match.arg(doublet)
   .sc_project_string(project_dir, "project_dir")
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
+  project_only <- is.null(input)
+  if (project_only && !existing) stop("Supply input for a new project, or project_dir for an existing saved project.", call. = FALSE)
+  if (project_only && (!is.null(sample_id) || !is.null(matrix_kind) || !is.null(cell_metadata) || !missing(feature_key)))
+    stop("Project-only reopening uses protected input checkpoints; omit import options.", call. = FALSE)
   if (existing && is.null(context)) context <- .sc_run_load(.sc_run_root(project_dir))$config$context
-  imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
-  context <- imported$context
-  if (imported$imported) {
-    if (reuse_processed) stop("10x MEX is raw counts; processed reuse requires an explicitly prepared Seurat RDS.",call.=FALSE)
-    input <- tempfile("scagentkit-tenx-",fileext=".rds")
-    on.exit(unlink(input),add=TRUE)
-    saveRDS(imported$input,input,version=2L)
+  imported <- list(imported = FALSE)
+  if (!project_only) {
+    imported <- .sc_ui_tenx_input(input, context, sample_id, matrix_kind, cell_metadata, match.arg(feature_key))
+    context <- imported$context
+    if (imported$imported) {
+      if (reuse_processed) stop("10x MEX is raw counts; processed reuse requires an explicitly prepared Seurat RDS.",call.=FALSE)
+      input <- tempfile("scagentkit-tenx-",fileext=".rds")
+      on.exit(unlink(input),add=TRUE)
+      saveRDS(imported$input,input,version=2L)
+    }
+    .sc_project_string(input, "input RDS path")
+    input <- normalizePath(path.expand(input), mustWork = TRUE)
+    if (dir.exists(input)) stop("input must be an RDS file or an explicitly declared MEX directory.", call. = FALSE)
   }
-  .sc_project_string(input, "input RDS path")
-  input <- normalizePath(path.expand(input), mustWork = TRUE)
-  if (dir.exists(input)) stop("input must be an RDS file. Supply the saved counts/Seurat file path, or an explicitly declared 10x MEX directory.", call. = FALSE)
   for (flag in c("browse", "reuse_processed")) if (!is.logical(get(flag)) ||
       length(get(flag)) != 1L || is.na(get(flag))) stop(flag, " must be TRUE or FALSE.", call. = FALSE)
   existing <- file.exists(file.path(path.expand(project_dir), "state.rds"))
@@ -80,6 +89,9 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   preferences <- file.path(path.expand(project_dir), ".workbench-review-launcher", "preferences.json")
   if (existing) {
     state <- .sc_run_load(.sc_run_root(project_dir))
+    if (!identical(state$implementation_hash, .sc_run_implementation()))
+      stop("Reopen this project with its original matching software environment; no project upgrade is performed.", call. = FALSE)
+    if (!is.null(reference_tissue)) stop("Reopening uses saved reference scope; omit reference_tissue. Use sc_run_set_reference for an explicit evidence revision before annotation application.", call. = FALSE)
     if (!is.null(context) && (!is.list(context) || is.null(names(context)) || anyDuplicated(names(context)) ||
         any(!vapply(names(context),function(name)identical(context[[name]],state$config$context[[name]]),logical(1)))))
       stop("Reopening uses saved context; omit context rather than replacing study facts.", call. = FALSE)
@@ -117,10 +129,10 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     model_timeout, " seconds. One-shot requests share this byte setting; scan uses available request space. Model token capacity is separate.")
   if (model_suggestions == "simulate" && !identical(setup$provider$name, "mock"))
     stop("Simulation requires provider='mock'; choose a new project for another provider.", call. = FALSE)
-  if (!is.list(context) || anyDuplicated(names(context)) || !all(c("species", "tissue", "research_goal") %in% names(context)) ||
-      length(setdiff(names(context), c("species", "tissue", "research_goal", "notes", "columns", "design"))))
+  if (!project_only && (!is.list(context) || anyDuplicated(names(context)) || !all(c("species", "tissue", "research_goal") %in% names(context)) ||
+      length(setdiff(names(context), c("species", "tissue", "research_goal", "notes", "columns", "design")))))
     stop("Supply named context with species, tissue, research_goal and optional notes, columns, design. Declare the actual study facts; omit unavailable optional roles.", call. = FALSE)
-  for (field in c("species", "tissue", "research_goal")) .sc_project_string(context[[field]], field)
+  if (!project_only) for (field in c("species", "tissue", "research_goal")) .sc_project_string(context[[field]], field)
   if (!is.null(context$notes) && (!is.character(context$notes) || length(context$notes)!=1L || is.na(context$notes)))
     stop("notes must be one text value. Supply a single study note or omit notes.",call.=FALSE)
   if (is.null(checkout)) checkout <- getOption("scAgentKit.checkout")
@@ -135,14 +147,29 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
   launcher <- file.path(runtime,"start_analysis.py")
   if (is.null(python)) python <- unname(Sys.which("python3"))
   if (length(python) != 1L || is.na(python) || !nzchar(python)) stop("Install/configure Python 3.9+ before starting the workbench.", call. = FALSE)
+  if (!is.null(reference_tissue)) {
+    .sc_project_string(reference_tissue, "reference_tissue")
+    reference <- annot_act_reference(context$species, reference_tissue)
+    message("Explicit ACT reference scope: ", reference_tissue, "; ", nrow(reference), " marker rows. Study tissue remains: ", context$tissue, ".")
+  }
+  if (!is.null(subcluster_workspace)) {
+    .sc_project_string(subcluster_workspace, "subcluster_workspace")
+    if (nzchar(Sys.readlink(path.expand(subcluster_workspace)))) stop("subcluster_workspace must not be a symlink.", call. = FALSE)
+    subcluster_workspace <- normalizePath(path.expand(subcluster_workspace), mustWork = TRUE)
+    project_path <- normalizePath(path.expand(project_dir), mustWork = FALSE)
+    if (identical(project_path, subcluster_workspace) || startsWith(subcluster_workspace,paste0(project_path,"/")) || startsWith(project_path,paste0(subcluster_workspace,"/")))
+      stop("subcluster_workspace must be separate from the parent project directory.", call. = FALSE)
+    if (!dir.exists(subcluster_workspace)) stop("subcluster_workspace must be an existing separate directory.", call. = FALSE)
+  }
+  .sc_start_summary(setup, model_suggestions, reuse_processed)
   context_file <- tempfile("scagentkit-context-",fileext=".json")
   on.exit(unlink(context_file),add=TRUE)
   if (identical(context$notes,"")) context$notes <- NULL
   jsonlite::write_json(context,context_file,auto_unbox=TRUE,null="null")
   Sys.chmod(context_file,"0600")
   args <- c(shQuote(launcher), shQuote(input), "--project", shQuote(path.expand(project_dir)),
-    "--species", shQuote(context$species), "--tissue", shQuote(context$tissue),
-    "--research-goal", shQuote(context$research_goal), "--notes", shQuote(if (is.null(context$notes)) "" else context$notes),
+    "--species", shQuote(if (is.null(context$species)) "" else context$species), "--tissue", shQuote(if (is.null(context$tissue)) "" else context$tissue),
+    "--research-goal", shQuote(if (is.null(context$research_goal)) "" else context$research_goal), "--notes", shQuote(if (is.null(context$notes)) "" else context$notes),
     "--rscript", shQuote(file.path(R.home("bin"), "Rscript")),
     "--r-library", shQuote(paste(.libPaths(), collapse=.Platform$path.sep)), "--background",
     "--context-file",shQuote(context_file),
@@ -150,6 +177,9 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     if (!is.null(checkout)) c("--source-checkout",shQuote(checkout)),
     "--cluster-column", shQuote(if (!existing && !reuse_processed && missing(cluster_column)) "sc_strategy_clusters" else cluster_column),
     if (!browse) "--no-browser", if (existing) "--reopen",
+    if (project_only) "--project-only",
+    if (!is.null(subcluster_workspace)) c("--subcluster-workspace", shQuote(subcluster_workspace)),
+    if (!is.null(reference_tissue)) c("--reference-tissue", shQuote(reference_tissue)),
     if (imported$imported) "--tenx-import",
     if (model_suggestions == "configured") "--model-suggestions",
     if (model_suggestions == "simulate") "--model-mock")
@@ -157,7 +187,7 @@ sc_start <- function(input, project_dir, context = NULL, checkout = NULL,
     .sc_project_string(processed_reason, "processed_reason")
     args <- c(args, "--reuse-processed", "--processed-reason", shQuote(processed_reason))
   }
-  if (!is.null(scientific_review)) {
+  if (!is.null(scientific_review) && !project_only) {
     if (reuse_processed) stop("Scientific diagnostics require a new raw entry.",call.=FALSE)
     science_file <- tempfile("scagentkit-science-",fileext=".json")
     on.exit(unlink(science_file),add=TRUE)

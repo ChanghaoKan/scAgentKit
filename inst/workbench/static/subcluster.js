@@ -88,13 +88,12 @@ function buttons() {
   contextStatus();
   $("sub-create").disabled = !ready || !state.selection.size || selectedCount() < 21 || !draftValid() || !choicesValid();
   $("sub-cancel").disabled = state.busy; $("sub-apply-cancel").disabled = state.busy;
-  $("sub-unknown").disabled = !ready || run()?.status !== "awaiting_configuration" || run()?.stage !== "annotation_propose" || child()?.parent_current !== true;
   $("sub-apply").disabled = !ready || run()?.status !== "complete" || child()?.parent_current !== true || !snapshotMatches();
   $("sub-undo").disabled = !ready || !activeApplication() || child()?.parent_current !== true;
   $("sub-retry").disabled = state.busy || !state.pending || !state.view;
   $("sub-clear-pending").disabled = state.busy || state.stale || !state.pending || !state.view;
   for (const control of state.controls) control.disabled = !ready;
-  for (const id of ["sub-choice-qc", "sub-choice-batch", "sub-choice-reference", "sub-annotation-column", "sub-strategy", "sub-create-reviewer", "sub-create-reason", "sub-column", "sub-supersedes", "sub-apply-reviewer", "sub-apply-reason", "sub-unknown-reviewer", "sub-unknown-reason", "sub-undo-reviewer", "sub-undo-reason", "sub-undo-application"]) $(id).disabled = !ready;
+  for (const id of ["sub-choice-qc", "sub-choice-batch", "sub-choice-reference", "sub-annotation-column", "sub-strategy", "sub-create-reviewer", "sub-create-reason", "sub-column", "sub-supersedes", "sub-apply-reviewer", "sub-apply-reason", "sub-undo-reviewer", "sub-undo-reason", "sub-undo-application"]) $(id).disabled = !ready;
   $("sub-pending-panel").hidden = !state.pending;
   $("sub-selection").textContent = `${state.selection.size} literal parent cluster(s), ${selectedCount()} selected cells. ${selectedCount() < 21 ? "The supported child graph requires at least 21 cells; settings will not be silently clipped." : "Create freezes this exact scope in R before review."}`;
 }
@@ -168,7 +167,6 @@ function render() {
     const current = run(); $("sub-child-status").textContent = `${current.project_id} · ${current.status} / ${current.stage} · child revision ${current.revision} · integration revision ${selected.integration_revision}`;
     $("sub-review-link").setAttribute("href", reviewURL(current.project_id)); $("sub-child-origin").replaceChildren(raw(selected.origin));
     $("sub-parent-current").textContent = selected.parent_current ? "The frozen parent binding is current." : "Parent binding changed. Writeback and undo are blocked: " + (selected.parent_error || "inspect the parent source and revision in R.");
-    $("sub-unknown-panel").hidden = !(current.status === "awaiting_configuration" && current.stage === "annotation_propose");
     $("sub-apply-panel").hidden = current.status !== "complete";
     const snapshot = selected.apply_snapshot;
     $("sub-apply-summary").textContent = snapshot ? "Verified target " + snapshot.column + "; outside NA. Exact project, parent, annotation and application hashes are shown below. Refresh after changing the column or supersession." : "No applicable writeback snapshot is available; inspect saved approval, exact scope and any column conflict in R.";
@@ -247,17 +245,16 @@ async function saveContext() {
   await operate({...reviewFields("context"), ...childFields(), expected_context_hash: binding.expected_context_hash,
     parent_scope_hash: binding.parent_scope_hash, expected_parent_revision: binding.expected_parent_revision, context: contextDraft()});
 }
-async function unknown() {if ($("sub-unknown").disabled || !$("sub-unknown-form").reportValidity()) return; await operate({...reviewFields("unknown"), ...childFields()});}
 async function apply() {if ($("sub-apply").disabled || !$("sub-apply-form").reportValidity()) return; const snapshot = child().apply_snapshot, keys = ["project_id", "input_hash", "expected_revision", "parent_scope_hash", "expected_parent_revision", "annotation_hash", "apply_hash", "column", "outside", "supersedes"], payload = {...reviewFields("apply"), child_id: run().project_id}; for (const key of keys) if (snapshot[key] != null) payload[key] = snapshot[key]; await operate(payload);}
 async function undo() {if ($("sub-undo").disabled || !$("sub-undo-form").reportValidity()) return; await operate({...reviewFields("undo"), ...childFields(), application_id: activeApplication().application_id, integration_revision: child().integration_revision});}
 function cancelSelection() {if (state.busy) return; state.selection.clear(); $("sub-strategy").value = ""; $("sub-choice-qc").value = "retain_selected"; $("sub-choice-batch").value = "none"; $("sub-choice-reference").value = "none"; render(); message("Selection draft cleared. No child or saved project was changed.");}
 function cancelApply() {if (state.busy) return; $("sub-column").value = child()?.apply_snapshot?.column || "sc_subtype"; $("sub-supersedes").value = child()?.apply_snapshot?.supersedes || ""; state.previewEdited = false; $("sub-apply-reason").value = ""; buttons(); message("Writeback draft cleared. No derived object or parent file was changed.");}
 function clearPending() {if ($("sub-clear-pending").disabled) return; state.pending = null; persistPending(); buttons(); message("Saved request draft cleared after inspection. Any already committed child or application remains in the saved history.");}
-$("sub-refresh").addEventListener("click", load); $("sub-create").addEventListener("click", createChild); $("sub-unknown").addEventListener("click", unknown); $("sub-apply").addEventListener("click", apply); $("sub-undo").addEventListener("click", undo); $("sub-cancel").addEventListener("click", cancelSelection); $("sub-apply-cancel").addEventListener("click", cancelApply); $("sub-retry").addEventListener("click", () => {if (state.pending) operate(state.pending);});
+$("sub-refresh").addEventListener("click", load); $("sub-create").addEventListener("click", createChild); $("sub-apply").addEventListener("click", apply); $("sub-undo").addEventListener("click", undo); $("sub-cancel").addEventListener("click", cancelSelection); $("sub-apply-cancel").addEventListener("click", cancelApply); $("sub-retry").addEventListener("click", () => {if (state.pending) operate(state.pending);});
 $("sub-clear-pending").addEventListener("click", clearPending);
 $("sub-context-save").addEventListener("click", saveContext);
 for (const id of ["sub-context-enabled", "sub-context-lineage", "sub-context-identity", "sub-context-tissue", "sub-context-notes"]) $(id).addEventListener("input", buttons);
 $("sub-strategy").addEventListener("input", buttons); for (const id of ["sub-column", "sub-supersedes"]) $(id).addEventListener("input", () => {state.previewEdited = true; buttons();});
 for (const id of ["sub-choice-qc", "sub-choice-batch", "sub-choice-reference"]) $(id).addEventListener("change", buttons);
-for (const id of ["sub-create-form", "sub-unknown-form", "sub-apply-form", "sub-undo-form", "sub-context-form"]) $(id).addEventListener("submit", event => event.preventDefault());
+for (const id of ["sub-create-form", "sub-apply-form", "sub-undo-form", "sub-context-form"]) $(id).addEventListener("submit", event => event.preventDefault());
 load();

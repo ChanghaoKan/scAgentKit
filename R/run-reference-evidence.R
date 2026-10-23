@@ -70,7 +70,7 @@
 
 .sc_run_reference_options <- function(value = NULL) {
   value <- .sc_run_annotation_options(value,
-    c("top_n", "symbol_aliases", "label_map", "label_relations", "ai_mode", "provenance", "strict_scope"),
+    c("top_n", "symbol_aliases", "label_map", "label_relations", "ai_mode", "provenance", "strict_scope", "tissue"),
     "reference_review")
   top_n <- if (is.null(value$top_n)) 5L else value$top_n
   if (!is.numeric(top_n) || length(top_n) != 1L || !is.finite(top_n) ||
@@ -82,6 +82,10 @@
     stop("reference_review$ai_mode must be independent or guided.", call. = FALSE)
   if (!is.null(value$strict_scope) && (!is.logical(value$strict_scope) || length(value$strict_scope) != 1L || is.na(value$strict_scope)))
     stop("reference_review$strict_scope must be TRUE or FALSE.", call. = FALSE)
+  if (!is.null(value$tissue)) {
+    .sc_project_string(value$tissue, "reference_review$tissue")
+    if (tolower(trimws(value$tissue)) == "all") stop("Reference scope must name one actual tissue; all-tissue fallback is not supported.", call. = FALSE)
+  }
   aliases <- .sc_run_reference_map(value$symbol_aliases, "symbol_aliases")
   labels <- .sc_run_reference_map(value$label_map, "label_map", TRUE)
   provenance <- .sc_run_annotation_options(value$provenance,
@@ -98,7 +102,7 @@
   }
   list(top_n = as.integer(top_n), symbol_aliases = aliases, label_map = labels,
        label_relations = .sc_run_reference_relations(value$label_relations, labels),
-       ai_mode = mode, provenance = provenance, strict_scope = isTRUE(value$strict_scope))
+       ai_mode = mode, provenance = provenance, strict_scope = isTRUE(value$strict_scope), tissue = if (is.null(value$tissue)) NULL else trimws(value$tissue))
 }
 
 .sc_run_reference_symbols <- function(genes, aliases) {
@@ -177,7 +181,9 @@
     .sc_project_string(value, paste0("reference context$", field))
     if (field == "species") .sc_run_species(value) else trimws(value)
   }); names(requested) <- c("species", "tissue")
-  provenance <- list(status = "not_supplied", mode = "local_marker_reference",
+  study_tissue <- requested$tissue
+  if (!is.null(options$tissue)) requested$tissue <- options$tissue
+  provenance <- list(study_tissue = study_tissue, reference_scope_explicit = !is.null(options$tissue), status = "not_supplied", mode = "local_marker_reference",
     species = requested$species, tissue_filter = requested$tissue,
     scope = list(method = "trimmed_case_insensitive_exact", tissue_all_rows = 0L,
                  species_method = "explicit_human_mouse_aliases",
@@ -192,7 +198,7 @@
     scoring = .sc_run_reference_scoring(), symbol_aliases = as.list(options$symbol_aliases),
     marker_symbols = .sc_run_reference_symbols(marker_original$gene, options$symbol_aliases))
   if(options$strict_scope)provenance$default_reference<-list(source="ACT",status=if(is.null(reference))"unavailable_no_verified_local_file" else "explicit_reference_supplied",
-    automatic_download=FALSE,notice="ACT is the selected default independent marker reference. No database is bundled; provide a lawfully obtained local ACT table. CL remains a separate exact-ID dictionary.")
+    automatic_download=FALSE,notice="ACT is the selected independent marker reference. New modern projects can use the pinned offline snapshot; explicit custom tables retain their own provenance. CL remains a separate exact-ID dictionary.")
   publication_rows<-data.frame(cell_type=character(),marker=character(),pmid=character(),stringsAsFactors=FALSE)
   matches <- all_matches <- .empty_reference_matches()
   scoped <- data.frame(cell_type = character(), marker = character(), stringsAsFactors = FALSE)

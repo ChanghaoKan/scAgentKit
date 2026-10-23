@@ -39,12 +39,12 @@ if (action %in% c('setup','setup-hvg')) {
     pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),each=ncol(counts))
   } else pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),length.out=ncol(pbmc_small))
   saveRDS(pbmc_small,input)
-  # sc_start defaults to raw reanalysis, model_suggestions='off', no provider.
+  # Explicit offline mode; do not depend on available provider keys.
   launch <- NULL
   invisible(capture.output(launch <- sc_start(input, project, context=list(
     species='human',tissue='public PBMC software fixture',
     research_goal='Offline software acceptance; Unknown labels, no biological accuracy claim',
-    columns=list(sample='acceptance_sample')), browse=FALSE,model_suggestions='off',
+    columns=list(sample='acceptance_sample')), browse=FALSE,provider='manual',model_suggestions='off',
     scientific_review=list(pc_sensitivity=TRUE,resampling=TRUE,resolution_extension=TRUE,
       panels='blood',cross_sample=TRUE,mixed_lineage=TRUE))))
   # Explicit synthetic eligibility control for local-only QC preselection.
@@ -57,7 +57,7 @@ if (action %in% c('setup','setup-hvg')) {
   preselection_input <- file.path(output,'preselection-input.rds');saveRDS(synthetic,preselection_input)
   preselection_launch <- NULL
   invisible(capture.output(preselection_launch <- sc_start(preselection_input,file.path(output,'preselection-project'),
-    context=list(species='human',tissue='Synthetic diagnostics',research_goal='Test unapproved local preselection only',columns=list(sample='sample')),browse=FALSE)))
+    context=list(species='human',tissue='Synthetic diagnostics',research_goal='Test conservative QC inspection only',columns=list(sample='sample')),browse=FALSE,provider='manual')))
   write_json(list(launch=launch,preselection_launch=preselection_launch,package=installed,runtime=runtime,
     version=as.character(packageVersion('scAgentKit')), R=R.version.string,
     input_cells=colnames(pbmc_small), archive_sha256=digest::digest(file=archive,algo='sha256'),

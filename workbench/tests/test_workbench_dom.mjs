@@ -67,8 +67,52 @@ function harness(search = "", hash = "") {
   h.wire = (id = "parent", value = view(id)) => {h.handler = async url => ({ok: true, json: async () => clone(url === "/api/run-review/scopes" ? scopes() : value)});};
   return h;
 }
+const workflowButtons = h => descend(h.el("wb-workflow-stages")).filter(node => node.getAttribute?.("data-workflow-step"));
+const workflowStep = (h, name) => workflowButtons(h).find(node => node.getAttribute("data-workflow-step") === name);
 const results = [];
 async function check(name, action) {try {await action(); results.push({name, passed: true});} catch (error) {results.push({name, passed: false, error: error.stack});}}
+await check("workflow hover, keyboard focus and tap inspect provenance without requests", async () => {
+  const h=harness("?child_id=child-A&project_id=child-A"); h.wire("child-A"); await h.call("wbLoad");
+  const count=h.requests.length; assert.equal(workflowButtons(h).length,11);
+  for(const [id,event] of [["qc","mouseenter"],["react","focus"],["annotation-review","click"]]) {
+    workflowStep(h,id).listeners[event][0]();
+    assert.equal(workflowStep(h,id).getAttribute("aria-pressed"),"true");
+    assert.equal(workflowButtons(h).filter(node=>node.getAttribute("aria-pressed")==="true").length,1);
+    assert(h.el("wb-workflow-detail").textContent.includes("Your decision"));
+  }
+  assert.equal(h.requests.length,count);assert.equal(h.state.section,"overview");
+});
+await check("workflow does not infer model participation from provider configuration", async () => {
+  const h=harness("?child_id=child-A&project_id=child-A"),value=view("child-A",{provider:"deepseek"});
+  value.strategy.review.details.source={kind:"manual_typed_strategy"};
+  value.strategy.review.details.canonical_proposal.qc.rationale='<img src=x onerror=alert(1)> analyst draft';
+  h.wire("child-A",value);await h.call("wbLoad");workflowStep(h,"qc").listeners.mouseenter[0]();
+  const text=h.el("wb-workflow-detail").textContent;
+  assert.match(text,/Saved typed draft/);assert.match(text,/<img src=x onerror=alert/);assert.doesNotMatch(text,/Saved model suggestion/);
+  workflowStep(h,"react").listeners.focus[0]();assert.match(h.el("wb-workflow-detail").textContent,/No ReAct trace is saved/);
+});
+await check("workflow distinguishes current, simulated and historical ReAct sources", async () => {
+  const h=harness(),value=view();
+  value.annotation.review.details.source={kind:"mock",react:{matches_current:false}};
+  value.react={summary:{target_clusters:1,tool_calls:2,known_cost_usd:0,unknown_cost_turns:1},clusters:[{cluster_id:"01",tools:[{tool:"gene_expression"}]}]};
+  h.wire("parent",value);await h.call("wbLoad");workflowStep(h,"react").listeners.mouseenter[0]();
+  assert.match(h.el("wb-workflow-detail").textContent,/Historical trace.*gene_expression.*unavailable cost: 1.*does not match.*SIMULATED/s);
+  assert.equal(h.call("wbWorkflowOrigin",{kind:"saved_provider_response",provider:{name:"mock"}}),"Simulated draft · no model inference");
+  assert.equal(h.call("wbWorkflowOrigin",{kind:"adopted_provider_suggestion",matches_current:false}),"Historical suggestion · current draft differs");
+  assert.equal(h.call("wbWorkflowOrigin",{kind:"adopted_provider_suggestion",matches_current:true,provider_candidate_matches_current:false}),"Model suggestion with retained analyst edits");
+});
+await check("workflow describes processed and child review scopes without invented gates", async () => {
+  const h=harness();h.wire();await h.call("wbLoad");
+  assert.match(h.el("wb-workflow-entry").textContent,/Processed entry/);
+  workflowStep(h,"plan-review").listeners.focus[0]();assert.match(h.el("wb-workflow-detail").textContent,/does not invent an initial raw-analysis approval/);
+  const c=harness("?child_id=child-A&project_id=child-A");c.wire("child-A");await c.call("wbLoad");
+  workflowStep(c,"cluster-review").listeners.click[0]();assert.match(c.el("wb-workflow-detail").textContent,/Only if a scan is requested.*cannot claim this review occurred/s);
+});
+await check("workflow hides old provenance when a refresh cannot verify the snapshot", async () => {
+  const h=harness();h.wire();await h.call("wbLoad");assert.equal(h.el("wb-workflow-map").hidden,false);
+  h.handler=async()=>({ok:false,json:async()=>({error:"Stale scope"})});await h.call("wbLoad");
+  assert.equal(h.el("wb-workflow-map").hidden,true);assert.equal(h.state.view,null);
+});
 await check("ReAct trace links open saved evidence without reviving removed citations", async () => {
   const h = harness(), value = view();
   value.annotation.review.details.annotations = [{clusterId: "01", proposal: {label: "T", markers: ["CD3D"], rationale: "Saved draft"}}];

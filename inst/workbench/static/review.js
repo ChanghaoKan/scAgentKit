@@ -517,7 +517,27 @@ async function suggestionAction(action, modify = false, requestAfterApproval = f
   } catch (error) {suggestionLost(error);}
   finally {state.busy = false; state.suggestionChaining = false; renderSuggestion(); buttons(); if (activeSuggestion() && !state.suggestionLost) scheduleSuggestionPoll();}
 }
+function renderRecovery() {
+  const target=$('run-recovery'), run=state.view?.run;
+  if(!target)return;
+  const local=state.continuation?.job, model=state.suggestion?.job;
+  const modelFailed=['failed','interrupted','timed_out'].includes(model?.status);
+  const localFailed=['failed','interrupted'].includes(local?.status);
+  const problem=run?.failure?.message || run?.failure?.error || (typeof run?.failure==='string'?run.failure:'') || model?.error?.message || local?.error?.message || state.suggestionError || '';
+  target.hidden=!run || !(run.failure || modelFailed || localFailed || state.connectionLost || state.suggestionLost || /key|credential|cancel|disk|restore|lock|uncertain/i.test(problem));
+  target.replaceChildren();if(target.hidden)return;
+  let next='Refresh and inspect the saved project before another action. Use the explicit local retry only when it is offered.';
+  let uncertain=modelFailed || state.suggestionLost ? 'Model delivery or usage may be unknown. Inspect and reconcile the provider ledger in R before deciding whether to retry; no automatic resend.' : 'No new model request is initiated by recovery guidance. Inspect the saved task to establish its stopping point.';
+  if(/cancel/i.test(problem))next='Cancellation is retained. In R, inspect this project, then explicitly clear it with sc_run_control(project_dir, cancel=FALSE) before resuming.';
+  else if(/disk|allowance|space/i.test(problem))next='Check available disk space and the project allowance. Explicitly adjust sc_run_control(project_dir, disk_limit_bytes=...) before resuming; saved checkpoints are not pruned.';
+  else if(/key|credential/i.test(problem))next='Set the saved provider credential on the analysis machine, then explicitly resume/retry in R. Keep the existing project and its saved progress.';
+  else if(/restore|directory.*changed/i.test(problem))next='Stop original workers and verify the whole restored project and matching environment. Rebind only terminal local jobs using run_continue_runtime.py restore; running or uncertain model jobs require reconciliation.';
+  else if(/lock|owner/i.test(problem))next='Verify whether the recorded worker is still alive. Use sc_run_unlock() in R only after confirming that its owner stopped; refresh afterwards.';
+  else if(modelFailed || state.suggestionLost)next='Inspect sc_run_inspect(project_dir) and the provider ledger, then use sc_run_provider_reconcile() with the observed request outcome. A failed browser response does not prove that the provider received nothing.';
+  target.append(element('h2','Recover the saved project'),element('p','Stopped: '+(problem || (state.connectionLost?'Connection to the local task was lost.':'A saved task did not finish successfully.'))),element('p',`Saved: last verified project ${run.project_id}, revision ${run.revision}. Existing checkpoints and decisions remain the basis for recovery.`),element('p','Uncertainty: '+uncertain),element('p','Next action: '+next),element('p','In R, set project_dir to this exact selected project before using recovery commands. No request, unlock or retry is performed by this panel.',{class:'microcopy'}));
+}
 function buttons() {
+  renderRecovery();
   updateRecommendationAvailability();
   updateRecommendationFactsAvailability();
   renderScientificAssessment();
@@ -926,16 +946,18 @@ function preparationChoose(cluster, row, index) {
   if (!candidate) return null;
   return {...row, label: candidate.label, markers: preparationCitations(cluster,candidate), touched: true, origin: 'Explicit reference candidate', candidate: candidate.label};
 }
+function preparationValidateDraft(saved, p) {
+  const text = (value, limit) => typeof value === 'string' && value.length <= limit;
+  const fields = ['binding','rows','reviewer','reason','unknownReason','edited'];
+  if (!saved || typeof saved !== 'object' || Object.keys(saved).some(key=>!fields.includes(key)) || json(saved.binding) !== json(preparationBinding(p)) || !Array.isArray(saved.rows) || saved.rows.length !== p.clusters.length || new Set(saved.rows.map(row=>row?.clusterId)).size !== p.clusters.length || !text(saved.reviewer,200) || !text(saved.reason,4000) || !text(saved.unknownReason,4000) || typeof saved.edited !== 'boolean') throw new Error('Worksheet does not match this exact project, evidence and revision, or has invalid fields.');
+  for (const cluster of p.clusters) {
+    const row = saved.rows.find(row=>row?.clusterId===cluster.clusterId);
+    if (!row || Object.keys(row).some(key=>!['clusterId','label','rationale','confidence','markers','confirmed','touched','origin','candidate'].includes(key)) || !text(row.label,200) || !text(row.rationale,4000) || !['','low','medium','high'].includes(row.confidence) || !Array.isArray(row.markers) || new Set(row.markers).size !== row.markers.length || row.markers.some(gene=>!array(cluster.markers).some(marker=>marker.gene===gene)) || typeof row.confirmed !== 'boolean' || typeof row.touched !== 'boolean' || !text(row.origin,200) || row.candidate != null && !text(row.candidate,200)) throw new Error('Worksheet contains a foreign cluster, unsupported citation or invalid annotation field.');
+  }
+  return JSON.parse(JSON.stringify(saved));
+}
 function preparationRestore(p) {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem(preparationKey(p)) || 'null');
-    if (!saved || json(saved.binding) !== json(preparationBinding(p)) || !Array.isArray(saved.rows) || saved.rows.length !== p.clusters.length || new Set(saved.rows.map(row=>row.clusterId)).size !== p.clusters.length) return null;
-    for (const cluster of p.clusters) {
-      const row = saved.rows.find(row=>row.clusterId===cluster.clusterId);
-      if (!row || ['label','rationale','confidence'].some(key=>typeof row[key]!=='string') || !['','low','medium','high'].includes(row.confidence) || !Array.isArray(row.markers) || row.markers.some(gene=>!array(cluster.markers).some(marker=>marker.gene===gene)) || typeof row.confirmed !== 'boolean' || typeof row.touched !== 'boolean') return null;
-    }
-    return saved;
-  } catch (_) {return null;}
+  try {return preparationValidateDraft(JSON.parse(sessionStorage.getItem(preparationKey(p)) || 'null'), p);} catch (_) {return null;}
 }
 function discardPreparation(p) {
   try {sessionStorage.setItem(preparationKey(p),'null');} catch (_) {}
@@ -956,11 +978,32 @@ function renderAnnotationPreparation() {
   model.addEventListener('click',()=>{if (dirty()) {message('Save the complete worksheet or explicitly discard its local edits before model actions; your rows are protected.',true);return;} $('suggestion-disclosure').open=true; $('run-suggestion').scrollIntoView?.({block:'start'}); if(state.view.suggestion_enabled===true)loadSuggestion();});target.append(model);
   const recovery = element('p',recovered ? 'Local worksheet restored for this exact project, evidence and revision. It is not a saved proposal.' : '',{'data-testid':'prepare-recovery',class:'microcopy'});target.append(recovery);
   try {const last=sessionStorage.getItem('scagentkit.annotation-last:'+preparation.project_id);if(!recovered && last && last!==key) recovery.textContent='A local worksheet belongs to an older evidence/revision. It is retained in this tab and was not applied to this snapshot.';} catch (_) {}
+  const portability = element('div', null, {class:'annotation-edit-actions'});
+  const download = element('button','Download unfinished worksheet',{type:'button',class:'button quiet','data-testid':'prepare-download'});
+  const importLabel = element('label','Import unfinished worksheet');
+  const upload = element('input',null,{type:'file',accept:'.json,application/json','data-testid':'prepare-import'});
+  importLabel.append(upload); portability.append(download,importLabel); target.append(portability,element('p','A downloaded worksheet can survive a closed tab or be handed to another analyst. It is bound to this exact project, evidence and revision; it contains no approval and cannot run analysis.',{class:'microcopy'}));
+  download.addEventListener('click',()=>{
+    if (!ready()) return;
+    const worksheet = preparationValidateDraft(state.preparationDraft,preparation);
+    const blob = new Blob([JSON.stringify({schema:'scagentkit.annotation-worksheet.v1',worksheet},null,2)],{type:'application/json'}), url=URL.createObjectURL(blob);
+    const link=element('a',null,{href:url,download:'annotation-worksheet.json'});target.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
+  upload.addEventListener('change',async()=>{
+    try {
+      if (!ready() || !upload.files?.length) return;
+      const file=upload.files[0]; if(file.size>2*1024*1024)throw new Error('Worksheet exceeds 2 MiB.');
+      const incoming=JSON.parse(await file.text());
+      if(!ready() || preparationKey(state.view.run.annotation_preparation)!==key)throw new Error('The saved snapshot changed; refresh before importing.');
+      if(incoming?.schema!=='scagentkit.annotation-worksheet.v1' || Object.keys(incoming).some(key=>!['schema','worksheet'].includes(key)))throw new Error('Choose a scAgentKit unfinished worksheet.');
+      const saved=preparationValidateDraft(incoming.worksheet,preparation);
+      if(preparationDirty()&&!window.confirm('Replace this local unfinished worksheet with the imported rows? Saved proposals and approvals stay unchanged.'))return;
+      saved.edited=true;sessionStorage.setItem(key,JSON.stringify(saved));state.preparationKey=null;renderAnnotationPreparation();buttons();message('Unfinished worksheet imported for this exact snapshot. Complete and save the proposal, then inspect and approve separately.');
+    } catch(error) {message(error.message+' Current rows were retained.',true);}
+    finally {upload.value='';}
+  });
   const discard=element('button','Discard this local worksheet',{type:'button',class:'button quiet','data-testid':'prepare-discard'});discard.addEventListener('click',()=>{if(state.busy||activeJob()||activeSuggestion()||!window.confirm('Discard this bound local worksheet? Saved R proposals, approvals and other revisions stay unchanged.'))return;discardPreparation(preparation);renderAnnotationPreparation();buttons();message('Local worksheet discarded. No saved proposal or approval changed.');});target.append(discard);
-  const start = element('button','Prepare annotation table',{type:'button',class:'button primary','data-testid':'annotation-prepare-start'});target.append(start);
-  function open(restoring=false) {
-    if (!restoring && !ready()) return;
-    start.remove();
+  function open() {
     const form=element('form',null,{'data-testid':'annotation-prepare-form'}),controls=[];state.preparationControls=controls;
     const field=(parent,title,tag,testid)=>{const label=element('label',title),input=element(tag,null,{'data-testid':testid});label.append(input);parent.append(label);return input;};
     const overview=element('p','',{'data-testid':'prepare-overview',role:'status'});form.append(overview);
@@ -968,7 +1011,7 @@ function renderAnnotationPreparation() {
       const draft=state.preparationDraft;
       draft.rows=controls.map(row=>({...row.data,label:row.label.value,confidence:row.confidence.value,rationale:row.rationale.value,markers:row.markers.filter(marker=>marker.box.checked).map(marker=>marker.gene),confirmed:row.keep.checked}));
       draft.reviewer=reviewer.value;draft.reason=reason.value;draft.unknownReason=unresolvedReason.value;
-      try {sessionStorage.setItem(key,JSON.stringify(draft));sessionStorage.setItem('scagentkit.annotation-last:'+preparation.project_id,key);}catch(_){recovery.textContent='Tab storage is unavailable; keep this page open or save the complete proposal before leaving.';}
+      try {sessionStorage.setItem(key,JSON.stringify(draft));sessionStorage.setItem('scagentkit.annotation-last:'+preparation.project_id,key);}catch(_){recovery.textContent='Tab storage is unavailable; download the unfinished worksheet before leaving.';}
       let confirmed=0,conflicts=0,unknown=0;
       for(const row of controls){const data=draft.rows.find(data=>data.clusterId===row.cluster.clusterId);if(data.confirmed)confirmed++;else if(preparationConflict(row.cluster))conflicts++;if(unresolvedLabel(data.label))unknown++;
         row.status.textContent=data.confirmed?'Manually checked · local draft':preparationConflict(row.cluster)?'Evidence conflict · inspect tied candidates / source':'Needs judgement';
@@ -988,7 +1031,7 @@ function renderAnnotationPreparation() {
       const candidates=preparationCandidates(cluster),select=field(card,'Inspect a saved reference candidate','select','prepare-candidate-'+cluster.clusterId);
       select.append(element('option','Choose explicitly; none selected',{value:''}),...candidates.map((candidate,index)=>element('option',candidate.label+' · '+candidate.overlap+'/'+candidate.referenceSize+' reference genes'+(candidate.overlap===1?' · single-marker evidence (weak)':'')+(candidate.tiedBest?' · best coverage (not certainty)':''),{value:String(index)})));
       const apply=element('button','Use selected candidate and its supplied citations',{type:'button',class:'button quiet','data-testid':'prepare-candidate-use-'+cluster.clusterId});card.append(apply);
-      const label=field(card,'Reviewed label (coarse labels and Unknown allowed)','input','prepare-label-'+cluster.clusterId),confidence=field(card,'Qualitative confidence · uncalibrated','select','prepare-confidence-'+cluster.clusterId),rationale=field(card,'Your interpretation and unresolved alternatives','textarea','prepare-rationale-'+cluster.clusterId);
+      const label=field(card,'Reviewed label (coarse labels and Unknown allowed)','input','prepare-label-'+cluster.clusterId),confidence=field(card,'Qualitative confidence · uncalibrated','select','prepare-confidence-'+cluster.clusterId),rationale=field(card,'Your interpretation and unresolved alternatives','textarea','prepare-rationale-'+cluster.clusterId);label.maxLength=200;rationale.maxLength=4000;
       confidence.append(...['','low','medium','high'].map(value=>element('option',value||'Choose confidence',{value})));label.required=confidence.required=rationale.required=true;
       const data=state.preparationDraft.rows.find(row=>row.clusterId===cluster.clusterId)||{clusterId:cluster.clusterId,label:'',confidence:'',rationale:'',markers:[],confirmed:false,touched:false,origin:''};
       label.value=data.label;confidence.value=data.confidence;rationale.value=data.rationale;
@@ -1009,7 +1052,7 @@ function renderAnnotationPreparation() {
     }
     const unresolvedReason=field(form,'Reason for retaining untouched populations as Unknown','textarea','prepare-unknown-reason'),unresolved=element('button','Keep all unfilled populations Unknown',{type:'button',class:'button quiet','data-testid':'prepare-unknown-all'});unresolvedReason.value=state.preparationDraft.unknownReason||'';form.append(unresolved);
     unresolved.addEventListener('click',()=>{if(!ready())return;if(!unresolvedReason.value.trim()){message('Provide a reason for retaining unresolved populations.',true);return;}for(const row of controls)if(!row.data.touched&&!row.keep.checked&&!row.label.value.trim()&&!row.rationale.value.trim()&&!row.confidence.value&&!row.markers.some(marker=>marker.box.checked)){row.label.value='Unknown';row.confidence.value='low';row.rationale.value=unresolvedReason.value.trim();Object.assign(row.data,{touched:true,origin:'Explicit Unknown'});}state.preparationDraft.edited=true;persist();});
-    const reviewer=field(form,'Reviewer','input','prepare-reviewer'),reason=field(form,'Overall submission reason','textarea','prepare-reason');reviewer.required=reason.required=true;reviewer.value=state.preparationDraft.reviewer||'';reason.value=state.preparationDraft.reason||'';
+    const reviewer=field(form,'Reviewer','input','prepare-reviewer'),reason=field(form,'Overall submission reason','textarea','prepare-reason');reviewer.required=reason.required=true;reviewer.maxLength=200;reason.maxLength=4000;unresolvedReason.maxLength=4000;reviewer.value=state.preparationDraft.reviewer||'';reason.value=state.preparationDraft.reason||'';
     for(const control of [reviewer,reason,unresolvedReason])control.addEventListener('input',()=>{state.preparationDraft.edited=true;persist();});
     const save=element('button','Save complete proposal for review',{type:'submit',class:'button primary','data-testid':'prepare-submit'});form.append(save);target.append(form);
     let requestId=null,submittedText=null;
@@ -1022,8 +1065,7 @@ function renderAnnotationPreparation() {
     });
     persist();
   }
-  start.addEventListener('click',()=>open(false));
-  if(recovered)open(true);
+  open();
 }
 function strategySection(title, value, notice) {
   const section = element("section", null, {class: "strategy-evidence-card"}); section.append(element("h3", title));
@@ -1616,31 +1658,12 @@ async function saveRecommendationFacts(reviewHash) {
   else if(prepare) message("Facts saved without approval. Suggestions are not yet rebuilt; local Continue preparation is unavailable. Resume preparation in R, then inspect the new review.");
   return true;
 }
-function preselectRecommendationDraft(context) {
-  if (!context.current || state.view?.effective_readonly === true || !node()?.can_revise || activeJob() || strategyDirty()) return false;
-  if (context.recommendations.fact_editable !== true) return false;
-  if ($("qc-draft-preselection-opt-in")?.checked !== true) return false;
-  if (!(state.preselectedRecommendationReviews instanceof Set)) state.preselectedRecommendationReviews = new Set();
-  const key = state.view.run.project_id + ":" + context.reviewHash;
-  if (state.preselectedRecommendationReviews.has(key)) return false;
-  state.preselectedRecommendationReviews.add(key);
-  const step = context.recommendations.steps.find(step => step.id === "qc"), selection = step?.draft_preselection;
-  if (selection?.automatic !== true || selection?.draft_only !== true || !selection.candidate_id) return false;
-  const candidate = step.candidates.find(candidate => candidate.id === selection.candidate_id && candidate.available === true);
-  if (!candidate) return false;
-  try {
-    setStrategyDraft(recommendationDraft(strategyDraft(),"qc",candidate),true);
-    message("QC comparison preselected in the local draft — NOT SAVED, NOT APPROVED. Review, change or discard it; saving and explicit approval remain separate.");
-    return true;
-  } catch (_) { return false; }
-}
 function renderRecommendations() {
   const target = $("strategy-recommendations"); if (!target) return;
   target.replaceChildren(element("h2","Recommendations and your next decision"));
   const notice = element("p",null,{class:"recommendation-notice",role:"status","data-testid":"recommendations-status"}), cards = element("div",null,{class:"recommendation-grid","data-testid":"recommendations-steps"});
   target.append(notice,cards); const controls = []; state.recommendationRegion = {notice,cards,controls};
   const context = recommendationContext();
-  preselectRecommendationDraft(context);
   if (context.current) {
     const rec = context.recommendations;
     recommendationList(cards,"Completed work recorded by R",rec.completed);
@@ -1655,7 +1678,6 @@ function renderRecommendations() {
       }
       if (step.scientific_diagnostics) { const diagnostics = element("details"); diagnostics.append(element("summary","Optional local sensitivity, resampling and expression evidence"),raw(step.scientific_diagnostics)); card.append(diagnostics); }
       if (step.sample_comparison && typeof step.sample_comparison === "object") card.append(renderSampleQCComparison(step.sample_comparison));
-      if (step.draft_preselection?.candidate_id) card.append(element("p","Draft comparison (unsaved and unapproved): " + step.draft_preselection.candidate_id + ". " + step.draft_preselection.reason,{class:"microcopy"}));
       for (const candidate of step.candidates) {
         const item = element("section",null,{class:"recommendation-candidate","data-testid":"recommendation-candidate-"+step.id+"-"+candidate.id});
         item.append(element("h4",candidate.label || candidate.id)); recommendationList(item,"Candidate reasons",candidate.reasons); recommendationList(item,"Candidate conflicts",candidate.conflicts);
@@ -1664,7 +1686,7 @@ function renderRecommendations() {
         }
         let valid = candidate.available === true;
         try {recommendationDraft(strategyDraft(),step.id,candidate);} catch (_) {valid = false;}
-        const apply = element("button",step.draft_preselection?.candidate_id === candidate.id ? "Load suggested comparison in local draft" : "Use candidate in local draft",{type:"button",class:"button quiet","data-unavailable":String(!valid),"data-testid":"recommendation-use-"+step.id+"-"+candidate.id}); controls.push(apply);
+        const apply = element("button","Use candidate in local draft",{type:"button",class:"button quiet","data-unavailable":String(!valid),"data-testid":"recommendation-use-"+step.id+"-"+candidate.id}); controls.push(apply);
         apply.addEventListener("click",()=>applyRecommendation(step.id,candidate.id,context.reviewHash)); item.append(apply);
         if (!valid) item.append(element("p","Unavailable for this draft. Inspect the saved reasons and supported parameter groups; no assessment or choice is invented.",{class:"microcopy"}));
         card.append(item);
@@ -1801,6 +1823,19 @@ function renderImport(summary) {
     element("p", "Explicit role mapping: " + json(summary.columns)), element("p", summary.raw_note));
   const details = element("details"); details.append(element("summary", "Analysis-key mapping, source hashes and excluded modalities"), raw({key_changes:summary.key_changes,files:summary.files,source_tables:summary.source_tables})); target.append(details);
 }
+function runActionLabel(run) {
+  if (run.status === "complete") return "Inspect saved results";
+  if (run.status === "failed") return "Inspect the stopped task and recover";
+  if (run.status === "ready") return "Continue approved local work";
+  if (run.annotation_preparation) return "Fill the annotation worksheet";
+  if (run.review_node?.kind === "annotation") return "Review cluster annotations";
+  if (run.review_node?.kind === "strategy") return run.strategy_review?.details?.cluster_diagnostics ? "Review measured clustering" : "Review analysis plan and QC";
+  if (run.review_node?.kind === "qc") return "Review QC impact";
+  if (run.pending?.kind === "external_transfer") return "Review aggregate transfer consent";
+  if (run.status === "rejected") return "Revise the rejected proposal";
+  if (run.status === "awaiting_configuration") return "Prepare the required proposal";
+  return "Inspect saved progress";
+}
 function render() {
   const run = state.view.run, current = run.review_node;
   renderImport(run.input_import);
@@ -1814,12 +1849,14 @@ function render() {
   childTools.hidden = !selectedChild;
   if (selectedChild) {
     $("run-child-scope-link").setAttribute("href", scopedRunURL("/subclusters"));
-    $("run-child-scope-link").textContent = run.status === "complete" ? "Review exact child labels and save a new parent object" : "Child scope, manual Unknown and safe writeback";
+    $("run-child-scope-link").textContent = run.status === "complete" ? "Review exact child labels and save a new parent object" : "Child selection and safe writeback";
   }
   $("run-project").textContent = `${run.project_id} · ${run.context?.species || "species undeclared"} · ${run.context?.tissue || "tissue undeclared"} · revision ${run.revision}`;
-  $("run-status").textContent = `${run.status} / ${run.stage}`;
-  const strategyFlow = !!run.strategy_review || run.stage.startsWith("strategy"), index = run.status === "complete" ? 3 : run.stage.startsWith("annotation") || ["finalize"].includes(run.stage) ? 2 : ["analysis", "markers", "strategy_basis", "strategy_neighbors", "strategy_cluster"].includes(run.stage) ? 1 : 0;
-  $("run-progress").replaceChildren(...[strategyFlow ? "Analysis strategy review · includes QC" : "QC review", continuationEnabled() ? "Analysis · local continuation" : "Analysis · explicit R resume", "Annotation review", "Saved output"].map((label, i) => element("li", label, {class: i === index ? "current" : i < index ? "complete" : ""})));
+  $("run-status").textContent = runActionLabel(run);
+  $("run-status").setAttribute("data-engine-status", `${run.status} / ${run.stage}`);
+  const measured = !!run.strategy_review?.details?.cluster_diagnostics;
+  const index = run.status === "complete" ? 4 : run.stage.startsWith("annotation") || run.stage === "finalize" ? 3 : measured ? 2 : ["analysis", "markers", "strategy_basis", "strategy_neighbors", "strategy_cluster"].includes(run.stage) ? 1 : 0;
+  $("run-progress").replaceChildren(...["Review analysis plan and QC", "Compute local evidence", "Review measured clustering", "Prepare and review annotations", "Inspect saved results"].map((label, i) => element("li", label, {class: i === index ? "current" : i < index ? "complete" : ""})));
   const next = $("run-next"); next.replaceChildren();
   if (run.status === "ready") {
     if (continuationEnabled()) next.append(element("p", "The decision is saved. Use the local task controls below to execute approved work. The worker stops at the next review or configuration step."));
@@ -1828,7 +1865,7 @@ function render() {
   else if (run.status === "complete") next.append(element("p", "The reviewed labels and audit are saved in the new output object. Inspect the output in R; biological result acceptance remains a separate analyst judgement."));
   else if (run.annotation_preparation) next.append(element("p", "Analysis and markers are saved. Prepare the blank annotation table below, save the complete proposal and review it before approving and continuing."));
   else if (run.status === "rejected" || run.status === "awaiting_configuration") next.append(element("p", current?.can_revise ? "The previous decision is inactive. Edit the supported saved proposal and rebuild the review, or provide a corrected proposal in R." : state.view.suggestion_enabled === true ? "Preview and request a configured model suggestion above, or prepare a supported manual proposal in R. A suggestion must still pass the central scientific review." : "The project needs a supported proposal or configuration in R. No browser calculation or external request is started."));
-  else if (run.status === "awaiting_review") next.append(element("p", current ? `Review the saved ${current.kind} snapshot below. Approval records this plan; ${continuationEnabled() ? "continue approved local work separately after approval." : "execution still requires R resume."}` : run.pending?.kind === "external_transfer" && state.view.suggestion_enabled === true ? "Review the exact aggregate preview above. Approve transmission before requesting a model suggestion; scientific review remains a separate decision." : "This node is outside the browser's supported review scope. Inspect and decide on it in R."));
+  else if (run.status === "awaiting_review") next.append(element("p", current ? `Review the saved ${current.kind} snapshot below. Approval records this plan; ${continuationEnabled() ? "use Approve and continue to record this exact decision and start local work. Save any edits first and inspect the rebuilt evidence." : "execution still requires R resume."}` : run.pending?.kind === "external_transfer" && state.view.suggestion_enabled === true ? "Review the exact aggregate preview above. Approve transmission before requesting a model suggestion; scientific review remains a separate decision." : "This node is outside the browser's supported review scope. Inspect and decide on it in R."));
   else next.append(element("p", "Saved status: " + run.status + ". Inspect or resume the computation in R, then refresh the saved state."));
   $("run-qc").hidden = !run.stage.startsWith("qc") || current?.kind !== "qc";
   if (!$("run-qc").hidden && !$("run-qc-frame").getAttribute("src")) $("run-qc-frame").setAttribute("src", scopedRunURL(continuationEnabled() ? "/review-qc?localContinue=1" : "/review-qc"));
@@ -1843,6 +1880,9 @@ function render() {
     const unresolved = annotationRows().filter(row => unresolvedLabel(row.proposal.label));
     if (unresolved.length) output.append(element("p", unresolved.length + " unresolved populations · " + unresolved.reduce((sum, row) => sum + row.cell_count, 0) + " cells retained as Unknown/unannotated. Saved workflow output does not establish their biological identities.", {role: "status", "data-testid": "completed-unresolved"}));
   }
+  if (run.status === "complete" && state.scopes?.workspace_enabled === false) {
+    output.append(element("p", "To start an independent child, create a separate workspace directory and reopen this saved project from R with subcluster_workspace. Then use Cell scope to select parent cells; annotations are prepared and reviewed here."), element("code", 'sc_start(project_dir="analysis", subcluster_workspace="analysis-children")'));
+  }
   if (run.output && typeof run.output === "object") {
     const list = element("ul", null, {class: "saved-artifact-list"});
     for (const [name, value] of Object.entries(run.output)) {
@@ -1853,7 +1893,7 @@ function render() {
   $("run-undo").hidden = !current?.can_undo;
   const fingerprints = element("div", null, {class: "qc-hashes"});
   for (const [label, value] of Object.entries({project_id: run.project_id, input_hash: run.input_hash, revision: run.revision, kind: current?.kind, proposal_hash: current?.proposal_hash, review_hash: current?.review_hash, config_hash: run.config_hash, implementation_hash: run.implementation_hash, decision_id: current?.decision_id})) fingerprints.append(element("span", label), element("code", value == null ? "Unavailable" : value));
-  $("run-fingerprints").replaceChildren(fingerprints, raw(current?.kind === "strategy" ? run.strategy_review?.lifecycle || {notice: "Strategy decisions and revisions are retained in the R journal."} : run.annotation_review?.lifecycle || {notice: "No annotation decision lifecycle is available yet."}));
+  $("run-fingerprints").replaceChildren(element("p", `Saved engine status: ${run.status} / ${run.stage}`), fingerprints, raw(current?.kind === "strategy" ? run.strategy_review?.lifecycle || {notice: "Strategy decisions and revisions are retained in the R journal."} : run.annotation_review?.lifecycle || {notice: "No annotation decision lifecycle is available yet."}));
   renderContinuation(); renderSuggestion(); buttons();
 }
 async function load() {
@@ -1950,7 +1990,6 @@ window.addEventListener("message", event => {
 });
 window.addEventListener("pagehide", () => {stopPolling(); stopSuggestionPolling();});
 window.addEventListener("pageshow", event => {if (event.persisted && state.view && !state.busy) {if (dirty()) {state.stale = true; state.awaitingFreshInspect = true; renderContinuation(); buttons();} else load();}});
-$("qc-draft-preselection-opt-in").addEventListener("change", () => renderRecommendations());
 $("storage-refresh")?.addEventListener("click", async () => {
   const out = $("storage-summary");
   out.textContent = "Measuring local storage…";

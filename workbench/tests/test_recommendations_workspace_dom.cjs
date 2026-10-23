@@ -92,26 +92,12 @@ const malformed=copy(value);malformed.run.strategy_review.details.recommendation
 const invalid=copy(value);invalid.run.strategy_review.details.recommendations.policy_version="unsupported";assert.match(setup(invalid).el("strategy-recommendations").textContent,/unavailable|unsupported/i);
 console.log(JSON.stringify({passed:true,actualProductionRenderer:true,actualBrowser:false,modelCalls:0,apiCalls:h.requests.length,cases:["saved measured and missing evidence","candidate only changes local draft","approval blocked until save","resolution preserves diagnostic grid","unknown and cross-step fields rejected","stale/absent recommendations fail closed"]}));
 
-// A bound preselection may fill memory, never write/approve or overwrite edits.
-const preselected=copy(value);
-preselected.run.strategy_review.details.recommendations.fact_editable=true;
-preselected.run.strategy_review.details.recommendations.steps[0].draft_preselection={candidate_id:"keep",automatic:true,draft_only:true,reason:"Synthetic transport eligibility"};
-const pre=setup(preselected);
-assert.equal(JSON.stringify(pre.call("strategyDraft").qc),JSON.stringify(preselected.run.strategy_review.details.canonical_proposal.qc),"Default automatic QC prefill is off");
-pre.el("qc-draft-preselection-opt-in").checked=true;pre.call("renderRecommendations");
-assert.equal(pre.requests.length,0);
-const afterApproval=copy(preselected);
-afterApproval.run.strategy_review.details.recommendations.fact_editable=false;
-const preserved=setup(afterApproval);
-assert.equal(JSON.stringify(preserved.call("strategyDraft").qc),JSON.stringify(afterApproval.run.strategy_review.details.canonical_proposal.qc),"An already executed/approved strategy keeps its explicit QC policy");
-assert.equal(preserved.requests.length,0);
-assert(!/NOT SAVED, NOT APPROVED/.test(preserved.el("run-message").textContent));
-assert.equal(pre.call("strategyDraft").qc.rationale,"Keep uncertain cells");
-assert.equal(pre.el("strategy-approve").disabled,true);
-assert.match(pre.el("run-message").textContent,/NOT SAVED, NOT APPROVED/);
-assert.equal(JSON.stringify(pre.state.view),JSON.stringify(preselected));
-const altered=copy(pre.call("strategyDraft"));altered.qc.rationale="Own unsaved edit";
-pre.call("setStrategyDraft",altered,true);
-pre.call("renderRecommendations");
-assert.equal(pre.call("strategyDraft").qc.rationale,"Own unsaved edit");
-assert.equal(pre.requests.length,0);
+// Suggestions never change a local draft without an explicit candidate action.
+const automated=copy(value);
+automated.run.strategy_review.details.recommendations.fact_editable=true;
+automated.run.strategy_review.details.recommendations.steps[0].draft_preselection={candidate_id:"keep",automatic:true,draft_only:true,reason:"Untrusted synthetic transport field"};
+const retained=setup(automated);
+retained.call("renderRecommendations");
+assert.equal(JSON.stringify(retained.call("strategyDraft").qc),JSON.stringify(automated.run.strategy_review.details.canonical_proposal.qc));
+assert.equal(retained.requests.length,0);
+assert(!fs.readFileSync(htmlPath,"utf8").includes('qc-draft-preselection-opt-in'));

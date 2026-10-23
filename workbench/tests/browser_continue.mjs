@@ -337,7 +337,7 @@ try {
     await frame.locator("#qc-reviewer").fill("Independent offline browser analyst");
     await frame.locator("#qc-reason").fill("Approve the exact toy/public software-control scope; not optimal biological QC");
     await frame.locator("#qc-approve").click(); await idle();
-    await page.waitForFunction(() => document.getElementById("run-status").textContent.startsWith("ready"));
+    await page.waitForFunction(() => document.getElementById("run-status").getAttribute("data-engine-status").startsWith("ready"));
     approved = (await inspect()).run; assert.equal(approved.stage, "qc_apply"); assert.equal(await ui("run-continue").isEnabled(), true);
     await fs.cp(project, approvedCopy, {recursive: true, force: false, errorOnExist: true});
     const before = await snapshot(project, true), body = continuePayload(approved);

@@ -1,5 +1,6 @@
 test_that('bundled ACT loads offline with fixed species, tissue, source and citation',{
  local_mocked_bindings(.sc_act_root=.sc_act_root,.package='scAgentKit')
+ scopes<-annot_act_scopes('human');expect_true('Blood' %in% scopes$tissue);expect_true(all(scopes$source_rows>0))
  human<-annot_act_reference('human',' Blood ');mouse<-annot_act_reference('mouse','blood')
  expect_equal(nrow(human),2021);expect_equal(nrow(mouse),158)
  expect_true(all(human$species=='human'));expect_true(all(mouse$species=='mouse'))

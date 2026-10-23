@@ -113,7 +113,7 @@ async function debugPage(label) {
   } catch (error) {report.uiDiagnosticsError = error.message;}
 }
 async function renderedCurrent() {
-  await page.waitForFunction(({status, stage}) => document.getElementById("run-status").textContent.trim() === status + " / " + stage && !document.getElementById("run-refresh").disabled, {status: current.status, stage: current.stage}, {timeout: 45000});
+  await page.waitForFunction(({status, stage}) => document.getElementById("run-status").getAttribute("data-engine-status").trim() === status + " / " + stage && !document.getElementById("run-refresh").disabled, {status: current.status, stage: current.stage}, {timeout: 45000});
 }
 let current;
 try {
@@ -140,7 +140,7 @@ try {
   await page.goto(origin + "/");
   await renderedCurrent();
   await test("actual readonly Chrome displays the verified current status/stage and saved difference cycle strategy", async () => {
-    assert.equal((await ui("run-status").textContent()).trim(), current.status + " / " + current.stage); assert.equal(await ui("run-complete").isVisible(), complete);
+    assert.equal((await ui("run-status").getAttribute("data-engine-status")).trim(), current.status + " / " + current.stage); assert.equal(await ui("run-complete").isVisible(), complete);
     assert.equal(await ui("run-continue").isDisabled(), true); assert.equal(await ui("run-qc").isVisible(), false); assert.equal(await ui("run-strategy").isVisible(), true);
     assert.equal(await ui("strategy-json").isDisabled(), true); assert.equal(await ui("strategy-approve").isDisabled(), true); assert.equal(await ui("strategy-save").isDisabled(), true);
     assert.equal(JSON.parse(await ui("strategy-json").inputValue()).cycle.method, "difference"); assert.equal(await page.locator("#strategy-operations > section").count(), 7);

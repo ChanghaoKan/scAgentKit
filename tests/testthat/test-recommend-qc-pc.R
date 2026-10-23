@@ -174,7 +174,7 @@ test_that("QC and PC recommendation records expose the complete plain-list contr
   expected <- c("id", "status", "assessment", "title", "reasons", "completed", "candidates", "conflicts", "uncertainty", "missing", "next_decision")
   for (record in records) {
     expect_identical(names(record)[names(record) %in% expected], expected)
-    expect_true(all(names(record) %in% c(expected,"sample_comparison","draft_preselection")))
+    expect_true(all(names(record) %in% c(expected,"sample_comparison")))
     expect_true(is.list(record$reasons) && is.list(record$completed) && is.list(record$missing))
     expect_true(record$status %in% c("recommend_execute", "recommend_skip", "insufficient_information"))
     for (candidate in record$candidates) {
@@ -208,20 +208,16 @@ test_that("a valid fixed PC policy does not inherit conflicts from unsupported e
   expect_length(step$conflicts, 0L)
   expect_true(all(!vapply(step$candidates, `[[`, logical(1), "available")))
 })
-test_that("QC draft preselection is bound, guarded and never replaces an explicit policy", {
+test_that("QC comparisons never request automatic draft replacement", {
   fixture <- recommend_qc_fixture()
   step <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
-  expect_true(isTRUE(step$draft_preselection$draft_only))
-  expect_false(step$draft_preselection$automatic)
-  expect_null(step$draft_preselection$candidate_id)
-  expect_match(step$draft_preselection$reason,"Load any comparison explicitly")
+  expect_false("draft_preselection" %in% names(step))
   # OR remains an inspectable comparison when measured, never an automatic replacement.
   candidate <- Filter(function(x) x$id=="any_quality3",step$candidates)
   expect_true(length(candidate) <= 1L)
   fixture$validated$proposal$qc$rules[[2]]$preset_id <- "conservative_and3"
   changed <- .sc_run_recommend_qc(fixture$evidence,fixture$validated)
-  expect_false(changed$draft_preselection$automatic)
-  expect_null(changed$draft_preselection$candidate_id)
+  expect_false("draft_preselection" %in% names(changed))
 })
 
 

@@ -1,6 +1,6 @@
 "use strict";
 const WB_SECTIONS = ["overview", "qc", "strategy", "analysis", "annotation", "children", "outputs", "history"];
-const wbState = {view: null, scopes: null, projectId: null, child: false, section: "overview", clusterId: null, busy: false, failed: false};
+const wbState = {view: null, scopes: null, projectId: null, child: false, section: "overview", clusterId: null, workflowStep: "qc", busy: false, failed: false};
 const wb$ = id => document.getElementById(id);
 const wbArray = value => value == null ? [] : Array.isArray(value) ? value : [value];
 const wbHash = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
@@ -182,6 +182,81 @@ function wbCurrentApproved(kind, review) {
   const node = wbState.view.run.review_node;
   return Boolean(wbHash(review?.hash) && node?.kind === kind && node.review_hash === review.hash && typeof node.decision_id === "string" && node.decision_id && node.can_decide === false && node.undone !== true);
 }
+// Display only: provenance is established by saved source records, not by a
+// configured provider. This guide adds no workflow state or scientific action.
+function wbWorkflowOrigin(source) {
+  if (!source) return "Source not recorded";
+  if (source.matches_current === false) return "Historical suggestion · current draft differs";
+  if (source.simulated === true || ["mock", "simulated_mock_suggestion"].includes(source.kind) || source.kind === "saved_provider_response" && source.provider?.name === "mock") return "Simulated draft · no model inference";
+  if (source.matches_current === true && source.provider_candidate_matches_current === false) return "Model suggestion with retained analyst edits";
+  if (["adopted_provider_suggestion", "provider_response", "saved_provider_response", "model"].includes(source.kind)) return "Saved model suggestion · requires human review";
+  if (["manual", "manual_typed_strategy"].includes(source.kind)) return "Saved typed draft · editable by the analyst";
+  if (source.kind === "local_rule_fallback") return "Local rule fallback · not approved";
+  return source.kind ? "Recorded source: " + wbText(source.kind) : "Source not recorded";
+}
+function wbWorkflowSteps() {
+  const value = wbState.view, run = value.run, details = value.strategy?.review?.details;
+  const plan = details?.canonical_proposal, qc = wbQCProposal(), impact = wbQCRecord()?.retention;
+  const annotation = value.annotation?.review, source = annotation?.details?.source;
+  const reused = value.source?.start_stage === "processed", child = value.project.scope === "child";
+  const scan = details?.cluster_diagnostics, react = value.react, summary = react?.summary;
+  const currentStrategy = run.review_node?.kind === "strategy" && run.review_node.can_decide === true;
+  const tools = [...new Set(wbArray(react?.clusters).flatMap(cluster => wbArray(cluster.tools).map(tool => tool.tool)).filter(Boolean))];
+  const rules = wbArray(qc?.rules), mad = wbQCRecord()?.mad_panel || details?.mad_panel;
+  const origin = wbWorkflowOrigin(details?.source), annotationOrigin = wbWorkflowOrigin(source);
+  const gate = measured => reused ? "Reused input" : currentStrategy && Boolean(scan) === measured ? "Review needed" : measured && !scan ? child ? "Only if a scan is requested" : "No saved scan yet" : "See saved decisions";
+  const planText = plan ? "Saved PC policy: " + wbText(plan.pcs?.method) + "; batch: " + wbText(plan.batch?.method) + "; resolution: " + wbText(plan.clustering?.resolution) + "." : "No saved analysis plan is supplied.";
+  const referenceMode = source?.reference_prompt?.mode || source?.reference_dependency;
+  const reactCurrent = source?.react?.matches_current;
+  const qcFacts = [origin, qc?.rationale ? "QC rationale: " + qc.rationale : "No saved QC rationale.", mad ? "A grouped MAD candidate panel is saved; exact candidate conditions remain inspectable." : "No saved MAD panel is supplied; no thresholds are invented."];
+  if (details?.source?.previous_suggestion) qcFacts.push("An earlier suggestion is recorded; it does not establish the origin of this edited draft.");
+  return [
+    {id:"input",phase:0,title:"Input & study facts",kind:"local",status:"Declared input",section:"overview",intro:"Start with counts and the facts of the study.",formation:["Import an RDS, Seurat object, 10x MEX or sample table; validate literal cell / feature IDs and counts.","Declare species, tissue and known sample, capture, donor and condition roles. Unknown facts remain unspecified."],evidence:["Species: "+wbText(run.context?.species)+"; tissue: "+wbText(run.context?.tissue)+".","Entry: "+(reused?"explicit processed reuse":child?"independent raw-count child":"raw-count analysis")+"."],decision:"The researcher confirms study facts. Input validity does not establish biological quality."},
+    {id:"qc",phase:0,title:"QC & analysis plan",kind:"local",status:reused?"Reused · no new QC":qc?"Draft recorded":"No saved draft",section:"qc",intro:"Where do the QC rules come from?",formation:reused?["This entry reuses supplied processing; it does not run or approve new QC thresholds."]:["Measure counts, detected features and mitochondrial fractions in the declared groups; compare local diagnostic candidates.","Grouped MAD candidates use saved medians and 1.4826-scaled MAD: log10(x+1) for counts / features, original percentages for mitochondrial values.","Form an editable QC / analysis draft. An authorized model can propose a candidate; adoption is not approval."],evidence:reused?[value.source.processed_reason||"Processed reuse reason not supplied."]:[...qcFacts,...(rules.length?rules.map(rule=>"Saved rule: "+wbRuleText(rule)):[qc?"No additional filtering rules; prior exclusions remain excluded.":"Rules are unavailable."]),...(impact?["Projected cells: "+wbCount(impact.before)+" → "+wbCount(impact.retained)+"; "+wbCount(impact.removed)+" unique removals. Preview, not an execution receipt."]:[]),planText],decision:"Review exact retention impacts and study suitability at the plan gate. The map never chooses or changes a threshold."},
+    {id:"plan-review",phase:0,title:"1 · Review the plan",kind:"human",status:gate(false),section:"strategy",intro:"Approve the complete plan before local execution.",formation:["Inspect QC retention, PC policy, batch handling, doublet / cycle choices and the requested scan.","Save edits, inspect rebuilt evidence, then approve the exact proposal and its evidence."],evidence:[origin,planText],decision:reused?"This processed entry does not invent an initial raw-analysis approval.":"Revise, reject, or approve and continue locally. Model transfer consent is separate."},
+    {id:"analysis",phase:1,title:"Local analysis & scan",kind:"local",status:reused?"Foundation reused":scan?"Measured scan saved":wbStageDone(["strategy_basis","analysis"])?"Saved computation":"No saved scan yet",section:"analysis",intro:"Compute the evidence for a clustering choice.",formation:["Apply approved cell selection, normalization, variable-feature selection, scaling and PCA.","Use reviewed batch handling when applicable; compare requested resolutions on the saved analysis basis."],evidence:[planText,scan?"A measured cluster comparison is recorded.":"No measured scan is supplied in this snapshot.",reused?value.source.processed_reason||"Supplied processing is reused.":"Previews and actual execution records are separate."],decision:"Local work stops at the next review. A completed task is not an automatic scientific decision."},
+    {id:"cluster-review",phase:1,title:"2 · Review clustering",kind:"human",status:gate(true),section:"strategy",intro:"Choose using actual measured clustering evidence.",formation:["Compare PC evidence, the cluster tree, marker contrasts and sample composition.","For a scan-based entry, choose an actually scanned resolution and inspect any saved revision."],evidence:[scan?"Measured clustering evidence is saved.":"No saved scan is available; the map cannot claim this review occurred.",child?"Child strategies may omit a separate scan; inspect the saved child plan.":reused?"Processed input does not acquire a new clustering approval.":"The normal raw-count route separates the initial plan and measured choice."],decision:"The researcher approves the measured choice. Tree edges represent shared cells, not lineage or an optimal resolution."},
+    {id:"markers",phase:2,title:"Markers & expression",kind:"local",status:value.evidence?"Evidence saved":"Not supplied yet",section:"analysis",intro:"Build evidence for each cluster's annotation.",formation:["Compute cluster markers and retain their statistics and expression views.","Compare any saved reference within its declared species and tissue scope."],evidence:[value.evidence?wbCount(wbArray(value.evidence.clusters).length)+" cluster evidence records are supplied.":"No cluster evidence records are supplied.","Missing measurements differ from zero; absent top markers do not establish non-expression."],decision:"Interpret the evidence. Reference coverage and marker presence are not identity probabilities."},
+    {id:"annotation-draft",phase:2,title:"Annotation draft",kind:"model",status:annotation?annotationOrigin:"Manual or optional model",section:"annotation",intro:"Prepare one complete, editable annotation proposal.",formation:["Fill labels, qualitative confidence, reasons and supplied marker citations; retain Unknown when unresolved.","An optional model can propose a draft within authorized transfer scope. An adopted candidate still needs scientific review."],evidence:[annotationOrigin,referenceMode?"Recorded reference prompt mode: "+referenceMode+". Guided mode depends on supplied reference candidates.":"Reference prompt dependency is not recorded.","A configured provider alone does not establish a model call or model-derived proposal."],decision:"Keep or revise the candidate. Only the complete saved proposal reaches annotation approval."},
+    {id:"react",phase:2,title:"ReAct · evidence checks",kind:"model",status:summary?reactCurrent===false?"Historical trace":"Saved trace":"No saved trace",section:"annotation",intro:"Optional read-only investigation during annotation assistance.",formation:["Model selects an allowed tool → tool returns an observation → model checks more evidence or stops → a draft is returned.","Tools inspect saved marker, expression, reference and cluster-comparison evidence. ReAct cannot alter counts, set QC thresholds or approve labels."],evidence:summary?["Recorded targets: "+wbCount(summary.target_clusters)+" clusters; "+wbCount(summary.tool_calls)+" tool calls.",tools.length?"Recorded tools: "+tools.join(", ")+".":"Tool names are not supplied.",...(Number.isFinite(summary.known_cost_usd)?["Known recorded cost: $"+summary.known_cost_usd.toFixed(4)+"; turns with unavailable cost: "+wbCount(summary.unknown_cost_turns)+"."]:[]),reactCurrent===false?"The trace does not match the current annotation proposal; it is historical evidence.":reactCurrent===true?"The saved ReAct source matches this proposal.":"Trace-to-proposal correspondence is not established in this projection.",...(source?.simulated===true||["mock","simulated_mock_suggestion"].includes(source?.kind)?["SIMULATED software-control source; not live-model inference."]:[])]:["No ReAct trace is saved in this snapshot. Other model requests may still have occurred.","This is an optional path, not a claim that it ran. Hovering never requests a model."],decision:"Inspect observations, citations and any baseline fallback. The researcher makes the annotation decision."},
+    {id:"annotation-review",phase:2,title:"3 · Review annotations",kind:"human",status:run.review_node?.kind==="annotation"&&run.review_node.can_decide===true?"Review needed":annotation?"See saved decisions":"No proposal yet",section:"annotation",intro:"Approve the whole annotation proposal, including uncertainty.",formation:["Inspect all populations, supporting evidence, confidence and retained Unknown labels.","Save corrections, inspect the fresh complete proposal and approve application of the exact labels."],evidence:[annotationOrigin,annotation?.lifecycle?.undone===true?"An annotation decision was undone; fresh review is required.":"The saved review retains the exact proposal, evidence and decision bindings."],decision:"Human approval is separate from model requests or adoption. There is no additional approval for each individual row."},
+    {id:"results",phase:3,title:"Results & records",kind:"local",status:run.status==="complete"&&run.output?"Output saved":"Not finalized",section:"outputs",intro:"Keep the usable object with its analysis record.",formation:["Apply approved labels and save the Seurat object, markers, metadata, parameters, figures and decision records.","Retrieve the final object with sc_result(project_dir) after completion."],evidence:[run.status==="complete"&&run.output?"The run has finalized output references.":"Provisional checkpoints are not finalized annotated results.","Keep the project, original inputs and matching software environment."],decision:"Assess biological conclusions and choose the study's downstream analyses."},
+    {id:"children",phase:3,title:"Optional subanalysis",kind:"local",status:wbState.scopes?.workspace_enabled===false?"Separate workspace required":"Independent project",section:"children",intro:"Investigate selected populations without overwriting the parent.",formation:["Select exact parent cells and create an independent raw-count child with its own plan and reviews.","Apply reviewed child labels explicitly into a new derived parent object."],evidence:["Parent embeddings and labels are provenance, not child ground truth.","Nested children are not supported by this workflow."],decision:"Select the scope and review integration. Completing a child alone does not write its labels back."}
+  ];
+}
+function wbRenderWorkflowMap() {
+  const target=wb$("wb-workflow-map"),stages=wb$("wb-workflow-stages"),detail=wb$("wb-workflow-detail");
+  target.hidden=false;stages.replaceChildren();
+  wb$("wb-workflow-entry").textContent=wbState.view.source?.start_stage==="processed"?"Processed entry · foundation reused":wbState.child?"Independent child · inspect its scan policy":"Raw counts · three review gates";
+  const steps=wbWorkflowSteps(),controls=[];
+  const select=step=>{
+    wbState.workflowStep=step.id;
+    for(const button of controls)button.setAttribute("aria-pressed",String(button.getAttribute("data-workflow-step")===step.id));
+    detail.replaceChildren(wbNode("p","STEP ORIGIN & EVIDENCE",{class:"wb-map-eyebrow"}),wbNode("h3",step.title),wbNode("span",step.status,{class:"wb-map-detail-status"}),wbNode("p",step.intro,{class:"wb-map-intro"}));
+    for(const [heading,lines] of [["How this step works",step.formation],["In this saved project",step.evidence],["Your decision",[step.decision]]]){
+      const block=wbNode("div",null,{class:"wb-map-explanation"}),list=wbNode("ul");block.append(wbNode("h4",heading));
+      for(const line of lines)list.append(wbNode("li",line));block.append(list);detail.append(block);
+    }
+    const link=wbNode("a","Inspect saved "+(step.section==="annotation"?"annotation evidence":step.section),{href:"#"+step.section,class:"wb-map-inspect"});
+    link.addEventListener("click",event=>{event.preventDefault();wbSelectSection(step.section,true);wb$("wb-section-"+step.section).scrollIntoView?.({block:"start",behavior:"smooth"});});detail.append(link);
+  };
+  for(const [phase,title] of ["Plan","Measure","Annotate","Deliver"].entries()){
+    const column=wbNode("section",null,{class:"wb-map-phase"});column.append(wbNode("h3",String(phase+1).padStart(2,"0")+" / "+title));
+    for(const step of steps.filter(step=>step.phase===phase)){
+      const button=wbNode("button",null,{type:"button",class:"wb-map-step "+step.kind,"data-workflow-step":step.id,"data-testid":"workflow-step-"+step.id,"aria-pressed":"false","aria-controls":"wb-workflow-detail"});
+      button.append(wbNode("span",step.kind==="human"?"HUMAN REVIEW":step.kind==="model"?"OPTIONAL ASSISTANCE":"LOCAL / SAVED RECORDS",{class:"wb-map-step-kind"}),wbNode("strong",step.title),wbNode("span",step.status,{class:"wb-map-step-status"}));
+      for(const event of ["mouseenter","focus","click"])button.addEventListener(event,()=>{
+        select(step);
+        if(event==="click" && window.matchMedia?.("(max-width: 950px)").matches)
+          detail.scrollIntoView?.({block:"nearest",behavior:"smooth"});
+      });
+      controls.push(button);column.append(button);
+    }
+    stages.append(column);
+  }
+  select(steps.find(step=>step.id===wbState.workflowStep)||steps[1]);
+}
+
 function wbNextStepText() {
   const run = wbState.view.run;
   if (run.status === "complete") {
@@ -512,7 +587,7 @@ function wbRender() {
   const childAction = wb$("wb-child-action"); childAction.hidden = wbState.scopes.workspace_enabled === false || !wbState.scopes.parent.ready;
   childAction.setAttribute("href", wbScopeURL("/subclusters", wbState.child ? selected.project_id : wbState.scopes.parent.project_id, wbState.child)); childAction.textContent = wbState.child && run.status === "complete" ? "Review writeback" : wbState.child ? "Child scope" : "Select cells";
   const clusters = wbArray(value.evidence?.clusters); if (!clusters.some(cluster => cluster.id === wbState.clusterId)) wbState.clusterId = clusters[0]?.id || null;
-  wbRenderOverview(); wbRenderQC(); wbRenderStrategy(); wbRenderAnalysis(); wbRenderResultSummary(); wbRenderAnnotation(); wbRenderChildren(); wbRenderOutputs(); wbRenderHistory(); wbSelectSection(wbState.section);
+  wbRenderOverview(); wbRenderQC(); wbRenderStrategy(); wbRenderAnalysis(); wbRenderResultSummary(); wbRenderAnnotation(); wbRenderChildren(); wbRenderOutputs(); wbRenderHistory(); wbRenderWorkflowMap(); wbSelectSection(wbState.section);
 }
 async function wbGET(path, headers = {}) {const response = await fetch(path, {method: "GET", cache: "no-store", headers}); const answer = await response.json(); if (!response.ok) throw new Error(answer?.error || "The saved evidence could not be inspected."); return answer;}
 async function wbLoad() {
@@ -528,6 +603,7 @@ async function wbLoad() {
     wb$("wb-status").textContent = "Saved evidence unavailable"; wb$("wb-next").textContent = "Refresh this exact registered scope after resolving the saved-state error.";
     wb$("wb-notice").textContent = error.message; wb$("wb-notice").hidden = false; wb$("wb-notice").className = "banner error";
     for (const id of ["wb-metrics", "wb-flow", "wb-flow-details", "wb-risk-details", "wb-background", "wb-diagnostics", "wb-stages", "wb-binding", "wb-qc-content", "wb-strategy-content", "wb-analysis-content", "wb-composition", "wb-questions", "wb-umap", "wb-umap-legend", "wb-clusters", "wb-markers", "wb-selection", "wb-marker-preview", "wb-risk", "wb-parameter-summary", "wb-annotation-content", "wb-children-content", "wb-outputs-content", "wb-history-content"]) wb$(id).replaceChildren();
+    wb$("wb-workflow-map").hidden = true;
     wb$("wb-risk-panel").hidden = true; wb$("wb-risk-summary").textContent = "Full saved cautions"; wb$("wb-status").setAttribute("data-run-status", "unverified");
     wb$("wb-current-title").textContent = "Saved evidence unavailable";
     wb$("wb-dataset-title").textContent = "Saved evidence unavailable";

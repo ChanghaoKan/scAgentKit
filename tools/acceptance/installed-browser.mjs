@@ -71,7 +71,7 @@ async function untilBoundary(startRevision,jobId) {
   await page.waitForFunction(({startRevision,jobId})=>{
     const section=document.getElementById('run-continuation');
     const id=document.getElementById('run-job-id')?.textContent.trim();
-    const status=document.getElementById('run-status')?.textContent.trim()||'';
+    const status=document.getElementById('run-status')?.getAttribute("data-engine-status").trim()||'';
     const revision=Number((document.getElementById('run-project')?.textContent||'').match(/revision (\d+)/)?.[1]);
     return id===jobId && ['succeeded','failed','interrupted','timed_out'].includes(section?.dataset.jobStatus) &&
       !document.getElementById('run-refresh').disabled && revision>startRevision &&
@@ -122,19 +122,19 @@ async function adoptAndSave(stepId,candidate) {
     old_review_hash:run.strategy_review.hash,new_review_hash:view.run.strategy_review.hash,
     old_proposal_hash:run.review_node.proposal_hash,new_proposal_hash:view.run.review_node.proposal_hash});
 }
-async function declarePartialBatchFacts() {
+async function declarePartialStudyFacts() {
   const old=structuredClone(view.run),beforeApproved=(await approvals()).length;
   assert.equal(beforeApproved,0);
-  const bool=ui('recommendation-fact-batch-technical_batch'),unknown=ui('recommendation-fact-doublet-empty_droplets_removed');
+  const bool=ui('recommendation-fact-doublet-empty_droplets_removed'),unknown=bool;
   assert.deepEqual(await bool.locator('option').evaluateAll(nodes=>nodes.map(node=>node.value)),['','true','false']);
   assert.equal(await bool.inputValue(),'');assert.equal(await unknown.inputValue(),'');
   assert.equal(await unknown.getAttribute('required'),null,'Optional incomplete paths must not prevent partial fact saving');
   const beforePosts=requests.length;
-  await bool.selectOption('false');await ui('recommendation-fact-batch-source').fill('Synthetic software fixture: the alternating sample labels are not declared technical batch units.');
+  await ui('recommendation-fact-doublet-input_source').fill('Bundled pbmc_small software control; original called-cell provenance is unavailable.');
   assert.equal(requests.length,beforePosts,'Fact editing itself must remain local');
   assert.equal(await ui('strategy-approve').isDisabled(),true);
   await ui('recommendation-facts-reviewer').fill('Offline real-browser acceptance author');
-  await ui('recommendation-facts-reason').fill('Declare only known synthetic batch provenance. Keep all assay/capture/doublet facts Unknown; no model or diagnostic deletion requested.');
+  await ui('recommendation-facts-reason').fill('Declare the actual bundled input source. Keep unknown cell-calling and capture facts Unknown; no model or diagnostic deletion requested.');
   await screenshot('01-partial-batch-facts');
   const prepared=page.waitForResponse(res=>new URL(res.url()).pathname==='/api/run-review/continue'&&res.request().method()==='POST');
   const answer=await clickResponse('recommendation-facts-save','/api/run-review/decision');
@@ -146,11 +146,10 @@ async function declarePartialBatchFacts() {
   assert.equal(current.input_hash,old.input_hash);assert.notEqual(current.config_hash,old.config_hash);
   assert.notEqual(current.strategy_review.hash,old.strategy_review.hash);
   const rec=current.strategy_review.details.recommendations;
-  assert.equal(rec.fact_values.batch.technical_batch,false);assert.equal(rec.fact_values.doublet?.empty_droplets_removed??null,null);
+  assert.match(rec.fact_values.doublet.input_source,/Bundled pbmc_small/);assert.equal(rec.fact_values.doublet?.empty_droplets_removed??null,null);
   assert.equal(await ui('recommendation-fact-doublet-empty_droplets_removed').inputValue(),'');
   const doublet=recommendationStep('doublet');assert.equal(doublet.assessment,'unavailable');assert(doublet.missing.length>0);
-  assert.equal(recommendationStep('batch').status,'recommend_skip');
-  report.partial_facts={no_approval:true,retained_unknown_doublet:true,batch_technical:false,
+  report.partial_facts={no_approval:true,retained_unknown_doublet:true,input_source_declared:true,
     old_config_hash:old.config_hash,new_config_hash:current.config_hash};
   await screenshot('01-facts-regenerated-unassessed-doublet');
 }
@@ -188,26 +187,28 @@ try {
   page.on('request',req=>{if(req.method()==='POST')requests.push({path:new URL(req.url()).pathname,body:req.postDataJSON()});});
   page.on('response',res=>{if(res.url().includes('/api/run-review/')) responses.push({path:new URL(res.url()).pathname,status:res.status()});});
   page.on('dialog',dialog=>dialog.accept());
-  await test('eligible QC comparison is preselected locally without save, approval or cell mutation',async()=>{
+  await test('QC keeps the saved conservative policy until an explicit candidate choice',async()=>{
     const statePath=path.join(output,'preselection-project','state.rds');
     const before=await fs.readFile(statePath),posts=requests.length;
     await page.goto(launch.preselection_launch.url);await ui('run-refresh').waitFor();
-    assert.equal(await ui('qc-draft-preselection-opt-in').isChecked(),false);
-    await ui('qc-draft-preselection-opt-in').check();
-    await page.waitForFunction(()=>document.getElementById('strategy-json').value.includes('any_quality3'));
+    await page.waitForFunction(()=>!document.getElementById('run-refresh').disabled);
+    assert.equal(await ui('qc-draft-preselection-opt-in').count(),0);
     const draft=JSON.parse(await ui('strategy-json').inputValue());
-    assert.equal(draft.qc.rules.find(rule=>rule.op==='mad_preset').preset_id,'any_quality3');
-    assert.equal(await ui('strategy-approve').isDisabled(),true);
-    assert.match(await ui('strategy-recommendations').innerText(),/unsaved and unapproved/i);
-    assert.equal(requests.length,posts,'Preselection cannot POST');
-    assert.deepEqual(await fs.readFile(statePath),before,'Preselection cannot mutate authority');
-    report.qc_preselection={actual_browser:true,local_draft_only:true,no_post:true,authority_unchanged:true};
-    await screenshot('00-unapproved-QC-preselection');
+    assert.equal(draft.qc.rules.find(rule=>rule.op==='mad_preset').preset_id,'conservative_and3');
+    assert.equal(requests.length,posts,'Inspection cannot POST');
+    assert.deepEqual(await fs.readFile(statePath),before,'Inspection cannot mutate authority');
+    report.qc_policy={actual_browser:true,no_automatic_preselection:true,no_post:true,authority_unchanged:true};
+    await screenshot('00-conservative-QC-policy');
   });
   await page.goto(launch.launch.url);await ui('run-refresh').waitFor();await fresh();
   await test('main entry exposes sample-aware QC, top-50 empirical PC policy and editable strategy',async()=>{
     const d=view.run.strategy_review?.details,p=d?.canonical_proposal;assert(d&&p);
     assert.equal(d.recommendations?.schema,'scagentkit.recommendations.v1','Main entry must expose the saved deterministic recommendation layer');
+    assert.equal(await ui('strategy-recommendations').isVisible(),false);
+    report.initial_layout=await page.evaluate(()=>({height:document.documentElement.scrollHeight,decision_top:document.getElementById('strategy-decision-form').getBoundingClientRect().top,storage_inside_model:document.getElementById('suggestion-disclosure').contains(document.getElementById('storage-refresh'))}));
+    assert.equal(report.initial_layout.storage_inside_model,false);
+    assert.equal(await ui('run-status').innerText(),'Review analysis plan and QC');
+    await reveal(ui('strategy-recommendations'));
     assert.equal(await ui('strategy-recommendations').isVisible(),true);
     assert(d.mad_panel,'Main entry must attach the saved sample-aware MAD/QC panel');
     assert.equal(p.pcs.method,'computed_top50');assert.equal(p.pcs.threshold,.8);assert(p.analysis.npcs<=50);
@@ -225,7 +226,7 @@ try {
     assert.equal(recommendationStep('doublet').assessment,'unavailable');
     assert.equal(await ui('recommendation-assessment-doublet').isVisible(),true);
     assert.equal(await ui('recommendation-step-qc').isVisible(),true);
-    await declarePartialBatchFacts();
+    await declarePartialStudyFacts();
     await adoptAndSave('batch',recommendationStep('batch').candidates.find(candidate=>candidate.id==='none'&&candidate.available));
   });
   if(args['sample-hvg']==='true')await test('sample-consensus HVGs are edited and saved through the actual main strategy UI before approval',async()=>{
@@ -283,14 +284,30 @@ try {
     const next=await continueOnce();assert.equal(next.stage,'annotation_propose');assert.equal(next.status,'awaiting_configuration');
   });
   await test('incomplete annotation draft survives refresh and cannot create a proposal or approval',async()=>{
-    await ui('annotation-prepare-start').click();
+    assert.equal(await ui('annotation-prepare-start').count(),0);
+    await ui('annotation-prepare-form').waitFor();
     const label=page.locator('[data-testid^="prepare-label-"]').first();await label.fill('Unknown');
     const before=requests.length, revision=view.run.revision;
     await ui('prepare-submit').click();await wait(200);assert.equal(requests.length,before,'Native/UI validation prevents incomplete submission');
+    const downloaded=page.waitForEvent('download');await ui('prepare-download').click();
+    const download=await downloaded, worksheet=path.join(output,'unfinished-worksheet.json');await download.saveAs(worksheet);
     await page.reload();await ui('prepare-recovery').waitFor();
     assert(/restored/i.test(await ui('prepare-recovery').textContent()));
     assert.equal(await page.locator('[data-testid^="prepare-label-"]').first().inputValue(),'Unknown');
     await fresh();assert.equal(view.run.revision,revision);assert.equal(view.run.annotation_review??null,null);
+    await page.evaluate(()=>sessionStorage.clear());await page.reload();await ui('annotation-prepare-form').waitFor();
+    await page.waitForFunction(()=>!document.getElementById('run-refresh').disabled);
+    assert.equal(await page.locator('[data-testid^="prepare-label-"]').first().inputValue(),'');
+    await ui('prepare-import').setInputFiles(worksheet);
+    await page.waitForFunction(()=>document.getElementById('run-message').textContent.includes('Unfinished worksheet imported'));
+    assert.equal(await page.locator('[data-testid^="prepare-label-"]').first().inputValue(),'Unknown');
+    const foreign=JSON.parse(await fs.readFile(worksheet,'utf8'));foreign.worksheet.binding[0]='another-project';
+    const foreignPath=path.join(output,'foreign-worksheet.json');await fs.writeFile(foreignPath,JSON.stringify(foreign));
+    await ui('prepare-import').setInputFiles(foreignPath);
+    await page.waitForFunction(()=>document.getElementById('run-message').textContent.includes('Current rows were retained'));
+    assert.equal(await page.locator('[data-testid^="prepare-label-"]').first().inputValue(),'Unknown');
+    assert.equal(requests.length,before,'Worksheet download and import are local and non-authoritative');
+    report.worksheet_portability={downloaded:true,imported_after_tab_storage_cleared:true,foreign_project_rejected:true,no_post:true};
     await screenshot('03-restored-incomplete-worksheet');
   });
   await test('complete manual Unknown proposal saves separately from approval and finishes once',async()=>{
@@ -305,8 +322,11 @@ try {
     assert.equal(view.run.status,'awaiting_review');assert.equal(view.run.review_node.kind,'annotation');assert.equal(view.run.output,null);
     await screenshot('04-saved-unapproved-annotation');
     await ui('annotation-reviewer').fill('Offline real-browser acceptance author');await ui('annotation-reason').fill('Approve the exact saved Unknown labels and cluster membership for software acceptance.');
-    await clickResponse('annotation-approve','/api/run-review/decision');await fresh();
-    const completed=await continueOnce();assert.equal(completed.status,'complete');await r('verify');
+    const submitted=page.waitForResponse(res=>new URL(res.url()).pathname==='/api/run-review/continue'&&res.request().method()==='POST');
+    const approved=await clickResponse('annotation-approve-continue','/api/run-review/decision');
+    const response=await submitted;assert.equal(response.status(),202);const started=await response.json();
+    report.jobs.push({job_id:started.job.job_id,purpose:'annotation-approve-and-continue'});
+    const completed=await untilBoundary(approved.run.revision,started.job.job_id);assert.equal(completed.status,'complete');await r('verify');
     report.verification=JSON.parse(await fs.readFile(path.join(output,'r-output-verification.json'),'utf8'));
     assert.equal(report.verification.provider_calls,0);report.provider_calls=report.verification.provider_calls;
     for(const job of report.jobs){

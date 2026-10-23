@@ -171,6 +171,7 @@ class DirectedRuntime:
                     "--output-dir", str(temporary), "--input-evidence-revision", evidence["revision"], "--cluster", "6"]
             env = scrub_secrets(dict(os.environ))
             if self.library:
+                env["R_LIBS"] = self.library
                 env["R_LIBS_USER"] = self.library
             try:
                 result = subprocess.run(args, env=env, capture_output=True, text=True, timeout=120, shell=False)

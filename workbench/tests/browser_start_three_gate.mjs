@@ -42,7 +42,7 @@ try{
   report.gates.push({gate,kind,beforeRevision:before.revision,adoptedRevision:adopted.revision,afterRevision:after.revision,status:after.status});
  }
  assert.equal((await inspect()).status,'complete');assert.equal(report.externalRequests.length,0);assert.equal(report.pageErrors.length,0);
- await page.waitForFunction(()=>document.querySelector('#run-status')?.textContent.startsWith('complete /'),null,{timeout:60000});
+ await page.waitForFunction(()=>document.querySelector('#run-status')?.getAttribute("data-engine-status").startsWith('complete /'),null,{timeout:60000});
  await page.screenshot({path:path.join(output,'complete.png'),fullPage:true});report.passed=true;
 }catch(e){report.passed=false;report.error=e.stack;process.exitCode=1;}
 finally{if(browser)await browser.close();server.kill('SIGTERM');await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));await fs.writeFile(path.join(output,'server.log'),log);console.log(JSON.stringify(report));}

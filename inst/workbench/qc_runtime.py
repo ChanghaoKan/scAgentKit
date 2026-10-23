@@ -39,6 +39,7 @@ def _check_project_state(project, library, rscript, timeout):
     env.update({name: os.devnull for name in
                 ("R_PROFILE", "R_PROFILE_USER", "R_ENVIRON", "R_ENVIRON_USER")})
     if library:
+        env["R_LIBS"] = library
         env["R_LIBS_USER"] = library
     try:
         result = subprocess.run([str(rscript), "--vanilla", str(FORMAT_BRIDGE), str(project)],
@@ -138,6 +139,7 @@ class QCRuntime:
             argv = [self.rscript, "--vanilla", str(self.bridge), operation, str(self.project), str(request), str(output)]
             env = scrub_secrets(dict(os.environ))
             if self.library:
+                env["R_LIBS"] = self.library
                 env["R_LIBS_USER"] = self.library
             try:
                 result = subprocess.run(argv, env=env, capture_output=True, timeout=self.timeout, shell=False)
