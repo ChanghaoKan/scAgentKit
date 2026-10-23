@@ -76,7 +76,7 @@
     paste("Study species:", plain(audit$context$species)),
     paste("Study tissue:", plain(audit$context$tissue)),
     paste("Research goal:", plain(audit$context$research_goal)), "",
-    paste("Entry:", audit$start_stage, if (audit$start_stage == "processed") paste("— supplied foundation reused:", plain(audit$processed_reason)) else "— locally computed raw-count analysis"),
+    paste("Entry:", audit$start_stage, if (audit$start_stage == "processed") paste("\u2014 supplied foundation reused:", plain(audit$processed_reason)) else "\u2014 locally computed raw-count analysis"),
     paste("Cells supplied:", audit$cell_counts$supplied, "; saved result:", audit$cell_counts$final, "; excluded:", audit$cell_counts$excluded, "; final features:", audit$final_features),
     paste("Unknown/unannotated cells retained:", unknown, ". These are unresolved populations, not proven negative identities."), "",
     "## Reviewed methods and observed execution", "",
