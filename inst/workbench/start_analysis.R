@@ -10,6 +10,16 @@ provider_metadata <- function(root) {
   state <- get(".sc_run_load",ns)(get(".sc_run_root",ns)(root))
   list(name=state$config$provider$name,api_key_env=state$config$provider$api_key_env)
 }
+if (isTRUE(request$project_only)) {
+  root <- get(".sc_run_root", ns)(request$project)
+  state <- get(".sc_run_load", ns)(root)
+  if (!identical(state$implementation_hash, get(".sc_run_implementation", ns)()))
+    stop("Reopen with the original matching software environment; project checkpoints were not upgraded.")
+  # Inspect verifies saved artifacts. No original source is loaded or rebound.
+  view <- scAgentKit::sc_run_inspect(root)
+  jsonlite::write_json(list(project_id=view$project_id,status=view$status,stage=view$stage,provider=provider_metadata(root)),args[2],auto_unbox=TRUE)
+  quit(status=0L)
+}
 input <- readRDS(request$input)
 if (isTRUE(request$tenx_import) && (!inherits(input,"Seurat") ||
     !identical(input@misc$scagentkit_tenx_import$schema,"scagentkit.tenx-import.v1")))
@@ -63,10 +73,10 @@ setup$provider <- get(".sc_run_provider_spec", ns)(setup$provider)$metadata
 if (identical(request$entry, "processed")) {
   scAgentKit::sc_run(request$input, request$project, context = request$context,
     start_stage = "processed", processed_reason = request$processed_reason,
-    cluster_column = request$cluster_column, reference = get(".sc_ui_act_default", ns)(request$context), provider = setup$provider, review = setup$review, react = setup$react, input_policy = list(preserve_metadata = TRUE, doublet_mode = "off"))
+    cluster_column = request$cluster_column, reference = get(".sc_ui_act_default", ns)(request$context, if (is.null(request$reference_tissue)) request$context$tissue else request$reference_tissue), reference_review = list(tissue=request$reference_tissue, strict_scope=TRUE), provider = setup$provider, review = setup$review, react = setup$react, input_policy = list(preserve_metadata = TRUE, doublet_mode = "off"))
 } else scAgentKit::sc_analyze(request$input, request$project, context = request$context,
   plan = list(), provider = setup$provider, review = setup$review,
-  scientific_review=request$scientific_review, react = setup$react,
+  scientific_review=request$scientific_review, reference_review=list(tissue=request$reference_tissue), react = setup$react,
   biological_diagnostics = setup$biological_diagnostics,
   doublet=if (is.null(request$doublet_mode)) "auto" else request$doublet_mode)
 view <- scAgentKit::sc_run_inspect(request$project)

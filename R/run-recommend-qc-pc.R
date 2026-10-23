@@ -152,10 +152,6 @@
     which(vapply(seq_along(candidates), function(j) j != i && !is.null(selections[[i]]) && identical(selections[[i]], selections[[j]]), logical(1))),
     function(j) candidates[[j]]$id, character(1)))
   step$candidates <- candidates
-  # The saved starting draft already used the shared policy. Comparisons never
-  # overwrite a later explicit choice or independently auto-prefill an OR rule.
-  step$draft_preselection <- list(candidate_id = NULL, automatic = FALSE, draft_only = TRUE,
-    reason = paste(fallback$reason, "Load any comparison explicitly; the saved and edited QC choices are preserved."))
   step$completed <- c(step$completed, list("Computed exact candidate impacts under the unchanged range and outer-combination policy."))
   executable <- any(vapply(candidates, function(item) item$id != "keep_all" && item$available, logical(1)))
   if (!length(step$missing) && !length(step$conflicts) && executable) step$status <- "recommend_execute"

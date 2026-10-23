@@ -103,9 +103,9 @@ try {
   page = await context.newPage(); page.setDefaultTimeout(30000); page.on("pageerror", error => report.pageErrors.push(error.message));
   page.on("dialog", async dialog => {report.unexpectedDialogs.push({type: dialog.type()}); await dialog.dismiss();});
   await page.goto(origin + "/");
-  await page.waitForFunction(() => document.getElementById("run-status").textContent.trim() === "complete / complete" && !document.getElementById("run-refresh").disabled);
+  await page.waitForFunction(() => document.getElementById("run-status").getAttribute("data-engine-status").trim() === "complete / complete" && !document.getElementById("run-refresh").disabled);
   await test("actual readonly Chrome displays the fresh completed status/stage, saved output paths and central strategy", async () => {
-    assert.equal((await ui("run-status").textContent()).trim(), "complete / complete"); assert.equal(await ui("run-complete").isVisible(), true);
+    assert.equal((await ui("run-status").getAttribute("data-engine-status")).trim(), "complete / complete"); assert.equal(await ui("run-complete").isVisible(), true);
     assert.equal(await ui("run-continue").isDisabled(), true); assert.equal(await ui("run-qc").isVisible(), false); assert.equal(await ui("run-strategy").isVisible(), true);
     assert.equal(await ui("strategy-json").isDisabled(), true); assert.equal(await ui("strategy-approve").isDisabled(), true); assert.equal(await ui("strategy-save").isDisabled(), true);
     assert.equal(JSON.parse(await ui("strategy-json").inputValue()).clustering.resolution, 0.5);
@@ -135,7 +135,7 @@ try {
   });
   await test("readonly refresh preserves completed project bytes, original input checkpoint, ledger and failed first receipt", async () => {
     await ui("run-refresh").click();
-    await page.waitForFunction(() => document.getElementById("run-status").textContent.trim() === "complete / complete" && !document.getElementById("run-refresh").disabled);
+    await page.waitForFunction(() => document.getElementById("run-status").getAttribute("data-engine-status").trim() === "complete / complete" && !document.getElementById("run-refresh").disabled);
     const latest = (await inspect()).run; assert.equal(latest.revision, current.revision); assert.equal(latest.history_head, current.history_head); assert.deepEqual(latest.output, current.output);
     report.finalOutputs = {};
     for (const [name, value] of Object.entries(current.output)) {

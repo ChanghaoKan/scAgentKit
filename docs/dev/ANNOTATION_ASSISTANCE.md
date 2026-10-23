@@ -28,7 +28,7 @@ genes and genes absent from a top-marker list are not evidence of non-expression
 A coarse interpretation or unresolved identity can be more appropriate than the
 reference's most specific name. The page does not invent a human rationale.
 
-No reference is downloaded or attached automatically. The table uses reference
+No reference is downloaded by the worksheet. New modern projects snapshot the pinned offline ACT reference at creation; existing projects retain their saved reference. The table uses reference
 facts already saved through the existing R configuration/update interfaces.
 `sc_run_set_reference()` remains the explicit evidence-refresh API before
 annotation application and rebuilds bindings/invalidates earlier acceptance.
@@ -53,8 +53,7 @@ Local drafts are stored in this browser tab under the exact project, original
 input, evidence hash and revision. Reloading the same binding restores the draft;
 a different revision/input/evidence never receives the old rows automatically.
 An older draft is retained in tab storage and is identified as stale. This is
-not durable server-side proposal storage and cannot replace Save. If tab storage
-is unavailable, keep the page open or save the complete proposal before leaving.
+not durable server-side proposal storage and cannot replace Save. Download an unfinished worksheet before closing the tab or handing work to another analyst. Import validates the exact binding, cluster IDs, citations and bounded fields; a foreign or stale file is rejected without replacing current rows. It grants no approval. If tab storage is unavailable, download before leaving.
 The explicit discard control affects only the current bound local worksheet.
 
 Unsaved worksheet edits now block model actions and accidental refresh changes.
@@ -66,17 +65,17 @@ rules. No automatic resend or new provider channel is introduced.
 
 ## Optional configured model
 
-The installed entry remains manual by default:
+Choose manual mode explicitly for a reproducible offline start:
 
 ```r
 library(scAgentKit)
 sc_start("a.rds", "analysis",
   context=list(species="human", tissue="Peripheral blood",
-    research_goal="Inspect the major immune populations."))
+    research_goal="Inspect the major immune populations."), provider="manual", reference_tissue="Blood")
 ```
 
 For a project already initialized with a supported immutable provider and the
-same RDS, `sc_start("a.rds", "analysis", model_suggestions="configured")` opens
+saved project, `sc_start(project_dir="analysis", model_suggestions="configured")` opens
 the existing preview/authorize/request/adopt component in that main workflow.
 The runtime passes only the saved provider's named credential to an explicitly
 enabled service/request worker. Credentials are never serialized into a launcher

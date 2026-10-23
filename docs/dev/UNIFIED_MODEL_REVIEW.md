@@ -42,7 +42,7 @@ or user secret mechanism, and a custom callback stays in R memory. See the
 The built-in factories read `DEEPSEEK_API_KEY` or `XAI_API_KEY` at dispatch; no key
 belongs in context, RDS, logs, browser fields or URLs.
 
-`provider=NULL` is a supported manual project with zero model calls. A missing
+For the low-level `sc_run()`/`sc_analyze()` entries, `provider=NULL` is a manual project. The convenience `sc_start()` entry detects exactly one available DeepSeek/Grok key; use `provider="manual"` to select manual mode explicitly. Startup alone sends zero model calls. A missing
 provider or runtime callback/credential is a configuration boundary, not a model
 decision. Supply a manual typed proposal or restore the runtime environment for
 the exact initialized configuration. There is no late browser provider, model,
@@ -51,12 +51,11 @@ a new project.
 
 ## Reach the existing component from the installed entry
 
-For a saved project already initialized from the same local RDS and immutable
-supported provider, use `sc_start("a.rds", "analysis", model_suggestions="configured")`.
+For a saved project already initialized with an immutable supported provider, use
+`sc_start(project_dir="analysis", model_suggestions="configured")`.
 This enables the existing component; it does not request a model or approve a
 transfer. The annotation worksheet has an explicit route to that same preview.
-Default `"off"` and missing provider configuration leave the local manual path
-available. Explicit `"simulate"` requires an immutable mock project and makes
+Default `"auto"` follows the saved provider (manual/off, mock/simulate or configured). Explicit `"off"` disables browser model actions; a missing credential leaves manual drafting available. Explicit `"simulate"` requires an immutable mock project and makes
 only marked software-control responses, never biological inference.
 
 The browser cannot add a provider to a manual project. Initialization still uses

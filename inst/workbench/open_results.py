@@ -18,6 +18,7 @@ from urllib.parse import urlencode, urlsplit
 from run_workbench_runtime import RunWorkbenchRuntime
 from run_review_runtime import RunReviewRuntime
 from run_continue_runtime import RunContinueRuntime
+from run_subcluster_runtime import RunSubclusterRuntime
 from run_suggestion_runtime import RunSuggestionRuntime, _environment
 from server import WorkbenchServer, Handler
 from store import scrub_secrets
@@ -132,7 +133,11 @@ def serve(config_path):
     mode = config.get("model_mode", "off")
     model_options = {"simulate": mode == "simulate", "worker_timeout": config.get("model_timeout", 300)} if editable and mode != "off" else None
     suggestion = RunSuggestionRuntime(config["project"], config.get("library"), config["rscript"], **model_options) if model_options else None
-    server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=review, run_workbench=runtime, run_continue=continuation, run_suggestion=suggestion, model_suggestion_options=model_options)
+    workspace = config.get("subcluster_workspace")
+    subcluster = RunSubclusterRuntime(config["project"], workspace, config.get("library"), config["rscript"], local_continue=True) if editable and workspace else None
+    if subcluster and subcluster.readiness()["frozen"]:
+        continuation = suggestion = None
+    server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=review, run_workbench=runtime, run_continue=continuation, run_subcluster=subcluster, run_suggestion=suggestion, model_suggestion_options=model_options)
     server.RequestHandlerClass = ReviewHandler if editable else ResultsHandler
     server.launch_identity = config["identity"]
     server.results_url = "/workbench?" + urlencode({"project_id": review.project_id})
@@ -144,7 +149,7 @@ def serve(config_path):
         server.server_close()
 
 
-def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90, review_mode=False, model_mode="off", key_env=None, model_timeout=300):
+def open_results(project, rscript="Rscript", library=None, browse=True, timeout=90, review_mode=False, model_mode="off", key_env=None, model_timeout=300, subcluster_workspace=None):
     if isinstance(model_timeout, bool) or not isinstance(model_timeout, int) or not 1 <= model_timeout <= 86400:
         raise ValueError("model_timeout must be whole seconds from 1 to 86400")
     if model_mode not in {"off", "configured", "simulate"} or not review_mode and model_mode != "off":
@@ -164,6 +169,13 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
         identity["review_mode"] = True
         identity["model_mode"] = model_mode
         identity["model_timeout"] = model_timeout
+    if subcluster_workspace:
+        if not review_mode:
+            raise ValueError("Child workspace requires explicit review mode")
+        subcluster = RunSubclusterRuntime(project, subcluster_workspace, library, rscript, local_continue=True)
+        subcluster_workspace = str(subcluster.workspace)
+        identity["subcluster_workspace"] = subcluster_workspace
+        identity["workspace_identity"] = list(subcluster.workspace_identity)
     base = project / (".workbench-review-launcher" if review_mode else ".workbench-launcher")
     base.mkdir(mode=0o700, exist_ok=True)
     if base.is_symlink():
@@ -177,7 +189,7 @@ def open_results(project, rscript="Rscript", library=None, browse=True, timeout=
             pass
         reused = record is not None and probe(record, identity)
         if not reused:
-            config = {"project": str(project), "rscript": str(rscript), "library": library, "identity": identity, "review_mode": review_mode, "model_mode": model_mode, "model_timeout": model_timeout}
+            config = {"project": str(project), "rscript": str(rscript), "library": library, "identity": identity, "review_mode": review_mode, "model_mode": model_mode, "model_timeout": model_timeout, "subcluster_workspace": subcluster_workspace}
             atomic(base / "config.json", config)
             launch_env = _environment(library, key_name=key_env if model_mode == "configured" else None)
             if model_mode != "configured" and isinstance(key_env, str):

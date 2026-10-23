@@ -834,7 +834,6 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   seu <- .sc_run_get(root, state, "annotated"); markers <- .sc_run_get(root, state, "markers")
   evidence <- .sc_run_get(root, state, "annotation_evidence")
   dir.create(file.path(root, "output"), showWarnings = FALSE)
-  .sc_run_atomic(seu, file.path(root, "output", "seurat.rds"))
   utils::write.csv(markers$markers, file.path(root, "output", "markers.csv"), row.names = FALSE)
   utils::write.csv(seu[[]], file.path(root, "output", "metadata.csv"), row.names = TRUE)
   .sc_run_atomic(state$config, file.path(root, "output", "parameters.json"), json = TRUE)
@@ -955,6 +954,11 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   }
   bundle <- .sc_run_bundle(seu, markers, evidence$private$candidates, root, state$config, bundle_execution)
   review <- .sc_run_annotation_review_verify(root, state)
+  audit <- .sc_run_output_audit(root, state, seu, review,
+    strategy = if (isTRUE(state$config$strategy)) strategy_record else NULL)
+  seu@misc$scAgentKit <- audit
+  .sc_run_atomic(seu, file.path(root, "output", "seurat.rds"))
+  .sc_run_atomic(audit, file.path(root, "output", "audit.json"), json = TRUE)
   joint <- lapply(review$details$annotations, function(row) {
     out <- row$joint_evidence
     out$database$all_candidates <- NULL
@@ -993,14 +997,14 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
               "Local annotation evidence bundle is in bundle/. No manual archive transfer is required.",
               "Approved scoped database/AI/history comparison, source hashes and dependency declarations are in annotation_evidence_summary.json; coverage is not a probability and absent top markers are not negative evidence.",
               "External request and usage accounting is in provider/ when a provider was used.")
-  writeLines(report, file.path(root, "output", "report.md"))
+  writeLines(c(.sc_run_report_lines(audit), "## Technical execution notes", "", report), file.path(root, "output", "report.md"))
   paths <- list.files(file.path(root, "output"), full.names = TRUE)
   for (path in c(paths, file.path(root, "resume.R"), list.files(file.path(root, "bundle"), recursive = TRUE, full.names = TRUE))) {
     relative <- substring(path, nchar(root) + 2L)
     state$files[[paste0("output:", relative)]] <- list(path = relative, sha256 = .sc_project_sha_file(path))
   }
   state$output <- list(seurat = file.path(root, "output", "seurat.rds"), bundle = bundle$path,
-                       report = file.path(root, "output", "report.md"), scientific_result = "EXECUTED")
+                       report = file.path(root, "output", "report.md"), audit = file.path(root, "output", "audit.json"), scientific_result = "EXECUTED")
   state
 }
 

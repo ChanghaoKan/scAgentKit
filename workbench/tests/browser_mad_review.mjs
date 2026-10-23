@@ -131,7 +131,7 @@ const ui = id => page.locator('[data-testid="' + id + '"]');
 async function idle() {await ui("run-refresh").waitFor(); await page.waitForFunction(() => !document.getElementById("run-refresh").disabled);}
 async function refresh() {await idle(); await ui("run-refresh").click(); await idle();}
 async function rendered(status, stage) {
-  await page.waitForFunction(({status, stage}) => document.getElementById("run-status").textContent.trim() === status + " / " + stage && !document.getElementById("run-refresh").disabled, {status, stage});
+  await page.waitForFunction(({status, stage}) => document.getElementById("run-status").getAttribute("data-engine-status").trim() === status + " / " + stage && !document.getElementById("run-refresh").disabled, {status, stage});
 }
 async function screenshot(name) {const file = path.join(output, name + ".png"); assert.equal(await exists(file), false); await page.screenshot({path: file, fullPage: true}); report.screenshots.push(file);}
 async function responseFrom(button, route) {

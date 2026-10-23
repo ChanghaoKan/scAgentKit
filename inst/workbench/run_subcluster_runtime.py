@@ -203,7 +203,9 @@ class RunSubclusterRuntime(QCRuntime):
             if self.inherit_model:
                 argv.append("true")
             env = scrub_secrets(dict(os.environ))
-            if self.library: env["R_LIBS_USER"] = self.library
+            if self.library:
+                env["R_LIBS"] = self.library
+                env["R_LIBS_USER"] = self.library
             try:
                 result = subprocess.run(argv, env=env, capture_output=True, timeout=self.timeout, shell=False)
             except subprocess.TimeoutExpired as problem:

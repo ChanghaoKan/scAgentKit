@@ -15,3 +15,11 @@ Read [ReAct](REACT.md), [run controls](user/TRIAL_CONTROLS.md) and
 [the provider/usage contract](dev/PROVIDER_MODEL_AND_USAGE_CONTRACT.md).
 Compare methods using recorded usage and costs with the model and pricing version.
 Formal cost comparisons have not yet been completed.
+
+## Standalone provider utilities
+
+Generic chat factories and process-wide token utilities belong to agentomicsCore
+and are not exported by scAgentKit. For standalone use, call them explicitly,
+for example `agentomicsCore::make_chat_fn_openai_compatible()`. These utilities
+do not replace the saved project transfer policy or its usage ledger. Use the
+reviewed scAgentKit workflow for project model requests and their audit records.

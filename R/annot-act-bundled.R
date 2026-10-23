@@ -15,15 +15,7 @@
   manifest
 }
 
-#' Load the pinned ACT snapshot offline
-#' @param species Explicit human or mouse scope.
-#' @param tissue Actual tissue, matched exactly after trimming/case folding.
-#' @return Marker reference with original PMID/source fields and fixed provenance.
-#' @export
-annot_act_reference <- function(species,tissue) {
-  species<-.sc_run_species(species)
-  if(!is.character(tissue)||length(tissue)!=1L||is.na(tissue)||!nzchar(trimws(tissue))||tolower(trimws(tissue))=='all')
-    stop('Choose an actual ACT tissue; all-tissue fallback is not supported.',call.=FALSE)
+.sc_act_read <- function(species) {
   root<-.sc_act_root();manifest<-.sc_act_manifest(root)
   selected<-Filter(function(x)identical(x$species,species),manifest$files)
   if(length(selected)!=1L)stop('ACT covers explicit human and mouse only.',call.=FALSE)
@@ -37,6 +29,30 @@ annot_act_reference <- function(species,tissue) {
   if(!identical(names(raw),unlist(manifest$columns,use.names=FALSE))||nrow(raw)!=spec$data_rows||
      any(tolower(raw$Species)!=species)||any(!startsWith(raw$SourceURL,spec$source_prefix)))
     stop('ACT schema, species, row count or source paths differ from the pinned snapshot.',call.=FALSE)
+  list(raw=raw, manifest=manifest, spec=spec, asset=asset)
+}
+
+#' List exact tissue scopes in the pinned ACT snapshot
+#' @param species Explicit human or mouse scope.
+#' @return Data frame of literal tissue keys and source-row counts; no scope is selected.
+#' @export
+annot_act_scopes <- function(species) {
+  loaded <- .sc_act_read(.sc_run_species(species))
+  counts <- table(loaded$raw$Tissue)
+  data.frame(tissue=names(counts), source_rows=as.integer(counts), stringsAsFactors=FALSE)
+}
+
+#' Load the pinned ACT snapshot offline
+#' @param species Explicit human or mouse scope.
+#' @param tissue Actual tissue, matched exactly after trimming/case folding.
+#' @return Marker reference with original PMID/source fields and fixed provenance.
+#' @export
+annot_act_reference <- function(species,tissue) {
+  species<-.sc_run_species(species)
+  if(!is.character(tissue)||length(tissue)!=1L||is.na(tissue)||!nzchar(trimws(tissue))||tolower(trimws(tissue))=='all')
+    stop('Choose an actual ACT tissue; all-tissue fallback is not supported.',call.=FALSE)
+  loaded <- .sc_act_read(species)
+  raw <- loaded$raw; manifest <- loaded$manifest; spec <- loaded$spec; asset <- loaded$asset
   out<-raw;names(out)[1:5]<-c('species','tissue','cell_type','marker','pmid')
   out$source_row<-seq_len(nrow(out))+1L
   for(key in c('species','tissue','cell_type','marker','pmid'))out[[paste0('act_',key,'_original')]]<-out[[key]]
@@ -59,14 +75,13 @@ annot_act_reference <- function(species,tissue) {
   out
 }
 
-.sc_ui_act_default <- function(context) {
+.sc_ui_act_default <- function(context, tissue = context$tissue) {
   species<-tryCatch(.sc_run_species(context$species),error=function(e)NULL)
-  tissue<-context$tissue
   if(is.null(species)||!is.character(tissue)||length(tissue)!=1L||is.na(tissue)||!nzchar(trimws(tissue))||tolower(trimws(tissue))=='all') {
     message('ACT default needs explicit human/mouse species and an actual tissue; reference matching remains unassessed.');return(NULL)
   }
   ref<-annot_act_reference(species,tissue)
-  if(!nrow(ref))message(attr(ref,'scope_notice'))
+  if(!nrow(ref))message(attr(ref,'scope_notice'), ' Inspect annot_act_scopes(species); choose reference_tissue explicitly rather than changing study facts.')
   ref
 }
 .sc_ui_act_provenance <- function(reference) {

@@ -239,3 +239,21 @@ test_that("installed workers complete read-only tools and enforce real wall time
   expect_lt(elapsed, 5)
   expect_identical(.sc_project_sha_file(file.path(fixture$root, "state.rds")), before)
 })
+
+test_that("ACT tools honor an explicit reference scope without replacing study tissue", {
+  fixture <- react_tool_fixture(); on.exit(unlink(fixture$root, recursive=TRUE))
+  state <- fixture$state
+  state$config$context$tissue <- "Peripheral blood study"
+  state$config$reference_review <- list(tissue="blood")
+  state$config_hash <- .sc_run_hash(state$config)
+  fixture$commit(state)
+  fixture$context <- .sc_run_react_context(fixture$root)
+  before <- .sc_project_sha_file(file.path(fixture$root,"state.rds"))
+  out <- react_local(fixture,"act_lookup",list(genes="G01"))$result
+  expect_identical(out$status,"matched")
+  expect_identical(out$tissue,"blood")
+  expect_identical(fixture$context$config$context$tissue,"Peripheral blood study")
+  expect_null(out$study_tissue) # Retain the existing bounded public tool projection.
+  expect_true(all(vapply(out$entries,function(row)row$tissue=="blood",logical(1))))
+  expect_identical(.sc_project_sha_file(file.path(fixture$root,"state.rds")),before)
+})

@@ -40,16 +40,32 @@ PMID37924118. This identifies the ACT publication, not a verified match between
 this 2026 download and the paper’s original data version. Use
 `citation("scAgentKit")` for the full reference.
 
+## Separate study and reference tissue
+
+```r
+annot_act_scopes("human")  # exact keys and source-row counts; selects nothing
+sc_start(input, "new-project",
+  context=list(species="human", tissue="Peripheral blood", research_goal="..."),
+  reference_tissue="Blood", provider="manual")
+# R entry: sc_analyze(..., reference_review=list(tissue="Blood"))
+```
+
+This is an explicit scientific reference-scope choice. It preserves the original
+study description, records both values in reference provenance, and never guesses
+that PBMC or peripheral blood means a particular database key. Default matching
+is unchanged. No all-tissue or cross-species fallback is introduced. Existing
+projects use their saved reference; an evidence revision before annotation
+application uses `sc_run_set_reference(..., reference_review=list(tissue="Blood",
+strict_scope=TRUE))` with the inspected bindings, reviewer and reason.
+
 ## Existing projects and implementation identity
 
-Only creation-time facade/loading code changed. Selected reference bytes/metadata
-are saved under the existing reference-artifact hash/binding; runtime execution
-never consults a moving default. Existing projects keep their own saved reference,
-configuration, history and approvals. The implementation fingerprint is measured
-before/after, not rewritten. The updated browser runtime still requires its matching
-installation/manifest; use a fresh private library rather than overwriting a pinned
-installation. If any environment/dependency fingerprint differs, retain the old
-library or create a new project with new review; do not edit saved hashes.
+This development version changes the execution fingerprint because it adds
+explicit reference-scope configuration and portable output projections. Keep the
+original package/dependency environment for existing projects. The new version
+does not migrate projects or rewrite configuration, implementation hashes or
+approvals. New projects require new review. The browser runtime also requires its
+matching installation and manifest.
 
 Explicit local import with `annot_import_act(path, ...)` is unchanged. Its tissue
 filter is literal substring; use the bundled loader above for exact matching.

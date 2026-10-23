@@ -42,7 +42,7 @@ try {
   });
   const page = await context.newPage(); page.on('pageerror', error => report.pageErrors.push(error.message));
   await page.goto(origin + '/review?project_id=' + encodeURIComponent(before.run.project_id));
-  await page.waitForFunction(() => document.querySelector('#run-status').textContent.includes('awaiting_review') && !document.querySelector('#run-refresh').disabled, {timeout: 60000});
+  await page.waitForFunction(() => document.querySelector('#run-status').getAttribute("data-engine-status").includes('awaiting_review') && !document.querySelector('#run-refresh').disabled, {timeout: 60000});
   const reveal = async locator => {for (const detail of await locator.locator('xpath=ancestor::details').all()) if (!await detail.evaluate(el => el.open)) await detail.locator(':scope > summary').click();};
   await reveal(page.locator('#harmony-method')); await page.locator('#harmony-method').selectOption('harmony');
   for (const [name, value] of Object.entries({group_by_vars: '["donor"]', theta: '2', lambda: '1', sigma: '.1', max_iter: '3', nclust: '4', reason: 'Software-only replicated donor nesting; embedding exploration, no condition-effect inference.'})) await page.locator('#harmony-' + name).fill(value);

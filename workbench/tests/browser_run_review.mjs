@@ -148,7 +148,7 @@ try {
     await frame.locator("#qc-reviewer").fill("Independent browser acceptance analyst");
     await frame.locator("#qc-reason").fill("Approve the frozen public software-verification cell scope; thresholds are not biological optimization");
     await frame.locator("#qc-approve").click();
-    await page.waitForFunction(() => document.getElementById("run-status").textContent.startsWith("ready")); await idle();
+    await page.waitForFunction(() => document.getElementById("run-status").getAttribute("data-engine-status").startsWith("ready")); await idle();
     const run = (await api()).run; assert.equal(run.stage, "qc_apply"); assert.equal(run.status, "ready"); assert.equal(run.pending, null);
     const before = await snapshot(project); const repeat = await api(qcApprovedPayload); assert.equal(repeat.run.status, "ready"); assert.deepEqual(await snapshot(project), before);
     const foreign = {...qcApprovedPayload, project_id: "foreign-project"}; await api(foreign, 409); assert.deepEqual(await snapshot(project), before);

@@ -655,6 +655,7 @@ class RunContinueRuntime:
             env = scrub_secrets(dict(os.environ))
             env.update({name: str(self.threads) for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS")})
             if self.library:
+                env["R_LIBS"] = self.library
                 env["R_LIBS_USER"] = self.library
             try:
                 process = subprocess.Popen([sys.executable, str(self.worker), str(directory / "config.json"),

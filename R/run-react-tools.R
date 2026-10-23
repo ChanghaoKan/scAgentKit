@@ -162,7 +162,8 @@
       !all(c("species", "tissue", "cell_type", "marker") %in% names(reference)))
     return(unavailable("The bound reference is not an identified ACT snapshot."))
   species <- .sc_run_species(context$config$context$species, allow_missing = TRUE)
-  tissue <- context$config$context$tissue
+  tissue <- context$config$reference_review$tissue
+  if (is.null(tissue)) tissue <- context$config$context$tissue
   if (is.null(species) || !is.character(tissue) || length(tissue) != 1L ||
       is.na(tissue) || !nzchar(trimws(tissue)) || tolower(trimws(tissue)) == "all")
     return(unavailable("ACT requires an explicit supported species and exact tissue."))

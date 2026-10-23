@@ -189,7 +189,7 @@ try {
     assert.equal(await ui("run-qc").isVisible(), false); assert.equal(await ui("run-continue").isDisabled(), true);
     // The fresh R API can finish before the page's asynchronous refresh renders.
     // Status and stage share this element; preserve the first failed receipt.
-    await page.waitForFunction(() => document.getElementById("run-status").textContent.trim() === "awaiting_configuration / annotation_propose");
+    await page.waitForFunction(() => document.getElementById("run-status").getAttribute("data-engine-status").trim() === "awaiting_configuration / annotation_propose");
     const history = JSON.parse(await fs.readFile(path.join(project, "decision_history.json"), "utf8")), approvals = array(history.events).filter(event => event.action === "approved");
     assert.equal(approvals.filter(event => event.details.kind === "strategy").length, 1); assert.equal(approvals.filter(event => event.details.kind === "qc").length, 0); assert.equal(approvals.filter(event => event.details.kind === "annotation").length, 0);
     const executions = array(history.events).filter(event => event.action === "executed").map(event => event.details.stage);

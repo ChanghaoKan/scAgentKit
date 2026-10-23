@@ -167,3 +167,10 @@ test_that("technical key collisions fail globally and invalid symbols do not cre
   expect_identical(stats::setNames(a$sc_analysis_key,a$sc_feature_id)[sort(a$sc_feature_id)],
     stats::setNames(b$sc_analysis_key,b$sc_feature_id)[sort(a$sc_feature_id)])
 })
+
+test_that("feature preflight explains differences before loading mismatched matrices", {
+  a<-tenx_fixture();b<-tenx_fixture(n_genes=5L)
+  samples<-data.frame(sample_id=c("first","second"),path=c(a$path,b$path),matrix_kind="filtered")
+  writeLines("deliberately unreadable matrix",file.path(b$path,"matrix.mtx"))
+  expect_error(.sc_ui_tenx_input(samples,tenx_context()),"sample second vs first; missing 1 \\[ENSG6")
+})

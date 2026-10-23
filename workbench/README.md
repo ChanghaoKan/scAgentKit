@@ -62,7 +62,7 @@ measured review. At the annotation boundary, select
 Save the complete proposal, inspect it, then select **Approve annotation and
 continue locally** to produce the saved result. These are three scientific
 approvals. Starting the service or preparing a table grants none. This guide
-targets scAgentKit 0.8.1. Explicit processed reuse starts at annotation and has its own entry.
+targets the current development version. Explicit processed reuse starts at annotation and has its own entry.
 
 To leave populations unresolved, supply one reason and explicitly select
 **Keep all unfilled populations Unknown**. Known labels require citations from
@@ -262,10 +262,10 @@ For an already configured saved provider, enable its existing preview/authorize/
 request/adopt component through the same R entry:
 
 ```r
-sc_start("a.rds", "analysis", model_suggestions = "configured")
+sc_start(project_dir="analysis", model_suggestions="configured")
 ```
 
-The default is `"off"`. Unconfigured manual projects continue locally without a
+The default is `"auto"`: `sc_start(provider=NULL)` detects exactly one available DeepSeek/Grok key, otherwise selects manual mode. Set `provider="manual"` explicitly for a manual project. The startup summary shows the resolved provider, destination, transfer consent, credential and supported method readiness. `model_suggestions="off"` disables model actions for the current service. Unconfigured manual projects continue locally without a
 model. Provider/model are immutable R-side configuration; no browser
 credential input is added. Explicit `"simulate"` is for saved mock projects only
 and is visibly marked as a zero-model software control.

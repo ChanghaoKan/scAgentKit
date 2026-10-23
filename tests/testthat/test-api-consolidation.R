@@ -2,6 +2,10 @@ test_that("development exports expose one project workflow and retained utilitie
   # Retired-export assertions belong in tests; no API inventory is installed.
   retired<-c(
     "qc_threshold", "qc_mad", "qc_doublet", "qc_remove_genes",
+    "chat_claude", "chat_openai", "chat_deepseek", "chat_grok", "chat_qwen",
+    "chat_kimi", "list_chat_providers", "make_chat_fn_claude",
+    "make_chat_fn_openai_compat", "make_chat_fn_openai_compatible",
+    "token_usage_summary", "token_usage_reset",
     "sc_normalize", "sc_find_hvg", "sc_scale", "sc_pca",
     "sc_select_pcs", "sc_select_pcs_visual", "sc_select_batch_var", "sc_harmony",
     "sc_cellcycle_score", "sc_cellcycle_regress", "sc_find_neighbors", "sc_cluster",

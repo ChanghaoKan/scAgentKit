@@ -39,15 +39,15 @@ if (action %in% c('setup','setup-hvg')) {
     pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),each=ncol(counts))
   } else pbmc_small$acceptance_sample <- rep(c('offline_A','offline_B'),length.out=ncol(pbmc_small))
   saveRDS(pbmc_small,input)
-  # sc_start defaults to raw reanalysis, model_suggestions='off', no provider.
+  # Explicit offline mode; do not depend on available provider keys.
   launch <- NULL
   invisible(capture.output(launch <- sc_start(input, project, context=list(
     species='human',tissue='public PBMC software fixture',
     research_goal='Offline software acceptance; Unknown labels, no biological accuracy claim',
-    columns=list(sample='acceptance_sample')), browse=FALSE,model_suggestions='off',
+    columns=list(sample='acceptance_sample')), browse=FALSE,provider='manual',model_suggestions='off',
     scientific_review=list(pc_sensitivity=TRUE,resampling=TRUE,resolution_extension=TRUE,
       panels='blood',cross_sample=TRUE,mixed_lineage=TRUE))))
-  # Explicit synthetic eligibility control for local-only QC preselection.
+  # Synthetic control that must retain its conservative QC policy.
   genes <- c('MT-CO1','RPS3','HBA1',paste0('Gene',4:80))
   m <- matrix(0,80,120,dimnames=list(genes,paste0('cell',1:120)))
   for(i in 1:120) { z <- (i-1L) %% 60L+1L; m[seq_len(20L+z %% 30L),i] <- 2L+z %% 9L; m[1,i] <- 1L+z %% 10L }
@@ -57,7 +57,7 @@ if (action %in% c('setup','setup-hvg')) {
   preselection_input <- file.path(output,'preselection-input.rds');saveRDS(synthetic,preselection_input)
   preselection_launch <- NULL
   invisible(capture.output(preselection_launch <- sc_start(preselection_input,file.path(output,'preselection-project'),
-    context=list(species='human',tissue='Synthetic diagnostics',research_goal='Test unapproved local preselection only',columns=list(sample='sample')),browse=FALSE)))
+    context=list(species='human',tissue='Synthetic diagnostics',research_goal='Test conservative QC inspection only',columns=list(sample='sample')),browse=FALSE,provider='manual')))
   write_json(list(launch=launch,preselection_launch=preselection_launch,package=installed,runtime=runtime,
     version=as.character(packageVersion('scAgentKit')), R=R.version.string,
     input_cells=colnames(pbmc_small), archive_sha256=digest::digest(file=archive,algo='sha256'),
@@ -121,12 +121,20 @@ if (action %in% c('setup','setup-hvg')) {
     clusterId=as.character(table$cluster[i]),gene=as.character(table$gene[i]),
     avgLog2FC=unname(table$avg_log2FC[i]),pct1=unname(table$pct.1[i]),
     pct2=unname(table$pct.2[i]),pAdj=unname(table$p_val_adj[i]),source='Seurat::FindAllMarkers'))
-  stopifnot(isTRUE(all.equal(marker_records,scan$markers[[as.character(selection$resolution)]]$markers,tolerance=1e-10)),
-    identical(markers$parameters,scan$markers[[as.character(selection$resolution)]]$parameters))
+  # This fixed fixture has the same final summary rows, but diagnostic scan
+  # filters and final-result filters intentionally differ. Verify each contract
+  # rather than changing scientific parameters to satisfy a false equivalence.
+  stopifnot(isTRUE(all.equal(marker_records,scan$markers[[as.character(selection$resolution)]]$markers,tolerance=1e-10)))
+  marker_defaults <- list(only_pos=FALSE,min_pct=.25,logfc_threshold=0,top_n=30L,
+    log2fc_cut=1,padj_cut=.05,exclude_shared=TRUE,exclude_genes=character())
+  stopifnot(identical(markers$parameters,utils::modifyList(marker_defaults,state$config$markers)))
   resolution_binding <- list(resolution=selection$resolution,scan_hash=scan$hash,
     strategy_review_hash=review$hash,membership_hash=scan$membership_hashes[[as.character(selection$resolution)]],
-    marker_rows=nrow(table),actual_final_membership_and_markers_verified=TRUE)
-  stopifnot(identical(state$config$recommendation_facts$batch$technical_batch,FALSE),
+    marker_rows=nrow(table),actual_final_membership_and_markers_verified=TRUE,
+    final_marker_parameters=markers$parameters,
+    diagnostic_marker_parameters=scan$markers[[as.character(selection$resolution)]]$parameters)
+  stopifnot(is.null(state$config$recommendation_facts$batch$technical_batch),
+    identical(state$config$recommendation_facts$doublet$input_source,"Bundled pbmc_small software control; original called-cell provenance is unavailable."),
     is.null(state$config$recommendation_facts$doublet$empty_droplets_removed),
     identical(view$scientific_assessment$certified_qc,FALSE),
     'doublet' %in% unlist(view$scientific_assessment$unassessed_steps),
