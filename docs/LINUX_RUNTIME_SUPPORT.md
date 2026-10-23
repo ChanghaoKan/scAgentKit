@@ -24,6 +24,9 @@ automatically an accepted adapter; acceptance requires independent verification.
 The accepted doublet pairs are defined in `R/run-doublet.R`; the Harmony API
 check is in `R/run-harmony.R`. Unknown versions, altered classifier functions
 and unsupported backends are rejected.
+The `older-doublet-pair` CI job installs 1.22.0/1.7.11.1 in its own R library
+and requires the existing genuine classifier test to execute without skips.
+Its runtime result must be checked separately from version-mocked tests.
 See [doublet prerequisites](dev/DOUBLET_REVIEW.md) and
 [Harmony design requirements](dev/HARMONY_PC_REVIEW.md) before enabling either.
 

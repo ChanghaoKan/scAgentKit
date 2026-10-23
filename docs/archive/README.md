@@ -5,6 +5,7 @@ translations and development reports can be read at their recorded Git revision.
 
 | Material | Historical source |
 | --- | --- |
+| Stage-1 ReAct benchmark driver and results | [Recorded source](https://github.com/ChanghaoKan/scAgentKit/blob/8afd4a694d07c92550cda1c314811d6e83affe37/docs/dev/REACT_TOOLS_BENCHMARK.md) |
 | Earlier designs and API inventories | [Design archive](https://github.com/ChanghaoKan/scAgentKit/tree/282ddec781e503279f9b296e117eecc6236e936c/docs/archive/design) |
 | Earlier Chinese translations | [Translation archive](https://github.com/ChanghaoKan/scAgentKit/tree/282ddec781e503279f9b296e117eecc6236e936c/docs/archive/translations) |
 | Earlier workflow diagrams | [Diagram sources](https://github.com/ChanghaoKan/scAgentKit/tree/282ddec781e503279f9b296e117eecc6236e936c/docs/diagrams) |

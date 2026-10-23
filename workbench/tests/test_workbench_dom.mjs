@@ -15,7 +15,7 @@ class Element {
   get textContent() {return this._text + this.children.map(child => child instanceof Element ? child.textContent : String(child)).join("");}
   set textContent(value) {this._text = String(value ?? ""); this.children = [];}
   set innerHTML(_) {throw new Error("Saved facts must never become HTML");}
-  append(...children) {this.children.push(...children);}
+  append(...children) {for (const child of children) {const index = this.children.indexOf(child); if (index >= 0) this.children.splice(index, 1); this.children.push(child);}}
   replaceChildren(...children) {this._text = ""; this.children = children;}
   setAttribute(name, value) {this.attributes[name] = String(value);}
   getAttribute(name) {return this.attributes[name] ?? null;}
@@ -81,6 +81,16 @@ await check("workflow hover, keyboard focus and tap inspect provenance without r
     assert(h.el("wb-workflow-detail").textContent.includes("Your decision"));
   }
   assert.equal(h.requests.length,count);assert.equal(h.state.section,"overview");
+});
+await check("touch scrolling cannot replace a tapped workflow step with mouse hover", async () => {
+  const h=harness();h.window.matchMedia=()=>({matches:false});h.wire();await h.call("wbLoad");
+  workflowStep(h,"react").listeners.click[0]();
+  workflowStep(h,"qc").listeners.mouseenter[0]();
+  assert.equal(workflowStep(h,"react").getAttribute("aria-pressed"),"true");
+  workflowStep(h,"qc").listeners.focus[0]();
+  assert.equal(workflowStep(h,"qc").getAttribute("aria-pressed"),"true");
+  h.window.matchMedia=()=>({matches:true});workflowStep(h,"react").listeners.mouseenter[0]();
+  assert.equal(workflowStep(h,"react").getAttribute("aria-pressed"),"true");
 });
 await check("workflow does not infer model participation from provider configuration", async () => {
   const h=harness("?child_id=child-A&project_id=child-A"),value=view("child-A",{provider:"deepseek"});
@@ -409,7 +419,7 @@ await check("absent flags do not imply a valid identity, and a stale refresh cle
 });
 await check("saved cluster expression and cross-sample evidence is reachable without mutation", async () => {
   const h = harness(), value = view();
-  value.annotation.review.details.annotations[0].measured_expression = {
+  value.annotation.review.details.measured_expression = {
     status: "measured", missing_genes: ["TRAC"], clusters: [{cluster: "01", genes: [{gene: "CD3D", mean_log_normalized: 2, pct_detected: .7}]}],
     cross_sample_consistency: {status: "descriptive"}};
   const before = JSON.stringify(value); h.wire("parent", value); await h.call("wbLoad");

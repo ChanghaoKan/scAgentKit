@@ -405,6 +405,7 @@ sc_run_suggest <- function(project_dir, action = c("preview", "approve", "reques
       error = function(error) list(status = if (inherits(error, c("sc_run_cancelled", "sc_run_disk_limit"))) "paused" else "interrupted", content = NULL, cached = FALSE,
         error = "Suggestion request interrupted; inspect the durable ledger. No automatic retry.",
         request_hash = context$request_hash))
+    state <- .sc_run_load(root, verify = FALSE)
     if (identical(answer$status, "ok") && context$kind == "annotation" && !is.null(state$config$react)) {
       state <- .sc_run_react_record_baseline(root, state, answer)
       .sc_run_save(root, state)

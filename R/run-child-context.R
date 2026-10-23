@@ -283,14 +283,12 @@ sc_run_set_child_context <- function(project_dir, context, project_id, input_has
     assay = config$assay, annotation_context = updated)
   if (!is.null(state$files$annotation_history_input)) evidence$private$historical <-
     .sc_run_annotation_history_import(.sc_run_get(root, state, "annotation_history_input"), evidence)
-  detached <- intersect(c("manual_annotation", "annotation_request", "annotation_response",
-    "annotation_validated", "annotation_review", "annotation_suggestion_adoption",
-    "annotation_suggestion_response"), names(state$files))
+  detached <- .sc_run_annotation_scope_files(state)
   previous <- state$files[detached]
   state$config <- config; state$config_hash <- .sc_run_hash(config)
   state <- .sc_run_put(root, state, "child_annotation_context", updated)
   state <- .sc_run_put(root, state, "annotation_evidence", evidence)
-  state$files[detached] <- NULL
+  state <- .sc_run_annotation_scope_detach(state)
   # Keep explicit NULL keys: `$suggestion` must not partially match the
   # suggestion_transfer_hashes vector after removing a live suggestion.
   state[c("pending", "approved", "suggestion")] <- list(NULL, NULL, NULL)

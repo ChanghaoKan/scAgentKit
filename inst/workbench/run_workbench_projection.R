@@ -71,9 +71,6 @@
 .sc_wb_plain <- function(value) {
   if (!is.list(value)) return(value)
   if (is.data.frame(value) && any(grepl("(^|_)cell_(id|ids)$|^cellId(s)?$", names(value)))) return(NULL)
-  if(!is.null(value$clusterId) && is.list(value$measured_expression) &&
-      "cell_quality" %in% names(value$measured_expression))
-    value$measured_expression <- .sc_wb_expression(value$measured_expression,value$clusterId)
   if(all(c("cell_quality","clusters","measured_genes","panels") %in% names(value)))
     value <- .sc_wb_expression(value)
   if(identical(value$schema,"scagentkit.scientific-diagnostics.v1")) {

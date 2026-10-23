@@ -1,4 +1,4 @@
-review_fixture <- function() {
+review_fixture <- function(model_records = NULL) {
   counts <- matrix(c(2,0,1,4,0,3,2,0,3,1,0,2,1,0,4,2), nrow = 4,
     dimnames = list(paste0("GENE", 1:4), c("001", "1", "cell x", "cell-y")))
   seu <- Seurat::CreateSeuratObject(Matrix::Matrix(counts, sparse = TRUE))
@@ -7,13 +7,15 @@ review_fixture <- function() {
   SeuratObject::Idents(seu) <- factor(c("a", "b", "c", "a"), levels = c("c", "b", "a", "unused"))
   root <- tempfile("project-review-"); dir.create(root)
   project <- file.path(root, "bundle")
-  sc_project_export(seu, project, "test project", normalized_layer = NULL, reduction = NULL)
+  sc_project_export(seu, project, "test project", normalized_layer = NULL, reduction = NULL,
+    model_records = model_records)
   manifest <- jsonlite::fromJSON(file.path(project, "manifest.json"), simplifyVector = FALSE)
   journal <- list(schema = "scagentkit.review-journal.v1", projectId = manifest$projectId,
     sourceFingerprint = manifest$sourceFingerprint, bundleDigest = manifest$bundleDigest,
     events = list(), artifacts = structure(list(), names = character()))
   list(seu = seu, project = project, journal = journal, path = file.path(root, "review.json"), root = root)
 }
+
 review_write <- function(fixture, journal = fixture$journal) {
   writeLines(jsonlite::toJSON(journal, auto_unbox = TRUE, null = "null", digits = NA), fixture$path, useBytes = TRUE)
   fixture$path
@@ -255,4 +257,22 @@ test_that("declared directed expression also requires the exact source and cell 
   writeLines(.sc_project_json(manifest), file.path(f$project, "manifest.json"), useBytes = TRUE)
   f$journal$bundleDigest <- manifest$bundleDigest
   review_expect_invalid(f, code = "scope_mismatch")
+})
+
+test_that("nullable model evidence survives export, journal validation and exact-ID writeback", {
+  for (status in c("not_run", "network_failed", "format_rejected", "valid")) {
+    model <- list(clusterId = "NA", callId = paste0("offline-", status), provider = "local",
+      mode = "strict", strictStatus = status,
+      strict = if (status == "valid") list(label = "Suggested label") else NULL,
+      posthoc = NULL, rawText = NULL, source = "provided")
+    f <- review_fixture(list(model)); on.exit(unlink(f$root, recursive = TRUE), add = TRUE)
+    before <- .sc_run_hash(f$seu)
+    f <- review_append(f, review_event(f, "NA", "Reviewed label"))
+    path <- review_write(f)
+    report <- sc_review_validate(f$seu, path, f$project)
+    expect_true(report$valid, info = paste(report$errors$message, collapse = "; "))
+    out <- sc_review_apply(f$seu, path, f$project)
+    expect_identical(unname(out$review_type), c("Reviewed label", NA_character_, NA_character_, "Reviewed label"))
+    expect_identical(.sc_run_hash(f$seu), before)
+  }
 })

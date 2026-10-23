@@ -51,8 +51,8 @@ preserve it before fixing the harness or product and rerunning in a fresh folder
 
 The recommendation-layer extension keeps those six core cases and exactly three
 scientific approvals (two strategy decisions and one annotation decision). It
-also saves only an explicit synthetic batch declaration while doublet facts stay
-Unknown, then observes the actual automatic R preparation worker regenerate a
+also saves an explicit synthetic input-source declaration while doublet facts stay
+Unknown and the batch choice remains explicitly none, then observes the actual automatic R preparation worker regenerate a
 new review without approval. This adds a fourth local worker job. Boolean fact
 controls must offer Unknown/Yes/No and optional missing fields must not prevent
 partial saving. Saved R recommendation candidates are copied through the UI to

@@ -75,6 +75,23 @@ annotation_review_files <- function(root) {
   }), paths)
 }
 
+test_that("annotation review stores complete cohort expression exactly once", {
+  fixture <- annotation_review_fixture(); on.exit(unlink(fixture$root, recursive = TRUE))
+  expression <- list(status = "measured", panels = list(T = "CD3D"),
+    clusters = list(list(cluster = "01", genes = list(list(gene = "ALB", pct_detected = .9))),
+      list(cluster = "NA", genes = list(list(gene = "CD3D", pct_detected = .8)))),
+    cell_quality = lapply(fixture$evidence$private$input_cells$cell_id,
+      function(id) list(cell_id = id, total_umi = 100L, high_count_flag = FALSE)))
+  evidence <- fixture$evidence; evidence$private$expression_review <- expression
+  record <- .sc_run_annotation_review_build(fixture$root, fixture$state, fixture$validated, evidence)
+  expect_identical(record$details$measured_expression, expression)
+  expect_true(all(vapply(record$details$annotations, function(row) is.null(row$measured_expression), logical(1))))
+  expect_identical(record$evidence_hash, .sc_run_hash(evidence))
+  previous <- .sc_run_annotation_review_hash(record)
+  record$details$measured_expression$cell_quality[[1L]]$total_umi <- 10001L
+  expect_false(identical(.sc_run_annotation_review_hash(record), previous))
+})
+
 test_that("annotation snapshot preserves literal scope and exact supplied cited statistics", {
   fixture <- annotation_review_fixture()
   on.exit(unlink(fixture$root, recursive = TRUE), add = TRUE)
@@ -102,8 +119,6 @@ test_that("annotation snapshot preserves literal scope and exact supplied cited 
   expect_false(record$details$annotations[[1]]$negative_evidence$assessed)
   expect_match(paste(record$details$limitations, collapse = " "), "not calibrated probabilities")
   expect_match(paste(record$details$limitations, collapse = " "), "not evidence of absent")
-  expect_identical(scAgentKit:::.sc_run_annotation_review_summary(record)$hash, record$hash)
-  expect_false("details" %in% names(scAgentKit:::.sc_run_annotation_review_summary(record)))
 })
 
 test_that("local reference availability is explicit and remains independent", {

@@ -12,7 +12,7 @@ sc_review_apply(object, journal, project, columns = c(type = "review_type"))
 }
 \value{A modified Seurat copy. An invalid review raises \code{sc_review_apply_error}, whose \code{report} contains the validation result.}
 \description{Revalidates the complete input immediately before applying current accepted human decisions, and aligns by exact cell ID. No files are written. Save the returned object separately with \code{saveRDS} to a new path if desired.}
-\details{The portable project must match project format version 3. A missing, damaged or mismatched format rejects writeback through the validation report; use the original software environment or create a new project. No migration is performed.
+\details{The portable project must match project format version 4. A missing, damaged or mismatched format rejects writeback through the validation report; use the original software environment or create a new project. No migration is performed.
 
 Existing metadata, factor levels and missing values, active identities, assays, reductions and wrapper history are preserved. Only the new requested label and companion columns are added. An occupied or overlapping target column causes atomic refusal before mutation. Abstained \code{unknown} remains distinct from deferred and unreviewed cells. Human acceptance does not establish biological truth.}
 \seealso{\code{\link{sc_review_validate}}, \code{\link{sc_project_export}}}

@@ -14,5 +14,5 @@
 ^tools/acceptance$
 ^tools/release$
 ^tools/environment$
-^tools/benchmark-react-tools\.R$
+^tools/create-react-benchmark-fixture\.R$
 ^tools/benchmark-react-session\.R$

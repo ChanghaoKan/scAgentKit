@@ -206,6 +206,22 @@
   invisible(NULL)
 }
 
+.sc_run_provider_lock <- function(lock) {
+  if (dir.exists(lock)) return(NULL)
+  staging <- tempfile(".dispatch-lock-", tmpdir = dirname(lock))
+  if (!dir.create(staging, showWarnings = FALSE)) stop("Cannot stage provider lock.", call. = FALSE)
+  on.exit(unlink(staging, recursive = TRUE), add = TRUE)
+  token <- .sc_run_provider_hash(list(Sys.getpid(), as.character(Sys.time()), tempfile()))
+  .sc_run_provider_write(list(token = token, pid = Sys.getpid(), host = unname(Sys.info()["nodename"]),
+    created_at = format(Sys.time(), tz = "UTC", usetz = TRUE)), file.path(staging, "owner.json"))
+  if (dir.exists(lock)) return(NULL)
+  if (!isTRUE(suppressWarnings(file.rename(staging, lock)))) {
+    if (dir.exists(lock)) return(NULL)
+    stop("Cannot publish provider lock.", call. = FALSE)
+  }
+  token
+}
+
 .sc_run_provider_cost_record_valid <- function(entry) {
   if (identical(entry$cost_state, "unknown")) return(is.null(entry$cost_usd))
   identical(entry$cost_state, "known") && is.numeric(entry$cost_usd) &&
@@ -245,6 +261,77 @@
         !identical(entry$turn_outcome_hash, .sc_run_provider_hash(entry$turn_outcome)))
       stop("Provider cached structured outcome hash mismatch; dispatch refused.")
   }
+  ledger
+}
+
+# Ordinary requests use the same immutable state/checkpoint authority as turns.
+# The attempt is part of the key because only explicit accounted-for retries
+# may create another ordinary request with the same payload hash.
+.sc_run_provider_commit <- function(root, entry, action, extra = list()) {
+  if (!file.exists(file.path(root, "state.rds"))) return(invisible(NULL))
+  state <- .sc_run_load(root, verify = FALSE)
+  key <- paste0("provider_request_", entry$request_hash, "_", entry$attempt)
+  state <- .sc_run_put(root, state, key, entry)
+  state <- .sc_run_event(state, action, c(list(request_hash = entry$request_hash,
+    attempt = entry$attempt, checkpoint = state$files[[key]], scientific_approval = FALSE), extra))
+  .sc_run_save(root, state)
+}
+
+.sc_run_provider_recover_ledger <- function(root, state, ledger, path) {
+  ledger <- .sc_run_turn_recover_ledger(root, state, ledger, path)
+  changed <- FALSE
+  for (entry in ledger$entries) if (is.null(entry$session_id) && !identical(entry$status, "dispatched") &&
+      is.null(state$files[[paste0("provider_request_", entry$request_hash, "_", entry$attempt)]]))
+    stop("A completed provider request has no committed receipt; dispatch refused.", call. = FALSE)
+  events <- Filter(function(event) event$action %in%
+    c("provider_request_dispatched", "provider_request_completed", "provider_request_reconciled"), state$history)
+  keys <- unique(vapply(events, function(event)
+    paste0("provider_request_", event$details$request_hash, "_", event$details$attempt), character(1)))
+  for (key in keys) {
+    file <- state$files[[key]]; full <- file.path(root, file$path)
+    if (is.null(file) || !file.exists(full) || nzchar(Sys.readlink(full)) ||
+        !identical(.sc_project_sha_file(full), file$sha256))
+      stop("An ordinary provider dispatch has no intact committed receipt; dispatch refused.", call. = FALSE)
+    saved <- readRDS(full)
+    linked <- any(vapply(events, function(event) identical(event$details$checkpoint, file) &&
+      identical(event$details$request_hash, saved$request_hash) &&
+      identical(as.integer(event$details$attempt), as.integer(saved$attempt)), logical(1)))
+    if (!linked) stop("Provider receipt does not match its state event; dispatch refused.", call. = FALSE)
+    hits <- which(vapply(ledger$entries, function(entry) identical(entry$request_hash, saved$request_hash) &&
+      identical(as.integer(entry$attempt), as.integer(saved$attempt)), logical(1)))
+    if (!length(hits)) { ledger$entries <- append(ledger$entries, list(saved)); changed <- TRUE; next }
+    if (length(hits) != 1L) stop("Duplicate provider attempt; dispatch refused.", call. = FALSE)
+    entry <- ledger$entries[[hits]]
+    if (identical(entry$status, "dispatched") && !identical(saved$status, "dispatched") ||
+        identical(saved$reconciliation$previous_entry_hash, .sc_run_provider_hash(entry))) {
+      if (!identical(entry$payload_hash, saved$payload_hash)) stop("Provider payload differs from its receipt.", call. = FALSE)
+      ledger$entries[[hits]] <- saved; changed <- TRUE; next
+    }
+    fields <- c("request_hash", "attempt", "provider", "purpose", "prompt_version", "payload_hash", "delivery", "usage",
+      "raw_usage", "cost_state", "cost_usd", "accounting_issue", "reconciliation")
+    if (!all(vapply(fields, function(field) identical(.sc_run_provider_json(entry[[field]]),
+        .sc_run_provider_json(saved[[field]])), logical(1))))
+      stop("Provider ledger differs from its committed receipt; dispatch refused.", call. = FALSE)
+    response_hash <- if (is.null(entry$response_hash)) entry$withheld_response_hash else entry$response_hash
+    withheld <- identical(entry$status, "secret_detected") && is.null(entry$raw) && is.null(entry$content)
+    saved_response_hash <- if (is.null(saved$response_hash)) saved$withheld_response_hash else saved$response_hash
+    if (!identical(response_hash, saved_response_hash) ||
+        (!identical(entry$status, saved$status) && !withheld))
+      stop("Provider cached response differs from its committed receipt; dispatch refused.", call. = FALSE)
+    metadata <- .sc_run_provider_response_metadata(list(response_metadata = saved$response_metadata), saved$provider$api_key_env)
+    if (!.sc_run_provider_json(entry$response_metadata) %in%
+        c(.sc_run_provider_json(saved$response_metadata), .sc_run_provider_json(metadata)))
+      stop("Provider response metadata differs from its committed receipt; dispatch refused.", call. = FALSE)
+  }
+  dispatches <- Filter(function(event) event$action %in%
+    c("provider_request_dispatched", "provider_turn_dispatched"), state$history)
+  ids <- vapply(dispatches, function(event) paste(event$details$request_hash,
+    if (is.null(event$details$attempt)) 1L else event$details$attempt), character(1))
+  rank <- match(vapply(ledger$entries, function(entry) paste(entry$request_hash, entry$attempt), character(1)), ids)
+  rank[is.na(rank)] <- length(ids) + seq_len(sum(is.na(rank)))
+  ordered <- ledger$entries[order(rank)]
+  if (!identical(ordered, ledger$entries)) {ledger$entries <- ordered; changed <- TRUE}
+  if (changed) .sc_run_provider_write(ledger, path)
   ledger
 }
 
@@ -440,24 +527,32 @@
           !identical(active$pid, Sys.getpid()))
         .sc_run_turn_error("invalid_session", "The structured turn requires the current project's coordinator lock.")
     }
+  } else if (file.exists(file.path(project_dir, "state.rds"))) {
+    owner_path <- file.path(project_dir, ".run-lock", "owner.rds")
+    active <- if (file.exists(owner_path)) tryCatch(readRDS(owner_path), error = function(e) NULL) else NULL
+    if (is.null(active) || !identical(active$pid, Sys.getpid())) {
+      owner <- .sc_run_lock(project_dir)
+      on.exit(.sc_run_release(project_dir, owner), add = TRUE)
+    }
   }
   base <- file.path(project_dir, "provider"); dir.create(base, showWarnings = FALSE)
   lock <- file.path(base, ".dispatch-lock")
   result <- function(status, error, extra = list()) c(list(status = status, content = NULL,
     raw = NULL, error = error, request_hash = request_hash, provider = spec$metadata, cached = FALSE), extra)
-  if (!dir.create(lock, showWarnings = FALSE)) return(result("provider_busy", "Another provider dispatch holds the project lock; inspect before recovering a stale lock."))
-  token <- .sc_run_provider_hash(list(Sys.getpid(), as.character(Sys.time()), tempfile()))
+  token <- .sc_run_provider_lock(lock)
+  if (is.null(token)) return(result("provider_busy", "Another provider dispatch holds the project lock; inspect before recovering a stale lock."))
   on.exit(.sc_run_provider_release(lock, token), add = TRUE)
-  .sc_run_provider_write(list(token = token, pid = Sys.getpid(), host = unname(Sys.info()["nodename"]),
-    created_at = format(Sys.time(), tz = "UTC", usetz = TRUE)), file.path(lock, "owner.json"))
   path <- file.path(base, "ledger.json")
   ledger <- .sc_run_provider_read(path)
   guard <- if (turn) .sc_run_turn_guard(project_dir, request, spec$metadata, prepared, react_runtime) else NULL
-  if (turn) ledger <- .sc_run_turn_recover_ledger(project_dir, guard$state, ledger, path)
+  receipt_state <- if (turn) guard$state else if (file.exists(file.path(project_dir, "state.rds")))
+    .sc_run_load(project_dir, verify = FALSE) else NULL
+  if (!is.null(receipt_state)) ledger <- .sc_run_provider_recover_ledger(project_dir, receipt_state, ledger, path)
   if (turn && isTRUE(allow_external) && !isTRUE(guard$state$config$review$allow_external))
     .sc_run_turn_error("invalid_session", "A turn cannot replace the committed project's external-transfer policy.")
   if (turn && retry) return(result("retry_refused", "Structured turns do not resend an earlier turn; resume its saved response or reconcile uncertain delivery."))
   hits <- which(vapply(ledger$entries, function(x) identical(x$request_hash, request_hash), logical(1)))
+  if (length(hits)) hits <- hits[order(vapply(ledger$entries[hits], function(x) x$attempt, numeric(1)))]
   if (length(hits)) {
     prior <- ledger$entries[[tail(hits, 1L)]]
     if (!retry || identical(prior$status, "ok")) {
@@ -521,6 +616,7 @@
         prior$response_audit <- parsed$response_audit
       }
       if (identical(parsed$status, "secret_detected")) {
+        if (!is.null(prior$response_hash)) prior$withheld_response_hash <- prior$response_hash
         prior$raw <- NULL; prior$response_hash <- NULL
         ledger$entries[[tail(hits, 1L)]] <- prior
         .sc_run_provider_write(ledger, path)
@@ -591,14 +687,16 @@
   index <- length(ledger$entries)
   .sc_run_provider_write(ledger, path) # dispatch is durable before any HTTP
   if (turn) {
+    guard$state <- .sc_run_put(project_dir, guard$state, paste0("provider_turn_", request_hash), entry)
     guard$state <- .sc_run_event(guard$state, "provider_turn_dispatched", list(
       session_id = entry$session_id, session_hash = entry$session_hash,
       cluster_id = entry$cluster_id, ordinal = entry$ordinal,
       request_hash = request_hash, payload_hash = entry$payload_hash,
+      checkpoint = guard$state$files[[paste0("provider_turn_", request_hash)]],
       authorization = entry$authorization,
       scientific_approval = FALSE))
     .sc_run_save(project_dir, guard$state)
-  }
+  } else .sc_run_provider_commit(project_dir, entry, "provider_request_dispatched")
   if (identical(getOption("scAgentKit.provider_crash"), "after_dispatch"))
     stop("Injected provider interruption after durable dispatch.")
   before <- length(.sc_run_provider_tokens())
@@ -694,6 +792,7 @@
   # explicit retry, and their safe failure is cached here by default.
   if (!spec$metadata$external) { entry$cost_state <- "known"; entry$cost_usd <- 0 }
   entry$completed_at <- format(Sys.time(), tz = "UTC", usetz = TRUE)
+  .sc_run_provider_commit(project_dir, entry, "provider_request_completed")
   ledger$entries[[index]] <- entry
   .sc_run_provider_write(ledger, path)
   entry
@@ -728,17 +827,16 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
   root <- .sc_run_root(project_dir); owner <- .sc_run_lock(root); on.exit(.sc_run_release(root, owner), add = TRUE)
   state <- if (file.exists(file.path(root, "state.rds"))) .sc_run_load(root) else NULL
   lock <- file.path(root, "provider", ".dispatch-lock")
-  if (!dir.create(lock, showWarnings = FALSE))
+  token <- .sc_run_provider_lock(lock)
+  if (is.null(token))
     stop("Another provider dispatch holds the project lock; reconcile after it finishes.", call. = FALSE)
-  token <- .sc_run_provider_hash(list(Sys.getpid(), as.character(Sys.time()), tempfile()))
   on.exit(.sc_run_provider_release(lock, token), add = TRUE)
-  .sc_run_provider_write(list(token = token, pid = Sys.getpid(), host = unname(Sys.info()["nodename"]),
-    created_at = format(Sys.time(), tz = "UTC", usetz = TRUE)), file.path(lock, "owner.json"))
   path <- file.path(root, "provider", "ledger.json")
   ledger <- .sc_run_provider_read(path)
-  if (!is.null(state)) ledger <- .sc_run_turn_recover_ledger(root, state, ledger, path)
+  if (!is.null(state)) ledger <- .sc_run_provider_recover_ledger(root, state, ledger, path)
   hits <- which(vapply(ledger$entries, function(x) identical(x$request_hash, request_hash), logical(1)))
   if (!length(hits)) stop("No provider ledger entry has this request hash.", call. = FALSE)
+  hits <- hits[order(vapply(ledger$entries[hits], function(x) x$attempt, numeric(1)))]
   index <- tail(hits, 1L); entry <- ledger$entries[[index]]
   if (!isTRUE(entry$provider$external) ||
       (identical(entry$cost_state, "known") && !isTRUE(entry$accounting_issue) &&
@@ -746,7 +844,7 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
     stop("This ledger entry has no unresolved accounting or delivery; only external entries with unknown cost, unknown delivery or an accounting issue are reconciled.", call. = FALSE)
   previous <- list(status = entry$status, delivery = entry$delivery, cost_state = entry$cost_state,
     cost_usd = entry$cost_usd, accounting_issue = isTRUE(entry$accounting_issue))
-  previous_entry_hash <- if (!is.null(entry$session_id)) .sc_run_provider_hash(entry) else NULL
+  previous_entry_hash <- .sc_run_provider_hash(entry)
   if (identical(entry$status, "dispatched"))
     entry$response_metadata_hash <- .sc_run_provider_hash(entry$response_metadata)
   if (entry$status %in% c("dispatched", "delivery_uncertain")) entry$status <- "reconciled_no_response"
@@ -768,8 +866,13 @@ sc_run_provider_reconcile <- function(project_dir, request_hash, cost_usd, revie
     return(invisible(entry))
   }
   ledger$entries[[index]] <- entry
+  entry$reconciliation$previous_entry_hash <- previous_entry_hash
+  .sc_run_provider_commit(root, entry, "provider_request_reconciled",
+    list(previous = previous, reviewer = reviewer, reason = reason))
+  ledger$entries[[index]] <- entry
   .sc_run_provider_write(ledger, path)
   if (!is.null(state)) {
+    state <- .sc_run_load(root, verify = FALSE)
     state <- .sc_run_event(state, "provider_reconciled", list(request_hash = request_hash,
       provider = entry$provider$name, cost_usd = cost_usd, previous = previous, reviewer = reviewer, reason = reason))
     .sc_run_save(root, state)

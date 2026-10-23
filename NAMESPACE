@@ -8,7 +8,6 @@ export(sc_result)
 S3method(print,sc_analysis)
 S3method(print,sc_review_snapshot)
 
-export(annot_clear_cache)
 export(annot_collapse_to_broad)
 export(annot_compare_with_reference)
 export(annot_load_reference)

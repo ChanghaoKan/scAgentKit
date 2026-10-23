@@ -131,6 +131,8 @@
       if(plan$analysis$npcs>=min(length(hvg),ncol(working))) stop("Resample has insufficient cells/HVGs for the unchanged PCA request.")
       working <- Seurat::ScaleData(working,assay=config$assay,features=hvg,verbose=FALSE)
       working <- Seurat::RunPCA(working,assay=config$assay,features=hvg,npcs=plan$analysis$npcs,seed.use=seed,verbose=FALSE)
+      tryCatch(.sc_run_strategy_pca_evidence(working, settings, select = FALSE), error = function(e)
+        stop(paste0("Resampling seed ", seed, ": ", conditionMessage(e)), call. = FALSE))
       c(list(seed=seed,cells=colnames(working)),.sc_run_science_partition_compare(membership,
         .sc_run_science_partition(working,k,plan$clustering$resolution,seed)))
     })
@@ -151,7 +153,8 @@
   })
   if(length(options$panels) || options$cross_sample || options$mixed_lineage)
     out$expression <- .sc_run_expression_panels(seu,config$assay,config$counts_layer,config$normalized_layer,
-      column,options$panels,config$context$columns$sample,options$mixed_lineage)
+      column,options$panels,if(options$cross_sample) config$context$columns$sample else NULL,options$mixed_lineage,
+      quality_group_column=config$context$columns$sample)
   if(!identical(before,.sc_run_hash(seu))) stop("Scientific diagnostics changed their input object.",call.=FALSE)
   out$hash <- .sc_run_hash(out)
   out

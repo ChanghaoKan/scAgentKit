@@ -124,7 +124,8 @@
     panels <- Filter(length,panels)
     expression_review <- .sc_run_expression_panels(seu,assay,
       .sc_run_annotation_option(config,"counts_layer","counts"),normalized_layer,cluster_column,
-      panels,config$context$columns$sample,science$mixed_lineage)
+      panels,if(science$cross_sample) config$context$columns$sample else NULL,science$mixed_lineage,
+      quality_group_column=config$context$columns$sample)
     attr(summary,"expression_review") <- expression_review
   } else if (!is.null(config$basic_expression_review)) {
     basic <- config$basic_expression_review

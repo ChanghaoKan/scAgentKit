@@ -44,3 +44,24 @@ turn_reply <- function(content = '{"draft":true}', tool = FALSE, input = 100, ou
 turn_call <- function(f, request = f$request, fn = function(...) turn_reply(), ...) {
   .sc_run_call(f$root, request, f$provider, fn, allow_external = f$provider$external, ...)
 }
+
+# Fixture-only exact-payload approval. Production uses the inspected suggestion action.
+ turn_approve_fixture <- function(root, request, reviewer, reason, expected_revision) {
+  .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
+  root <- .sc_run_root(root); owner <- .sc_run_lock(root)
+  on.exit(.sc_run_release(root, owner), add = TRUE)
+  state <- .sc_run_load(root)
+  .sc_run_qc_revision_check(state, expected_revision)
+  prepared <- .sc_run_turn_prepare(request, state$config$provider)
+  .sc_run_turn_guard(root, request, state$config$provider, prepared)
+  ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
+  .sc_run_turn_sequence(request, ledger$entries, prepared)
+  state$suggestion_transfer_hashes <- unique(c(state$suggestion_transfer_hashes, prepared$request_hash))
+  state <- .sc_run_event(state, "suggestion_transfer_approved", list(
+    request_hash = prepared$request_hash, payload_hash = .sc_run_provider_hash(prepared$payload),
+    session_hash = request$session$hash, cluster_id = request$cluster_id,
+    ordinal = as.integer(request$ordinal), reviewer = reviewer, reason = reason,
+    authority = "Exact outgoing structured payload only; no scientific approval."))
+  .sc_run_save(root, state)
+  invisible(prepared$request_hash)
+}

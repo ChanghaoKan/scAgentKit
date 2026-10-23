@@ -59,7 +59,7 @@ test_that("CellMarker never contacts arbitrary mirrors or trusts a cache sidecar
   cache <- mock_cellmarker_cache(); on.exit(unlink(cache$path,recursive=TRUE))
   for (url in c("http://117.50.127.228/table.xlsx","https://example.invalid/source-a.xlsx"))
     expect_error(annot_query_cellmarker("human",tissue="blood",local_file=cache$file,url=url),"fixed official HTTPS")
-  expect_error(annot_query_cellmarker("human",tissue="blood",cache_dir=cache$path),"waiting for a verified fixed")
+  expect_error(annot_query_cellmarker("human",tissue="blood"),"waiting for a verified fixed")
   expect_error(annot_query_cellmarker("human",local_file=cache$file),"explicit tissue")
   expect_error(annot_query_cellmarker("human",tissue="blood",local_file=cache$file,sha256=paste(rep("0",64),collapse="")),"SHA256 does not match")
   expect_error(annot_query_cellmarker("human",tissue="blood",local_file=cache$file,force_refresh=TRUE),"waiting for a verified fixed")

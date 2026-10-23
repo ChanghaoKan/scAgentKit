@@ -144,18 +144,11 @@ test_that("diagnostic summaries align literal saved cell IDs including numeric s
   expect_error(react_local(fixture, "cluster_context", list(cluster_id = "0")), "identity binding")
 })
 
-test_that("caches bind normalized arguments, checkpoint identity and result bytes", {
+test_that("normalized arguments retain result identity and reject stale context", {
   fixture <- react_tool_fixture(); on.exit(unlink(fixture$root, recursive = TRUE))
-  first <- react_local(fixture, "gene_expression", list(cluster_id = "0", genes = c("G02", "G01")), NULL)
-  second <- react_local(fixture, "gene_expression", list(genes = c("G01", "G02"), cluster_id = "0"), NULL)
-  expect_false(first$cached); expect_true(second$cached)
+  first <- react_local(fixture, "gene_expression", list(cluster_id = "0", genes = c("G02", "G01")))
+  second <- react_local(fixture, "gene_expression", list(genes = c("G01", "G02"), cluster_id = "0"))
   expect_identical(first$result_hash, second$result_hash)
-  files <- list.files(file.path(fixture$root, "annotation", "react", "cache"), full.names = TRUE)
-  expect_length(files, 1)
-  damaged <- readRDS(files[1]); damaged$result$genes[[1]]$mean_inside <- 999
-  saveRDS(damaged, files[1])
-  expect_error(react_local(fixture, "gene_expression", list(cluster_id = "0", genes = c("G01", "G02")), NULL), "cache record is invalid")
-  unlink(files)
   old_hash <- fixture$context$input_hash
   state <- fixture$state; state$config$context$tissue <- "lung"; state$config_hash <- .sc_run_hash(state$config); fixture$commit(state)
   expect_error(react_local(fixture, "cluster_context", list(cluster_id = "0")), "no longer matches")
@@ -163,7 +156,7 @@ test_that("caches bind normalized arguments, checkpoint identity and result byte
   expect_false(identical(old_hash, fixture$context$input_hash))
 })
 
-test_that("scientific checkpoint mutation, context mutation and cache symlinks fail closed", {
+test_that("scientific checkpoint mutation, context mutation and symlinks fail closed", {
   fixture <- react_tool_fixture(); on.exit(unlink(fixture$root, recursive = TRUE))
   original <- fixture$context
   fixture$context$config$normalized_layer <- "counts"
@@ -178,8 +171,8 @@ test_that("scientific checkpoint mutation, context mutation and cache symlinks f
   fixture$context <- original
   outside <- tempfile(); dir.create(outside); on.exit(unlink(outside, recursive = TRUE), add = TRUE)
   linked <- file.path(fixture$root, "linked-cache")
-  if (file.symlink(outside, linked)) expect_error(react_local(fixture, "cluster_context", list(cluster_id = "0"), linked), "nonsymlink")
-  expect_error(react_local(fixture, "cluster_context", list(cluster_id = "0"), outside), "inside")
+  if (file.symlink(outside, linked)) expect_false(.sc_run_react_safe_path(file.path(linked, "file"), fixture$root))
+  expect_false(.sc_run_react_safe_path(outside, fixture$root))
   path <- file.path(fixture$root, fixture$state$files$markers$path)
   saveRDS(list(changed = TRUE), path)
   expect_error(react_local(fixture, "cluster_markers", list(cluster_id = "0")), "checkpoint changed")
@@ -208,35 +201,28 @@ test_that("the public boundary rejects cells, paths, matrices, unknown fields an
   }
 })
 
-test_that("dispatch returns structured errors without echoing malformed input", {
+test_that("session worker rejects malformed and private arguments without changing state", {
   fixture <- react_tool_fixture(); on.exit(unlink(fixture$root, recursive = TRUE))
-  out <- .sc_run_react_dispatch(fixture$context, "delete_cells", list(path = "/private/file"))
+  runtime <- .sc_run_react_worker_start(fixture$context)
+  on.exit(.sc_run_react_worker_close(runtime), add = TRUE)
+  before <- .sc_project_sha_file(file.path(fixture$root, "state.rds"))
+  out <- .sc_run_react_worker_call(runtime, "delete_cells", list(path = "/private/file"))
   expect_false(out$ok); expect_identical(out$error$code, "unknown_tool")
-  out <- .sc_run_react_dispatch(fixture$context, "gene_expression", list(cluster_id = "0", genes = rep("x", 21)))
+  out <- .sc_run_react_worker_call(runtime, "gene_expression", list(cluster_id = "0", genes = rep("x", 21)))
   expect_false(out$ok); expect_identical(out$error$code, "invalid_arguments")
   expect_false(grepl("/private/", .sc_project_json(out), fixed = TRUE))
-})
-
-test_that("installed workers complete read-only tools and enforce real wall timeouts", {
-  fixture <- react_tool_fixture(); on.exit(unlink(fixture$root, recursive = TRUE))
-  # The worker loads the installed package, so this assertion also detects an
-  # out-of-date installed implementation when running source-only tests.
-  out <- .sc_run_react_dispatch(fixture$context, "cluster_context", list(cluster_id = "0"), timeout = 60)
+  out <- .sc_run_react_worker_call(runtime, "cluster_context", list(cluster_id = "0"))
   expect_true(out$ok, info = paste(out$error$code, out$error$message))
   expect_identical(out$result$cells, 6L)
-  hit <- .sc_run_react_dispatch(fixture$context, "cluster_context", list(cluster_id = "0"), timeout = 60)
+  hit <- .sc_run_react_worker_call(runtime, "cluster_context", list(cluster_id = "0"))
   expect_true(hit$cached)
   for (gene in c(fixture$cells[1], "/tmp/a", "source=/tmp/a")) {
-    private <- .sc_run_react_dispatch(fixture$context, "act_lookup", list(genes = gene))
+    private <- .sc_run_react_worker_call(runtime, "act_lookup", list(genes = gene))
     expect_false(private$ok)
     expect_identical(private$error$code, "private_output")
     expect_false(grepl(gene, .sc_project_json(private), fixed = TRUE))
   }
-  before <- .sc_project_sha_file(file.path(fixture$root, "state.rds"))
-  elapsed <- system.time(timed <- .sc_run_react_dispatch(fixture$context, "gene_expression",
-    list(cluster_id = "0", genes = "G01"), cache_dir = FALSE, timeout = .001))[["elapsed"]]
-  expect_false(timed$ok); expect_identical(timed$error$code, "timeout")
-  expect_lt(elapsed, 5)
+  expect_silent(.sc_run_react_worker_check(runtime, final = TRUE))
   expect_identical(.sc_project_sha_file(file.path(fixture$root, "state.rds")), before)
 })
 

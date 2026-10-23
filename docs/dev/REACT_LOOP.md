@@ -75,7 +75,7 @@ receipt recovery. The pbmc_small coordinator test stops at unapproved third-gate
 review; the three-gate accept-drafts acceptance test remains stage 4.
 
 The 50k-cell synthetic performance receipt is in
-benchmarks/react-session-50k/. Reproduce using tools/benchmark-react-tools.R to
+benchmarks/react-session-50k/. Reproduce using tools/create-react-benchmark-fixture.R to
 prepare the synthetic fixture and tools/benchmark-react-session.R to measure
 one session. It does not establish biological accuracy or the later full
 50k-cell public-data pipeline acceptance criterion.

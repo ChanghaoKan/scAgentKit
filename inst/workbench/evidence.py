@@ -9,7 +9,7 @@ import math
 from collections import Counter
 from pathlib import Path
 
-PROJECT_FORMAT_VERSION = 3
+PROJECT_FORMAT_VERSION = 4
 PROJECT_FORMAT_ERROR = "Project format is unsupported. Open it with its original software environment or create a new project."
 
 DATASET_ID = "pbmc3k-phase1"

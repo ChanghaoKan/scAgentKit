@@ -72,6 +72,27 @@ function activeSuggestion() {return ["queued", "running"].includes(state.suggest
 function continuationEnabled() {return state.continuation?.enabled === true;}
 function ready() {return !!state.view && state.view.effective_readonly !== true && !state.busy && !state.stale && !activeJob() && !activeSuggestion() && !state.suggestionBusy && !state.suggestionChaining && !state.suggestionLost && !state.awaitingFreshInspect;}
 function annotationRows() {return array(state.view?.run.annotation_review?.details?.annotations);}
+function measuredExpression(item) {
+  const value = state.view?.run.annotation_review?.details?.measured_expression;
+  return value ? {...value, clusters: array(value.clusters).filter(row => String(row.cluster) === item.clusterId),
+    display_cluster: item.clusterId, display_boundary: "Expression contrasts are for this literal cluster. Shared quality, broad-expression and coexpression evidence describes the complete saved cohort; it is not a cluster-specific total."} : null;
+}
+function linkedAnnotationCluster() {
+  const fragment = new URLSearchParams((window.location.hash || "").slice(1));
+  const id = fragment.size === 1 && fragment.getAll("cluster").length === 1 ? fragment.get("cluster") : null;
+  return annotationRows().some(row => row.clusterId === id) ? id : null;
+}
+function revealLinkedAnnotation() {
+  const id = linkedAnnotationCluster();
+  if (id === null) return;
+  state.selectedCluster = id;
+  $("run-annotation-context").open = true;
+  $("run-annotation-context-title").textContent = "Current annotation review";
+  renderCluster();
+  $("annotation-title").setAttribute("tabindex", "-1");
+  $("annotation-title").focus();
+  $("annotation-title").scrollIntoView?.({block: "start"});
+}
 function normalizeRow(row) {return {clusterId: String(row.clusterId), label: row.label, confidence: row.confidence, rationale: row.rationale, markers: array(row.markers)};}
 function admissibleGenes(item) {return [...new Set(array(item?.supplied_marker_stats).map(row => row.gene).filter(gene => typeof gene === "string" && gene))];}
 function unresolvedLabel(label) {return ["unknown", "unannotated"].includes(label.trim().toLowerCase());}
@@ -840,8 +861,9 @@ function renderJointEvidence(item) {
     contrasts.append(table(["Gene", "Saved contrast direction", "pct1 - pct2"], array(expression.records).map(row => [row.gene, row.direction, evidenceNumber(row.detection_difference)]), (value, index) => index === 0 ? geneNode(value) : null));
     details.append(contrasts);
   }
-  if (item.measured_expression) {
-    const panels = jointDetail(details, "Saved panel expression, cross-sample contrasts and local coexpression", "annotation-measured-panels", item.measured_expression);
+  const measured = measuredExpression(item);
+  if (measured) {
+    const panels = jointDetail(details, "Saved panel expression, cross-sample contrasts and local coexpression", "annotation-measured-panels", measured);
     panels.append(element("p", "These saved local measurements include missing genes and per-cell count flags. Coexpression is not a doublet or ambient diagnosis, and cells are not donor replicates."));
   }
   const currentCitations = jointDetail(details, "Current proposal citations", "annotation-joint-citations", array(current.citations).map(row => ({gene: row?.gene, status: row?.status, statistics: evidenceRecord(row?.statistics, ["gene", "avgLog2FC", "pct1", "pct2", "pAdj", "source"])})));
@@ -879,7 +901,7 @@ function renderCluster() {
     if(!array(evidence.plots).length)plots.append(element("p","Plots unavailable: "+evidence.dotplot_status+"; citations: "+evidence.citation_status));
   }
   const reference = $("annotation-reference"); reference.replaceChildren(element("p", "Saved reference status: " + (item.local_reference?.status || "unavailable"), {class: "annotation-reference-status"}), raw(item.local_reference || {status: "unavailable", interpretation: "No local-reference evidence was supplied."}));
-  if (item.measured_expression) reference.append(raw(item.measured_expression));
+  if (!joint && measuredExpression(item)) reference.append(raw(measuredExpression(item)));
   const row = state.drafts.get(item.clusterId); $("annotation-label").value = row.label; $("annotation-confidence").value = row.confidence; $("annotation-rationale").value = row.rationale;
   const citations = $("annotation-citations"), genes = admissibleGenes(item); citations.replaceChildren(); state.citationInputs = [];
   for (const gene of genes) {
@@ -897,12 +919,12 @@ function updateDraftStatus() {
 function renderAnnotation() {
   const record = state.view.run.annotation_review, details = record.details, rows = annotationRows();
   state.drafts = new Map(rows.map(item => [String(item.clusterId), normalizeRow(item.proposal)]));
+  const linked = linkedAnnotationCluster();
+  if (linked !== null) state.selectedCluster = linked;
   if (!rows.some(item => item.clusterId === state.selectedCluster)) {
     // A local workbench link selects a row of this verified proposal only. It
     // never supplies a label, approval, scope or server-side action.
-    const fragment = new URLSearchParams((window.location.hash || "").slice(1));
-    const linked = fragment.size === 1 && fragment.getAll("cluster").length === 1 ? fragment.get("cluster") : null;
-    state.selectedCluster = rows.some(item => item.clusterId === linked) ? linked : rows[0].clusterId;
+    state.selectedCluster = rows[0].clusterId;
   }
   $("annotation-counts").textContent = `${details.cell_count} exact cells · ${details.cluster_count} clusters · output ${details.output_columns?.label || record.target_column}`;
   $("annotation-plan-overview").replaceChildren(table(["Literal cluster", "Cells", "Proposed label", "Qualitative confidence", "Cited markers", "Saved rationale"], rows.map(item => [item.clusterId, item.cell_count, item.proposal.label, item.proposal.confidence, array(item.proposal.markers).join(", "), item.proposal.rationale])));
@@ -1875,10 +1897,13 @@ function render() {
   $("run-strategy").hidden = !run.strategy_review;
   if (run.strategy_review) renderStrategy(); else {state.strategyDraftText = null; state.recommendationFacts = null;}
   $("run-annotation-context").hidden = !run.annotation_review;
-  $("run-annotation-context").open = !!run.annotation_review && (current?.kind === "annotation" && run.status !== "complete" || /^#annotation-cluster=/.test(window.location.hash || ""));
+  $("run-annotation-context").open = !!run.annotation_review && (current?.kind === "annotation" && run.status !== "complete" || linkedAnnotationCluster() !== null);
   $("run-annotation-context-title").textContent = $("run-annotation-context").open ? "Current annotation review" : "Saved annotation review";
   $("run-annotation").hidden = !run.annotation_review;
-  if (run.annotation_review) renderAnnotation(); else state.drafts.clear();
+  if (run.annotation_review) {
+    renderAnnotation();
+    revealLinkedAnnotation();
+  } else state.drafts.clear();
   renderAnnotationPreparation();
   $("run-complete").hidden = run.status !== "complete" && !current?.can_undo;
   const output = $("run-output"); output.replaceChildren();
@@ -1995,6 +2020,12 @@ window.addEventListener("message", event => {
   if (event.origin === window.location.origin && event.source === $("run-qc-frame").contentWindow && event.data?.type === "scagentkit.qc-reviewed" && event.data.project_id === state.view?.run.project_id && !state.busy && !activeJob() && !dirty()) load();
 });
 window.addEventListener("pagehide", () => {stopPolling(); stopSuggestionPolling();});
+window.addEventListener("beforeunload", event => {
+  if (!dirty()) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+window.addEventListener("hashchange", () => {if (state.view?.run.annotation_review) revealLinkedAnnotation();});
 window.addEventListener("pageshow", event => {if (event.persisted && state.view && !state.busy) {if (dirty()) {state.stale = true; state.awaitingFreshInspect = true; renderContinuation(); buttons();} else load();}});
 $("storage-refresh")?.addEventListener("click", async () => {
   const out = $("storage-summary");

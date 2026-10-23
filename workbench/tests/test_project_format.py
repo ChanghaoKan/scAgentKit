@@ -68,7 +68,7 @@ class ProjectFormatTests(unittest.TestCase):
                     lambda path: RunSubclusterRuntime(path, self.workspace, rscript=str(self.contract.executable))]
 
     def test_every_run_runtime_rejects_missing_old_and_future_versions_without_writes(self):
-        for version in (None, 1, 2, PROJECT_FORMAT_VERSION + 1):
+        for version in (None, 1, 2, 3, PROJECT_FORMAT_VERSION + 1):
             if version is None:
                 self.marker.unlink(missing_ok=True)
             else:
@@ -79,14 +79,14 @@ class ProjectFormatTests(unittest.TestCase):
 
     def test_marker_has_exact_bounded_typed_contract(self):
         for value in ({"project_format_version": True}, {"project_format_version": str(PROJECT_FORMAT_VERSION)},
-                      {"project_format_version": 3, "extra": None}, {}, [],
+                      {"project_format_version": 4, "extra": None}, {}, [],
                       {"project_format_version": "x" * 4096}):
             self.marker.write_text(json.dumps(value))
             with self.subTest(value=str(value)[:60]):
                 self.unchanged_rejection(lambda: check_project_format(self.project, rscript=str(self.contract.executable)))
         self.marker.unlink()
         target = self.root / "marker.json"
-        target.write_text('{"project_format_version":3}')
+        target.write_text('{"project_format_version":4}')
         self.marker.symlink_to(target)
         self.unchanged_rejection(lambda: check_project_format(self.project, rscript=str(self.contract.executable)))
 
@@ -125,7 +125,7 @@ class ProjectFormatTests(unittest.TestCase):
 
     def test_current_marker_cannot_admit_old_missing_or_future_R_state(self):
         self.mark()
-        for version in (None, 1, 2, PROJECT_FORMAT_VERSION + 1):
+        for version in (None, 1, 2, 3, PROJECT_FORMAT_VERSION + 1):
             self.contract.state(self.project, version)
             for constructor in self.constructors():
                 with self.subTest(version=version, runtime=constructor):
@@ -303,7 +303,7 @@ class ProjectFormatTests(unittest.TestCase):
         self.assertEqual(before, snapshot(self.root))
 
     def test_portable_loader_registry_and_import_reject_before_cache_lock(self):
-        for version in (None, 1, 2, PROJECT_FORMAT_VERSION + 1):
+        for version in (None, 1, 2, 3, PROJECT_FORMAT_VERSION + 1):
             value = project_fixture()
             if version is None:
                 value.pop("project_format_version")
@@ -323,7 +323,7 @@ class ProjectFormatTests(unittest.TestCase):
 
     def test_portable_runtime_rejects_unversioned_or_old_evidence(self):
         runtime = ProjectRuntime(ProjectLoader(self.root / "unused"))
-        for version in (None, 1, 2, PROJECT_FORMAT_VERSION + 1):
+        for version in (None, 1, 2, 3, PROJECT_FORMAT_VERSION + 1):
             value = {"project_format_version": version}
             for operation in (lambda: runtime.describe(value), lambda: runtime.augment(value)):
                 self.unchanged_rejection(operation)

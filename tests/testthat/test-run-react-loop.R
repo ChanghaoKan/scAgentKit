@@ -255,7 +255,7 @@ test_that("strict sessions persist the exact unsent payload for explicit approva
   trace <- readRDS(file.path(f$root, run$traces[["0"]]$path))
   request <- trace$pending_request
   expect_true(is.list(request))
-  .sc_run_turn_approve(f$root, request, "fixture-reviewer", "Exact synthetic payload reviewed.",
+  turn_approve_fixture(f$root, request, "fixture-reviewer", "Exact synthetic payload reviewed.",
     .sc_run_load(f$root)$revision)
   run <- .sc_run_react_refine(f$root, f$baseline, fn)
   expect_identical(count, 1L)

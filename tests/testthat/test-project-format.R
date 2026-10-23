@@ -9,7 +9,7 @@ format_snapshot <- function(root) {
     bytes = lapply(file.path(root, paths[regular]), function(path)
       readBin(path, "raw", n = file.info(path)$size)))
 }
-format_fixture <- function(version = 3L, marker = TRUE) {
+format_fixture <- function(version = .sc_project_format_version(), marker = TRUE) {
   root <- tempfile("project-format-"); dir.create(root)
   if (marker) .sc_project_write_json(file.path(root, "project-format.json"),
     list(project_format_version = version))
@@ -25,7 +25,7 @@ test_that("every exported project entry rejects old projects without writes", {
   exports <- getNamespaceExports("scAgentKit")
   entries <- sort(c("sc_analyze", "sc_start", "sc_open", grep("^sc_run($|_)", exports, value = TRUE)))
   expect_true(length(entries) >= 28L)
-  for (version in list(NULL, 1L, 2L, 4L)) {
+  for (version in list(NULL, 1L, 2L, 3L, 5L)) {
     root <- format_fixture(version, marker = !is.null(version))
     before <- format_snapshot(root)
     for (name in entries) {
@@ -51,7 +51,7 @@ test_that("a current marker cannot authorize old state or a changed checksum", {
   expect_error(sc_run_control(root, cancel = TRUE), "Open it with its original software environment or create a new project")
   expect_error(.sc_run_lock(root), "Open it with its original software environment or create a new project")
   expect_identical(format_snapshot(root), before)
-  envelope$state$project_format_version <- 3L
+  envelope$state$project_format_version <- 4L
   saveRDS(envelope, file.path(root, "state.rds"))
   before <- format_snapshot(root)
   expect_error(sc_run_resume(root), "State checksum mismatch")
@@ -63,7 +63,7 @@ test_that("new roots receive one marker and existing unversioned content is refu
   root <- tempfile("new-format-"); on.exit(unlink(root, recursive = TRUE))
   expect_identical(.sc_run_root(root, create = TRUE), normalizePath(root))
   expect_identical(jsonlite::read_json(file.path(root, "project-format.json")),
-    list(project_format_version = 3L))
+    list(project_format_version = 4L))
   before <- format_snapshot(root)
   .sc_run_root(root, create = TRUE)
   expect_identical(format_snapshot(root), before)
@@ -95,7 +95,7 @@ test_that("child operations verify parent and destination format before locks", 
 
 test_that("format helpers participate in runtime and scientific fingerprints", {
   before <- .sc_run_implementation()
-  testthat::local_mocked_bindings(.sc_project_format_version = function() 4L,
+  testthat::local_mocked_bindings(.sc_project_format_version = function() 5L,
     .package = "scAgentKit")
   expect_false(identical(before, .sc_run_implementation()))
 })
@@ -103,7 +103,7 @@ test_that("format helpers participate in runtime and scientific fingerprints", {
 test_that("exported bundle formats are checked after integrity without writing", {
   root <- tempfile("bundle-format-"); dir.create(root)
   on.exit(unlink(root, recursive = TRUE))
-  for (version in list(NULL, 1L, 2L, 4L)) {
+  for (version in list(NULL, 1L, 2L, 3L, 5L)) {
     .sc_project_write_json(file.path(root, "project.json"),
       list(schema = "scagentkit.project.v1", project_format_version = version))
     asset <- .sc_project_file_record(root, "project.json")
@@ -118,12 +118,13 @@ test_that("exported bundle formats are checked after integrity without writing",
 })
 
 format_installed_bridge <- function(root) {
-  bridge <- system.file("workbench", "project_format_bridge.R", package = "scAgentKit")
+  installed <- find.package("scAgentKit", lib.loc = .libPaths())
+  bridge <- file.path(installed, "workbench", "project_format_bridge.R")
   stopifnot(nzchar(bridge), file.exists(bridge))
   output <- tempfile("format-bridge-output-"); error <- tempfile("format-bridge-error-")
   on.exit(unlink(c(output, error)), add = TRUE)
-  libraries <- unique(c(dirname(find.package("scAgentKit")), .libPaths()))
-  environment <- paste0("R_LIBS_USER=", shQuote(paste(libraries, collapse = .Platform$path.sep)))
+  libraries <- unique(c(dirname(installed), .libPaths()))
+  environment <- paste0(c("R_LIBS=", "R_LIBS_USER="), shQuote(paste(libraries, collapse = .Platform$path.sep)))
   status <- system2(file.path(R.home("bin"), "Rscript"),
     args = shQuote(c("--vanilla", bridge, root)), env = environment,
     stdout = output, stderr = error)
@@ -137,7 +138,7 @@ test_that("installed format bridge verifies serialized authority without writing
     list(status = 0L, output = "scagentkit.project-format.ok"))
   expect_identical(format_snapshot(root), before)
   original <- readRDS(file.path(root, "state.rds"))
-  for (version in list(NULL, 1L, 2L, 4L)) {
+  for (version in list(NULL, 1L, 2L, 3L, 5L)) {
     envelope <- original
     envelope$state$project_format_version <- version
     envelope$hash <- .sc_run_hash(envelope$state)

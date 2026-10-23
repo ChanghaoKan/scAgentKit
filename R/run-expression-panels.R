@@ -1,6 +1,6 @@
 # Sparse, explicit expression measurements; no panel name becomes a label.
 .sc_run_expression_panels <- function(seu, assay, counts_layer, data_layer, cluster_column,
-  panels=list(), sample_column=NULL, mixed_lineage=FALSE) {
+  panels=list(), sample_column=NULL, mixed_lineage=FALSE, quality_group_column=sample_column) {
   counts <- .sc_project_layer(seu,assay,counts_layer,raw_counts=TRUE)
   data <- .sc_project_layer(seu,assay,data_layer)
   cells <- colnames(seu); metadata <- seu[[]]
@@ -48,7 +48,10 @@
       cross_sample_status=if(length(Filter(function(x) x$status=="measured",strata))>=2L) "descriptive_replication" else "unavailable")
   })
   totals <- as.numeric(Matrix::colSums(counts)); detected <- as.numeric(Matrix::colSums(counts>0))
-  quality_groups <- if(is.null(sample)) rep("unstratified",length(cells)) else sample
+  quality_groups <- if(is.null(quality_group_column)) rep("unstratified",length(cells)) else
+    as.character(metadata[[quality_group_column]])
+  if(length(quality_groups)!=length(cells) || anyNA(quality_groups) || any(!nzchar(quality_groups)))
+    stop("Expression count flags require complete explicitly declared quality groups.",call.=FALSE)
   high_count <- rep(NA,length(cells)); count_z <- rep(NA_real_,length(cells))
   for(group in unique(quality_groups)) {
     index <- which(quality_groups==group); transformed <- log10(totals[index]+1)

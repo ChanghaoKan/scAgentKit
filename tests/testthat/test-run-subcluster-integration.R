@@ -770,6 +770,6 @@ test_that("child undo and unknown require explicit current revisions", {
   subcluster_integration_create(parent, child)
   snapshot <- sc_run_inspect(child)
   expect_error(sc_run_subcluster_unknown(child, project_id = snapshot$project_id,
-    input_hash = snapshot$review_node$input_hash %||% snapshot$input_hash, expected_revision = NULL,
+    input_hash = if (is.null(snapshot$review_node$input_hash)) snapshot$input_hash else snapshot$review_node$input_hash, expected_revision = NULL,
     reviewer = "offline QA", reason = "Synthetic.", request_id = "unknown-null"), "expected_revision is required")
 })

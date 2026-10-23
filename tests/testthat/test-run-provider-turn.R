@@ -53,8 +53,8 @@ test_that("strict authorization requires a saved exact payload receipt", {
   request <- f$request; request$approved_payload_hash <- .sc_run_request_hash(request, f$provider)
   expect_identical(turn_call(f, request)$status, "awaiting_external_approval")
   revision <- .sc_run_load(f$root)$revision
-  expect_error(.sc_run_turn_approve(f$root, request, "reviewer", "Reviewed exact body.", revision + 1L))
-  .sc_run_turn_approve(f$root, request, "reviewer", "Reviewed exact body.", revision)
+  expect_error(turn_approve_fixture(f$root, request, "reviewer", "Reviewed exact body.", revision + 1L))
+  turn_approve_fixture(f$root, request, "reviewer", "Reviewed exact body.", revision)
   out <- turn_call(f, request)
   expect_identical(out$status, "ok"); expect_identical(out$authorization$mode, "strict")
   changed <- request; changed$messages[[2]]$content <- "Different aggregate."
@@ -174,7 +174,7 @@ test_that("a received invalid response can advance to another cluster with a saf
 test_that("post-hoc turns have no monetary cap while per-cluster limits remain enforced", {
   f <- turn_fixture(TRUE, FALSE); on.exit(unlink(f$root, recursive = TRUE))
   request <- f$request
-  request$approved_payload_hash <- .sc_run_turn_approve(f$root, request, "reviewer",
+  request$approved_payload_hash <- turn_approve_fixture(f$root, request, "reviewer",
     "Reviewed uncapped post-hoc cost and exact payload.", .sc_run_load(f$root)$revision)
   out <- turn_call(f, request, fn = function(...) { x <- turn_reply(); x$cost_usd <- 2; x })
   expect_identical(out$status, "ok"); expect_equal(out$cost_usd, 2)

@@ -64,7 +64,7 @@ class FactsTransport(unittest.TestCase):
     def test_invalid_facts_never_start_the_R_bridge(self):
         with tempfile.TemporaryDirectory() as temp:
             project = Path(temp); (project / "state.rds").write_bytes(b"authority fixture")
-            (project / "project-format.json").write_text('{"project_format_version":3}')
+            (project / "project-format.json").write_text('{"project_format_version":4}')
             runtime = RunReviewRuntime(project)
             with patch("qc_runtime.subprocess.run") as process, self.assertRaises(StoreError):
                 runtime.decide(request(dict(columns=dict(infer_sample="forbidden"))), runtime.csrf_token)

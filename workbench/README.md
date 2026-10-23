@@ -57,8 +57,8 @@ review and edit the strategy, then select **Approve strategy and continue locall
 The computed PC evidence and ordinary resolution scan then require a second
 strategy approval: inspect the tree, marker contrasts and sample composition,
 select an actually scanned resolution, save any edit, and approve the fresh
-measured review. At the annotation boundary, select
-**Prepare annotation table**, inspect the markers and fill in the blank rows.
+measured review. At the annotation boundary, inspect the markers and fill in
+the directly displayed blank annotation rows.
 Save the complete proposal, inspect it, then select **Approve annotation and
 continue locally** to produce the saved result. These are three scientific
 approvals. Starting the service or preparing a table grants none. This guide
@@ -148,9 +148,9 @@ children; it does not copy keys, callbacks, request consent or scientific approv
 
 ## Project format and reopening
 
-The current project format version is **3**, independent of envelope names such
+The current project format version is **4**, independent of envelope names such
 as `scagentkit.run-state.v1`. A run directory contains `project-format.json` with
-`{"project_format_version":3}` and an authoritative `state.rds` whose state
+`{"project_format_version":4}` and an authoritative `state.rds` whose state
 contains the same version under its saved hash. The software creates both;
 do not construct or edit them to open a project from another format.
 
@@ -166,7 +166,7 @@ Matching the format does not replace input, implementation or approval checks.
 
 Keep the complete directory, including the marker and state, in backups.
 Restoring or moving files does not upgrade the format. Portable evidence exports
-instead store version 3 in `project.json`, bound by the bundle digest; see the
+instead store version 4 in `project.json`, bound by the bundle digest; see the
 [portable project contract](PROJECT_SCHEMA.md).
 
 ## Saved views and interrupted sessions

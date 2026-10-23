@@ -25,6 +25,65 @@ permissions:
   contents: read
 
 jobs:
+  older-doublet-pair:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: "no"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.3'
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache: false
+          dependencies: '"hard"'
+          extra-packages: |
+            any::BiocManager
+            any::remotes
+            any::testthat
+      - name: Install the exact older classifier pair in an isolated library
+        shell: Rscript {0}
+        run: |
+          native_lib <- file.path(Sys.getenv("RUNNER_TEMP"), "older-doublet-library")
+          dir.create(native_lib)
+          .libPaths(c(native_lib, .libPaths()))
+          options(repos = BiocManager::repositories(version = "3.21"))
+          remotes::install_url("https://cran.r-project.org/src/contrib/Archive/xgboost/xgboost_1.7.11.1.tar.gz",
+            lib = native_lib, dependencies = NA, upgrade = "never")
+          remotes::install_url("https://bioconductor.org/packages/3.21/bioc/src/contrib/scDblFinder_1.22.0.tar.gz",
+            lib = native_lib, dependencies = NA, upgrade = "never")
+          stopifnot(as.character(packageVersion("scDblFinder")) == "1.22.0",
+            as.character(packageVersion("xgboost")) == "1.7.11.1")
+      - name: Install a temporary source copy and require genuine classifier acceptance
+        shell: Rscript {0}
+        run: |
+          native_lib <- file.path(Sys.getenv("RUNNER_TEMP"), "older-doublet-library")
+          .libPaths(c(native_lib, .libPaths()))
+          source_copy <- file.path(Sys.getenv("RUNNER_TEMP"), "older-doublet-source")
+          dir.create(source_copy)
+          paths <- list.files(".", all.files = TRUE, no.. = TRUE, full.names = TRUE)
+          stopifnot(all(file.copy(paths[basename(paths) != ".git"], source_copy, recursive = TRUE)))
+          remotes::install_local(source_copy, lib = native_lib, dependencies = FALSE, upgrade = "never", build = FALSE)
+          loadNamespace("scAgentKit")
+          getFromNamespace(".sc_run_doublet_dependencies", "scAgentKit")()
+          stopifnot(as.character(packageVersion("scDblFinder")) == "1.22.0",
+            as.character(packageVersion("xgboost")) == "1.7.11.1")
+          results <- testthat::test_file(file.path(source_copy, "tests/testthat/test-run-doublet-legacy.R"),
+            package = "scAgentKit", load_package = "installed", load_helpers = FALSE,
+            reporter = "summary", stop_on_failure = TRUE)
+          summary <- as.data.frame(results)
+          write.csv(summary[intersect(c("file", "test", "failed", "skipped", "error", "passed"), names(summary))],
+            file.path(Sys.getenv("RUNNER_TEMP"), "older-doublet-tests.csv"), row.names = FALSE)
+          stopifnot(!any(summary$skipped))
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: older-doublet-pair
+          path: ${{ runner.temp }}/older-doublet-tests.csv
+          if-no-files-found: warn
   source-install:
     strategy:
       fail-fast: false

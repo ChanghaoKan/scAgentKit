@@ -7,8 +7,8 @@ run_provider_fixture <- function(external = FALSE) {
     purpose = "qc_proposal", evidence_hash = paste(rep("a", 64), collapse = ""),
     validator = function(x) {
       x <- .decision_object(x, required = c("operation", "reason"))
-      x$operation <- .decision_string(x$operation, "operation", "keep_all")
-      x$reason <- .decision_string(x$reason, "reason")
+      x$operation <- .sc_run_provider_scalar(x$operation, "operation", "^keep_all$")
+      x$reason <- .sc_run_provider_scalar(x$reason, "reason")
       x
     })
   request$approved_payload_hash <- .sc_run_request_hash(request, provider)

@@ -201,6 +201,37 @@ try {
     await screenshot('00-conservative-QC-policy');
   });
   await page.goto(launch.launch.url);await ui('run-refresh').waitFor();await fresh();
+  await test('workflow map explains QC and ReAct by pointer, keyboard and touch without a write',async()=>{
+    const mapPage=await context.newPage(), posts=[];
+    let touchContext;
+    mapPage.on('pageerror',error=>report.page_errors.push(error.message));
+    mapPage.on('request',request=>{if(request.method()==='POST')posts.push(new URL(request.url()).pathname);});
+    const authority=path.join(output,'project','state.rds');
+    const before=await fs.readFile(authority);
+    try {
+      const url=new URL(launch.launch.url);url.pathname='/workbench';url.hash='';
+      await mapPage.goto(url.href);
+      const qc=mapPage.getByTestId('workflow-step-qc'), react=mapPage.getByTestId('workflow-step-react');
+      await qc.waitFor();await qc.hover();
+      assert.match(await mapPage.locator('#wb-workflow-detail').innerText(),/Where do the QC rules come from/);
+      await react.focus();assert.equal(await react.getAttribute('aria-pressed'),'true');
+      assert.match(await mapPage.locator('#wb-workflow-detail').innerText(),/ReAct|read-only|read.only/i);
+      await mapPage.mouse.move(0,0);await qc.hover();assert.equal(await qc.getAttribute('aria-pressed'),'true');
+      touchContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+      await touchContext.route('**/*',route=>{const value=route.request().url();if(value.startsWith(origin+'/')||value.startsWith('data:'))return route.continue();report.external_requests.push(value);return route.abort();});
+      const touchPage=await touchContext.newPage();
+      touchPage.on('pageerror',error=>report.page_errors.push(error.message));
+      touchPage.on('request',request=>{if(request.method()==='POST')posts.push(new URL(request.url()).pathname);});
+      await touchPage.goto(url.href);
+      const touchQC=touchPage.getByTestId('workflow-step-qc'), touchReAct=touchPage.getByTestId('workflow-step-react');
+      await touchQC.waitFor();await touchQC.tap();await touchReAct.tap();
+      await touchPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+      assert.equal(await touchReAct.getAttribute('aria-pressed'),'true');
+      assert.equal(await touchPage.locator('#wb-workflow-detail').isVisible(),true);
+      assert.equal(await touchPage.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
+      assert.deepEqual(posts,[]);assert.deepEqual(await fs.readFile(authority),before);
+    } finally {await touchContext?.close();await mapPage.close();}
+  });
   await test('main entry exposes sample-aware QC, top-50 empirical PC policy and editable strategy',async()=>{
     const d=view.run.strategy_review?.details,p=d?.canonical_proposal;assert(d&&p);
     assert.equal(d.recommendations?.schema,'scagentkit.recommendations.v1','Main entry must expose the saved deterministic recommendation layer');

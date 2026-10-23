@@ -8,8 +8,8 @@ provider_metadata_fixture <- function(external = FALSE) {
     user_prompt = "Public synthetic aggregate: 10 cells.", purpose = "qc",
     validator = function(x) {
       .decision_object(x, c("operation", "reason"))
-      .decision_string(x$operation, "operation", "keep_all")
-      .decision_string(x$reason, "reason")
+      .sc_run_provider_scalar(x$operation, "operation", "^keep_all$")
+      .sc_run_provider_scalar(x$reason, "reason")
       x
     })
   request$approved_payload_hash <- .sc_run_request_hash(request, provider)

@@ -36,7 +36,8 @@ doublet_engine_mock_detection <- function(counts, options, rate, seed) {
     threshold = .5, warnings = character(), messages = "Test-only deterministic algorithm-prediction fixture; no classifier was executed.",
     classifier_audit = list(train_attempts = 3L, train_successes = 3L, predict_attempts = 3L,
       predict_successes = 3L, training_errors = character(), prediction_errors = character(), test_only_mock = TRUE),
-    adapter_source_hashes = scAgentKit:::.sc_run_doublet_classifier_source_hashes())
+    adapter_source_hashes = scAgentKit:::.sc_run_doublet_classifier_source_hashes(),
+    adapter_versions = list(scDblFinder = "1.26.7", xgboost = "3.2.1.1"))
 }
 
 doublet_engine_mock_reference <- function(fixture) {

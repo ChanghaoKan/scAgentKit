@@ -21,8 +21,10 @@
   const validId = value => typeof value === "string" || (typeof value === "number" && Number.isFinite(value));
   const suppliedText = value => value === undefined ? "—" : value !== null && typeof value === "object" ? JSON.stringify(value) : String(value);
   const numericText = value => value === undefined || value === null || value === "" ? "—" : suppliedText(value);
+  const selections = new WeakMap();
 
   function embedding(target, {points, clusters, name = "Embedding", title, selectedCluster, onSelect, showAll = true, savedLabels, labelColumn, colorBy = target.getAttribute("data-color-by") || "cluster"} = {}) {
+    selections.delete(target);
     target.replaceChildren();
     const embeddingName = name === undefined || name === null || name === "" ? "Embedding" : String(name);
     target.append(node("h3", {class: "embedding-title", "data-testid": "embedding-title"}, embeddingName));
@@ -72,12 +74,14 @@
       });
       control.append(select); target.append(control);
     }
+    const circles = [];
     for (const point of [...points].sort((a, b) => Number(selected(a)) - Number(selected(b)))) {
       const isSelected = selected(point);
       const circle = svgNode("circle", {cx: scaleX(point.x), cy: scaleY(point.y), r: isSelected ? 2.05 : 1.6, fill: isSelected || showAll ? (byLabel ? labelColors.get(labels.get(String(point.cellId))) : colors.get(String(point.clusterId))) || "#dce2ed" : "#dce2ed", opacity: isSelected ? .95 : hasSelection ? .4 : .72, stroke: isSelected ? "#172b4d" : "none", "stroke-width": isSelected ? .65 : 0, "data-selected": isSelected, class: "umap-point", "data-cluster": point.clusterId, "data-cell-id": point.cellId});
       circle.append(svgNode("title", {}, `${point.cellId} · cluster ${point.clusterId}${byLabel ? ` · saved label ${labels.get(String(point.cellId)) ?? "(missing)"}` : ""}`));
       if (typeof onSelect === "function") circle.addEventListener("click", () => onSelect(point.clusterId));
       svg.append(circle);
+      circles.push({point, circle});
     }
     const chart = node("div", {class: "umap-chart", "data-testid": "embedding-chart"}); chart.append(svg); target.append(chart);
     const legend = node("div", {class: "umap-legend", "data-testid": "embedding-legend"});
@@ -93,7 +97,25 @@
       legend.append(item);
     }
     target.append(legend);
+    selections.set(target, (id, all) => {
+      selectedCluster = id; showAll = all;
+      const has = id !== undefined && id !== null;
+      for (const {point, circle} of circles) {
+        const active = has && String(point.clusterId) === String(id);
+        for (const [key, value] of Object.entries({r: active ? 2.05 : 1.6,
+          fill: active || all ? (byLabel ? labelColors.get(labels.get(String(point.cellId))) : colors.get(String(point.clusterId))) || "#dce2ed" : "#dce2ed",
+          opacity: active ? .95 : has ? .4 : .72, stroke: active ? "#172b4d" : "none", "stroke-width": active ? .65 : 0, "data-selected": active})) circle.setAttribute(key, String(value));
+        if (active) svg.append(circle);
+      }
+      svg.setAttribute("aria-label", `Real ${embeddingName}: ${points.length} cells${has ? `, cluster ${id} selected` : ""}`);
+    });
     return target;
+  }
+
+  function selectEmbedding(target, id, showAll = true) {
+    const select = selections.get(target);
+    if (!select) return false;
+    select(id, showAll); return true;
   }
 
   function markers(target, rows, {species} = {}) {
@@ -127,5 +149,11 @@
     const wrap = node("div", {class: "table-wrap"}); wrap.append(table); target.append(wrap);
     return target;
   }
-  globalThis.ScEvidenceDisplay = Object.freeze({embedding, markers});
+  function expressionForCluster(value, clusterId) {
+    if (!value || typeof value !== "object") return null;
+    return {...value, clusters: (Array.isArray(value.clusters) ? value.clusters : []).filter(row => String(row.cluster) === String(clusterId)),
+      display_cluster: clusterId,
+      display_boundary: "Expression contrasts are for this literal cluster. Shared quality, broad-expression and coexpression evidence describes the complete saved cohort; it is not a cluster-specific total."};
+  }
+  globalThis.ScEvidenceDisplay = Object.freeze({embedding, selectEmbedding, markers, expressionForCluster});
 })();

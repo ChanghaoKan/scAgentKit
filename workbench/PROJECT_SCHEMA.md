@@ -5,7 +5,7 @@ Writeback requires a verified project and a `scagentkit.review-journal.v1`
 journal bound to its exact project, source and snapshot identities. All files
 stay local.
 
-The required project format version is **3**. It is independent of schema names
+The required project format version is **4**. It is independent of schema names
 such as `scagentkit.project.v1` and belongs in `project.json`, where the bundle
 digest binds it. It is not a field in the manifest or review journal. Missing,
 damaged or mismatched formats are rejected before project writes; use the
@@ -48,7 +48,7 @@ assay missing any object cell are rejected with helpful explicit remediation.
 `project.json`:
 
 ```json
-{"schema":"scagentkit.project.v1","project_format_version":3,
+{"schema":"scagentkit.project.v1","project_format_version":4,
  "projectId":"study-A","displayName":"Study A",
  "identity":{"algorithm":"scagentkit.source.v1","fingerprint":"sha256"},
  "cells":[{"cellId":"001","clusterId":"T alpha","qc":{}}],

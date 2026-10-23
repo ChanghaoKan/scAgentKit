@@ -302,30 +302,10 @@
     is.character(event$details$reason) && nzchar(event$details$reason), logical(1)))
 }
 
-# Internal hook for the existing exact-payload approval action; not a tool or a
-# scientific approval. The later loop/UI integration supplies the inspected revision.
-.sc_run_turn_approve <- function(root, request, reviewer, reason, expected_revision) {
-  .sc_project_string(reviewer, "reviewer"); .sc_project_string(reason, "reason")
-  root <- .sc_run_root(root); owner <- .sc_run_lock(root)
-  on.exit(.sc_run_release(root, owner), add = TRUE)
-  state <- .sc_run_load(root)
-  .sc_run_qc_revision_check(state, expected_revision)
-  prepared <- .sc_run_turn_prepare(request, state$config$provider)
-  .sc_run_turn_guard(root, request, state$config$provider, prepared)
-  ledger <- .sc_run_provider_read(file.path(root, "provider", "ledger.json"))
-  .sc_run_turn_sequence(request, ledger$entries, prepared)
-  state$suggestion_transfer_hashes <- unique(c(state$suggestion_transfer_hashes, prepared$request_hash))
-  state <- .sc_run_event(state, "suggestion_transfer_approved", list(
-    request_hash = prepared$request_hash, payload_hash = .sc_run_provider_hash(prepared$payload),
-    session_hash = request$session$hash, cluster_id = request$cluster_id,
-    ordinal = as.integer(request$ordinal), reviewer = reviewer, reason = reason,
-    authority = "Exact outgoing structured payload only; no scientific approval."))
-  .sc_run_save(root, state)
-  invisible(prepared$request_hash)
-}
 
 .sc_run_turn_sequence <- function(request, entries, prepared) {
   prior <- Filter(function(x) identical(x$session_id, request$session$id), entries)
+  if (length(prior)) prior <- prior[order(vapply(prior, function(x) x$ordinal, numeric(1)))]
   if (request$ordinal != length(prior) + 1L ||
       sum(vapply(prior, function(x) identical(x$cluster_id, request$cluster_id), logical(1))) >=
         request$session$policy$max_steps_per_cluster)
@@ -444,6 +424,25 @@
 
 .sc_run_turn_recover_ledger <- function(root, state, ledger, path) {
   changed <- FALSE
+  # The ledger is a projection. Start from committed dispatch history as well
+  # as its surviving rows, so deletion or prefix rollback cannot authorize a send.
+  dispatches <- Filter(function(event) identical(event$action, "provider_turn_dispatched"), state$history)
+  for (event in dispatches) {
+    hash <- event$details$request_hash
+    if (any(vapply(ledger$entries, function(entry) identical(entry$request_hash, hash), logical(1)))) next
+    key <- paste0("provider_turn_", hash)
+    file <- state$files[[key]]
+    if (is.null(file)) .sc_run_turn_error("invalid_receipt", "A recorded dispatch has no recoverable receipt; dispatch refused.")
+    full <- file.path(root, file$path)
+    if (!file.exists(full) || nzchar(Sys.readlink(full)) ||
+        !identical(.sc_project_sha_file(full), file$sha256))
+      .sc_run_turn_error("invalid_receipt", "A recorded provider receipt changed; dispatch refused.")
+    saved <- readRDS(full)
+    if (!identical(saved$request_hash, hash) || !identical(saved$session_hash, event$details$session_hash) ||
+        !identical(saved$payload_hash, event$details$payload_hash))
+      .sc_run_turn_error("invalid_receipt", "The saved receipt differs from its recorded dispatch.")
+    ledger$entries <- append(ledger$entries, list(saved)); changed <- TRUE
+  }
   for (i in seq_along(ledger$entries)) {
     entry <- ledger$entries[[i]]
     if (is.null(entry$session_id)) next
@@ -454,7 +453,19 @@
         .sc_run_turn_error("invalid_receipt", "A completed turn has no committed state receipt; dispatch refused.")
       next
     }
-    saved <- .sc_run_get(root, state, key)
+    full <- file.path(root, file$path)
+    if (!file.exists(full) || nzchar(Sys.readlink(full)) ||
+        !identical(.sc_project_sha_file(full), file$sha256))
+      .sc_run_turn_error("invalid_receipt", "A recorded provider receipt changed; dispatch refused.")
+    saved <- readRDS(full)
+    if (identical(saved$status, "dispatched")) {
+      linked <- any(vapply(dispatches, function(event)
+        identical(event$details$request_hash, saved$request_hash) &&
+          identical(event$details$checkpoint, file), logical(1)))
+      if (!linked || !identical(.sc_run_provider_json(entry), .sc_run_provider_json(saved)))
+        .sc_run_turn_error("invalid_receipt", "An unresolved dispatch differs from its committed receipt.")
+      next
+    }
     linked <- any(vapply(state$history, function(event)
       event$action %in% c("provider_turn_completed", "provider_reconciled") &&
         identical(event$details$request_hash, saved$request_hash) &&
@@ -489,7 +500,8 @@
     same <- all(vapply(immutable, function(name)
       identical(.sc_run_provider_json(entry[[name]]), .sc_run_provider_json(saved[[name]])), logical(1)))
     original <- if (is.null(entry$turn_response_hash)) entry$withheld_response_hash else entry$turn_response_hash
-    if (!same || !identical(original, saved$turn_response_hash))
+    saved_original <- if (is.null(saved$turn_response_hash)) saved$withheld_response_hash else saved$turn_response_hash
+    if (!same || !identical(original, saved_original))
       .sc_run_turn_error("invalid_receipt", "The cached turn differs from its committed response; dispatch refused.")
   }
   if (changed) .sc_run_provider_write(ledger, path)
