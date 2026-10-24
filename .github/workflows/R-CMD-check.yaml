@@ -69,6 +69,10 @@ jobs:
             stopifnot(requireNamespace("SummarizedExperiment", quietly = TRUE))
             stopifnot(requireNamespace("scDblFinder", quietly = TRUE))
           }, warning = function(w) stop(conditionMessage(w), call. = FALSE))
+      - name: Scientific diagnostics before the full check
+        shell: Rscript {0}
+        run: |
+          testthat::test_local(filter = "^science-diagnostics$", reporter = "summary", stop_on_failure = TRUE)
       - name: Check
         shell: Rscript {0}
         run: |

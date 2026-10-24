@@ -2,8 +2,9 @@
 
 Development version.
 
-- Make the resampling rank-loss regression structural across numerical libraries
-  and allow bounded large Bioconductor downloads in the exact-pair CI job.
+- Exercise resampling rank rejection with an explicit degenerate PCA result,
+  independently of approximate-SVD roundoff, before the complete R check.
+  Allow bounded large Bioconductor downloads in the exact-pair CI job.
   Align the main-branch citation, quick starts and reopening/annotation guidance
   with development 0.9.1.9000, format 4 and the manual offline workflow.
 - Require project format 4 for the current persisted execution contract. Keep

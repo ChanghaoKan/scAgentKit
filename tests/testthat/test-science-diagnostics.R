@@ -92,17 +92,10 @@ test_that("cross-sample opt-out retains separate declared-sample count flags", {
   expect_identical(.sc_run_hash(object), before)
 })
 
-test_that("resampling rejects numerical rank loss under the unchanged approved PCA request", {
+test_that("resampling propagates a rank-rejected PCA result without changing the approved request", {
   set.seed(8401)
-  base <- matrix(stats::rpois(20L * 100L, 10), 20L)
-  selected <- withr::with_seed(42L, sort(sample.int(100L, 80L)))
-  rare <- numeric(100L)
-  rare[setdiff(seq_len(100L), selected)[[1L]]] <- 200L
-  # The full basis has 21 independent patterns. Seed 42 removes the rare one;
-  # duplicated features remain identical after normalization and scaling.
-  # This rank loss is structural rather than a BLAS-dependent near-zero case.
-  counts <- rbind(base, rare, base[1:9, , drop = FALSE])
-  dimnames(counts) <- list(paste0("GENE", seq_len(nrow(counts))), paste0("cell", seq_len(ncol(counts))))
+  counts <- matrix(stats::rpois(100L * 100L, 10), 100L,
+    dimnames = list(paste0("GENE", 1:100), paste0("cell", 1:100)))
   object <- Seurat::CreateSeuratObject(Matrix::Matrix(counts, sparse = TRUE), min.cells = 0, min.features = 0)
   config <- list(assay = "RNA", counts_layer = "counts", normalized_layer = "data",
     cluster_column = "review_clusters", context = list(), scientific_review = list(resampling = TRUE))
@@ -115,9 +108,20 @@ test_that("resampling rejects numerical rank loss under the unchanged approved P
   object <- .sc_run_strategy_neighbors(object, config, plan)
   object <- .sc_run_strategy_cluster(object, config, plan)
   before <- .sc_run_hash(object); seed <- .Random.seed
+  actual_check <- .sc_run_strategy_pca_evidence
+  observed <- NULL
+  testthat::local_mocked_bindings(.sc_run_strategy_pca_evidence = function(seu, settings, select = TRUE) {
+    computed <- length(SeuratObject::Stdev(seu[["pca"]]))
+    observed <<- list(requested = settings$analysis$npcs, computed = computed, cells = ncol(seu), select = select)
+    # Inject a finite positive component below the existing rank threshold.
+    # Delegate the decision to the real validator, independently of SVD roundoff.
+    seu[["pca"]]@stdev[computed] <- 1e-30
+    actual_check(seu, settings, select = select)
+  }, .package = "scAgentKit")
   result <- suppressWarnings(.sc_run_science_diagnostics(object, config, plan))
   expect_identical(result$resampling$status, "unavailable")
   expect_match(result$resampling$reason, "seed 42.*numerical rank")
   expect_null(result$resampling$replicates)
+  expect_equal(observed, list(requested = 21L, computed = 21L, cells = 80L, select = FALSE))
   expect_identical(.sc_run_hash(object), before); expect_identical(.Random.seed, seed)
 })

@@ -64,6 +64,11 @@ bounded by the available features and cells; the actual saved count determines
 the denominator. Invalid variances are rejected. A crossing at one PC requires
 a revised rule or an explicit supported fixed choice; it is not rounded up.
 
+The numerical admissibility guard checks the computed PCA deviations against
+its recorded floating-point tolerance. Approximate solvers can return nonzero
+values for theoretically null components; this guard is not an exact
+matrix-rank certificate or a biological signal threshold.
+
 Calculation sources: [R's PCA definition of standard deviations and variances](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/prcomp.html),
 the fixed-main [default policy](https://github.com/ChanghaoKan/scAgentKit/blob/2b0827fc04fde28191241c300ab687200df660c8/R/analysis-api.R#L45-L90),
 [exact implementation and shortfall handling](https://github.com/ChanghaoKan/scAgentKit/blob/2b0827fc04fde28191241c300ab687200df660c8/R/run-pc-diagnostics.R#L9-L50),
