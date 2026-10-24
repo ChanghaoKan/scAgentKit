@@ -6,7 +6,7 @@ authors:
     given-names: "Changhao"
     email: "kch_ynu@163.com"
     affiliation: "Shenzhen Bay Laboratory"
-version: "0.9.1.9000"
+version: "0.10.0"
 url: "https://github.com/ChanghaoKan/scAgentKit"
 repository-code: "https://github.com/ChanghaoKan/scAgentKit"
 license: MIT

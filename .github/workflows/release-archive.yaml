@@ -9,7 +9,7 @@ on:
       tag:
         description: Release tag already contained in main
         required: true
-        default: v0.9.0
+        default: v0.10.0
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.tag || github.ref_name }}
@@ -253,7 +253,7 @@ jobs:
               'Download the R package and SHA256SUMS below; INSTALL.md contains the matching commands.';
             const {data: release} = await github.rest.repos.createRelease({...context.repo,
               tag_name: tag, target_commitish: receipt.source_commit, name: `scAgentKit ${version}`,
-              body, draft: true, prerelease: true});
+              body, draft: true, prerelease: false});
             try {
               for (const name of [archive, 'SHA256SUMS', 'build-receipt.json', 'INSTALL.md']) {
                 await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: release.id,

@@ -1,7 +1,7 @@
 Package: scAgentKit
 Type: Package
 Title: Human-in-the-Loop, Auditable scRNA-Seq Toolkit
-Version: 0.9.1.9000
+Version: 0.10.0
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
 Description: Experimental single-cell RNA-seq workflow with explicit scientific
