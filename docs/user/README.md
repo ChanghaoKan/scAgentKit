@@ -6,8 +6,8 @@ browser session and retain the resulting Seurat object and project records.
 
 ## Version
 
-This manual describes development source **0.9.1.9000**, using project format 4.
-The published [v0.9.0 release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0)
+This manual describes **scAgentKit 0.10.0**, using project format 4.
+The earlier [v0.9.0 release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0)
 uses format 3 and its own supplied manual. Retain the source commit as well as
 the package version. Use the manual supplied with the installed version.
 Open existing projects in the environment used to create them.

@@ -6,7 +6,7 @@ in a local browser, then inspect markers and approve cell-type annotations.
 The result is a Seurat object accompanied by marker tables, figures and a record
 of your decisions. Model assistance is optional.
 
-[Latest release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0) ·
+[Latest release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.10.0) ·
 [Installation](docs/user/INSTALL.md) ·
 [User guide](docs/user/README.md) ·
 [Examples](inst/examples/README.md) ·
@@ -19,17 +19,17 @@ The R package includes the browser interface. Windows is unsupported.
 
 | Version | Install | Documentation |
 | --- | --- | --- |
-| Release: **v0.9.0** | Download `scAgentKit_0.9.0.tar.gz` and `SHA256SUMS` from [Releases](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0) | [Manual for that release](https://github.com/ChanghaoKan/scAgentKit/blob/v0.9.0/inst/INSTALL.md#installation) |
-| Development source: **0.9.1.9000 on main** | Follow [source installation](docs/user/INSTALL.md#install-current-source) | [Current user guide](docs/user/README.md) |
+| Release: **v0.10.0** | Download `scAgentKit_0.10.0.tar.gz` and `SHA256SUMS` from [Releases](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.10.0) | [Manual for that release](https://github.com/ChanghaoKan/scAgentKit/blob/v0.10.0/inst/INSTALL.md#installation) |
+| Source on main: **0.10.0** | Follow [source installation](docs/user/INSTALL.md#install-current-source) | [Current user guide](docs/user/README.md) |
 
-Use the manual for the version you install. Current development source requires
-project format 4; published v0.9.0 uses format 3. Open existing projects in their
-original software environment. scAgentKit is experimental; formal evaluation
+Use the manual for the version you install. Release v0.10.0 and current source
+require project format 4; earlier v0.9.0 uses format 3. Open existing projects
+in their original software environment. scAgentKit is experimental; formal evaluation
 of biological accuracy is pending.
 
 ## Start with a small dataset
 
-After installing current source, run this example in R. It opens the local
+After installing scAgentKit, run this example in R. It opens the local
 workbench with a public PBMC dataset and manual annotation, with no model calls.
 
 ```r

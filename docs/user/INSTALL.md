@@ -4,15 +4,15 @@ scAgentKit runs on Linux and macOS with R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3
 Windows is unsupported. The browser interface is included in the R package.
 Choose a version below, then use its matching guide and a new project for your
 first trial. Retain the original software environment for existing projects.
-Current source is development 0.9.1.9000 and requires project format 4; the
-published release below retains its original format 3 and matching manual.
+Release 0.10.0 and current source require project format 4. Earlier v0.9.0
+projects use format 3 and require their original software environment.
 
-## Download scAgentKit 0.9.0
+## Download scAgentKit 0.10.0
 
-The [v0.9.0 release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0)
+The [v0.10.0 release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.10.0)
 provides a built R source package. Under **Assets**, download
-[`scAgentKit_0.9.0.tar.gz`](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.9.0/scAgentKit_0.9.0.tar.gz)
-and [`SHA256SUMS`](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.9.0/SHA256SUMS)
+[`scAgentKit_0.10.0.tar.gz`](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.10.0/scAgentKit_0.10.0.tar.gz)
+and [`SHA256SUMS`](https://github.com/ChanghaoKan/scAgentKit/releases/download/v0.10.0/SHA256SUMS)
 into the same directory. Verify the download in a terminal:
 
 ```sh
@@ -23,9 +23,9 @@ shasum -a 256 -c SHA256SUMS
 ```
 
 After verification, follow the
-[installation instructions for v0.9.0](https://github.com/ChanghaoKan/scAgentKit/blob/v0.9.0/inst/INSTALL.md#installation).
+[installation instructions for v0.10.0](https://github.com/ChanghaoKan/scAgentKit/blob/v0.10.0/inst/INSTALL.md#installation).
 This experimental release includes a three-review workflow and project
-format 3. Preserve its package and dependency environment with the project.
+format 4. Preserve its package and dependency environment with the project.
 Older releases are listed on the [Releases page](https://github.com/ChanghaoKan/scAgentKit/releases).
 
 ## Install current source
@@ -108,4 +108,4 @@ help("sc_start", package = "scAgentKit")
 
 For a source archive built from the current branch, follow the installation
 guide included in that archive; its current source is
-[inst/INSTALL.md](../../inst/INSTALL.md). For the v0.9.0 download, use its version-matched instructions above.
+[inst/INSTALL.md](../../inst/INSTALL.md). For the v0.10.0 download, use its version-matched instructions above.

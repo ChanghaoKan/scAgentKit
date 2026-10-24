@@ -1,8 +1,9 @@
 # Install and check a source archive
 
 For GitHub source installation, see the repository's `docs/user/INSTALL.md`.
-This guide is included in the R archive. Follow the instructions supplied with
-the archive you downloaded, and keep its version, source commit and checksum
+This guide accompanies scAgentKit 0.10.0 and project format 4. Follow the
+instructions supplied with the archive you downloaded, and keep its version,
+source commit and checksum
 with the analysis.
 
 Download the archive and its checksum from the same build. Verify SHA256 before
