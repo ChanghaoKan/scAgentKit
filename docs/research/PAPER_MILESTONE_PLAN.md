@@ -13,6 +13,10 @@ mechanisms must be reused where possible; parallel state stores, ledgers,
 event systems and automatic-approval APIs are outside the plan. Stage reports
 must record the PR/commit, changes to 1.0 acceptance and research evidence,
 tests/CI, limitations, deviations and paper-milestone progress.
+For current main-branch behavior and dependency versions, use the
+[current user guide](../user/README.md), [NEWS](../../NEWS.md) and
+[DESCRIPTION](../../DESCRIPTION). The dated PR records below are historical;
+they do not replace those current implementation references.
 
 ## Submitted PRs: recorded status
 

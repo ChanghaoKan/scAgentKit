@@ -94,8 +94,15 @@ test_that("cross-sample opt-out retains separate declared-sample count flags", {
 
 test_that("resampling rejects numerical rank loss under the unchanged approved PCA request", {
   set.seed(8401)
-  counts <- matrix(5, 100L, 100L, dimnames = list(paste0("GENE", 1:100), paste0("cell", 1:100)))
-  counts[1:40, 1:22] <- matrix(stats::rpois(40L * 22L, 30), 40L)
+  base <- matrix(stats::rpois(20L * 100L, 10), 20L)
+  selected <- withr::with_seed(42L, sort(sample.int(100L, 80L)))
+  rare <- numeric(100L)
+  rare[setdiff(seq_len(100L), selected)[[1L]]] <- 200L
+  # The full basis has 21 independent patterns. Seed 42 removes the rare one;
+  # duplicated features remain identical after normalization and scaling.
+  # This rank loss is structural rather than a BLAS-dependent near-zero case.
+  counts <- rbind(base, rare, base[1:9, , drop = FALSE])
+  dimnames(counts) <- list(paste0("GENE", seq_len(nrow(counts))), paste0("cell", seq_len(ncol(counts))))
   object <- Seurat::CreateSeuratObject(Matrix::Matrix(counts, sparse = TRUE), min.cells = 0, min.features = 0)
   config <- list(assay = "RNA", counts_layer = "counts", normalized_layer = "data",
     cluster_column = "review_clusters", context = list(), scientific_review = list(resampling = TRUE))

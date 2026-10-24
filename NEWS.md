@@ -2,6 +2,10 @@
 
 Development version.
 
+- Make the resampling rank-loss regression structural across numerical libraries
+  and allow bounded large Bioconductor downloads in the exact-pair CI job.
+  Align the main-branch citation, quick starts and reopening/annotation guidance
+  with development 0.9.1.9000, format 4 and the manual offline workflow.
 - Require project format 4 for the current persisted execution contract. Keep
   complete cohort expression evidence once in each annotation review and show
   the selected cluster's contrasts without duplicating per-cell evidence.

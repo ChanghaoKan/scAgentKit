@@ -88,7 +88,8 @@ to the declared species and tissue; candidate records include their source
 PMIDs. If no matching reference is available, use the marker evidence and
 retain **Unknown** where appropriate.
 
-The first model draft uses markers. ACT comparisons and read-only
+Optional model assistance can propose a draft from saved marker evidence.
+ACT comparisons and read-only
 [ReAct checks](../REACT.md) can supply additional evidence. Cell Ontology IDs
 come from a versioned exact-name and synonym dictionary; ambiguous or unmapped
 labels receive no CLID.
@@ -126,28 +127,20 @@ Reopening requires the current project format, including for `sc_open()` and
 the read-only `sc_run_open()` viewer. A format mismatch is rejected before
 project writes; use the original software environment or create a new project.
 See the [format gate](../../workbench/README.md#project-format-and-reopening).
-Use the original package environment, input and options. Repeat the relevant
-entry call, omitting context to reuse the saved study facts:
+Use the original package environment and reopen the saved project directly:
 
 ```r
-# For the single-directory example:
-sc_start("filtered_feature_bc_matrix", project_dir,
-  sample_id="S1", matrix_kind="filtered")
-# For the sample-table example: sc_start(input, project_dir)
-# For the RDS example: sc_start("a.rds", project_dir)
+sc_start(project_dir=project_dir)
 ```
 
-The page shows the saved stage. To inspect results without the original input
-location, use `sc_open(project_dir)` in R or `sc_run_open(project_dir)` for the
-read-only browser. See [reopening and errors](../SCIENTIFIC_REVIEW_QUICKSTART.md#11-results-reopening-and-errors).
+The protected input checkpoint and saved context supply the original data and
+study facts. A changed file at the recorded original path is still rejected to
+prevent input confusion. To inspect results, use `sc_open(project_dir)` in R or
+`sc_run_open(project_dir)` for the read-only browser. See
+[reopening and errors](../SCIENTIFIC_REVIEW_QUICKSTART.md#11-results-reopening-and-errors).
 
 
 ## Reopen, hand off and recover
-
-Reopen an existing project with `sc_start(project_dir="analysis")`. It uses the
-protected input checkpoint and saved context; it never rebinds another input or
-upgrades the project. Keep the original matching software environment. A changed
-file at the recorded original path is still rejected to prevent input confusion.
 
 The manual annotation worksheet is shown directly when markers are ready.
 Download an unfinished worksheet before closing the tab, or import it in another

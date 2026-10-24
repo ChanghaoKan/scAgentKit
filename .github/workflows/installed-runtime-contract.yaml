@@ -50,7 +50,8 @@ jobs:
           native_lib <- file.path(Sys.getenv("RUNNER_TEMP"), "older-doublet-library")
           dir.create(native_lib)
           .libPaths(c(native_lib, .libPaths()))
-          options(repos = BiocManager::repositories(version = "3.21"))
+          options(timeout = max(1800, getOption("timeout", 60)), warn = 1L,
+            repos = BiocManager::repositories(version = "3.21"))
           remotes::install_url("https://cran.r-project.org/src/contrib/Archive/xgboost/xgboost_1.7.11.1.tar.gz",
             lib = native_lib, dependencies = NA, upgrade = "never")
           remotes::install_url("https://bioconductor.org/packages/3.21/bioc/src/contrib/scDblFinder_1.22.0.tar.gz",
