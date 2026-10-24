@@ -3,9 +3,6 @@
 .sc_run_annotation_review_hash <- function(record) {
   .sc_run_hash(record[setdiff(names(record), c("hash", "lifecycle"))])
 }
-.sc_run_annotation_review_summary <- function(record) {
-  record[setdiff(names(record), c("details", "lifecycle"))]
-}
 .sc_run_annotation_review_provider <- function(metadata) {
   if (!is.list(metadata)) return(NULL)
   # No credentials, headers, raw transport object or function environments.
@@ -165,7 +162,6 @@
         if (!length(local) && !length(local_all)) "no_candidates" else "available"
     list(clusterId = id, cell_count = length(cells), cell_ids = cells, proposal = row,
          cited_marker_stats = cited_stats, supplied_marker_stats = supplied,
-         measured_expression = evidence$private$expression_review,
          local_reference = list(status = reference_status, candidates = local,
            all_candidates = local_all, provenance = provenance),
          expression_assessment = list(per_cell_assessed = !is.null(evidence$private$expression_review$mixed_lineage),
@@ -191,6 +187,7 @@
        details = list(input_cells = input, cell_count = nrow(input), cluster_count = length(ids),
          output_columns = output_columns, canonical_proposal = .sc_run_annotation_review_plain(checked),
          annotations = rows, source = source, ontology = ontology,
+         measured_expression = evidence$private$expression_review,
          plot_evidence = .sc_run_annotation_plots_get(root,state,evidence,checked),
          marker_pool = evidence$summary$marker_pool,
          child_context = evidence$summary$child_context,

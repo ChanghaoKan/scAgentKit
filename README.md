@@ -6,7 +6,7 @@ in a local browser, then inspect markers and approve cell-type annotations.
 The result is a Seurat object accompanied by marker tables, figures and a record
 of your decisions. Model assistance is optional.
 
-[Download](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0) ·
+[Latest release](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0) ·
 [Installation](docs/user/INSTALL.md) ·
 [User guide](docs/user/README.md) ·
 [Examples](inst/examples/README.md) ·
@@ -20,16 +20,17 @@ The R package includes the browser interface. Windows is unsupported.
 | Version | Install | Documentation |
 | --- | --- | --- |
 | Release: **v0.9.0** | Download `scAgentKit_0.9.0.tar.gz` and `SHA256SUMS` from [Releases](https://github.com/ChanghaoKan/scAgentKit/releases/tag/v0.9.0) | [Manual for that release](https://github.com/ChanghaoKan/scAgentKit/blob/v0.9.0/inst/INSTALL.md#installation) |
-| Development source: **main** | Follow [source installation](docs/user/INSTALL.md#install-current-source) | [Current user guide](docs/user/README.md) |
+| Development source: **0.9.1.9000 on main** | Follow [source installation](docs/user/INSTALL.md#install-current-source) | [Current user guide](docs/user/README.md) |
 
-Use the manual for the version you install. Development source on main may
-include changes after the release. scAgentKit 0.9.0 is experimental; formal
-evaluation of biological accuracy is pending.
+Use the manual for the version you install. Current development source requires
+project format 4; published v0.9.0 uses format 3. Open existing projects in their
+original software environment. scAgentKit is experimental; formal evaluation
+of biological accuracy is pending.
 
 ## Start with a small dataset
 
-After installing scAgentKit 0.9.0, run this example in R. It opens the local
-workbench with a public PBMC dataset and makes no external model requests.
+After installing current source, run this example in R. It opens the local
+workbench with a public PBMC dataset and manual annotation, with no model calls.
 
 ```r
 library(scAgentKit)
@@ -42,7 +43,7 @@ saveRDS(pbmc_small, input)
 sc_start(input, file.path(example_dir, "project"),
   context = list(species = "human", tissue = "blood",
                  research_goal = "Explore the review workflow"),
-  provider = "mock", doublet = "off")
+  provider = "manual", model_suggestions = "off", doublet = "off")
 ```
 
 The browser guides you through three decisions:
@@ -52,8 +53,9 @@ The browser guides you through three decisions:
 3. Review markers and reference candidates, complete the annotation worksheet,
    and approve the labels.
 
-Saving a draft keeps your edits; approval starts the next local step. The mock
-example demonstrates the interface and does not validate cell-type accuracy.
+Saving a draft keeps your edits; approval starts the next local step. Enter
+labels or retain Unknown where unresolved. This public software fixture
+demonstrates the interface and does not validate cell-type accuracy.
 The [workflow guide](docs/user/WORKFLOW.md) explains each decision.
 
 ## Analyse your data

@@ -4,8 +4,8 @@ test_that("R review printing is bounded while the sealed full evidence stays acc
     rationale=paste(rep("Long evidence with unicode 证据",2000),collapse=" "))
   view <- list(status="awaiting_review",stage="annotation_propose",context=list(tissue="Blood"),
     evidence=list(clusters=list()),annotation_review=list(details=list(
-      annotations=lapply(seq_len(30),function(i) list(clusterId=as.character(i),measured_expression=global)),
-      full_evidence=global)),pending=list(kind="annotation"))
+      annotations=lapply(seq_len(30),function(i) list(clusterId=as.character(i))),
+      measured_expression=global)),pending=list(kind="annotation"))
   x <- .sc_ui_object(tempfile(),view,reviewed=TRUE)
   original <- .sc_run_hash(x); limit <- getOption("max.print")
   text <- capture.output(returned <- print(x))
@@ -15,5 +15,5 @@ test_that("R review printing is bounded while the sealed full evidence stays acc
   expect_identical(.sc_run_hash(x),original)
   expect_identical(returned,x)
   expect_identical(getOption("max.print"),limit)
-  expect_identical(x$view$annotation_review$details$full_evidence,global)
+  expect_identical(x$view$annotation_review$details$measured_expression,global)
 })

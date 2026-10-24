@@ -53,32 +53,6 @@
   parsed
 }
 
-.validate_cited_markers <- function(parsed, cluster_top_genes) {
-  cited_support     <- as.character(parsed$supporting_markers    %||% character(0))
-  cited_contradict  <- as.character(parsed$contradicting_markers %||% character(0))
-  all_cited         <- unique(c(cited_support, cited_contradict))
-
-  if (length(all_cited) == 0) {
-    return(list(hallucinated = character(0), rate = NA_real_))
-  }
-
-  input_upper  <- toupper(trimws(cluster_top_genes))
-  cited_upper  <- toupper(trimws(all_cited))
-  is_halluc    <- !(cited_upper %in% input_upper)
-  hallucinated <- all_cited[is_halluc]
-
-  # Rate is over supporting_markers (the affirmative claims that matter
-  # most). Contradicting hallucinations are still recorded but not
-  # counted in the rate.
-  rate <- if (length(cited_support) == 0) {
-    NA_real_
-  } else {
-    sup_upper <- toupper(trimws(cited_support))
-    mean(!(sup_upper %in% input_upper))
-  }
-
-  list(hallucinated = hallucinated, rate = rate)
-}
 
 .reference_filter_input <- function(x, name) {
   if (!is.null(x) && (!is.character(x) || !length(x) || anyNA(x) ||
@@ -110,27 +84,6 @@
              stringsAsFactors = FALSE)
 }
 
-.review_label_normalizer <- function(label_map) {
-  if (!is.null(label_map)) {
-    if (!is.character(label_map) || !length(label_map) || is.null(names(label_map)) ||
-        anyNA(label_map) || anyNA(names(label_map)) ||
-        any(!nzchar(trimws(label_map))) || any(!nzchar(trimws(names(label_map))))) {
-      stop("`label_map` must be a named character vector with non-empty labels and targets.")
-    }
-    keys <- tolower(trimws(names(label_map)))
-    if (anyDuplicated(keys)) stop("`label_map` names must be unique after normalization.")
-    label_map <- stats::setNames(tolower(trimws(label_map)), keys)
-  }
-  function(x) {
-    out <- tolower(trimws(as.character(x)))
-    out[is.na(out) | !nzchar(out)] <- NA_character_
-    if (!is.null(label_map)) {
-      hit <- !is.na(out) & out %in% names(label_map)
-      out[hit] <- unname(label_map[out[hit]])
-    }
-    out
-  }
-}
 
 .review_genes <- function(x) {
   x <- unlist(x, use.names = FALSE)
@@ -140,11 +93,6 @@
   unique(genes[nzchar(genes)])
 }
 
-.review_cluster_ids <- function(x, source) {
-  if (anyNA(x) || any(!nzchar(trimws(as.character(x))))) {
-    stop(source, " cluster IDs must be non-empty and non-missing.")
-  }
-}
 
 .review_input_alignment <- function(saved, current) {
   if (is.null(saved) || is.null(current)) return("unverified")
@@ -175,79 +123,3 @@
   if (length(extra)) stop("Unexpected decision fields: ", paste(extra, collapse = ", "))
   parsed
 }
-
-.decision_string <- function(value, field, choices = NULL) {
-  if (!is.character(value) || length(value) != 1L || is.na(value) ||
-      !nzchar(trimws(value))) {
-    stop("`", field, "` must be one non-empty JSON string.")
-  }
-  if (!is.null(choices) && !value %in% choices) {
-    stop("`", field, "` must be one of: ", paste(choices, collapse = ", "))
-  }
-  value
-}
-
-.decision_number <- function(value, field, choices, integer = FALSE) {
-  if (!is.numeric(value) || length(value) != 1L || !is.finite(value) ||
-      (integer && (value != floor(value) || value > .Machine$integer.max))) {
-    stop("`", field, "` must be one finite JSON ", if (integer) "integer." else "number.")
-  }
-  if (!value %in% choices) {
-    stop("`", field, "` must be one of the supplied candidates: ",
-         paste(choices, collapse = ", "))
-  }
-  if (integer) as.integer(value) else value
-}
-
-.decision_array <- function(value, field, validate, empty = character()) {
-  if (!is.list(value) || !is.null(names(value))) {
-    stop("`", field, "` must be a JSON array.")
-  }
-  if (!length(value)) return(empty)
-  out <- lapply(value, validate)
-  if (anyDuplicated(unlist(out, use.names = FALSE))) {
-    stop("`", field, "` must not contain duplicate entries.")
-  }
-  unlist(out, use.names = FALSE)
-}
-
-.validate_pcs_decision <- function(parsed, candidates) {
-  parsed <- .decision_object(parsed, c("chosen_ndim", "confidence", "reasoning"))
-  parsed$chosen_ndim <- .decision_number(parsed$chosen_ndim, "chosen_ndim", candidates, integer = TRUE)
-  parsed$confidence <- .decision_string(parsed$confidence, "confidence", c("low", "medium", "high"))
-  parsed$reasoning <- .decision_string(parsed$reasoning, "reasoning")
-  parsed
-}
-
-.validate_resolution_decision <- function(parsed, res_values, panels_used = numeric(),
-                                          require_visual_notes = FALSE) {
-  fields <- c("chosen_resolution", "confidence", "alternatives", "reasoning")
-  if (require_visual_notes) fields <- c(fields, "visual_notes")
-  parsed <- .decision_object(parsed, fields, c("visual_notes", "clustree_notes"))
-  choices <- if (length(panels_used)) panels_used else res_values
-  parsed$chosen_resolution <- .decision_number(parsed$chosen_resolution, "chosen_resolution", choices)
-  parsed$confidence <- .decision_string(parsed$confidence, "confidence", c("low", "medium", "high"))
-  parsed$alternatives <- .decision_array(parsed$alternatives, "alternatives", function(x) {
-    .decision_number(x, "alternatives", res_values)
-  }, empty = numeric())
-  parsed$reasoning <- .decision_string(parsed$reasoning, "reasoning")
-  for (field in intersect(c("visual_notes", "clustree_notes"), names(parsed))) {
-    parsed[[field]] <- .decision_string(parsed[[field]], field)
-  }
-  parsed
-}
-
-.validate_batch_decision <- function(parsed, valid_cols) {
-  parsed <- .decision_object(parsed, c("recommended", "confidence", "alternatives", "warnings", "reasoning"))
-  parsed$recommended <- .decision_string(parsed$recommended, "recommended", valid_cols)
-  parsed$confidence <- .decision_string(parsed$confidence, "confidence", c("low", "medium", "high"))
-  parsed$alternatives <- .decision_array(parsed$alternatives, "alternatives", function(x) {
-    .decision_string(x, "alternatives", valid_cols)
-  })
-  parsed$warnings <- .decision_array(parsed$warnings, "warnings", function(x) {
-    .decision_string(x, "warnings")
-  })
-  parsed$reasoning <- .decision_string(parsed$reasoning, "reasoning")
-  parsed
-}
-

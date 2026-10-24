@@ -2,7 +2,12 @@
 # lookup or guessing that an Ensembl identifier is a biological gene symbol.
 .sc_run_mito_features <- function(seu, assay, features, species) {
   pattern <- if (identical(species, "human")) "^MT-" else if (identical(species, "mouse")) "^mt-" else NULL
+  .sc_run_gene_family_features(seu, assay, features, species, pattern, "mitochondrial")
+}
+
+.sc_run_gene_family_features <- function(seu, assay, features, species, pattern, family) {
   result <- function(genes = character(), source = "input_symbols", reason = NULL) {
+    if (!is.null(reason)) reason <- gsub("mitochondrial", family, reason, ignore.case = TRUE)
     list(features = genes, summary = list(available = length(genes) > 0L,
       feature_count = length(genes), pattern = pattern, mapping_source = source,
       unavailable_reason = reason))

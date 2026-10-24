@@ -12,4 +12,4 @@ qc_add_metrics(obj, species = NULL, mt_pattern = NULL, ribo_pattern = NULL, hb_p
 \item{assay, counts_layer}{Exact source assay/layer.}
 }
 \description{Add explicitly declared count-based QC measurements to a Seurat copy}
-\value{Seurat copy with percent.mt, percent.ribo and percent.hb; no filtering.}
+\value{Seurat copy with percent.mt, percent.ribo and percent.hb; no filtering. Unavailable gene families and zero-total cells are NA. Default patterns use existing aligned gene-symbol annotations; explicit patterns match literal feature IDs.}

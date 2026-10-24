@@ -211,8 +211,8 @@ before submitting the local job. Without `--local-continue`, resume in R with
 analysis or a provider request. Model requests use separately enabled preview,
 transfer-approval and request controls; scientific approval remains separate.
 
-At a saved annotation boundary with no proposal, select **Prepare annotation
-table**. The fields start blank. Inspect the supplied markers, enter labels,
+At a saved annotation boundary with no proposal, the manual annotation
+worksheet is shown directly. The fields start blank. Inspect the supplied markers, enter labels,
 qualitative confidence and rationale, and cite markers from that exact cluster.
 Alternatively, explicitly retain all unfilled populations as `Unknown` with one
 overall reason. Save the complete proposal, inspect the resulting annotation

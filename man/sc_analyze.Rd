@@ -42,7 +42,7 @@ Always assign the snapshot returned by \code{sc_review} and review its complete 
 
 Provider calls require an explicit request. Exact external payload approval remains separate from strategy/annotation approval. The configured provider and disclosure policy remain bound. Failed/unknown provider attempts require the advanced explicit recovery protocol in \code{sc_run_resume}; these adapters never retry them. Scoped child model suggestions continue to use \code{sc_run_suggest}.
 
-Existing projects must match project format version 3 before any project writes or write locks, including when opened with \code{sc_open}. A missing, damaged or mismatched format is rejected; use the original software environment or create a new project. No migration is performed.
+Existing projects must match project format version 4 before any project writes or write locks, including when opened with \code{sc_open}. A missing, damaged or mismatched format is rejected; use the original software environment or create a new project. No migration is performed.
 
 Handles and review snapshots may be saved with saveRDS and reopened in another R session. They contain project paths and displayed aggregate evidence, so treat them as local study artifacts. Old snapshots remain subject to the same stale checks. \code{sc_result} returns a verified copy without saving labels or rewriting exports; it uses a transient project lock for a consistent read.
 }

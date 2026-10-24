@@ -1,6 +1,6 @@
 # The project format is independent of individual JSON schema names. Increment
 # it whenever persisted execution contracts change; old projects are rejected.
-.sc_project_format_version <- function() 3L
+.sc_project_format_version <- function() 4L
 .sc_project_format_fail <- function() {
   stop("Project format is not supported. Open it with its original software environment or create a new project.", call. = FALSE)
 }

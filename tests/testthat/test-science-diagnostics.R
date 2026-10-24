@@ -65,3 +65,63 @@ test_that("cell-level panel review retains measured counts without calling high 
   expect_match(value$high_count_interpretation,"Flag-only")
   expect_error(sc_run(x,tempfile(),context=list(species="mouse"),strategy=TRUE,scientific_review=list(panels="blood")),"human species")
 })
+
+test_that("cross-sample opt-out retains separate declared-sample count flags", {
+  object <- SeuratObject::pbmc_small
+  object$sample <- rep(c("A", "B"), each = 40L)
+  config <- list(assay = "RNA", counts_layer = "counts", normalized_layer = "data",
+    cluster_column = "RNA_snn_res.1", context = list(columns = list(sample = "sample")),
+    scientific_review = list(panels = list(B = c("MS4A1", "CD79A")), cross_sample = FALSE))
+  plan <- list(analysis = list(seed = 42), pcs = list(method = "fixed", ndim = 2L),
+    batch = list(method = "none"), clustering = list(resolution = .5))
+  object@misc$strategy_execution$neighbors$pcs <- 2L
+  before <- .sc_run_hash(object)
+  without <- .sc_run_science_diagnostics(object, config, plan)$expression
+  config$scientific_review$cross_sample <- TRUE
+  with <- .sc_run_science_diagnostics(object, config, plan)$expression
+  expect_identical(without$cell_quality, with$cell_quality)
+  expect_setequal(vapply(without$cell_quality, `[[`, "", "group"), c("A", "B"))
+  expect_true(all(vapply(without$clusters, function(row) length(row$samples) == 0L, logical(1))))
+  expect_true(all(vapply(with$clusters, function(row) length(row$samples) == 2L, logical(1))))
+  expect_identical(lapply(without$clusters, `[[`, "genes"), lapply(with$clusters, `[[`, "genes"))
+  config$scientific_review$cross_sample <- FALSE
+  markers <- suppressWarnings(.sc_run_markers(object, config))
+  expression <- attr(markers$marker_summary, "expression_review")
+  expect_true(all(vapply(expression$clusters, function(row) length(row$samples) == 0L, logical(1))))
+  expect_identical(expression$cell_quality, without$cell_quality)
+  expect_identical(.sc_run_hash(object), before)
+})
+
+test_that("resampling propagates a rank-rejected PCA result without changing the approved request", {
+  set.seed(8401)
+  counts <- matrix(stats::rpois(100L * 100L, 10), 100L,
+    dimnames = list(paste0("GENE", 1:100), paste0("cell", 1:100)))
+  object <- Seurat::CreateSeuratObject(Matrix::Matrix(counts, sparse = TRUE), min.cells = 0, min.features = 0)
+  config <- list(assay = "RNA", counts_layer = "counts", normalized_layer = "data",
+    cluster_column = "review_clusters", context = list(), scientific_review = list(resampling = TRUE))
+  plan <- list(analysis = list(normalization_method = "LogNormalize", scale_factor = 10000,
+    nfeatures = 30L, npcs = 21L, seed = 17L), pcs = list(method = "fixed", ndim = 2L),
+    batch = list(method = "none", reason = "Software fixture"),
+    clustering = list(resolution = .5, diagnostic_resolutions = numeric()), umap = list(run = FALSE, n_neighbors = 30L))
+  object <- suppressWarnings(.sc_run_strategy_basis(object, config, plan))
+  expect_silent(.sc_run_strategy_pca_evidence(object, .sc_run_strategy_runtime_settings(plan), select = FALSE))
+  object <- .sc_run_strategy_neighbors(object, config, plan)
+  object <- .sc_run_strategy_cluster(object, config, plan)
+  before <- .sc_run_hash(object); seed <- .Random.seed
+  actual_check <- .sc_run_strategy_pca_evidence
+  observed <- NULL
+  testthat::local_mocked_bindings(.sc_run_strategy_pca_evidence = function(seu, settings, select = TRUE) {
+    computed <- length(SeuratObject::Stdev(seu[["pca"]]))
+    observed <<- list(requested = settings$analysis$npcs, computed = computed, cells = ncol(seu), select = select)
+    # Inject a finite positive component below the existing rank threshold.
+    # Delegate the decision to the real validator, independently of SVD roundoff.
+    seu[["pca"]]@stdev[computed] <- 1e-30
+    actual_check(seu, settings, select = select)
+  }, .package = "scAgentKit")
+  result <- suppressWarnings(.sc_run_science_diagnostics(object, config, plan))
+  expect_identical(result$resampling$status, "unavailable")
+  expect_match(result$resampling$reason, "seed 42.*numerical rank")
+  expect_null(result$resampling$replicates)
+  expect_equal(observed, list(requested = 21L, computed = 21L, cells = 80L, select = FALSE))
+  expect_identical(.sc_run_hash(object), before); expect_identical(.Random.seed, seed)
+})

@@ -37,7 +37,7 @@ class QCRuntimeTests(unittest.TestCase):
         self.project = Path(self.temp.name) / "project"
         self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"fixture only; never interpreted by Python")
-        (self.project / "project-format.json").write_text('{"project_format_version":3}')
+        (self.project / "project-format.json").write_text('{"project_format_version":4}')
         self.runtime = QCRuntime(self.project, library=self.temp.name)
 
     def tearDown(self):
@@ -99,7 +99,7 @@ class QCRuntimeTests(unittest.TestCase):
     def test_replaced_project_directory_rejected(self):
         self.project.rename(self.project.with_name("old-project")); self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"replacement")
-        (self.project / "project-format.json").write_text('{"project_format_version":3}')
+        (self.project / "project-format.json").write_text('{"project_format_version":4}')
         with self.assertRaises(StoreError): self.runtime.describe()
 
     def test_coordinator_stale_error_returned_without_stdout_or_stderr(self):
@@ -149,7 +149,7 @@ class QCHTTPTests(unittest.TestCase):
         mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory()
         self.project = Path(self.temp.name); (self.project / "state.rds").write_bytes(b"fixture")
-        (self.project / "project-format.json").write_text('{"project_format_version":3}')
+        (self.project / "project-format.json").write_text('{"project_format_version":4}')
         self.runtime = MockQC(self.project)
         self.server = WorkbenchServer(("127.0.0.1", 0), None, None, qc=self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()

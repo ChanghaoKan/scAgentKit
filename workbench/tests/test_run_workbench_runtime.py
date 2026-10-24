@@ -30,7 +30,7 @@ class RunWorkbenchRuntimeTests(unittest.TestCase):
         self.root.mkdir()
         self.root = self.root.resolve()
         (self.root / "state.rds").write_bytes(b"Fixed fixture envelope; never read as R by Python")
-        (self.root / "project-format.json").write_text('{"project_format_version":3}')
+        (self.root / "project-format.json").write_text('{"project_format_version":4}')
         self.runtime = RunWorkbenchRuntime(self.root, library=self.temp.name)
         event = {"sequence": 1, "created_at": "2026-10-05T10:00:00Z", "action": "processed_stage_reused",
                  "details": {"reason": "Explicit processed public fixture", "skipped": ["qc_evidence", "analysis"]},
@@ -127,8 +127,8 @@ class RunWorkbenchRuntimeTests(unittest.TestCase):
     def test_large_saved_reviews_are_transmitted_once_without_losing_records(self):
         # A bounded R inspection can still exceed the HTTP bound when the same
         # review is serialized both under run and under its display section.
-        record = {"hash": "d" * 64, "details": {"annotations": [
-            {"clusterId": "literal", "measured_expression": {"saved": "x" * (9 * 1024 * 1024)}}]}}
+        record = {"hash": "d" * 64, "details": {"annotations": [{"clusterId": "literal"}],
+            "measured_expression": {"saved": "x" * (9 * 1024 * 1024)}}}
         self.run["annotation_review"] = record
         self.run["strategy_review"] = {"hash": "e" * 64, "details": {"saved": "full strategy"}}
         before = copy.deepcopy(self.run)
@@ -198,7 +198,7 @@ class RunWorkbenchRuntimeTests(unittest.TestCase):
         def changed(argv, **kwargs):
             result = self.process(argv, **kwargs)
             (self.root / "state.rds").write_bytes(b"A different committed revision")
-            (self.root / "project-format.json").write_text('{"project_format_version":3}')
+            (self.root / "project-format.json").write_text('{"project_format_version":4}')
             return result
         with self.assertRaises(StoreError): self.describe(changed)
 
@@ -232,7 +232,7 @@ class RunWorkbenchRuntimeTests(unittest.TestCase):
         directory = self.root / "reintegration"
         directory.mkdir()
         (directory / "state.rds").write_bytes(b"Independent saved integration fixture")
-        (directory / "project-format.json").write_text('{"project_format_version":3}')
+        (directory / "project-format.json").write_text('{"project_format_version":4}')
         self.saved["integration_state_sha256"] = sha(directory / "state.rds")
         self.saved["integration_history"] = {"schema": "scagentkit.subcluster.integration-history.v1",
             "revision": 1, "head": "d" * 64, "total_events": 1, "provided_events": 1, "truncated": False,

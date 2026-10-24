@@ -258,7 +258,7 @@ sc_run <- function(input, project_dir, context = list(), provider = NULL, chat_f
     pending <- setdiff(local, selected)
     selected <- unique(c(selected, pending))
   }
-  # Symbol helpers such as %||% sort differently under C and UTF-8 collation.
+  # Function names sort differently under C and UTF-8 collation.
   # Fingerprints must retain byte-stable ordering in every R worker process.
   selected <- sort(selected, method = "radix")
   code <- lapply(selected, function(name) {
@@ -526,6 +526,7 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
   .sc_run_save(root, state)
   answer <- .sc_run_call(root, request, provider, chat_fn,
                          allow_external = external, retry = retry)
+  state <- .sc_run_load(root, verify = FALSE)
   if (identical(answer$status, "needs_provider")) {
     state$status <- "awaiting_configuration"; state$nodes[[state$stage]] <- "NEEDS_CONFIGURATION"
     state$diagnostics$provider_configuration_needed <- answer$error
@@ -818,6 +819,8 @@ sc_run_resume <- function(project_dir, provider = NULL, chat_fn = NULL, retry = 
       # committed, so the failure must append after them, not reuse their
       # sequence and revision numbers.
       state$history <- published$history; state$revision <- published$revision
+      receipts <- grep("^provider_(request|turn)_", names(published$files), value = TRUE)
+      state$files[receipts] <- published$files[receipts]
       state$status <- "failed"; state$nodes[[stage]] <- "FAILED"
       state$failure <- list(stage = stage, message = result$error, retry = "Explicit retry only; reconcile uncertain external delivery before retrying.")
       state <- .sc_run_event(state, "failed", state$failure); .sc_run_save(root, state)

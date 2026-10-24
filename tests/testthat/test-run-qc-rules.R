@@ -330,7 +330,8 @@ test_that("rule QC and independent saved doublet removal deduplicate overlapping
         messages = "Authored predictions for mechanism tests; no classifier executed",
         classifier_audit = list(train_attempts = 3L, train_successes = 3L, predict_attempts = 3L, predict_successes = 3L,
           training_errors = character(), prediction_errors = character(), test_only_mock = TRUE),
-        adapter_source_hashes = scAgentKit:::.sc_run_doublet_classifier_source_hashes())
+        adapter_source_hashes = scAgentKit:::.sc_run_doublet_classifier_source_hashes(),
+    adapter_versions = list(scDblFinder = "1.26.7", xgboost = "3.2.1.1"))
     }, .package = "scAgentKit", .env = environment())
   qc <- scAgentKit:::.sc_run_qc_evidence(seu, context)
   record <- scAgentKit:::.sc_run_doublet_evidence(seu, config)

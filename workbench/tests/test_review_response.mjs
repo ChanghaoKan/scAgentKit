@@ -52,12 +52,13 @@ function client(fetch = async () => {throw new Error("Unexpected request");}, in
     if (!nodes.has(id)) nodes.set(id, new InertNode());
     return nodes.get(id);
   }, createElement: tag => new InertNode(tag)};
-  const window = {confirm: () => true, location: {origin: "http://127.0.0.1:1", hash: fragment}, addEventListener() {}};
+  const listeners = new Map();
+  const window = {confirm: () => true, location: {origin: "http://127.0.0.1:1", hash: fragment}, addEventListener(type, fn) {listeners.set(type, fn);}};
   const context = vm.createContext({document, window, fetch, console, URLSearchParams});
   // Production render/event logic executes with DOM operations made inert.
   vm.runInContext(source.slice(0, -"load();\n".length) + "\nglobalThis.reviewClient = {state, verify, request, load, buttons, dirty, draftError, basePayload, decide, edit, render, admissibleGenes};", context);
   const api = context.reviewClient; api.state.view = initial; api.verify(initial); api.render();
-  return {api, nodes, context, click: id => nodes.get(id).listeners.get("click")()};
+  return {api, nodes, context, window, listeners, click: id => nodes.get(id).listeners.get("click")()};
 }
 function disabled(c) {
   c.api.buttons();
@@ -250,5 +251,19 @@ await test("result question links select a literal saved proposal and prefill wi
   assert.match(overview,/literal:A.*T-like.*CD3D.*01.*B-like.*CD79A/s);
   for (const fragment of ["#cluster=foreign", "#cluster=01&cluster=literal%3AA", "#cluster=01&approve=true"]) {const invalid = client(undefined, view(), fragment); assert.equal(invalid.api.state.selectedCluster, "literal:A"); assert.equal(invalid.api.dirty(), false);}
   checks += 13;
+});
+await test("same-document cluster navigation preserves unsaved corrections and reveals the selected row", async () => {
+  const c = client(undefined, view(), "#cluster=01");
+  c.api.state.drafts.get("01").label = "Edited B label";
+  c.window.location.hash = "#cluster=literal%3AA";
+  c.listeners.get("hashchange")();
+  assert.equal(c.api.state.selectedCluster, "literal:A");
+  assert.equal(c.nodes.get("run-annotation-context").open, true);
+  assert.equal(c.api.state.drafts.get("01").label, "Edited B label");
+  assert.equal(c.api.dirty(), true);
+  let prevented = false;
+  c.listeners.get("beforeunload")({preventDefault() {prevented = true;}});
+  assert.equal(prevented, true);
+  checks += 5;
 });
 console.log(`${cases} client cases / ${checks} focused checks passed; no GUI, R or external API calls`);

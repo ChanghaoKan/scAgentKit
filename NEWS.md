@@ -2,6 +2,43 @@
 
 Development version.
 
+- Exercise resampling rank rejection with an explicit degenerate PCA result,
+  independently of approximate-SVD roundoff, before the complete R check.
+  Allow bounded large Bioconductor downloads in the exact-pair CI job.
+  Align the main-branch citation, quick starts and reopening/annotation guidance
+  with development 0.9.1.9000, format 4 and the manual offline workflow.
+- Require project format 4 for the current persisted execution contract. Keep
+  complete cohort expression evidence once in each annotation review and show
+  the selected cluster's contrasts without duplicating per-cell evidence.
+- Recover lost or rolled-back provider ledgers from immutable dispatch and
+  response receipts before deriving the next request. Preserve receipts across
+  failure rollback and study-fact changes; uncertain sends remain blocked.
+  Bind cached response content and finish metadata to their receipts, retain
+  privacy-withheld witnesses across reconciliation, and keep invoice updates
+  separate from scientific proposal approval.
+- Reject altered orphan checkpoint content before publication and stage provider
+  lock ownership before publishing the dispatch lock.
+- Detach obsolete active ReAct scope when reference, child context or analysis
+  evidence changes, retaining historical artifacts. Accept nullable strict and
+  post-hoc model evidence consistently through portable review writeback.
+- Guard unsaved review drafts during navigation and reload. Preserve keyboard
+  focus and existing embedding points during cluster selection; reveal valid
+  cluster deep links without clearing local drafts. Load the pinned mouse
+  mapping only when mouse links are needed. Keep touch workflow selection stable
+  when scrolling produces mouse hover events.
+- Resolve aligned feature symbols in standalone QC metrics and keep unavailable
+  gene families as NA, including their plot annotations. Apply the existing PCA
+  rank validator to resampling, honor cross-sample opt-out independently of
+  quality grouping, and exclude obsolete/non-CL terms from fuzzy lookup.
+- Remove unused private validators and helpers, the obsolete tool dispatch/cache
+  implementation, the stale reference-cache API and ignored import parameter,
+  old executed-doublet receipt acceptance, and the duplicate two-review PBMC
+  walkthrough. Retain current classifier adapters and the three-review tutorial.
+- Repair the SVG browser driver, extend installed workflow-map acceptance, and
+  add an isolated CI job that requires the genuine older doublet-pair test to
+  execute without skips. Keep historical release and benchmark claims distinct
+  from current source validation. Exclude interactive vignette snippets from
+  extracted-code execution, since their approvals require a researcher.
 - Complete the product-review corrections: show manual annotation worksheets
   directly, keep child annotation in Review, move storage to project-level
   operations and show actionable workflow states with distinct plan and

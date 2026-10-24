@@ -10,7 +10,11 @@ test_that("explicit initial sample facts enable grouped MAD without implicit poo
   root <- tempfile(); on.exit(unlink(root, recursive = TRUE), add = TRUE)
   sc_analyze(fixture$recommend_workspace_input(), root,
     context = list(species = "human", tissue = "software fixture", research_goal = "Explicit sample facts"))
+  .sc_run_call(root, list(system_prompt = "Return JSON.", user_prompt = "Synthetic aggregate.",
+    purpose = "strategy"), provider = "mock", chat_fn = function(...) '{"draft":true}')
   old <- .sc_run_load(root)
+  receipts <- grep("^provider_request_", names(old$files), value = TRUE)
+  expect_length(receipts, 1L)
   expect_null(old$config$qc_mad)
   expect_null(old$config$context$columns$sample)
   out <- fixture$recommend_workspace_facts(root, list(columns = list(sample = "sample")))
@@ -19,6 +23,9 @@ test_that("explicit initial sample facts enable grouped MAD without implicit poo
   expect_identical(saved$config$qc_mad$grouping$column, "sample")
   expect_identical(saved$config$qc_mad$grouping$declared_role, "sample")
   expect_identical(saved$files$input, old$files$input)
+  expect_identical(saved$files[receipts], old$files[receipts])
+  expect_silent(.sc_run_provider_recover_ledger(root, saved,
+    .sc_run_provider_read(file.path(root, "provider", "ledger.json")), file.path(root, "provider", "ledger.json")))
   expect_length(saved$approvals, 0L)
   expect_null(saved$pending)
   archive <- .sc_run_get(root, saved, "recommendation_facts_archive")$revisions[[1L]]

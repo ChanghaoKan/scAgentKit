@@ -83,14 +83,14 @@ expression <- list(status="measured",panels=list(T="CD3D"),measured_genes="CD3D"
    coexpressing_cell_quality=list(list(cell_id=private,total_umi=100,detected_features=20,high_count_flag=FALSE)))))
 science <- list(schema="scagentkit.scientific-diagnostics.v1",cells=c(private,paste0(private,"B")),hash=strrep("a",64),
  resampling=list(status="measured",replicates=list(list(seed=42L,cells=private,ari=.8))),expression=expression)
-value <- list(science=science,annotation=list(clusterId="0",measured_expression=expression),
+value <- list(science=science,annotation=list(details=list(measured_expression=expression)),
  history=list(events=lapply(1:250,function(i)list(sequence=i,hash=strrep("b",64))),truncated=FALSE))
 original <- serialize(value,NULL);display <- .sc_wb_plain(value)
 stopifnot(identical(original,serialize(value,NULL)),!grepl(private,jsonlite::toJSON(display),fixed=TRUE),
  identical(display$history,value$history),identical(display$science$hash,science$hash),
  identical(display$science$measured_cells,2L),identical(display$science$resampling$replicates[[1]]$sampled_cells,1L),
- length(display$annotation$measured_expression$clusters)==1L,
- identical(display$annotation$measured_expression$clusters[[1]],expression$clusters[[1]]),
+ length(display$annotation$details$measured_expression$clusters)==2L,
+ identical(display$annotation$details$measured_expression$clusters[[1]],expression$clusters[[1]]),
  identical(display$science$expression$cell_quality_summary$measured_cells,2L),
  identical(display$science$expression$cell_quality_summary$high_count_flagged,1L),
  display$science$expression$cell_quality_summary$total_umi$median==150,

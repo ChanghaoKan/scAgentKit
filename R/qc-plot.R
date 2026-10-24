@@ -33,13 +33,20 @@ qc_plot <- function(obj,out_dir="figures",tag="qc",group_by=NULL,width=10,height
                             colnames(plot_seu@meta.data))
   p2_registered <- FALSE
   if (length(pct_features) > 0) {
-    p2 <- if (has_group) {
-      suppressWarnings(Seurat::VlnPlot(plot_seu, features = pct_features,
+    available <- pct_features[vapply(plot_seu[[]][pct_features], function(value)
+      is.numeric(value) && any(is.finite(value)), logical(1))]
+    missing <- setdiff(pct_features, available)
+    p2 <- if (!length(available)) {
+      ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0,
+        label = "QC percentages unavailable; no finite measurements.") + ggplot2::theme_void()
+    } else if (has_group) {
+      suppressWarnings(Seurat::VlnPlot(plot_seu, features = available,
                       group.by = group_by, pt.size = 0))
     } else {
-      suppressWarnings(Seurat::VlnPlot(plot_seu, features = pct_features,
+      suppressWarnings(Seurat::VlnPlot(plot_seu, features = available,
                       pt.size = 0))
     }
+    if (length(missing)) p2 <- p2 + ggplot2::labs(caption = paste("Unavailable (not zero):", paste(missing, collapse = ", ")))
     ggplot2::ggsave(p2_path, p2, width = width, height = height, dpi = dpi)
     p2_registered <- TRUE
   }

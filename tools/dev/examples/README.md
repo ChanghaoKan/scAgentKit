@@ -49,12 +49,6 @@ can accept an explicitly configured external provider.
 
 ## Public-data workflow
 
-[`researcher-pbmc.R`](researcher-pbmc.R) defines `researcher_pbmc_start(...)`,
-`researcher_pbmc_inspect(...)`, `researcher_pbmc_decide(...)` and
-`researcher_pbmc_resume(...)`. It uses `pbmc_small`, separate manual decisions
-and mock responses. Sourcing the file defines these functions without starting
-an analysis.
-
 For the complete scripted three-review fixture, call the installed tutorial
 directly, as documented in the [installed example guide](../../../inst/examples/README.md):
 

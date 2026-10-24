@@ -13,6 +13,33 @@ test_that("retained metrics preserve raw counts and require an explicit species 
   }
   expect_identical(.sc_run_hash(x),before)
 })
+test_that("QC defaults resolve aligned symbols and preserve unavailable family measurements", {
+  counts <- Matrix::Matrix(matrix(c(2, 2, 1, 3, 0, 4, 0, 0), 2, 4,
+    dimnames = list(c("ENSG00000198888", "ENSG00000141510"), c("001", "NA", "zero", "empty"))), sparse = TRUE)
+  object <- Seurat::CreateSeuratObject(counts, min.cells = 0, min.features = 0)
+  object[["RNA"]] <- SeuratObject::AddMetaData(object[["RNA"]],
+    data.frame(gene_symbol = c("MT-ND1", "TP53"), row.names = rownames(counts)))
+  original <- .sc_run_hash(object)
+  measured <- qc_add_metrics(object, species = "human")
+  expect_equal(unname(measured$percent.mt), c(50, 25, 0, NA_real_))
+  expect_true(all(is.na(measured$percent.ribo)))
+  expect_true(all(is.na(measured$percent.hb)))
+  expect_identical(measured@misc$qc_metric_source$metrics$percent.mt$mapping_source, "feature_metadata:gene_symbol")
+  expect_identical(.sc_run_hash(object), original)
+  conflicted <- object
+  conflicted[["RNA"]] <- SeuratObject::AddMetaData(conflicted[["RNA"]],
+    data.frame(symbol = c("TP53", "TP53"), row.names = rownames(counts)))
+  expect_true(all(is.na(qc_add_metrics(conflicted, species = "human")$percent.mt)))
+  explicit <- qc_add_metrics(conflicted, mt_pattern = "98888$", ribo_pattern = "41510$", hb_pattern = "absent")
+  expect_equal(unname(explicit$percent.mt), c(50, 25, 0, NA_real_))
+  expect_true(all(is.na(explicit$percent.hb)))
+  expect_identical(.sc_run_hash(measured@assays$RNA@layers$counts), .sc_run_hash(object@assays$RNA@layers$counts))
+  expect_identical(.sc_run_hash(object), original)
+  unmapped <- object
+  unmapped[["RNA"]][["gene_symbol"]] <- NULL
+  expect_true(all(is.na(qc_add_metrics(unmapped, species = "human")$percent.mt)))
+})
+
 test_that("split merge needs declared roles and explicit collision handling", {
   x<-SeuratObject::pbmc_small;x$source_sample<-rep(c("A","B"),each=40)
   before<-.sc_run_hash(x);parts<-qc_split(x,"source_sample")

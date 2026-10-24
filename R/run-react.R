@@ -81,6 +81,9 @@
     on.exit(.sc_run_release(root, project_lock_owner), add = TRUE)
   }
   state <- .sc_run_load(root)
+  ledger_path <- file.path(root, "provider", "ledger.json")
+  if (dir.exists(dirname(ledger_path)))
+    .sc_run_provider_recover_ledger(root, state, .sc_run_provider_read(ledger_path), ledger_path)
   .sc_run_control_check(root)
   if (is.null(turn_fn) && identical(state$config$provider$name, "mock"))
     turn_fn <- .sc_run_react_mock_turn

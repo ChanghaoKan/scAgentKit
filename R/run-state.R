@@ -115,9 +115,13 @@
 }
 .sc_run_put <- function(root, state, name, value) {
   # Versioned immutable snapshots make an interrupted state commit harmless.
-  path <- file.path("checkpoints", paste0(name, "-", .sc_run_hash(value), ".rds"))
+  hash <- .sc_run_hash(value)
+  path <- file.path("checkpoints", paste0(name, "-", hash, ".rds"))
   full <- file.path(root, path)
   if (!file.exists(full)) .sc_run_atomic(value, full, storage_root = root)
+  else if (nzchar(Sys.readlink(full)) || !identical(tryCatch(.sc_run_hash(readRDS(full)),
+      error = function(e) NULL), hash))
+    stop("Existing checkpoint content differs from its expected object hash; publication refused.", call. = FALSE)
   state$files[[name]] <- list(path = path, sha256 = .sc_project_sha_file(full))
   state
 }
@@ -141,8 +145,11 @@
     file_names <- intersect(c("input", "analysis", "markers", "reference", "annotation_history_input",
       "annotation_evidence", "manual_annotation", "annotation_validated", "annotation_review",
       "annotation_react_run", "annotation_react_citations", "annotation_baseline_risks",
-      grep("^(react_cluster_|react_session_|provider_turn_)", names(state$files), value = TRUE)), names(state$files))
+      grep("^(react_cluster_|react_session_)", names(state$files), value = TRUE)), names(state$files))
   if (is.null(file_names)) file_names <- names(state$files)
+  # Operational receipt pointers can advance after invoice reconciliation.
+  # Scientific response/evidence/trace artifacts remain bound independently.
+  file_names <- file_names[!grepl("^provider_(request|turn)_", file_names)]
   pending <- list(kind = kind, stage = state$stage, proposal = proposal, evidence_hash = evidence_hash,
                   revision_created = state$revision, next_stage = next_stage, binding = .sc_run_binding(state, file_names))
   pending$hash <- .sc_run_pending_hash(state, pending)

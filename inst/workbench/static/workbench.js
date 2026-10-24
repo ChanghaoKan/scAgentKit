@@ -246,6 +246,7 @@ function wbRenderWorkflowMap() {
       const button=wbNode("button",null,{type:"button",class:"wb-map-step "+step.kind,"data-workflow-step":step.id,"data-testid":"workflow-step-"+step.id,"aria-pressed":"false","aria-controls":"wb-workflow-detail"});
       button.append(wbNode("span",step.kind==="human"?"HUMAN REVIEW":step.kind==="model"?"OPTIONAL ASSISTANCE":"LOCAL / SAVED RECORDS",{class:"wb-map-step-kind"}),wbNode("strong",step.title),wbNode("span",step.status,{class:"wb-map-step-status"}));
       for(const event of ["mouseenter","focus","click"])button.addEventListener(event,()=>{
+        if(event==="mouseenter" && window.matchMedia?.("(hover: hover)")?.matches===false)return;
         select(step);
         if(event==="click" && window.matchMedia?.("(max-width: 950px)").matches)
           detail.scrollIntoView?.({block:"nearest",behavior:"smooth"});
@@ -379,7 +380,7 @@ function wbRenderStrategy() {
   if (details.applicability) target.append(wbCard("Saved applicability", wbFacts(details.applicability)));
   target.append(wbCard("Recorded strategy and decision lifecycle", wbRecord("Saved strategy review", review || value.summary))); wbProjection(target, "Strategy", value.projection);
 }
-function wbSelectCluster(id) {const clusters = wbArray(wbState.view?.evidence?.clusters); if (!clusters.some(cluster => cluster.id === id)) return; wbState.clusterId = id; wbRenderEmbedding(); wbRenderMarkers();}
+function wbSelectCluster(id) {const clusters = wbArray(wbState.view?.evidence?.clusters); if (!clusters.some(cluster => cluster.id === id)) return; wbState.clusterId = id; if (!ScEvidenceDisplay.selectEmbedding(wb$("wb-umap"), id, wb$("wb-show-all").checked)) wbRenderEmbedding(); wbRenderMarkers();}
 function wbRenderEmbedding() {
   const evidence = wbState.view.evidence, clusters = wbArray(evidence?.clusters), points = wbArray(evidence?.umap), name = evidence?.embeddingName || "Saved embedding";
   wb$("wb-embedding-title").textContent = name; wb$("wb-embedding-summary").textContent = points.length ? points.length.toLocaleString() + " plotted cells" + (wbState.view.evidence_kind === "saved_analysis_checkpoint" ? " · annotation not finalized" : "") : "No embedding coordinates were supplied for this snapshot.";
@@ -389,8 +390,15 @@ function wbRenderEmbedding() {
   wb$("wb-umap-legend").replaceChildren(); // The pure display helper supplies the actual coloured legend.
 }
 function wbRenderMarkers() {
-  const clusters = wbArray(wbState.view.evidence?.clusters), list = wb$("wb-clusters"); list.replaceChildren();
-  for (const cluster of clusters) {const button = wbNode("button", cluster.id, {type: "button", "data-cluster-id": cluster.id, "aria-label": "Cluster " + cluster.id + " · " + cluster.cellCount + " cells", "aria-pressed": cluster.id === wbState.clusterId}); button.addEventListener("click", () => wbSelectCluster(cluster.id)); list.append(button);}
+  const clusters = wbArray(wbState.view.evidence?.clusters), list = wb$("wb-clusters");
+  if (list.children.length !== clusters.length || clusters.some((cluster, index) => list.children[index].getAttribute("data-cluster-id") !== cluster.id)) {
+    list.replaceChildren();
+    for (const cluster of clusters) {const button = wbNode("button", cluster.id, {type: "button", "data-cluster-id": cluster.id}); button.addEventListener("click", () => wbSelectCluster(cluster.id)); list.append(button);}
+  }
+  for (const [index, cluster] of clusters.entries()) {
+    list.children[index].setAttribute("aria-label", "Cluster " + cluster.id + " · " + cluster.cellCount + " cells");
+    list.children[index].setAttribute("aria-pressed", String(cluster.id === wbState.clusterId));
+  }
   const selected = clusters.find(cluster => cluster.id === wbState.clusterId), markers = wbArray(selected?.markers);
   wb$("wb-marker-summary").textContent = selected ? "Cluster " + selected.id + ": " + markers.length + " supplied marker rows. Missing top-marker evidence does not establish non-expression. Gene lookups use the declared dataset species." : "No literal cluster scope is available for this saved output.";
   ScEvidenceDisplay.markers(wb$("wb-markers"), markers, {species: wbState.view.run.context?.species});
@@ -502,7 +510,8 @@ function wbRenderAnnotation() {
     card.append(wbNode("h3", "Cluster " + row.clusterId + " · " + wbText(row.cell_count) + " cells"), wbNode("p", proposal.label || "Label unavailable", {class: "wb-annotation-label"}), wbNode("p", (proposal.confidence || "Unavailable") + " qualitative confidence · uncalibrated"), wbNode("p", proposal.rationale || "No rationale supplied"), wbGeneLine("Cited genes: ", proposal.markers));
     const joint = row.joint_evidence;
     if (joint) card.append(wbRecord("Saved database / model joint evidence", joint)); else if (row.local_reference) card.append(wbRecord("Saved local reference evidence", row.local_reference));
-    if (row.measured_expression) card.append(wbRecord("Saved measured expression and cross-sample evidence", row.measured_expression));
+    const expression = ScEvidenceDisplay.expressionForCluster(review?.details?.measured_expression, row.clusterId);
+    if (expression) card.append(wbRecord("Saved measured expression and cross-sample evidence", expression));
     const trace = wbArray(audit?.clusters).find(item => item.cluster_id === row.clusterId);
     if (trace) {
       const details = wbNode("details", null, {class: "wb-react-trace"}), steps = new Map();
@@ -613,7 +622,7 @@ async function wbLoad() {
 for (const link of wb$("wb-navigation").children) link.addEventListener("click", event => {event.preventDefault(); wbSelectSection(link.getAttribute("data-section"), true);});
 for (const link of wb$("wb-primary-navigation").children) link.addEventListener("click", event => {event.preventDefault(); wbSelectSection(link.getAttribute("href").slice(1), true);});
 for (const [id, section] of [["wb-open-annotation", "annotation"], ["wb-open-history", "history"]]) wb$(id).addEventListener("click", event => {event.preventDefault(); wbSelectSection(section, true);});
-wb$("wb-show-all").addEventListener("change", () => {if (wbState.view) wbRenderEmbedding();});
+wb$("wb-show-all").addEventListener("change", () => {if (wbState.view && !ScEvidenceDisplay.selectEmbedding(wb$("wb-umap"), wbState.clusterId, wb$("wb-show-all").checked)) wbRenderEmbedding();});
 wb$("wb-refresh").addEventListener("click", wbLoad);
 window.addEventListener("hashchange", () => wbSelectSection((window.location.hash || "").slice(1)));
 window.addEventListener("pageshow", event => {if (event.persisted) wbLoad();});

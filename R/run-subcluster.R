@@ -227,13 +227,6 @@ sc_run_subcluster_list <- function(parent_project, workspace) {
   list(schema = "scagentkit.subcluster.registry.v1", parent_project_id = parent$state$project_id,
        parent_scope_hash = .sc_run_hash(parent$binding), children = children)
 }
-.sc_run_subcluster_resolve <- function(parent_project, workspace, child_id) {
-  .sc_project_string(child_id, "child_id")
-  children <- sc_run_subcluster_list(parent_project, workspace)$children
-  chosen <- Filter(function(child) identical(child$project_id, child_id), children)
-  if (length(chosen) != 1L) stop("Child ID is absent or foreign to this registered parent workspace.", call. = FALSE)
-  chosen[[1L]]$project_dir
-}
 
 .sc_run_subcluster_fields <- function(column) {
   .sc_project_string(column, "column")

@@ -184,30 +184,6 @@ test_that("saved legacy provenance verifies without installed dependencies and r
   saved <- tempfile(fileext = ".rds"); on.exit(unlink(saved), add = TRUE)
   saveRDS(record, saved)
   expect_silent(scAgentKit:::.sc_run_doublet_verify(readRDS(saved)))
-  historical <- record
-  historical$summary$scoring$adapter_versions <- NULL
-  historical$summary$scoring$versions <- list(scDblFinder = "1.26.7", xgboost = "3.2.1.1",
-    fixture_scope = "Authored historical modern record metadata; no classifier execution.")
-  historical$summary$scoring$adapter_source_hashes <- scAgentKit:::.sc_run_doublet_classifier_source_hashes()
-  for (capture in names(historical$execution)) {
-    historical$execution[[capture]]$adapter_versions <- NULL
-    historical$execution[[capture]]$adapter_source_hashes <- scAgentKit:::.sc_run_doublet_classifier_source_hashes()
-  }
-  historical$evidence_hash <- scAgentKit:::.sc_run_doublet_hash(historical)
-  saveRDS(historical, saved)
-  expect_silent(scAgentKit:::.sc_run_doublet_verify(readRDS(saved)))
-  for (change in c("unknown_release", "legacy_release", "missing_release", "missing_versions", "unknown_backend", "missing_backend", "older_backend")) {
-    invalid <- historical
-    if (change == "unknown_release") invalid$summary$scoring$versions$scDblFinder <- "fictional"
-    if (change == "legacy_release") invalid$summary$scoring$versions$scDblFinder <- "1.22.0"
-    if (change == "missing_release") invalid$summary$scoring$versions$scDblFinder <- NULL
-    if (change == "missing_versions") invalid$summary$scoring$versions <- NULL
-    if (change == "unknown_backend") invalid$summary$scoring$versions$xgboost <- "unknown"
-    if (change == "missing_backend") invalid$summary$scoring$versions$xgboost <- NULL
-    if (change == "older_backend") invalid$summary$scoring$versions$xgboost <- "1.7.11.1"
-    invalid$evidence_hash <- scAgentKit:::.sc_run_doublet_hash(invalid)
-    expect_error(scAgentKit:::.sc_run_doublet_verify(invalid), "provenance|backend|supported named fields")
-  }
   for (change in c("pair", "hash", "missing", "summary", "capture")) {
     invalid <- record
     if (change == "pair") invalid$summary$scoring$adapter_versions$xgboost <- "3.2.1.1"
@@ -253,7 +229,7 @@ test_that("unsupported local diagnostics persist unavailable backends without cl
     if (change == "missing_reason") invalid$summary$scoring$adapter_unavailable_reason <- NULL
     if (change == "scores") invalid$scores_hash <- scAgentKit:::.sc_run_hash(invalid$scores)
     invalid$evidence_hash <- scAgentKit:::.sc_run_doublet_hash(invalid)
-    expect_error(scAgentKit:::.sc_run_doublet_verify(invalid), "provenance|Unknown|execution|source identities|unavailable reason")
+    expect_error(scAgentKit:::.sc_run_doublet_verify(invalid), "supported named fields|provenance|Unknown|execution|source identities|unavailable reason")
   }
 })
 

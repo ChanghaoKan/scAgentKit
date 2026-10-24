@@ -4,6 +4,8 @@ scAgentKit runs on Linux and macOS with R ≥ 4.2, Seurat ≥ 5 and Python ≥ 3
 Windows is unsupported. The browser interface is included in the R package.
 Choose a version below, then use its matching guide and a new project for your
 first trial. Retain the original software environment for existing projects.
+Current source is development 0.9.1.9000 and requires project format 4; the
+published release below retains its original format 3 and matching manual.
 
 ## Download scAgentKit 0.9.0
 
@@ -22,7 +24,7 @@ shasum -a 256 -c SHA256SUMS
 
 After verification, follow the
 [installation instructions for v0.9.0](https://github.com/ChanghaoKan/scAgentKit/blob/v0.9.0/inst/INSTALL.md#installation).
-This experimental release includes the current three-review workflow and project
+This experimental release includes a three-review workflow and project
 format 3. Preserve its package and dependency environment with the project.
 Older releases are listed on the [Releases page](https://github.com/ChanghaoKan/scAgentKit/releases).
 
@@ -74,13 +76,14 @@ saveRDS(pbmc_small, "pbmc-small-trial.rds")
 sc_start("pbmc-small-trial.rds", "pbmc-small-trial-project",
   context = list(species = "human", tissue = "blood",
                  research_goal = "Try the review workflow"),
-  provider = "mock", doublet = "off")
+  provider = "manual", model_suggestions = "off", doublet = "off")
 ```
 
 The workbench opens an analysis plan for review. Continue through the three
 decisions: the initial plan, measured clustering and annotation. Saving a draft
-does not approve it. This trial makes no external model calls; its mock labels
-demonstrate software operation and do not validate biological accuracy.
+does not approve it. Complete the manual annotation worksheet with labels or
+Unknown. This trial makes no model calls and demonstrates software operation;
+it does not validate biological accuracy.
 
 For model-assisted analysis, set the selected provider's API key in the R
 environment (for example, `DEEPSEEK_API_KEY`), select that provider and create a
@@ -88,7 +91,8 @@ new project. Confirm the aggregate data transfer scope before requesting a
 draft. Keep credentials outside the repository. Provider usage and costs are
 recorded after calls; there is no monetary cap.
 
-Reopen using the same input/project and software environment. See
+Reopen with `sc_start(project_dir="pbmc-small-trial-project")` in the same
+software environment; the saved input checkpoint supplies the original data. See
 [workflow](WORKFLOW.md), [cancel/resume/disk allowance](TRIAL_CONTROLS.md) and
 [complete examples](../../inst/examples/README.md).
 

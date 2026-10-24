@@ -26,7 +26,7 @@ class Element {
   insertAdjacentHTML() {htmlParses++; throw new Error("Evidence must remain literal text");}
   setAttribute(name, value) {this.attributes[name] = String(value);}
   getAttribute(name) {return this.attributes[name] ?? null;}
-  append(...values) {this.children.push(...values);}
+  append(...values) {for (const value of values) {const index = this.children.indexOf(value); if (index >= 0) this.children.splice(index, 1); this.children.push(value);}}
   replaceChildren(...values) {this.text = ""; this.children = values;}
   addEventListener(name, callback) {(this.listeners[name] ||= []).push(callback);}
   emit(name) {for (const callback of this.listeners[name] || []) callback({target: this});}
@@ -59,9 +59,23 @@ const clusters = () => [{id: "01", cellCount: 1}, {id: "1", cellCount: 1}, {id: 
 const marker = () => ({gene: "CD3D", avgLog2FC: 1.23456789012345, pct1: .700000000000001, pct2: .100000000000002, pctDiff: 0, pAdj: 1.23456789123456e-105, source: "saved original source"});
 const cells = target => tags(target, "tbody")[0]?.children.map(row => row.children.map(cell => cell.textContent)) || [];
 
-check("standalone API exposes only two frozen display functions", () => {
+check("repeated selection preserves circle identity and coordinates and keeps selected points on top", () => {
+  const {api, target} = setup();
+  api.embedding(target, {points: [{cellId: "001", clusterId: "A", x: 0, y: 0}, {cellId: "1", clusterId: "B", x: 1, y: 1}], clusters: [{id: "A"}, {id: "B"}], selectedCluster: "A"});
+  const before = tags(target, "circle"), coordinates = before.map(node => [node.getAttribute("cx"), node.getAttribute("cy")]);
+  assert.equal(api.selectEmbedding(target, "B", false), true);
+  const after = tags(target, "circle");
+  assert.equal(after.length, 2);
+  for (const [index, node] of before.entries()) {assert(after.includes(node)); assert.deepEqual([node.getAttribute("cx"), node.getAttribute("cy")], coordinates[index]);}
+  assert.equal(after.at(-1).getAttribute("data-cluster"), "B");
+  assert.equal(after.at(-1).getAttribute("data-selected"), "true");
+  assert.equal(after.find(node => node.getAttribute("data-cluster") === "A").getAttribute("fill"), "#dce2ed");
+  assert.equal(api.selectEmbedding(target, "A", true), true);
+  assert.equal(tags(target, "circle").at(-1).getAttribute("data-cluster"), "A");
+});
+check("standalone API exposes frozen display functions", () => {
   const {api, context} = setup();
-  assert.deepEqual(Object.keys(api), ["embedding", "markers"]); assert.equal(Object.isFrozen(api), true);
+  assert.deepEqual(Object.keys(api), ["embedding", "selectEmbedding", "markers", "expressionForCluster"]); assert.equal(Object.isFrozen(api), true);
   assert.equal(typeof api.embedding, "function"); assert.equal(typeof api.markers, "function");
   assert.throws(() => vm.runInContext('"use strict"; ScEvidenceDisplay.markers = null;', context), /read only|readonly|Cannot assign/i);
   assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon|window|innerHTML|outerHTML|insertAdjacentHTML)\b/);

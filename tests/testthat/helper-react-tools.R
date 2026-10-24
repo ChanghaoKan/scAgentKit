@@ -43,8 +43,14 @@ react_tool_fixture <- function() {
     genes = genes, seu = seu, commit = commit)
 }
 
-react_local <- function(fixture, tool, arguments, cache_dir = FALSE) {
+react_local <- function(fixture, tool, arguments) {
   definition <- .sc_run_react_tools()[[tool]]
-  .sc_run_react_dispatch_local(fixture$context, tool,
-    .sc_run_react_arguments(definition, arguments), cache_dir)
+  context <- fixture$context
+  .sc_run_react_verify_context(context)
+  arguments <- .sc_run_react_arguments(definition, arguments)
+  .sc_run_react_public_check(arguments, context, definition$max_argument_bytes, arguments = TRUE)
+  result <- definition$execute(context, arguments)
+  .sc_run_react_public_check(result, context, definition$max_result_bytes)
+  .sc_run_react_verify_context(context)
+  list(result = result, result_hash = .sc_run_hash(result))
 }

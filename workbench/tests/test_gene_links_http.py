@@ -43,7 +43,8 @@ class GeneLinksHTTPTests(unittest.TestCase):
         for route, application in (("/index.html", b"/app.js"), ("/review", b"/review.js"), ("/workbench", b"/workbench.js")):
             status, body = self.request(route)
             self.assertEqual(status, 200)
-            self.assertLess(body.index(b"/ortholog-map.js"), body.index(b"/gene-links.js"))
+            self.assertNotIn(b'src="/ortholog-map.js"', body)
+            self.assertIn(b'src="/gene-links.js"', body)
             self.assertLess(body.index(b"/gene-links.js"), body.index(application))
             self.assertNotIn(b"src=\"https://www.genecards.org", body)
 

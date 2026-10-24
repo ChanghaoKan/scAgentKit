@@ -200,14 +200,16 @@
     reviewer = reviewer, reason = reason, supplied_facts = facts,
     policy = "Historical declarations and artifacts only; no approval or computation is copied to the new facts.")
   state <- .sc_run_put(root, state, "recommendation_facts_archive", list(revisions = append(previous, list(record))))
-  preserve <- intersect(c("input", "reference", "annotation_history_input", "manual_strategy", "manual_annotation", "recommendation_facts_archive"), names(state$files))
+  preserve <- intersect(c("input", "reference", "annotation_history_input", "manual_strategy", "manual_annotation", "recommendation_facts_archive",
+    grep("^provider_(request|turn)_", names(state$files), value = TRUE)), names(state$files))
   invalidated <- state$files[setdiff(names(state$files), preserve)]
   state$files <- state$files[preserve]
   old_config_hash <- state$config_hash
   state$config <- config; state$config_hash <- .sc_run_hash(config)
   state$pending <- NULL; state$approved <- NULL; state$failure <- NULL; state$output <- NULL
   state$strategy_return <- NULL; state$strategy_authorizations <- NULL
-  state$suggestion <- NULL; state$transfer_hashes <- character()
+  state["suggestion"] <- list(NULL)
+  state$transfer_hashes <- state$suggestion_transfer_hashes <- character()
   state$completed <- character(); state$nodes <- list()
   state$stage <- if (!is.null(config$qc_mad)) "prefilter" else "strategy_evidence"
   state$status <- "ready"; state$nodes[[state$stage]] <- "PLANNED"

@@ -12,7 +12,7 @@ sc_review_validate(object, journal, project, columns = c(type = "review_type"))
 }
 \value{A list with \code{valid}, structured \code{errors} and \code{warnings} tables, a per-cell \code{mapping}, \code{coverage}, target \code{columns}, and the computed source \code{identity}. Invalid input returns \code{valid = FALSE}; no object or file is changed.}
 \description{Checks project and asset hashes, complete expression identity, exact literal cell-ID and cluster scopes, original JSON event payload hashes, workflow status and undo history before deriving any writeback. Different cell or gene order is permitted; changed values, membership, features or cell sets are refused. The journal must use \code{scagentkit.review-journal.v1} and match the verified project's ID, source fingerprint and bundle digest.}
-\details{The portable project must declare project format version 3 in \code{project.json}. A missing, damaged or mismatched format produces an invalid validation report before writeback; use the original software environment or create a new project. No migration or file repair is performed.
+\details{The portable project must declare project format version 4 in \code{project.json}. A missing, damaged or mismatched format produces an invalid validation report before writeback; use the original software environment or create a new project. No migration or file repair is performed.
 
 The latest active accepted ordinary label is \code{labeled}; accepted \code{unknown} is \code{abstained}. Proposed or reviewed decisions are \code{deferred} and leave labels missing. No decision is \code{unreviewed}. Undo restores the preceding active decision. Partial review is legal and reported explicitly. Human acceptance is a workflow state, not biological truth.
 

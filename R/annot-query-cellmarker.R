@@ -9,7 +9,6 @@
 #' @param species One of "human" or "mouse"; applied to the table's species column.
 #' @param tissue Required nonempty literal tissue filter (case insensitive).
 #' @param cancer_only Restrict to non-Normal cancer context when TRUE.
-#' @param cache_dir Not used by the explicit local-file import.
 #' @param force_refresh TRUE requests automatic refresh, which is unavailable and
 #'   rejected; use a local_file.
 #' @param url Only the documented fixed official HTTPS URL is recognized; no mirrors.
@@ -19,7 +18,7 @@
 #' @return Scoped marker reference with local provenance and explicit zero-match status.
 #' @export
 annot_query_cellmarker <- function(species, tissue = NULL, cancer_only = FALSE,
-                                   cache_dir = NULL, force_refresh = FALSE, url = NULL,
+                                   force_refresh = FALSE, url = NULL,
                                    local_file = NULL, sha256 = NULL) {
   if (missing(species) || !is.character(species) || length(species) != 1L ||
       is.na(species) || !species %in% c("human", "mouse"))
@@ -147,29 +146,4 @@ annot_query_cellmarker <- function(species, tissue = NULL, cancer_only = FALSE,
   expanded$marker <- trimws(expanded$marker)
   expanded <- expanded[nzchar(expanded$marker), , drop = FALSE]
   expanded
-}
-
-
-#' Clear the scAgentKit reference cache
-#'
-#' Removes every file in the scAgentKit reference cache: cached CellMarker
-#' XLSX tables with their source-URL records and the cached Cell Ontology
-#' (`cl.obo`). Use if you suspect a cached table is corrupt or outdated.
-#'
-#' @param cache_dir Directory to clear. Defaults to scAgentKit's user
-#'   cache.
-#' @return Invisibly returns the number of files removed.
-#' @export
-annot_clear_cache <- function(cache_dir = NULL) {
-  if (is.null(cache_dir)) {
-    cache_dir <- tryCatch(
-      tools::R_user_dir("scAgentKit", which = "cache"),
-      error = function(e) tempdir()
-    )
-  }
-  if (!dir.exists(cache_dir)) return(invisible(0L))
-  files <- list.files(cache_dir, full.names = TRUE)
-  n <- sum(file.remove(files))
-  message(sprintf("[annot_clear_cache] removed %d file(s) from %s", n, cache_dir))
-  invisible(n)
 }

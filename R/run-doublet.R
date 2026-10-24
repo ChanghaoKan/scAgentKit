@@ -567,9 +567,8 @@
       !(identical(record$summary$status, "available") || identical(record$summary$status, "unsupported")) ||
       !identical(record$evidence_hash, .sc_run_doublet_hash(record)))
     .sc_project_fail("Doublet evidence is missing or changed; regenerate it and obtain fresh strategy review.")
-  # Historical evidence binds its saved release, not whichever optional
-  # package happens to be installed in the reviewing process. Records from the
-  # original modern adapter remain valid without the new explicit pair field.
+  # Saved evidence binds its explicit audited adapter pair, independently of
+  # optional packages installed in the reviewing process.
   adapter_versions <- record$summary$scoring$adapter_versions
   not_executed <- identical(record$summary$status, "unsupported") &&
     identical(record$summary$scoring$adapter_status, "not_executed")
@@ -581,11 +580,6 @@
       .sc_project_fail("Unsupported diagnostics with an unavailable adapter cannot claim executed classifier source identities.")
     .sc_run_doublet_text(record$summary$scoring$adapter_unavailable_reason, "unexecuted doublet adapter unavailable reason")
     adapter_hashes <- NULL
-  } else if (is.null(adapter_versions)) {
-    versions <- record$summary$scoring$versions
-    if (!is.list(versions) || !identical(versions$scDblFinder, "1.26.7"))
-      .sc_project_fail("Doublet evidence without explicit adapter provenance requires saved verified scDblFinder 1.26.7 and its supported xgboost backend; legacy, missing, and unknown releases must be regenerated before review.")
-    adapter_hashes <- .sc_run_doublet_classifier_versions_verify(versions[c("scDblFinder", "xgboost")])
   } else {
     .sc_run_doublet_classifier_provenance_verify(adapter_versions, record$summary$scoring$versions)
     adapter_hashes <- .sc_run_doublet_classifier_source_hashes(adapter_versions$scDblFinder)

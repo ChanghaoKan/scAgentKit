@@ -80,6 +80,20 @@
     }
   }
   loadMapping();
+  let mappingLoad = null;
+  function ensureMapping() {
+    if (["available", "invalid"].includes(mapInfo.status) || !document.head) return null;
+    if (mappingLoad) return mappingLoad;
+    mapInfo = Object.freeze({...mapInfo, status: "loading"});
+    mappingLoad = new Promise(resolve => {
+      const script = document.createElement("script");
+      script.src = "/ortholog-map.js";
+      script.onload = () => {loadMapping(); if (mapInfo.status === "loading") mapInfo = Object.freeze({...mapInfo, status: "unavailable"}); resolve();};
+      script.onerror = () => {mapInfo = Object.freeze({...mapInfo, status: "unavailable"}); resolve();};
+      document.head.append(script);
+    });
+    return mappingLoad;
+  }
   function mappingInfo() {return mapInfo;}
   function lookup(gene, declaredSpecies) {
     const kind = species(declaredSpecies).kind;
@@ -96,7 +110,7 @@
     const value = species(declaredSpecies);
     if (value.kind === "human") return "Human GeneCards lookups open in a new tab only when a gene is clicked; entry existence is not verified. The clicked symbol is sent to GeneCards. No gene list is uploaded or fetched.";
     if (value.kind === "mouse") {
-      const coverage = mapInfo.status === "available" ? "Local official snapshot " + mapInfo.snapshot_id + ": " + mapInfo.entries + " mouse records; official aliases for " + mapInfo.alias_entries + " records only. Exact symbols take priority over case-sensitive official aliases. Every supplied human candidate is shown; homology-group candidates are distinct from recorded one-to-one orthologs." : "The local official mouse mapping is " + (mapInfo.status === "invalid" ? "invalid" : "unavailable") + "; mouse links stay unavailable.";
+      const coverage = mapInfo.status === "available" ? "Local official snapshot " + mapInfo.snapshot_id + ": " + mapInfo.entries + " mouse records; official aliases for " + mapInfo.alias_entries + " records only. Exact symbols take priority over case-sensitive official aliases. Every supplied human candidate is shown; homology-group candidates are distinct from recorded one-to-one orthologs." : "Mouse links use the pinned local official mapping, loaded on demand. Availability is shown beside each gene; missing mappings never imply ortholog absence.";
       return coverage + " GeneCards focuses on human entries and can include mouse ortholog information; MGI opens the mouse record. Links open only when clicked, sending one mapped symbol or MGI ID to that site. No gene list is uploaded or fetched; entry existence and external content are not verified.";
     }
     return (value.kind === "unknown" ? "Species is undeclared." : "This declared species has no supported GeneCards mapping.") + " GeneCards is a human gene database; no direct link or species inference is offered.";
@@ -141,7 +155,12 @@
       symbol.setAttribute("aria-label", gene + " · human GeneCards lookup, new tab; entry not verified");
       symbol.setAttribute("title", "Open human GeneCards lookup; this entry has not been verified");
     }
-    if (value.kind === "mouse") {wrapper.append(symbol); mouseLinks(wrapper, gene); return wrapper;}
+    if (value.kind === "mouse") {
+      const loading = ensureMapping();
+      wrapper.append(symbol); mouseLinks(wrapper, gene);
+      if (loading) loading.then(() => {wrapper.replaceChildren(symbol); mouseLinks(wrapper, gene);});
+      return wrapper;
+    }
     const label = document.createElement("small"); label.setAttribute("class", "gene-lookup-label");
     label.textContent = href ? "human · GeneCards ↗" : value.kind === "human" ? "human · link unavailable" : value.label + " · no GeneCards mapping";
     wrapper.append(symbol, label); return wrapper;

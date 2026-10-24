@@ -21,7 +21,7 @@ software environment when reopening an existing project.
 
 Use SeuratObject's bundled PBMC dataset for a first run:
 
-```{r browser}
+```{r browser, purl=FALSE}
 library(scAgentKit)
 data("pbmc_small", package = "SeuratObject")
 example_dir <- tempfile("scagentkit-example-")
@@ -33,11 +33,11 @@ project_dir <- file.path(example_dir, "project")
 sc_start(input, project_dir,
   context = list(species = "human", tissue = "blood",
                  research_goal = "Explore the review workflow"),
-  provider = "mock", doublet = "off")
+  provider = "manual", model_suggestions = "off", doublet = "off")
 ```
 
-This opens a local browser page. The mock provider needs no API key and sends
-no data to an external model. Review the evidence at each step:
+This opens a local browser page for manual review. It needs no API key and
+makes no model calls. Review the evidence at each step:
 
 1. Inspect QC distributions and the analysis plan. Save any edits, then approve
    the reviewed plan to run the local analysis.
@@ -47,15 +47,15 @@ no data to an external model. Review the evidence at each step:
    each row with a label or Unknown, confidence, rationale and supporting
    markers. Save the complete proposal, inspect it, then approve annotation.
 
-Saving a draft records edits without approving it. The small dataset and mock
-responses demonstrate operation; they do not establish biological accuracy or
+Saving a draft records edits without approving it. The small dataset and manual
+Unknown labels demonstrate operation; they do not establish biological accuracy or
 suitable parameters for a study.
 
 ## Retrieve and reopen results
 
 After the browser reports completion:
 
-```{r results}
+```{r results, purl=FALSE}
 result <- sc_result(project_dir)
 table(result$sc_annotation)
 sc_open(project_dir)$view$output
@@ -68,7 +68,7 @@ durable path for a study.
 
 To reopen this example in the same environment:
 
-```{r reopen}
+```{r reopen, purl=FALSE}
 sc_start(input, project_dir)
 ```
 
@@ -85,7 +85,7 @@ aggregate data-transfer scope before requesting a suggestion. Scientific
 approval is a separate decision. Function help describes the supported input
 and configuration arguments:
 
-```{r help}
+```{r help, purl=FALSE}
 help("sc_start", package = "scAgentKit")
 help("sc_result", package = "scAgentKit")
 ```
@@ -95,7 +95,7 @@ help("sc_result", package = "scAgentKit")
 For a software installation check, the package also includes an offline
 three-review tutorial:
 
-```{r scripted}
+```{r scripted, purl=FALSE}
 source(system.file("examples", "three-gate-analysis.R",
                    package = "scAgentKit", mustWork = TRUE))
 checked <- three_gate_analysis(tempfile("scagentkit-check-"))

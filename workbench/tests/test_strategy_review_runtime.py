@@ -86,7 +86,7 @@ class StrategyReviewBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"; project.mkdir()
             (project / "state.rds").write_bytes(b"Not interpreted by Python")
-            (project / "project-format.json").write_text('{"project_format_version":3}')
+            (project / "project-format.json").write_text('{"project_format_version":4}')
             runtime = RunReviewRuntime(project, library=directory)
             value = proposal(); value["rationale"] = "$(touch /never-execute) `literal`; source('x')"
             payload = dict(decision("revise"), proposal=value)
@@ -114,7 +114,7 @@ class StrategyReviewBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"; project.mkdir()
             (project / "state.rds").write_bytes(b"fixture")
-            (project / "project-format.json").write_text('{"project_format_version":3}')
+            (project / "project-format.json").write_text('{"project_format_version":4}')
             runtime = RunReviewRuntime(project)
             with patch("qc_runtime.subprocess.run") as process:
                 with self.assertRaises(StoreError) as problem: runtime.decide(decision(), "old-token")

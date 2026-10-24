@@ -46,15 +46,17 @@ cl_lookup <- function(query, n = 10, obo_path = NULL) {
   }
   cl <- .get_cl_ontology(obo_path)
   q  <- .cl_normalise(query)
-  names_norm <- vapply(cl$name, .cl_normalise, character(1))
+  ids <- .cl_candidates(cl)
+  labels <- cl$name[ids]
+  names_norm <- vapply(labels, .cl_normalise, character(1))
   # Simple substring + Levenshtein hybrid score
   contains <- grepl(q, names_norm, fixed = TRUE)
   dist <- utils::adist(q, names_norm, ignore.case = TRUE)[1, ]
   score <- ifelse(contains, 0, dist)
   ord <- order(score)[seq_len(min(n, length(score)))]
   data.frame(
-    cl_id   = names(cl$name)[ord],
-    cl_name = cl$name[ord],
+    cl_id   = ids[ord],
+    cl_name = labels[ord],
     score   = score[ord],
     stringsAsFactors = FALSE,
     row.names = NULL

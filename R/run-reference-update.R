@@ -7,7 +7,8 @@
 #' @param annotation_history Optional historical import. Omit to keep it; explicit
 #'   NULL removes it. This function never calls a provider or reruns markers.
 #' @return Updated run status; an existing typed manual proposal is rebuilt for
-#'   whole-plan review, otherwise awaiting_configuration. Prior approval is inactive.
+#'   whole-plan review if still valid, otherwise awaiting_configuration. Prior
+#'   approval and ReAct authority are inactive; historical artifacts are retained.
 #' @export
 sc_run_set_reference <- function(project_dir, reference, project_id, input_hash,
                                  expected_revision, reviewer, reason,
@@ -40,15 +41,18 @@ sc_run_set_reference <- function(project_dir, reference, project_id, input_hash,
     cluster_column = config$cluster_column, reference_review = options, assay = config$assay,
     annotation_context = config$annotation_context)
   if (!is.null(history)) evidence$private$historical <- .sc_run_annotation_history_import(history, evidence)
-  if (!is.null(state$files$manual_annotation))
+  keep_manual <- !is.null(state$files$manual_annotation) && isTRUE(tryCatch({
     .sc_run_annotation_validate(.sc_run_get(root, state, "manual_annotation"), evidence)
+    TRUE
+  }, error = function(e) FALSE))
   previous_review <- if (is.null(state$files$annotation_review)) NULL else .sc_run_get(root, state, "annotation_review")$hash
   previous_approval <- if (is.null(state$approved)) NULL else state$approved$hash
+  previous_artifacts <- state$files[.sc_run_annotation_scope_files(state)]
   state$config <- config; state$config_hash <- .sc_run_hash(config)
   if (is.null(reference)) state$files$reference <- NULL else state <- .sc_run_put(root, state, "reference", reference)
   if (is.null(history)) state$files$annotation_history_input <- NULL else state <- .sc_run_put(root, state, "annotation_history_input", history)
   state <- .sc_run_put(root, state, "annotation_evidence", evidence)
-  state$files$annotation_review <- state$files$annotation_validated <- NULL
+  state <- .sc_run_annotation_scope_detach(state, keep_manual = keep_manual)
   state$pending <- state$approved <- NULL
   state$transfer_hashes <- character()
   state$failure <- NULL; state$output <- NULL
@@ -56,8 +60,27 @@ sc_run_set_reference <- function(project_dir, reference, project_id, input_hash,
   state$completed <- setdiff(state$completed, c("annotation_propose", "annotation_apply", "finalize"))
   state <- .sc_run_event(state, "reference_evidence_reconfigured", list(reviewer = reviewer,
     reason = reason, previous_review_hash = previous_review, previous_approval_hash = previous_approval,
+    previous_artifacts = previous_artifacts, manual_proposal_retained = keep_manual,
     evidence_hash = .sc_run_hash(evidence), config_hash = state$config_hash,
     calculation_reused = c("analysis", "markers"), provider_dispatch = "not_sent"))
   .sc_run_save(root, state)
   .sc_run_drive(root, state, provider = NULL, chat_fn = NULL, retry = FALSE, local_only = TRUE)
+}
+
+# Active annotation authority is narrower than retained historical receipts.
+.sc_run_annotation_scope_files <- function(state) {
+  intersect(c("manual_annotation", "annotation_request", "annotation_response",
+    "annotation_validated", "annotation_review", "annotation_suggestion_adoption",
+    "annotation_suggestion_response", "annotation_react_run", "annotation_react_citations",
+    "annotation_baseline_risks", "annotation_ontology", "annotation_plots",
+    grep("^react_cluster_", names(state$files), value = TRUE)), names(state$files))
+}
+.sc_run_annotation_scope_detach <- function(state, keep_manual = FALSE) {
+  drop <- .sc_run_annotation_scope_files(state)
+  if (keep_manual) drop <- setdiff(drop, "manual_annotation")
+  state$files[drop] <- NULL
+  state["suggestion"] <- list(NULL)
+  state$transfer_hashes <- state$suggestion_transfer_hashes <- character()
+  state$diagnostics$react <- NULL
+  state
 }

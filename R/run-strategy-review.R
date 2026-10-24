@@ -410,7 +410,7 @@
     if (grid_same && graph_same) .sc_run_cluster_selection(validated$proposal$clustering$resolution, scan)
     else state$files$cluster_scan <- NULL
   }
-  all_downstream <- c("markers", "annotation_evidence", "annotation_request", "annotation_response", "annotation_validated", "annotation_review", "manual_annotation", "annotated")
+  all_downstream <- c("markers", "annotation_evidence", .sc_run_annotation_scope_files(state), "annotated")
   drop <- character()
   if ("qc" %in% changed) drop <- c(drop, "qc_object", "strategy_selected", "strategy_preprocess", "strategy_basis", "strategy_batch", "strategy_neighbors", "analysis")
   else if ("selection" %in% changed) drop <- c(drop, "strategy_selected", "strategy_preprocess", "strategy_basis", "strategy_batch", "strategy_neighbors", "analysis")
@@ -428,6 +428,7 @@
   old_pending <- state$pending$hash
   dropped_files <- intersect(drop, names(state$files))
   state$files <- state$files[!names(state$files) %in% unique(c(drop, "strategy_request", "strategy_response"))]
+  if (length(changed)) state <- .sc_run_annotation_scope_detach(state)
   invalidated_stages <- character()
   if ("qc_object" %in% drop) invalidated_stages <- c(invalidated_stages, "qc_apply")
   if ("strategy_selected" %in% drop) invalidated_stages <- c(invalidated_stages, "strategy_selection")

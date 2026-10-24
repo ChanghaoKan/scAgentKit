@@ -3,14 +3,13 @@
 \title{Import a locally obtained CellMarker 2.0 table with explicit scope}
 \usage{
 annot_query_cellmarker(species, tissue = NULL, cancer_only = FALSE,
-  cache_dir = NULL, force_refresh = FALSE, url = NULL,
+  force_refresh = FALSE, url = NULL,
   local_file = NULL, sha256 = NULL)
 }
 \arguments{
 \item{species}{One of human or mouse; applied to the table species column.}
 \item{tissue}{Required nonempty literal tissue filter, case insensitive.}
 \item{cancer_only}{Restrict to non-Normal cancer context when TRUE.}
-\item{cache_dir}{Not used by the explicit local-file import.}
 \item{force_refresh}{TRUE requests automatic refresh, which is unavailable and rejected; use a local_file.}
 \item{url}{Only the fixed official HTTPS URL is recognized; no mirrors.}
 \item{local_file}{Explicit path to a lawfully obtained local XLSX file.}

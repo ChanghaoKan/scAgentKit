@@ -11,7 +11,8 @@ const joint = {schema:'scagentkit.joint-annotation-evidence.v1',clusterId:'0', d
 context.item = {clusterId:'0',joint_evidence:joint,proposal:{label:'Unknown',confidence:'low',rationale:'Unresolved',markers:[]}};
 joint.database.enrichment={status:'measured',records:[{label:'Single',a:1,b:2,c:3,d:4,p_value:.2,p_adjusted:.4,universe_size:10}]};
 joint.database.all_candidates=[{label:'Single',enrichment:[{p_value:.2,p_adjusted:.4,universe_size:10}]}];
-context.item.measured_expression={status:'measured',missing_genes:['ABSENT'],clusters:[{cluster:'0',genes:[{gene:'LOW',mean_log_normalized:1.25,pct_detected:.5}]}],cell_quality:[{cell_id:'local-cell',total_umi:100,high_count_flag:false}]};
+context.expression={status:'measured',missing_genes:['ABSENT'],clusters:[{cluster:'0',genes:[{gene:'LOW',mean_log_normalized:1.25,pct_detected:.5}]}],cell_quality:[{cell_id:'local-cell',total_umi:100,high_count_flag:false}]};
+vm.runInContext('state.view = {run:{annotation_review:{details:{measured_expression:expression}}}};', context);
 assert.equal(vm.runInContext('renderJointEvidence(item)', context), true);
 const rendered = JSON.stringify(nodes.get('annotation-joint-evidence'));
 for (const text of ['1/1 ranks above 10/20 by coverage only','single-marker evidence (weak)','10 / 20','qualitative, uncalibrated','label semantics not validated','lower_in_cluster','-0.8']) assert(rendered.includes(text),text);

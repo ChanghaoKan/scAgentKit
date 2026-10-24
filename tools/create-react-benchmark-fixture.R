@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Manual, offline performance check of the installed stage-1 tool implementation.
+# Create the synthetic fixture for the current session-worker benchmark.
 # Synthetic matrices and synthetic saved marker statistics are not biological data.
 args <- commandArgs(trailingOnly = TRUE)
 option <- function(name, default = NULL) {
@@ -8,7 +8,6 @@ option <- function(name, default = NULL) {
   if (length(hit) != 1L || hit == length(args)) stop("Invalid --", name)
   args[[hit + 1L]]
 }
-mode <- option("mode", "benchmark")
 output <- option("output")
 if (is.null(output)) stop("Provide --output with a new directory outside the package.")
 dir.create(output, recursive = TRUE, showWarnings = FALSE)
@@ -19,42 +18,6 @@ write_json <- function(value, path) jsonlite::write_json(value, path,
 internal <- function(name) getFromNamespace(name, "scAgentKit")
 elapsed <- function() unname(proc.time()[["elapsed"]])
 
-if (mode == "worker") {
-  start <- elapsed()
-  suppressPackageStartupMessages(library(scAgentKit))
-  package_ready <- elapsed()
-  context <- internal(".sc_run_react_context")(file.path(output, "project"))
-  invisible(gc())
-  context_ready <- elapsed()
-  tool <- option("tool")
-  phase <- option("phase", "cold")
-  spec <- readRDS(file.path(output, "calls.rds"))[[tool]]
-  cache <- file.path(output, "project", "annotation", "react", "cache", tool)
-  dispatch <- internal(".sc_run_react_dispatch")
-  count <- if (phase == "cold") 4L else 1L
-  rows <- vector("list", count)
-  for (i in seq_len(count)) {
-    before <- elapsed()
-    value <- dispatch(context, tool, spec, cache_dir = cache, timeout = 60)
-    duration <- elapsed() - before
-    rows[[i]] <- list(tool = tool,
-      phase = if (phase == "restart") "warm_restart" else if (i == 1L) "cold" else "warm_same_process",
-      repetition = if (phase == "restart" || i == 1L) 1L else i - 1L,
-      elapsed_seconds = duration, ok = isTRUE(value$ok), cached = isTRUE(value$cached),
-      result_hash = value$result_hash,
-      result_bytes = nchar(jsonlite::toJSON(value, auto_unbox = TRUE, null = "null", digits = NA), type = "bytes"),
-      error = value$error)
-    if (!isTRUE(value$ok)) break
-  }
-  rows <- Filter(Negate(is.null), rows)
-  write_json(list(package_load_seconds = package_ready - start,
-    context_load_seconds = context_ready - package_ready,
-    in_process_total_seconds = elapsed() - start, rows = rows),
-    file.path(output, paste0(tool, "-", phase, ".json")))
-  quit(status = if (all(vapply(rows, function(x) x$ok, logical(1)))) 0L else 2L)
-}
-
-if (mode != "benchmark") stop("Unknown --mode.")
 if (file.exists(file.path(output, "project", "state.rds")))
   stop("Use a new output directory: existing projects/caches are never removed.")
 required <- c("scAgentKit", "Seurat", "SeuratObject", "Matrix", "digest", "callr")
@@ -156,9 +119,9 @@ calls <- list(
 saveRDS(calls, file.path(output, "calls.rds"))
 command_value <- function(command, arguments) {
   if (!nzchar(Sys.which(command))) return("unknown")
-  value <- tryCatch(system2(command, arguments, stdout = TRUE, stderr = FALSE),
-    error = function(e) "unknown")
-  paste(value, collapse = " ")
+  value <- tryCatch(suppressWarnings(system2(command, arguments, stdout = TRUE, stderr = FALSE)),
+    error = function(e) character())
+  if (!length(value) || !is.null(attr(value, "status"))) "unknown" else paste(value, collapse = " ")
 }
 packages <- unique(c(required, "agentomicsCore", "jsonlite", "processx", "ps"))
 machine <- list(os = as.list(Sys.info()[c("sysname", "release", "version", "machine")]),
@@ -181,62 +144,4 @@ dataset <- list(kind = "synthetic_sparse_Seurat", seed = seed, cells = cells_n,
   checkpoint_bytes = sum(file.info(file.path(root, vapply(state$files, `[[`, "", "path")))$size),
   setup_seconds = elapsed() - setup_start)
 write_json(list(machine = machine, dataset = dataset), file.path(output, "environment.json"))
-rm(object, counts, normal, markers, marker_table, marker_summary, evidence, reference)
-invisible(gc())
-script <- sub("^--file=", "", grep("^--file=", commandArgs(), value = TRUE)[[1L]])
-script <- normalizePath(script, mustWork = TRUE)
-measurements <- list()
-for (tool in names(calls)) for (phase in c("cold", "restart")) {
-  before <- elapsed()
-  logfile <- file.path(output, paste0(tool, "-", phase, ".log"))
-  executable <- file.path(R.home("bin"), "Rscript")
-  arguments <- c("--vanilla", shQuote(script), "--mode", "worker", "--output", shQuote(output),
-    "--tool", tool, "--phase", phase)
-  measured_rss <- identical(unname(Sys.info()[["sysname"]]), "Darwin") &&
-    file.exists("/usr/bin/time")
-  if (measured_rss) {
-    arguments <- c("-l", shQuote(executable), arguments)
-    executable <- "/usr/bin/time"
-  }
-  code <- system2(executable, arguments, stdout = logfile, stderr = logfile)
-  wall <- elapsed() - before
-  record_path <- file.path(output, paste0(tool, "-", phase, ".json"))
-  record <- if (file.exists(record_path)) jsonlite::read_json(record_path, simplifyVector = FALSE) else list()
-  record$tool <- tool
-  record$process_phase <- phase
-  record$process_wall_seconds <- wall
-  record$exit_status <- code
-  rss <- if (measured_rss) grep("maximum resident set size", readLines(logfile, warn = FALSE), value = TRUE) else character()
-  record$process_maximum_resident_bytes <- if (length(rss) == 1L)
-    as.numeric(sub("^\\s*([0-9]+).*$", "\\1", rss)) else NULL
-  measurements[[length(measurements) + 1L]] <- record
-}
-rows <- do.call(rbind, lapply(measurements, function(run)
-  do.call(rbind, lapply(run$rows, function(row) data.frame(
-    tool = run$tool, phase = row$phase, repetition = row$repetition,
-    dispatch_seconds = row$elapsed_seconds, package_load_seconds = run$package_load_seconds,
-    context_load_seconds = run$context_load_seconds, process_wall_seconds = run$process_wall_seconds,
-    process_maximum_resident_bytes = if (is.null(run$process_maximum_resident_bytes)) NA_real_ else run$process_maximum_resident_bytes,
-    ok = row$ok, cached = row$cached,
-    result_hash = if (is.null(row$result_hash)) NA_character_ else row$result_hash,
-    error_code = if (is.null(row$error$code)) NA_character_ else row$error$code,
-    result_bytes = row$result_bytes, stringsAsFactors = FALSE)))))
-if (!is.null(rows)) utils::write.csv(rows, file.path(output, "timings.csv"), row.names = FALSE)
-valid <- length(measurements) == 8L && all(vapply(measurements, function(run)
-  identical(as.integer(run$exit_status), 0L) && length(run$rows) > 0 &&
-    all(vapply(run$rows, function(row) isTRUE(row$ok) && row$elapsed_seconds <= 60, logical(1))),
-  logical(1)))
-cache_correct <- !is.null(rows) && all(!rows$cached[rows$phase == "cold"]) &&
-  all(rows$cached[rows$phase != "cold"]) && all(vapply(split(rows$result_hash, rows$tool),
-    function(x) length(unique(x)) == 1L, logical(1)))
-report <- list(schema = "scagentkit.react-tools-benchmark.v1", machine = machine,
-  dataset = dataset, passed = valid && cache_correct, cache_correct = cache_correct,
-  timings = measurements,
-  scope = paste("Offline synthetic performance only. Cold means new R process and empty application cache;",
-    "OS disk cache is not flushed. Dispatch includes checksum validation, isolated worker startup,",
-    "tool computation, privacy/size checks and cache writes. Context and package load are separately measured.",
-    "No provider call, scientific annotation, DE, or biological accuracy validation was performed."))
-write_json(report, file.path(output, "benchmark.json"))
-cat("Benchmark results: ", file.path(output, "benchmark.json"), "\n", sep = "")
-cat("Passed: ", report$passed, "\n", sep = "")
-if (!report$passed) quit(status = 2L)
+cat("Synthetic fixture: ", output, "\n", sep = "")

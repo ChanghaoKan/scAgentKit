@@ -52,7 +52,7 @@ class RunReviewRuntimeTests(unittest.TestCase):
         self.project = Path(self.temp.name) / "project"
         self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"fixture; never interpreted by Python")
-        (self.project / "project-format.json").write_text('{"project_format_version":3}')
+        (self.project / "project-format.json").write_text('{"project_format_version":4}')
         self.runtime = RunReviewRuntime(self.project, library=self.temp.name)
 
     def tearDown(self):
@@ -224,7 +224,7 @@ class RunReviewRuntimeTests(unittest.TestCase):
     def test_replaced_project_directory_rejected(self):
         self.project.rename(self.project.with_name("old-project")); self.project.mkdir()
         (self.project / "state.rds").write_bytes(b"replacement")
-        (self.project / "project-format.json").write_text('{"project_format_version":3}')
+        (self.project / "project-format.json").write_text('{"project_format_version":4}')
         with patch("qc_runtime.subprocess.run") as process, self.assertRaises(StoreError): self.runtime.describe()
         process.assert_not_called()
 
@@ -324,7 +324,7 @@ class RunReviewHTTPTests(unittest.TestCase):
         mock_format_authority(self)
         self.temp = tempfile.TemporaryDirectory()
         self.project = Path(self.temp.name); (self.project / "state.rds").write_bytes(b"fixture")
-        (self.project / "project-format.json").write_text('{"project_format_version":3}')
+        (self.project / "project-format.json").write_text('{"project_format_version":4}')
         self.runtime = MockRunReview(self.project)
         self.server = WorkbenchServer(("127.0.0.1", 0), None, None, run_review=self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()

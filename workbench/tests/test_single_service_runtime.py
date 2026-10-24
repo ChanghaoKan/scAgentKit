@@ -31,7 +31,7 @@ class SingleServiceRuntimeTests(unittest.TestCase):
         mock_format_authority(self)
         self.temporary = tempfile.TemporaryDirectory(); self.root = Path(self.temporary.name)
         self.parent = self.root / "parent"; self.parent.mkdir(); (self.parent / "state.rds").write_bytes(b"Never loaded by R")
-        (self.parent / "project-format.json").write_text('{"project_format_version":3}')
+        (self.parent / "project-format.json").write_text('{"project_format_version":4}')
         self.workspace = self.root / "children"; self.workspace.mkdir()
         self.runtime = RunSubclusterRuntime(self.parent, self.workspace)
     def tearDown(self): self.temporary.cleanup()

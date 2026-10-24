@@ -38,6 +38,16 @@ test_that("the CL session cache is keyed by path and content", {
   expect_identical(attr(other, "scAgentKit_source")$sha256, digest::digest(file = second, algo = "sha256"))
 })
 
+test_that("fuzzy lookup ranks only current CL terms and grants no exact identity", {
+  skip_if_not_installed("ontologyIndex")
+  path <- cl_fixture_obo(); on.exit(unlink(path))
+  for (query in c("obsolete cell", "test organ", "test cel")) {
+    result <- cl_lookup(query, n = 10L, obo_path = path)
+    expect_identical(result$cl_id, "CL:0000001")
+  }
+  expect_true(is.na(.cl_match_one("test cel", .get_cl_ontology(path))$cl_id))
+})
+
 
 test_that("default CL is a verified fixed local release with no imports or network", {
   skip_if_not_installed("ontologyIndex")

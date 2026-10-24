@@ -5,7 +5,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {createRequire} from "node:module";
 import {fileURLToPath} from "node:url";
-import {execFileSync} from "node:child_process";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const require = createRequire(import.meta.url);
 const {chromium} = require(process.env.SCAGENTKIT_PLAYWRIGHT || "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules/playwright");
@@ -15,8 +14,7 @@ try {
   const context = await browser.newContext();
   await context.route("**/*", route => {report.networkRequests.push(route.request().url()); return route.abort();});
   const source = await fs.readFile(path.join(root, "workbench/static/evidence-display.js"), "utf8");
-  const baseline = execFileSync("git", ["show", "HEAD:workbench/static/evidence-display.js"], {cwd: root, encoding: "utf8"});
-  for (const [version, content] of [["baseline", baseline], ["revised", source]]) {
+  for (const [version, content] of [["current", source]]) {
     const page = await context.newPage();
     await page.setContent('<div id="plot" style="width:640px"></div>'); await page.addScriptTag({content});
     // Warm up first paint and report five samples rather than one startup-sensitive measurement.
@@ -31,7 +29,7 @@ try {
       }, count);
       assert.equal(timing.pointsRendered, count); report.benchmark.push({version, cells: count, sample, ...timing});
     }
-    if (version === "revised") {
+    {
       const result = await page.evaluate(() => {
         const target = document.querySelector("#plot");
         const points = [[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1]].map(([x, y], i) => ({cellId: String(i), clusterId: String(i), x, y}));
